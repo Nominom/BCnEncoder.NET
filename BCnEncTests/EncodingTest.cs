@@ -1,5 +1,6 @@
 using System.IO;
 using BCnComp.Net.Encoder;
+using BCnComp.Net.Shared;
 using Xunit;
 
 namespace BCnEncTests
@@ -12,6 +13,9 @@ namespace BCnEncTests
 			
 			BcEncoder encoder = new BcEncoder();
 			encoder.OutputOptions.quality = EncodingQuality.BestQuality;
+			encoder.OutputOptions.generateMipMaps = true;
+			encoder.OutputOptions.format = CompressionFormat.BC1;
+
 			using FileStream fs = File.OpenWrite("encoding_bc1_gradient_bestQuality.ktx");
 			encoder.Encode(image, fs);
 		}
@@ -21,7 +25,11 @@ namespace BCnEncTests
 			var image = ImageLoader.testGradient1;
 			
 			BcEncoder encoder = new BcEncoder();
+
 			encoder.OutputOptions.quality = EncodingQuality.Balanced;
+			encoder.OutputOptions.generateMipMaps = true;
+			encoder.OutputOptions.format = CompressionFormat.BC1;
+
 			using FileStream fs = File.OpenWrite("encoding_bc1_gradient_balanced.ktx");
 			encoder.Encode(image, fs);
 		}
@@ -32,6 +40,9 @@ namespace BCnEncTests
 			
 			BcEncoder encoder = new BcEncoder();
 			encoder.OutputOptions.quality = EncodingQuality.Fast;
+			encoder.OutputOptions.generateMipMaps = true;
+			encoder.OutputOptions.format = CompressionFormat.BC1;
+
 			using FileStream fs = File.OpenWrite("encoding_bc1_gradient_fast.ktx");
 			encoder.Encode(image, fs);
 		}
@@ -45,6 +56,9 @@ namespace BCnEncTests
 			
 			BcEncoder encoder = new BcEncoder();
 			encoder.OutputOptions.quality = EncodingQuality.BestQuality;
+			encoder.OutputOptions.generateMipMaps = true;
+			encoder.OutputOptions.format = CompressionFormat.BC1;
+
 			using FileStream fs = File.OpenWrite("encoding_bc1_diffuse_bestQuality.ktx");
 			encoder.Encode(image, fs);
 		}
@@ -55,6 +69,9 @@ namespace BCnEncTests
 			
 			BcEncoder encoder = new BcEncoder();
 			encoder.OutputOptions.quality = EncodingQuality.Balanced;
+			encoder.OutputOptions.generateMipMaps = true;
+			encoder.OutputOptions.format = CompressionFormat.BC1;
+
 			using FileStream fs = File.OpenWrite("encoding_bc1_diffuse_balanced.ktx");
 			encoder.Encode(image, fs);
 		}
@@ -65,6 +82,9 @@ namespace BCnEncTests
 			
 			BcEncoder encoder = new BcEncoder();
 			encoder.OutputOptions.quality = EncodingQuality.Fast;
+			encoder.OutputOptions.generateMipMaps = true;
+			encoder.OutputOptions.format = CompressionFormat.BC1;
+
 			using FileStream fs = File.OpenWrite("encoding_bc1_diffuse_fast.ktx");
 			encoder.Encode(image, fs);
 		}

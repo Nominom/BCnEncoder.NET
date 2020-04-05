@@ -13,7 +13,7 @@ namespace BCnEncTests
 		[Fact]
 		public void Bc1Decode() {
 			using FileStream fs = File.OpenRead(@"..\..\..\testImages\test_decompress_bc1.ktx");
-			KtxFile file = KtxFile.Load(fs, true);
+			KtxFile file = KtxFile.Load(fs);
 			Assert.True(file.Header.VerifyHeader());
 			Assert.Equal((uint)1, file.Header.NumberOfFaces);
 

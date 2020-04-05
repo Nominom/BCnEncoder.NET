@@ -24,7 +24,8 @@ namespace BCnComp.Net.Shared
 
 		public void Write(Stream s)
 		{
-			if (MipMaps.Count < 1 || MipMaps[0].NumberOfFaces < 1) {
+			if (MipMaps.Count < 1 || MipMaps[0].NumberOfFaces < 1)
+			{
 				throw new InvalidOperationException("The KTX structure should have at least 1 mipmap level and 1 Face before writing to file.");
 			}
 
@@ -37,7 +38,8 @@ namespace BCnComp.Net.Shared
 				Header.NumberOfMipmapLevels = (uint)MipMaps.Count;
 				Header.NumberOfArrayElements = 0;
 
-				if (!Header.VerifyHeader()) {
+				if (!Header.VerifyHeader())
+				{
 					throw new InvalidOperationException("Please verify the header validity before writing to file.");
 				}
 
@@ -48,7 +50,8 @@ namespace BCnComp.Net.Shared
 					KtxKeyValuePair.WriteKeyValuePair(bw, keyValuePair);
 				}
 
-				for (int mip = 0; mip < Header.NumberOfMipmapLevels; mip++) {
+				for (int mip = 0; mip < Header.NumberOfMipmapLevels; mip++)
+				{
 					uint imageSize = MipMaps[mip].SizeInBytes;
 					bw.Write(imageSize);
 					bool isCubemap = Header.NumberOfFaces == 6 && Header.NumberOfArrayElements == 0;
@@ -70,33 +73,26 @@ namespace BCnComp.Net.Shared
 			}
 		}
 
-		public static KtxFile Load(Stream s, bool readKeyValuePairs)
+		public static KtxFile Load(Stream s)
 		{
 
 			using (BinaryReader br = new BinaryReader(s, UTF8, true))
 			{
 				KtxHeader header = br.ReadStruct<KtxHeader>();
 
-				if (header.NumberOfArrayElements > 0) {
+				if (header.NumberOfArrayElements > 0)
+				{
 					throw new NotSupportedException("KTX files with arrays are not supported.");
 				}
 
 				KtxFile ktx = new KtxFile(header);
 
-				if (readKeyValuePairs)
+				int keyValuePairBytesRead = 0;
+				while (keyValuePairBytesRead < header.BytesOfKeyValueData)
 				{
-					int keyValuePairBytesRead = 0;
-					while (keyValuePairBytesRead < header.BytesOfKeyValueData)
-					{
-						int bytesRemaining = (int)(header.BytesOfKeyValueData - keyValuePairBytesRead);
-						KtxKeyValuePair kvp = KtxKeyValuePair.ReadKeyValuePair(br, out int read);
-						keyValuePairBytesRead += read;
-						ktx.KeyValuePairs.Add(kvp);
-					}
-				}
-				else
-				{
-					br.SkipPadding((int)header.BytesOfKeyValueData); //Skip over key values
+					KtxKeyValuePair kvp = KtxKeyValuePair.ReadKeyValuePair(br, out int read);
+					keyValuePairBytesRead += read;
+					ktx.KeyValuePairs.Add(kvp);
 				}
 
 				uint numberOfFaces = Math.Max(1, header.NumberOfFaces);
@@ -104,19 +100,18 @@ namespace BCnComp.Net.Shared
 				for (uint mipLevel = 0; mipLevel < header.NumberOfMipmapLevels; mipLevel++)
 				{
 					uint imageSize = br.ReadUInt32();
-					uint mipWidth = header.PixelWidth / (uint) (Math.Pow(2, mipLevel));
-					uint mipHeight = header.PixelHeight / (uint) (Math.Pow(2, mipLevel));
+					uint mipWidth = header.PixelWidth / (uint)(Math.Pow(2, mipLevel));
+					uint mipHeight = header.PixelHeight / (uint)(Math.Pow(2, mipLevel));
 
 					ktx.MipMaps.Add(new KtxMipmap(imageSize, mipWidth, mipHeight, numberOfFaces));
 
-					// For cubemap textures, imageSize is actually the size of an individual face.
-					bool isCubemap = header.NumberOfFaces == 6 && header.NumberOfArrayElements == 0;
+					bool cubemap = header.NumberOfFaces == 6 && header.NumberOfArrayElements == 0;
 					for (uint face = 0; face < numberOfFaces; face++)
 					{
 						byte[] faceData = br.ReadBytes((int)imageSize);
 						ktx.MipMaps[(int)mipLevel].Faces[(int)face] = new KtxMipFace(faceData, mipWidth, mipHeight);
 						uint cubePadding = 0u;
-						if (isCubemap)
+						if (cubemap)
 						{
 							cubePadding = 3 - ((imageSize + 3) % 4);
 						}
@@ -297,7 +292,8 @@ namespace BCnComp.Net.Shared
 		{
 			KtxHeader header = new KtxHeader();
 			Span<byte> id = stackalloc byte[] { 0xAB, 0x4B, 0x54, 0x58, 0x20, 0x31, 0x31, 0xBB, 0x0D, 0x0A, 0x1A, 0x0A };
-			for (int i = 0; i < id.Length; i++) {
+			for (int i = 0; i < id.Length; i++)
+			{
 				header.Identifier[i] = id[i];
 			}
 			header.Endianness = 0x04030201;
@@ -316,7 +312,8 @@ namespace BCnComp.Net.Shared
 		{
 			KtxHeader header = new KtxHeader();
 			Span<byte> id = stackalloc byte[] { 0xAB, 0x4B, 0x54, 0x58, 0x20, 0x31, 0x31, 0xBB, 0x0D, 0x0A, 0x1A, 0x0A };
-			for (int i = 0; i < id.Length; i++) {
+			for (int i = 0; i < id.Length; i++)
+			{
 				header.Identifier[i] = id[i];
 			}
 			header.Endianness = 0x04030201;
