@@ -1,13 +1,10 @@
 ﻿using System;
 using System.IO;
-using BCnComp.Net.Shared;
+using BCnEnc.Net.Shared;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
-using SixLabors.ImageSharp.Processing;
-using SixLabors.ImageSharp.Processing.Dithering;
-using SixLabors.ImageSharp.Processing.Processors.Dithering;
 
-namespace BCnComp.Net.Encoder
+namespace BCnEnc.Net.Encoder
 {
 	public class CompressorInputOptions
 	{

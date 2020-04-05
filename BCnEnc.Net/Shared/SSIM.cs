@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using SixLabors.ImageSharp.PixelFormats;
 
-namespace BCnComp.Net.Shared
+namespace BCnEnc.Net.Shared
 {
 	public static class SSIM
 	{

@@ -2,7 +2,7 @@
 using System.Numerics;
 using SixLabors.ImageSharp.PixelFormats;
 
-namespace BCnComp.Net.Shared
+namespace BCnEnc.Net.Shared
 {
 	internal struct ColorRgb565 : IEquatable<ColorRgb565>
 	{

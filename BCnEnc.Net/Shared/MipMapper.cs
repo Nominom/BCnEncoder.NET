@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
-namespace BCnComp.Net.Shared
+namespace BCnEnc.Net.Shared
 {
 	public static class MipMapper
 	{

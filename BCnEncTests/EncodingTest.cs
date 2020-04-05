@@ -1,6 +1,6 @@
 using System.IO;
-using BCnComp.Net.Encoder;
-using BCnComp.Net.Shared;
+using BCnEnc.Net.Encoder;
+using BCnEnc.Net.Shared;
 using Xunit;
 
 namespace BCnEncTests

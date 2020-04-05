@@ -1,9 +1,9 @@
 ﻿using System;
-using BCnComp.Net.Shared;
+using BCnEnc.Net.Shared;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
-namespace BCnComp.Net.Decoder
+namespace BCnEnc.Net.Decoder
 {
 	public class BcDecoder
 	{

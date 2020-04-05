@@ -1,5 +1,5 @@
 ﻿using System;
-using BCnComp.Net.Shared;
+using BCnEnc.Net.Shared;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Advanced;
 using SixLabors.ImageSharp.PixelFormats;

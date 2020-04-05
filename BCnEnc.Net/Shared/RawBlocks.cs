@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Runtime.InteropServices;
-using System.Security.Cryptography.X509Certificates;
 using SixLabors.ImageSharp.PixelFormats;
 
-namespace BCnComp.Net.Shared
+namespace BCnEnc.Net.Shared
 {
 
 	internal struct RawBlock4X4Rgba32 {

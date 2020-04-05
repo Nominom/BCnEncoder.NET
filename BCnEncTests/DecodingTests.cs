@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using BCnComp.Net.Decoder;
-using BCnComp.Net.Shared;
+using BCnEnc.Net.Decoder;
+using BCnEnc.Net.Shared;
 using SixLabors.ImageSharp;
 using Xunit;
 

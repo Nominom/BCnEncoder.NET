@@ -1,4 +1,4 @@
-﻿namespace BCnComp.Net.Shared
+﻿namespace BCnEnc.Net.Shared
 {
 	public enum GLFormat : uint
 	{

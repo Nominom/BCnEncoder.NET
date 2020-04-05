@@ -1,9 +1,9 @@
 ﻿using System;
 using System.IO;
 using System.Runtime.InteropServices;
-using BCnComp.Net.Shared;
+using BCnEnc.Net.Shared;
 
-namespace BCnComp.Net.Decoder
+namespace BCnEnc.Net.Decoder
 {
 	internal interface IBcBlockDecoder {
 		RawBlock4X4Rgba32[,] Decode(ReadOnlySpan<byte> data, int pixelWidth, int pixelHeight, out int blockWidth,

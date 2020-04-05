@@ -1,14 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Accord.Math;
-using BCnComp.Net.Shared;
+using BCnEnc.Net.Shared;
 using SixLabors.ImageSharp.PixelFormats;
 
-namespace BCnComp.Net.Encoder
+namespace BCnEnc.Net.Encoder
 {
 
 
