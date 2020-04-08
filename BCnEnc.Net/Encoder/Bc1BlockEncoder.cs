@@ -79,17 +79,17 @@ namespace BCnEnc.Net.Encoder
 			var c0 = color0.ToColorRgb24();
 			var c1 = color1.ToColorRgb24();
 
-			Span<YCbCr> colors = output.HasAlphaOrBlack ?
-				stackalloc YCbCr[] {
-				new YCbCr(c0),
-				new YCbCr(c1),
-				new YCbCr(c0 * (1.0 / 2.0) + c1 * (1.0 / 2.0)),
-				new YCbCr(0, 0, 0)
-			} : stackalloc YCbCr[] {
-				new YCbCr(c0),
-				new YCbCr(c1),
-				new YCbCr(c0 * (2.0 / 3.0) + c1 * (1.0 / 3.0)),
-				new YCbCr(c0 * (1.0 / 3.0) + c1 * (2.0 / 3.0))
+			Span<ColorYCbCr> colors = output.HasAlphaOrBlack ?
+				stackalloc ColorYCbCr[] {
+				new ColorYCbCr(c0),
+				new ColorYCbCr(c1),
+				new ColorYCbCr(c0 * (1.0 / 2.0) + c1 * (1.0 / 2.0)),
+				new ColorYCbCr(0, 0, 0)
+			} : stackalloc ColorYCbCr[] {
+				new ColorYCbCr(c0),
+				new ColorYCbCr(c1),
+				new ColorYCbCr(c0 * (2.0 / 3.0) + c1 * (1.0 / 3.0)),
+				new ColorYCbCr(c0 * (1.0 / 3.0) + c1 * (2.0 / 3.0))
 			};
 
 			for (int i = 0; i < 16; i++)
@@ -138,22 +138,22 @@ namespace BCnEnc.Net.Encoder
 				ColorRgb24 color0 = new ColorRgb24(c0);
 				ColorRgb24 color1 = new ColorRgb24(c1);
 
-				Span<YCbCr> colors = output.HasAlphaOrBlack ?
-					stackalloc YCbCr[] {
-					new YCbCr(color0),
-					new YCbCr(color1),
-					new YCbCr(color0 * (1.0 / 2.0) + color1 * (1.0 / 2.0)),
-					new YCbCr(new ColorRgb24(0, 0, 0))
-				} : stackalloc YCbCr[] {
-					new YCbCr(color0),
-					new YCbCr(color1),
-					new YCbCr(color0 * (2.0 / 3.0) + color1 * (1.0 / 3.0)),
-					new YCbCr(color0 * (1.0 / 3.0) + color1 * (2.0 / 3.0))
+				Span<ColorYCbCr> colors = output.HasAlphaOrBlack ?
+					stackalloc ColorYCbCr[] {
+					new ColorYCbCr(color0),
+					new ColorYCbCr(color1),
+					new ColorYCbCr(color0 * (1.0 / 2.0) + color1 * (1.0 / 2.0)),
+					new ColorYCbCr(new ColorRgb24(0, 0, 0))
+				} : stackalloc ColorYCbCr[] {
+					new ColorYCbCr(color0),
+					new ColorYCbCr(color1),
+					new ColorYCbCr(color0 * (2.0 / 3.0) + color1 * (1.0 / 3.0)),
+					new ColorYCbCr(color0 * (1.0 / 3.0) + color1 * (2.0 / 3.0))
 				};
 
 				for (int i = 0; i < 16; i++)
 				{
-					var color = new YCbCr(pixels[i]);
+					var color = new ColorYCbCr(pixels[i]);
 					output[i] = ColorChooser.ChooseClosestColor(colors, color);
 				}
 
@@ -165,7 +165,7 @@ namespace BCnEnc.Net.Encoder
 		{
 			private const int variations = 2;
 
-			private static void GenerateVariations(YCbCr min, YCbCr max, List<ColorRgb565> colors)
+			private static void GenerateVariations(ColorYCbCr min, ColorYCbCr max, List<ColorRgb565> colors)
 			{
 
 				for (int i = 0; i < variations; i++)
@@ -246,8 +246,8 @@ namespace BCnEnc.Net.Encoder
 				PcaVectors.Create(pixels, out var mean, out var principalAxis);
 				PcaVectors.GetExtremePoints(pixels, mean, principalAxis, out var min, out var max);
 
-				var minYcbcr = new YCbCr(min);
-				var maxYcbcr = new YCbCr(max);
+				var minYcbcr = new ColorYCbCr(min);
+				var maxYcbcr = new ColorYCbCr(max);
 				List<ColorRgb565> uniqueColors = new List<ColorRgb565>();
 				uniqueColors.Add(minYcbcr.ToColorRgb565());
 				uniqueColors.Add(maxYcbcr.ToColorRgb565());
@@ -288,7 +288,7 @@ namespace BCnEnc.Net.Encoder
 		{
 			private const int variations = 2;
 
-			private static void GenerateVariations(YCbCr min, YCbCr max, List<ColorRgb565> colors)
+			private static void GenerateVariations(ColorYCbCr min, ColorYCbCr max, List<ColorRgb565> colors)
 			{
 
 				for (int i = 0; i < variations; i++)
@@ -344,8 +344,8 @@ namespace BCnEnc.Net.Encoder
 				PcaVectors.Create(pixels, out var mean, out var principalAxis);
 				PcaVectors.GetExtremePoints(pixels, mean, principalAxis, out var min, out var max);
 
-				var minYcbcr = new YCbCr(min);
-				var maxYcbcr = new YCbCr(max);
+				var minYcbcr = new ColorYCbCr(min);
+				var maxYcbcr = new ColorYCbCr(max);
 				List<ColorRgb565> uniqueColors = new List<ColorRgb565>();
 				uniqueColors.Add(minYcbcr.ToColorRgb565());
 				uniqueColors.Add(maxYcbcr.ToColorRgb565());

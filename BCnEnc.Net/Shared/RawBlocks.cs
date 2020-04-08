@@ -47,8 +47,8 @@ namespace BCnEnc.Net.Shared
 			var pix1 = AsSpan;
 			var pix2 = other.AsSpan;
 			for (int i = 0; i < pix1.Length; i++) {
-				var col1 = new YCbCr(pix1[i]);
-				var col2 = new YCbCr(pix2[i]);
+				var col1 = new ColorYCbCr(pix1[i]);
+				var col2 = new ColorYCbCr(pix2[i]);
 
 				var ye = col1.y - col2.y;
 				var cbe = col1.cb - col2.cb;
@@ -82,7 +82,7 @@ namespace BCnEnc.Net.Shared
 			var pixels = AsSpan;
 			var ycbcrPs = rawYcbcr.AsSpan;
 			for (int i = 0; i < pixels.Length; i++) {
-				ycbcrPs[i] = new YCbCr(pixels[i]);
+				ycbcrPs[i] = new ColorYCbCr(pixels[i]);
 			}
 			return rawYcbcr;
 		}
@@ -90,13 +90,13 @@ namespace BCnEnc.Net.Shared
 
 
 	internal struct RawBlock4X4Ycbcr {
-		public YCbCr p00, p10, p20, p30;
-		public YCbCr p01, p11, p21, p31;
-		public YCbCr p02, p12, p22, p32;
-		public YCbCr p03, p13, p23, p33;
-		public Span<YCbCr> AsSpan => MemoryMarshal.CreateSpan(ref p00, 16);
+		public ColorYCbCr p00, p10, p20, p30;
+		public ColorYCbCr p01, p11, p21, p31;
+		public ColorYCbCr p02, p12, p22, p32;
+		public ColorYCbCr p03, p13, p23, p33;
+		public Span<ColorYCbCr> AsSpan => MemoryMarshal.CreateSpan(ref p00, 16);
 
-		public YCbCr this[int x, int y] {
+		public ColorYCbCr this[int x, int y] {
 			get => AsSpan[x + y * 4];
 			set => AsSpan[x + y * 4] = value;
 		}
@@ -109,7 +109,7 @@ namespace BCnEnc.Net.Shared
 			var pix2 = other.AsSpan;
 			for (int i = 0; i < pix1.Length; i++) {
 				var col1 = pix1[i];
-				var col2 = new YCbCr(pix2[i]);
+				var col2 = new ColorYCbCr(pix2[i]);
 
 				var ye = col1.y - col2.y;
 				var cbe = col1.cb - col2.cb;

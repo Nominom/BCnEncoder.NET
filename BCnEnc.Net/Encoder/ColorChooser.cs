@@ -31,7 +31,7 @@ namespace BCnEnc.Net.Encoder
 			return closest;
 		}
 
-		public static int ChooseClosestColor(Span<YCbCr> colors, YCbCr color, float luminanceMultiplier = 4)
+		public static int ChooseClosestColor(Span<ColorYCbCr> colors, ColorYCbCr color, float luminanceMultiplier = 4)
 		{
 			int closest = 0;
 			float closestError = 0;

@@ -33,4 +33,20 @@
 		BC6,
 		BC7
 	}
+
+	public static class CompressionFormatExtensions {
+		public static bool IsCompressedFormat(this CompressionFormat format)
+		{
+			switch (format) {
+				case CompressionFormat.R:
+				case CompressionFormat.RG:
+				case CompressionFormat.RGB:
+				case CompressionFormat.RGBA:
+					return false;
+				
+				default:
+					return true;
+			}
+		}
+	}
 }

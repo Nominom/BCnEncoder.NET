@@ -285,20 +285,20 @@ namespace BCnEnc.Net.Shared
 		}
 	}
 
-	internal struct YCbCr
+	internal struct ColorYCbCr
 	{
 		public float y;
 		public float cb;
 		public float cr;
 
-		public YCbCr(float y, float cb, float cr)
+		public ColorYCbCr(float y, float cb, float cr)
 		{
 			this.y = y;
 			this.cb = cb;
 			this.cr = cr;
 		}
 
-		public YCbCr(ColorRgb24 rgb)
+		public ColorYCbCr(ColorRgb24 rgb)
 		{
 			float fr = (float)rgb.r / 255;
 			float fg = (float)rgb.g / 255;
@@ -309,7 +309,7 @@ namespace BCnEnc.Net.Shared
 			cr = (0.5000f * fr - 0.4184f * fg - 0.0816f * fb);
 		}
 
-		public YCbCr(ColorRgb565 rgb)
+		public ColorYCbCr(ColorRgb565 rgb)
 		{
 			float fr = (float)rgb.R / 255;
 			float fg = (float)rgb.G / 255;
@@ -320,7 +320,7 @@ namespace BCnEnc.Net.Shared
 			cr = (0.5000f * fr - 0.4184f * fg - 0.0816f * fb);
 		}
 
-		public YCbCr(ColorRgba32 rgba)
+		public ColorYCbCr(ColorRgba32 rgba)
 		{
 			float fr = (float)rgba.r / 255;
 			float fg = (float)rgba.g / 255;
@@ -331,7 +331,7 @@ namespace BCnEnc.Net.Shared
 			cr = (0.5000f * fr - 0.4184f * fg - 0.0816f * fb);
 		}
 
-		public YCbCr(Rgba32 rgb)
+		public ColorYCbCr(Rgba32 rgb)
 		{
 			float fr = (float)rgb.R / 255;
 			float fg = (float)rgb.G / 255;
@@ -342,7 +342,7 @@ namespace BCnEnc.Net.Shared
 			cr = (0.5000f * fr - 0.4184f * fg - 0.0816f * fb);
 		}
 
-		public YCbCr(Vector3 vec) {
+		public ColorYCbCr(Vector3 vec) {
 			float fr = (float) vec.X;
 			float fg = (float) vec.Y;
 			float fb = (float) vec.Z;
@@ -368,7 +368,7 @@ namespace BCnEnc.Net.Shared
 			return $"r : {r * 255} g : {g * 255} b : {b * 255}";
 		}
 
-		public float CalcDistWeighted(YCbCr other, float yWeight = 4) {
+		public float CalcDistWeighted(ColorYCbCr other, float yWeight = 4) {
 			float dy = (y - other.y) * (y - other.y) * yWeight;
 			float dcb = (cb - other.cb) * (cb - other.cb);
 			float dcr = (cr - other.cr) * (cr - other.cr);
