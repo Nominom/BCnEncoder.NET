@@ -14,7 +14,6 @@ namespace BCnEnc.Net.Encoder
 	internal class Bc1BlockEncoder : IBcBlockEncoder
 	{
 
-
 		public byte[] Encode(RawBlock4X4Rgba32[,] blocks, int blockWidth, int blockHeight, EncodingQuality quality, bool parallel)
 		{
 			byte[] outputData = new byte[blockWidth * blockHeight * Marshal.SizeOf<Bc1Block>()];
@@ -66,34 +65,53 @@ namespace BCnEnc.Net.Encoder
 			return GLFormat.GL_RGB;
 		}
 
+		#region Encoding private stuff
 
+		private static Bc1Block TryColors(RawBlock4X4Ycbcr rawBlock, ColorRgb565 color0, ColorRgb565 color1)
+		{
+			Bc1Block output = new Bc1Block();
+
+			var pixels = rawBlock.AsSpan;
+
+			output.color0 = color0;
+			output.color1 = color1;
+
+			var c0 = color0.ToColorRgb24();
+			var c1 = color1.ToColorRgb24();
+
+			Span<YCbCr> colors = output.HasAlphaOrBlack ?
+				stackalloc YCbCr[] {
+				new YCbCr(c0),
+				new YCbCr(c1),
+				new YCbCr(c0 * (1.0 / 2.0) + c1 * (1.0 / 2.0)),
+				new YCbCr(0, 0, 0)
+			} : stackalloc YCbCr[] {
+				new YCbCr(c0),
+				new YCbCr(c1),
+				new YCbCr(c0 * (2.0 / 3.0) + c1 * (1.0 / 3.0)),
+				new YCbCr(c0 * (1.0 / 3.0) + c1 * (2.0 / 3.0))
+			};
+
+			for (int i = 0; i < 16; i++)
+			{
+				var color = pixels[i];
+				output[i] = ColorChooser.ChooseClosestColor(colors, color);
+			}
+
+			return output;
+		}
+
+
+		#endregion
+
+		#region Encoders
+		
 		private static class Bc1BlockEncoderFast
 		{
 
 			private const int blackThreshold = 10;
 
-			private static int ChooseClosestColor(Span<ColorRgb24> colors, Rgba32 color)
-			{
-				int closest = 0;
-				int closestError =
-					Math.Abs(colors[0].r - color.R)
-					+ Math.Abs(colors[0].g - color.G)
-					+ Math.Abs(colors[0].b - color.B);
 
-				for (int i = 1; i < colors.Length; i++)
-				{
-					int error =
-						Math.Abs(colors[i].r - color.R)
-						+ Math.Abs(colors[i].g - color.G)
-						+ Math.Abs(colors[i].b - color.B);
-					if (error < closestError)
-					{
-						closest = i;
-						closestError = error;
-					}
-				}
-				return closest;
-			}
 
 			internal static Bc1Block EncodeBlock(RawBlock4X4Rgba32 rawBlock)
 			{
@@ -102,10 +120,11 @@ namespace BCnEnc.Net.Encoder
 				var pixels = rawBlock.AsSpan;
 
 				PcaVectors.Create(pixels, out var mean, out var principalAxis);
-				PcaVectors.GetExtremePoints(pixels, mean, principalAxis, out var min, out var max);
+				//PcaVectors.GetExtremePoints(pixels, mean, principalAxis, out var min, out var max);
+				PcaVectors.OptimizeEndpoints(pixels, mean, principalAxis, out var min, out var max);
 
-				ColorRgb565 c0 = new ColorRgb565(min);
-				ColorRgb565 c1 = new ColorRgb565(max);
+				ColorRgb565 c0 = min;
+				ColorRgb565 c1 = max;
 
 				if (c0.data <= c1.data)
 				{
@@ -119,90 +138,32 @@ namespace BCnEnc.Net.Encoder
 				ColorRgb24 color0 = new ColorRgb24(c0);
 				ColorRgb24 color1 = new ColorRgb24(c1);
 
-				Span<ColorRgb24> colors = output.HasAlphaOrBlack ?
-					stackalloc ColorRgb24[] {
-					color0,
-					color1,
-					color0 * (1.0 / 2.0) + color1 * (1.0 / 2.0),
-					new ColorRgb24(0, 0, 0)
-				} : stackalloc ColorRgb24[] {
-					color0,
-					color1,
-					color0 * (2.0 / 3.0) + color1 * (1.0 / 3.0),
-					color0 * (1.0 / 3.0) + color1 * (2.0 / 3.0)
+				Span<YCbCr> colors = output.HasAlphaOrBlack ?
+					stackalloc YCbCr[] {
+					new YCbCr(color0),
+					new YCbCr(color1),
+					new YCbCr(color0 * (1.0 / 2.0) + color1 * (1.0 / 2.0)),
+					new YCbCr(new ColorRgb24(0, 0, 0))
+				} : stackalloc YCbCr[] {
+					new YCbCr(color0),
+					new YCbCr(color1),
+					new YCbCr(color0 * (2.0 / 3.0) + color1 * (1.0 / 3.0)),
+					new YCbCr(color0 * (1.0 / 3.0) + color1 * (2.0 / 3.0))
 				};
 
 				for (int i = 0; i < 16; i++)
 				{
-					var color = pixels[i];
-					output[i] = ChooseClosestColor(colors, color);
+					var color = new YCbCr(pixels[i]);
+					output[i] = ColorChooser.ChooseClosestColor(colors, color);
 				}
 
 				return output;
 			}
 		}
+
 		private static class Bc1BlockEncoderYcbcrSlowBest
 		{
 			private const int variations = 2;
-
-			private static int ChooseClosestColor(Span<YCbCr> colors, YCbCr color)
-			{
-				int closest = 0;
-				float closestError = 0;
-				bool first = true;
-
-				for (int i = 0; i < colors.Length; i++)
-				{
-					float error = MathF.Abs(colors[i].y - color.y) * 4
-								  + MathF.Abs(colors[i].cb - color.cb)
-								  + MathF.Abs(colors[i].cr - color.cr);
-					if (first)
-					{
-						closestError = error;
-						first = false;
-					}
-					else if (error < closestError)
-					{
-						closest = i;
-						closestError = error;
-					}
-				}
-				return closest;
-			}
-
-			private static Bc1Block TryColors(RawBlock4X4Ycbcr rawBlock, ColorRgb565 color0, ColorRgb565 color1)
-			{
-				Bc1Block output = new Bc1Block();
-
-				var pixels = rawBlock.AsSpan;
-
-				output.color0 = color0;
-				output.color1 = color1;
-
-				var c0 = color0.ToColorRgb24();
-				var c1 = color1.ToColorRgb24();
-
-				Span<YCbCr> colors = output.HasAlphaOrBlack ?
-					stackalloc YCbCr[] {
-					new YCbCr(c0),
-					new YCbCr(c1),
-					new YCbCr(c0 * (1.0 / 2.0) + c1 * (1.0 / 2.0)),
-					new YCbCr(0, 0, 0)
-				} : stackalloc YCbCr[] {
-					new YCbCr(c0),
-					new YCbCr(c1),
-					new YCbCr(c0 * (2.0 / 3.0) + c1 * (1.0 / 3.0)),
-					new YCbCr(c0 * (1.0 / 3.0) + c1 * (2.0 / 3.0))
-				};
-
-				for (int i = 0; i < 16; i++)
-				{
-					var color = pixels[i];
-					output[i] = ChooseClosestColor(colors, color);
-				}
-
-				return output;
-			}
 
 			private static void GenerateVariations(YCbCr min, YCbCr max, List<ColorRgb565> colors)
 			{
@@ -327,65 +288,6 @@ namespace BCnEnc.Net.Encoder
 		{
 			private const int variations = 2;
 
-			private static int ChooseClosestColor(Span<YCbCr> colors, YCbCr color)
-			{
-				int closest = 0;
-				float closestError = 0;
-				bool first = true;
-
-				for (int i = 0; i < colors.Length; i++)
-				{
-					float error = MathF.Abs(colors[i].y - color.y) * 4
-								  + MathF.Abs(colors[i].cb - color.cb)
-								  + MathF.Abs(colors[i].cr - color.cr);
-					if (first)
-					{
-						closestError = error;
-						first = false;
-					}
-					else if (error < closestError)
-					{
-						closest = i;
-						closestError = error;
-					}
-				}
-				return closest;
-			}
-
-			private static Bc1Block TryColors(RawBlock4X4Ycbcr rawBlock, ColorRgb565 color0, ColorRgb565 color1)
-			{
-				Bc1Block output = new Bc1Block();
-
-				var pixels = rawBlock.AsSpan;
-
-				output.color0 = color0;
-				output.color1 = color1;
-
-				var c0 = color0.ToColorRgb24();
-				var c1 = color1.ToColorRgb24();
-
-				Span<YCbCr> colors = output.HasAlphaOrBlack ?
-					stackalloc YCbCr[] {
-					new YCbCr(c0),
-					new YCbCr(c1),
-					new YCbCr(c0 * (1.0 / 2.0) + c1 * (1.0 / 2.0)),
-					new YCbCr(0, 0, 0)
-				} : stackalloc YCbCr[] {
-					new YCbCr(c0),
-					new YCbCr(c1),
-					new YCbCr(c0 * (2.0 / 3.0) + c1 * (1.0 / 3.0)),
-					new YCbCr(c0 * (1.0 / 3.0) + c1 * (2.0 / 3.0))
-				};
-
-				for (int i = 0; i < 16; i++)
-				{
-					var color = pixels[i];
-					output[i] = ChooseClosestColor(colors, color);
-				}
-
-				return output;
-			}
-
 			private static void GenerateVariations(YCbCr min, YCbCr max, List<ColorRgb565> colors)
 			{
 
@@ -480,5 +382,6 @@ namespace BCnEnc.Net.Encoder
 				return best;
 			}
 		}
+		#endregion
 	}
 }

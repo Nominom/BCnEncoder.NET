@@ -64,7 +64,7 @@ namespace BCnEnc.Net.Encoder
 
 			for (int i = 0; i < numMipMaps; i++) {
 				var blocks = ImageToBlocks.ImageTo4X4(mipChain[i].Frames[0], out int blocksWidth, out int blocksHeight);
-				var encoded = encoder.Encode(blocks, blocksWidth, blocksHeight, OutputOptions.quality);
+				var encoded = encoder.Encode(blocks, blocksWidth, blocksHeight, OutputOptions.quality, true);
 
 				output.MipMaps.Add(new KtxMipmap((uint)encoded.Length, 
 					(uint)inputImage.Width, 

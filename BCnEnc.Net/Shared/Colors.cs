@@ -309,6 +309,17 @@ namespace BCnEnc.Net.Shared
 			cr = (0.5000f * fr - 0.4184f * fg - 0.0816f * fb);
 		}
 
+		public YCbCr(ColorRgb565 rgb)
+		{
+			float fr = (float)rgb.R / 255;
+			float fg = (float)rgb.G / 255;
+			float fb = (float)rgb.B / 255;
+
+			y = (0.2989f * fr + 0.5866f * fg + 0.1145f * fb);
+			cb = (-0.1687f * fr - 0.3313f * fg + 0.5000f * fb);
+			cr = (0.5000f * fr - 0.4184f * fg - 0.0816f * fb);
+		}
+
 		public YCbCr(ColorRgba32 rgba)
 		{
 			float fr = (float)rgba.r / 255;
@@ -355,6 +366,14 @@ namespace BCnEnc.Net.Shared
 			float b = Math.Max(0.0f, Math.Min(1.0f, (float)(y + 1.7710 * cb + 0.0000 * cr)));
 
 			return $"r : {r * 255} g : {g * 255} b : {b * 255}";
+		}
+
+		public float CalcDistWeighted(YCbCr other, float yWeight = 4) {
+			float dy = (y - other.y) * (y - other.y) * yWeight;
+			float dcb = (cb - other.cb) * (cb - other.cb);
+			float dcr = (cr - other.cr) * (cr - other.cr);
+
+			return MathF.Sqrt(dy + dcb + dcr);
 		}
 	}
 }
