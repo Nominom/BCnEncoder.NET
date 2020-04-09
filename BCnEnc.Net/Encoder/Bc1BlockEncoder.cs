@@ -257,12 +257,20 @@ namespace BCnEnc.Net.Encoder
 				Bc1Block best = new Bc1Block();
 				float bestError = 0;
 				bool first = true;
-				for (int i = 0; i < uniqueColors.Count; i++)
+				for (int i = 0; i < uniqueColors.Count - 1; i++)
 				{
-					for (int j = 0; j < uniqueColors.Count; j++)
+					for (int j = i + 1; j < uniqueColors.Count; j++)
 					{
 						var color0 = uniqueColors[i];
 						var color1 = uniqueColors[j];
+
+						
+						if(color0.data < color1.data) {
+							var c = color0;
+							color0 = color1;
+							color1 = c;
+						}
+
 						var encoded = TryColors(rawBlockYcbcr, color0, color1);
 						var decoded = encoded.Decode(false);
 						var error = rawBlockYcbcr.CalculateError(decoded);
@@ -355,12 +363,19 @@ namespace BCnEnc.Net.Encoder
 				Bc1Block best = new Bc1Block();
 				float bestError = 0;
 				bool first = true;
-				for (int i = 0; i < uniqueColors.Count; i++)
+				for (int i = 0; i < uniqueColors.Count - 1; i++)
 				{
-					for (int j = 0; j < uniqueColors.Count; j++)
+					for (int j = i + 1; j < uniqueColors.Count; j++)
 					{
 						var color0 = uniqueColors[i];
 						var color1 = uniqueColors[j];
+
+						if(color0.data < color1.data) {
+							var c = color0;
+							color0 = color1;
+							color1 = c;
+						}
+
 						var encoded = TryColors(rawBlockYcbcr, color0, color1);
 						var decoded = encoded.Decode(false);
 						var error = rawBlockYcbcr.CalculateError(decoded);
