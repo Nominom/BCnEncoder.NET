@@ -46,7 +46,7 @@ image.SaveAsPng(outFs);
 # TO-DO
 
 - [x] BC1 / DXT1 Encoding Without Alpha
-- [ ] BC1 / DXT1 Encoding With 1bit of alpha
+- [x] BC1 / DXT1 Encoding With 1bit of alpha
 - [ ] BC2 / DXT2 & DXT3 Encoding
 - [ ] BC3 / DXT4 & DXT5 Encoding
 - [ ] Implement PCA to remove Accord.Statistics dependecy

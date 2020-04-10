@@ -30,6 +30,8 @@ namespace BCnEnc.Net.Shared
 			var color0 = this.color0.ToColorRgb24();
 			var color1 = this.color1.ToColorRgb24();
 
+			useAlpha = useAlpha && HasAlphaOrBlack;
+
 			Span<ColorRgb24> colors = HasAlphaOrBlack ?
 				stackalloc ColorRgb24[] {
 				color0,

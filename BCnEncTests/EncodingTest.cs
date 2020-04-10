@@ -221,4 +221,75 @@ namespace BCnEncTests
 			return ImageQuality.PeakSignalToNoiseRatio(pixels, pixels2, false);
 		}
 	}
+
+	public class Bc1ASpriteTest
+	{
+
+		private readonly ITestOutputHelper output;
+
+		public Bc1ASpriteTest(ITestOutputHelper output)
+		{
+			this.output = output;
+		}
+
+
+		[Fact]
+		public void Bc1aSpriteBestQuality() {
+			var image = ImageLoader.testTransparentSprite1;
+			
+			BcEncoder encoder = new BcEncoder();
+			encoder.OutputOptions.quality = EncodingQuality.BestQuality;
+			encoder.OutputOptions.generateMipMaps = true;
+			encoder.OutputOptions.format = CompressionFormat.BC1WithAlpha;
+
+			using FileStream fs = File.OpenWrite("encoding_bc1a_sprite_bestQuality.ktx");
+			encoder.Encode(image, fs);
+			fs.Close();
+			var psnr = DecodeCheckPSNR("encoding_bc1a_sprite_bestQuality.ktx", image);
+			output.WriteLine("PSNR: "+psnr+"db");
+		}
+
+		[Fact]
+		public void Bc1aSpriteBalanced() {
+			var image = ImageLoader.testTransparentSprite1;
+			
+			BcEncoder encoder = new BcEncoder();
+			encoder.OutputOptions.quality = EncodingQuality.Balanced;
+			encoder.OutputOptions.generateMipMaps = true;
+			encoder.OutputOptions.format = CompressionFormat.BC1WithAlpha;
+
+			using FileStream fs = File.OpenWrite("encoding_bc1a_sprite_balanced.ktx");
+			encoder.Encode(image, fs);
+			fs.Close();
+			var psnr = DecodeCheckPSNR("encoding_bc1a_sprite_balanced.ktx", image);
+			output.WriteLine("PSNR: "+psnr+"db");
+		}
+
+		[Fact]
+		public void Bc1aSpriteFast() {
+			var image = ImageLoader.testTransparentSprite1;
+			
+			BcEncoder encoder = new BcEncoder();
+			encoder.OutputOptions.quality = EncodingQuality.Fast;
+			encoder.OutputOptions.generateMipMaps = true;
+			encoder.OutputOptions.format = CompressionFormat.BC1WithAlpha;
+
+			using FileStream fs = File.OpenWrite("encoding_bc1a_sprite_fast.ktx");
+			encoder.Encode(image, fs);
+			fs.Close();
+			var psnr = DecodeCheckPSNR("encoding_bc1a_sprite_fast.ktx", image);
+			output.WriteLine("PSNR: "+psnr+"db");
+		}
+
+		private float DecodeCheckPSNR(string filename, Image<Rgba32> original) {
+			using FileStream fs = File.OpenRead(filename);
+			var ktx = KtxFile.Load(fs);
+			var decoder = new BcDecoder();
+			using var img = decoder.Decode(ktx);
+			var pixels = original.GetPixelSpan();
+			var pixels2 = img.GetPixelSpan();
+
+			return ImageQuality.PeakSignalToNoiseRatio(pixels, pixels2, false);
+		}
+	}
 }

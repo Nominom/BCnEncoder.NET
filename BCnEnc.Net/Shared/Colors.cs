@@ -131,6 +131,10 @@ namespace BCnEnc.Net.Shared
 		public override string ToString() {
 			return $"r : {R} g : {G} b : {B}";
 		}
+
+		public ColorRgba32 ToColorRgba32() {
+			return new ColorRgba32(R, G, B, 255);
+		}
 	}
 
 	internal struct ColorRgba32 : IEquatable<ColorRgba32>
@@ -192,6 +196,26 @@ namespace BCnEnc.Net.Shared
 				ByteHelper.ClampToByte(left.g - right.g),
 				ByteHelper.ClampToByte(left.b - right.b),
 				ByteHelper.ClampToByte(left.a - right.a));
+		}
+
+		public static ColorRgba32 operator /(ColorRgba32 left, double right)
+		{
+			return new ColorRgba32(
+				ByteHelper.ClampToByte((int)(left.r / right)),
+				ByteHelper.ClampToByte((int)(left.g / right)),
+				ByteHelper.ClampToByte((int)(left.b / right)),
+				ByteHelper.ClampToByte((int)(left.a / right))
+			);
+		}
+
+		public static ColorRgba32 operator *(ColorRgba32 left, double right)
+		{
+			return new ColorRgba32(
+				ByteHelper.ClampToByte((int)(left.r * right)),
+				ByteHelper.ClampToByte((int)(left.g * right)),
+				ByteHelper.ClampToByte((int)(left.b * right)),
+				ByteHelper.ClampToByte((int)(left.a * right))
+			);
 		}
 
 		public override string ToString() {

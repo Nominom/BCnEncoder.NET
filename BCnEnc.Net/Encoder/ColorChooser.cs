@@ -31,6 +31,33 @@ namespace BCnEnc.Net.Encoder
 			return closest;
 		}
 
+		public static int ChooseClosestColorAlphaCutOff(Span<ColorRgba32> colors, Rgba32 color, byte alphaCutOff = 255 / 2)
+		{
+			if (color.A <= alphaCutOff) {
+				return 3;
+			}
+
+			int closest = 0;
+			int closestError =
+				Math.Abs(colors[0].r - color.R)
+				+ Math.Abs(colors[0].g - color.G)
+				+ Math.Abs(colors[0].b - color.B);
+
+			for (int i = 1; i < colors.Length; i++)
+			{
+				int error =
+					Math.Abs(colors[i].r - color.R)
+					+ Math.Abs(colors[i].g - color.G)
+					+ Math.Abs(colors[i].b - color.B);
+				if (error < closestError)
+				{
+					closest = i;
+					closestError = error;
+				}
+			}
+			return closest;
+		}
+
 		public static int ChooseClosestColor(Span<ColorYCbCr> colors, ColorYCbCr color, float luminanceMultiplier = 4)
 		{
 			int closest = 0;

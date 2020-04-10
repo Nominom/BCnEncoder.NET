@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel.Design;
 using System.Runtime.InteropServices;
 using SixLabors.ImageSharp.PixelFormats;
 
@@ -17,7 +18,7 @@ namespace BCnEnc.Net.Shared
 			set => AsSpan[x + y * 4] = value;
 		}
 
-		public int CalculateError(RawBlock4X4Rgba32 other) {
+		public int CalculateError(RawBlock4X4Rgba32 other, bool useAlpha = false) {
 			float error = 0;
 			var pix1 = AsSpan;
 			var pix2 = other.AsSpan;
@@ -32,6 +33,11 @@ namespace BCnEnc.Net.Shared
 				error += re * re;
 				error += ge * ge;
 				error += be * be;
+
+				if (useAlpha) {
+					var ae = col1.A - col2.A;
+					error += ae * ae * 4;
+				}
 			}
 
 			error /= pix1.Length;
@@ -85,6 +91,14 @@ namespace BCnEnc.Net.Shared
 				ycbcrPs[i] = new ColorYCbCr(pixels[i]);
 			}
 			return rawYcbcr;
+		}
+
+		public bool HasTransparentPixels() {
+			var pixels = AsSpan;
+			for (int i = 0; i < pixels.Length; i++) {
+				if (pixels[i].A < 255) return true;
+			}
+			return false;
 		}
 	}
 
