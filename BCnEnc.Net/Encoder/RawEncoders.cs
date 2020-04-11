@@ -16,12 +16,23 @@ namespace BCnEnc.Net.Encoder
 		uint GetGlTypeSize();
 	}
 
-	internal class RawLuminanceEncoder : IRawEncoder
-	{
+	internal class RawLuminanceEncoder : IRawEncoder {
+		private readonly bool useLuminance;
+
+		public RawLuminanceEncoder(bool useLuminance) {
+			this.useLuminance = useLuminance;
+		}
+
 		public byte[] Encode(ReadOnlySpan<Rgba32> pixels) {
 			byte[] output = new byte[pixels.Length];
 			for (int i = 0; i < pixels.Length; i++) {
-				output[i] = (byte)(new ColorYCbCr(pixels[i]).y * 255);
+				if (useLuminance) {
+					output[i] = (byte)(new ColorYCbCr(pixels[i]).y * 255);
+				}
+				else {
+					output[i] = pixels[i].R;
+				}
+				
 			}
 			return output;
 		}

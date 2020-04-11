@@ -9,14 +9,25 @@ namespace BCnEnc.Net.Decoder
 		Rgba32[] Decode(ReadOnlySpan<byte> data, int pixelWidth, int pixelHeight);
 	}
 
-	public class RawRDecoder : IRawDecoder
-	{
+	public class RawRDecoder : IRawDecoder {
+		private readonly bool redAsLuminance;
+		public RawRDecoder(bool redAsLuminance) {
+			this.redAsLuminance = redAsLuminance;
+		}
+
 		public Rgba32[] Decode(ReadOnlySpan<byte> data, int pixelWidth, int pixelHeight) {
 			Rgba32[] output = new Rgba32[pixelWidth * pixelHeight];
 			for (int i = 0; i < output.Length; i++) {
-				output[i].R = data[i];
-				output[i].G = data[i];
-				output[i].B = data[i];
+				if (redAsLuminance) {
+					output[i].R = data[i];
+					output[i].G = data[i];
+					output[i].B = data[i];
+				}
+				else {
+					output[i].R = data[i];
+					output[i].G = 0;
+					output[i].B = 0;
+				}
 				output[i].A = 255;
 			}
 			return output;

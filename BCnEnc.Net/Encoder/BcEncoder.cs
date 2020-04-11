@@ -7,12 +7,15 @@ using SixLabors.ImageSharp.PixelFormats;
 
 namespace BCnEnc.Net.Encoder
 {
-	public class CompressorInputOptions
-	{
-
+	public class EncoderInputOptions {
+		/// <summary>
+		/// If true, when encoding to a format that only includes a red channel,
+		/// use the pixel luminance instead of just the red channel. Default is false.
+		/// </summary>
+		public bool luminanceAsRed = false;
 	}
 
-	public class CompressorOutputOptions
+	public class EncoderOutputOptions
 	{
 		public bool generateMipMaps = true;
 		public int maxMipMapLevel = -1;
@@ -22,8 +25,8 @@ namespace BCnEnc.Net.Encoder
 
 	public class BcEncoder
 	{
-		public CompressorInputOptions InputOptions { get; set; } = new CompressorInputOptions();
-		public CompressorOutputOptions OutputOptions { get; set; } = new CompressorOutputOptions();
+		public EncoderInputOptions InputOptions { get; set; } = new EncoderInputOptions();
+		public EncoderOutputOptions OutputOptions { get; set; } = new EncoderOutputOptions();
 
 
 		public BcEncoder() { }
@@ -53,7 +56,7 @@ namespace BCnEnc.Net.Encoder
 		{
 			switch (format) {
 				case CompressionFormat.R:
-					return new RawLuminanceEncoder();
+					return new RawLuminanceEncoder(InputOptions.luminanceAsRed);
 				case CompressionFormat.RG:
 					return new RawRGEncoder();
 				case CompressionFormat.RGB:

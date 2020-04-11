@@ -7,8 +7,18 @@ using SixLabors.ImageSharp.PixelFormats;
 
 namespace BCnEnc.Net.Decoder
 {
+	public class DecoderOutputOptions {
+		/// <summary>
+		/// If true, when decoding from a format that only includes a red channel,
+		/// output pixels will have all colors set to the same value (greyscale). Default is true.
+		/// </summary>
+		public bool redAsLuminance = true;
+	}
+
 	public class BcDecoder
 	{
+		public DecoderOutputOptions OutputOptions { get; set; } = new DecoderOutputOptions();
+
 		private bool IsSupportedRawFormat(GlInternalFormat format)
 		{
 			switch (format)
@@ -45,7 +55,7 @@ namespace BCnEnc.Net.Decoder
 			switch (format)
 			{
 				case GlInternalFormat.GL_R8:
-					return new RawRDecoder();
+					return new RawRDecoder(OutputOptions.redAsLuminance);
 				case GlInternalFormat.GL_RG8:
 					return new RawRGDecoder();
 				case GlInternalFormat.GL_RGB8:
