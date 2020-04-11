@@ -40,7 +40,7 @@ namespace BCnEnc.Net.Shared
 		public ushort data;
 
 		public byte R {
-			get {
+			readonly get {
 				double rd = ((data & RedMask) >> RedShift) / (double)((1 << 5) - 1);
 				return (byte)(rd * 255);
 			}
@@ -53,7 +53,7 @@ namespace BCnEnc.Net.Shared
 		}
 
 		public byte G {
-			get {
+			readonly get {
 				double gd = ((data & GreenMask) >> GreenShift) / (double)((1 << 6) - 1);
 				return (byte)(gd * 255);
 			}
@@ -66,7 +66,7 @@ namespace BCnEnc.Net.Shared
 		}
 
 		public byte B {
-			get {
+			readonly get {
 				double bd = ((data & BlueMask)) / (double)((1 << 5) - 1);
 				return (byte)(bd * 255);
 			}
@@ -79,7 +79,7 @@ namespace BCnEnc.Net.Shared
 		}
 
 		public int RawR {
-			get { return ((data & RedMask) >> RedShift); }
+			readonly get { return ((data & RedMask) >> RedShift); }
 			set {
 				if (value > 31) value = 31;
 				if (value < 0) value = 0;
@@ -89,7 +89,7 @@ namespace BCnEnc.Net.Shared
 		}
 
 		public int RawG {
-			get { return ((data & GreenMask) >> GreenShift); }
+			readonly get { return ((data & GreenMask) >> GreenShift); }
 			set {
 				if (value > 63) value = 63;
 				if (value < 0) value = 0;
@@ -99,7 +99,7 @@ namespace BCnEnc.Net.Shared
 		}
 
 		public int RawB {
-			get { return (data & BlueMask); }
+			readonly get { return (data & BlueMask); }
 			set {
 				if (value > 31) value = 31;
 				if (value < 0) value = 0;
@@ -123,7 +123,7 @@ namespace BCnEnc.Net.Shared
 			B = ByteHelper.ClampToByte(colorVector.Z * 255);
 		}
 
-		public ColorRgb24 ToColorRgb24()
+		public readonly ColorRgb24 ToColorRgb24()
 		{
 			return new ColorRgb24(R, G, B);
 		}

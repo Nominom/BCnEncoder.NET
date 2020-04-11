@@ -18,6 +18,11 @@ namespace BCnEnc.Net.Shared
 			set => AsSpan[x + y * 4] = value;
 		}
 
+		public Rgba32 this[int index] {
+			get => AsSpan[index];
+			set => AsSpan[index] = value;
+		}
+
 		public int CalculateError(RawBlock4X4Rgba32 other, bool useAlpha = false) {
 			float error = 0;
 			var pix1 = AsSpan;
