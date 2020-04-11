@@ -5,9 +5,9 @@ A Cross-platform BCn / DXT encoding libary for .NET
 This library is my attempt at writing a texture block compression library. 
 
 # Current state
-The current state of this library is in its baby shoes, but I'm planning on implementing support for more codecs and 
-different algorithms. The current version is capable of encoding BC1 / DXT1 without alpha, and decoding BC1 images stored in KTX format.
-The library can save compressed images to KTX format but I might implement DDS support later.
+The current state of this library is in early development, but I'm planning on implementing support for more codecs and 
+different algorithms. The current version is capable of encoding and decoding BC1-BC3 images in KTX format.
+Only KTX format is supported for compressed images, but I might implement DDS support later.
 
 # Dependencies
 Current dependencies are:
