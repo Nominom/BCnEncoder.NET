@@ -126,30 +126,8 @@ namespace BCnEnc.Net.Encoder
 					c0 = c1;
 					c1 = c;
 				}
-				output.color0 = c0;
-				output.color1 = c1;
 
-				ColorRgb24 color0 = new ColorRgb24(c0);
-				ColorRgb24 color1 = new ColorRgb24(c1);
-
-				Span<ColorYCbCr> colors = output.HasAlphaOrBlack ?
-					stackalloc ColorYCbCr[] {
-					new ColorYCbCr(color0),
-					new ColorYCbCr(color1),
-					new ColorYCbCr(color0 * (1.0 / 2.0) + color1 * (1.0 / 2.0)),
-					new ColorYCbCr(new ColorRgb24(0, 0, 0))
-				} : stackalloc ColorYCbCr[] {
-					new ColorYCbCr(color0),
-					new ColorYCbCr(color1),
-					new ColorYCbCr(color0 * (2.0 / 3.0) + color1 * (1.0 / 3.0)),
-					new ColorYCbCr(color0 * (1.0 / 3.0) + color1 * (2.0 / 3.0))
-				};
-
-				for (int i = 0; i < 16; i++)
-				{
-					var color = new ColorYCbCr(pixels[i]);
-					output[i] = ColorChooser.ChooseClosestColor(colors, color);
-				}
+				output = TryColors(rawBlock.ToRawBlockYcbcr(), c0, c1);
 
 				return output;
 			}
@@ -158,79 +136,6 @@ namespace BCnEnc.Net.Encoder
 		private static class Bc1BlockEncoderYcbcrSlowBest
 		{
 			private const int variations = 2;
-
-			private static void GenerateVariations(ColorYCbCr min, ColorYCbCr max, List<ColorRgb565> colors)
-			{
-
-				for (int i = 0; i < variations; i++)
-				{
-					max.y -= 0.05f;
-					min.y += 0.05f;
-
-					var ma = max.ToColorRgb565();
-					var mi = min.ToColorRgb565();
-					if (!colors.Contains(ma))
-					{
-						colors.Add(ma);
-					}
-
-					if (!colors.Contains(mi))
-					{
-						colors.Add(mi);
-					}
-
-					//variate reds in max
-					ma.RawR += 1;
-					if (!colors.Contains(ma))
-					{
-						colors.Add(ma);
-					}
-					ma.RawR -= 2;
-					if (!colors.Contains(ma))
-					{
-						colors.Add(ma);
-					}
-
-					//variate blues in max
-					ma.RawR += 1;
-					ma.RawB += 1;
-					if (!colors.Contains(ma))
-					{
-						colors.Add(ma);
-					}
-					ma.RawB -= 2;
-					if (!colors.Contains(ma))
-					{
-						colors.Add(ma);
-					}
-
-					//variate reds in min
-					mi.RawR += 1;
-					if (!colors.Contains(mi))
-					{
-						colors.Add(mi);
-					}
-					ma.RawR -= 2;
-					if (!colors.Contains(ma))
-					{
-						colors.Add(ma);
-					}
-
-					//variate blues in min
-					mi.RawR += 1;
-					mi.RawB += 1;
-					if (!colors.Contains(mi))
-					{
-						colors.Add(mi);
-					}
-					mi.RawB -= 2;
-					if (!colors.Contains(mi))
-					{
-						colors.Add(mi);
-					}
-
-				}
-			}
 
 			internal static Bc1Block EncodeBlock(RawBlock4X4Rgba32 rawBlock)
 			{
@@ -242,11 +147,8 @@ namespace BCnEnc.Net.Encoder
 
 				var minYcbcr = new ColorYCbCr(min);
 				var maxYcbcr = new ColorYCbCr(max);
-				List<ColorRgb565> uniqueColors = new List<ColorRgb565>();
-				uniqueColors.Add(minYcbcr.ToColorRgb565());
-				uniqueColors.Add(maxYcbcr.ToColorRgb565());
-				GenerateVariations(minYcbcr, maxYcbcr, uniqueColors);
-
+				List<ColorRgb565> uniqueColors =
+					ColorVariationGenerator.GenerateVariationsSidewaysMinMax(variations, minYcbcr, maxYcbcr);
 
 				Bc1Block best = new Bc1Block();
 				float bestError = 0;
@@ -291,54 +193,6 @@ namespace BCnEnc.Net.Encoder
 		{
 			private const int variations = 2;
 
-			private static void GenerateVariations(ColorYCbCr min, ColorYCbCr max, List<ColorRgb565> colors)
-			{
-
-				for (int i = 0; i < variations; i++)
-				{
-					max.y -= 0.05f;
-					min.y += 0.05f;
-
-					var ma = max.ToColorRgb565();
-					var mi = min.ToColorRgb565();
-					if (!colors.Contains(ma))
-					{
-						colors.Add(ma);
-					}
-
-					if (!colors.Contains(mi))
-					{
-						colors.Add(mi);
-					}
-
-					//variate reds in max
-					ma.RawR += 1;
-					if (!colors.Contains(ma))
-					{
-						colors.Add(ma);
-					}
-					ma.RawR -= 2;
-					if (!colors.Contains(ma))
-					{
-						colors.Add(ma);
-					}
-
-					//variate blues in max
-					ma.RawR += 1;
-					ma.RawB += 1;
-					if (!colors.Contains(ma))
-					{
-						colors.Add(ma);
-					}
-					ma.RawB -= 2;
-					if (!colors.Contains(ma))
-					{
-						colors.Add(ma);
-					}
-
-				}
-			}
-
 			internal static Bc1Block EncodeBlock(RawBlock4X4Rgba32 rawBlock)
 			{
 				var rawBlockYcbcr = rawBlock.ToRawBlockYcbcr();
@@ -349,11 +203,8 @@ namespace BCnEnc.Net.Encoder
 
 				var minYcbcr = new ColorYCbCr(min);
 				var maxYcbcr = new ColorYCbCr(max);
-				List<ColorRgb565> uniqueColors = new List<ColorRgb565>();
-				uniqueColors.Add(minYcbcr.ToColorRgb565());
-				uniqueColors.Add(maxYcbcr.ToColorRgb565());
-				GenerateVariations(minYcbcr, maxYcbcr, uniqueColors);
-
+				List<ColorRgb565> uniqueColors =
+					ColorVariationGenerator.GenerateVariationsSidewaysMax(variations, minYcbcr, maxYcbcr);
 
 				Bc1Block best = new Bc1Block();
 				float bestError = 0;
@@ -395,7 +246,6 @@ namespace BCnEnc.Net.Encoder
 		}
 		#endregion
 	}
-
 
 	internal class Bc1AlphaBlockEncoder : IBcBlockEncoder
 	{
@@ -528,79 +378,6 @@ namespace BCnEnc.Net.Encoder
 		{
 			private const int variations = 2;
 
-			private static void GenerateVariations(ColorYCbCr min, ColorYCbCr max, List<ColorRgb565> colors)
-			{
-
-				for (int i = 0; i < variations; i++)
-				{
-					max.y -= 0.05f;
-					min.y += 0.05f;
-
-					var ma = max.ToColorRgb565();
-					var mi = min.ToColorRgb565();
-					if (!colors.Contains(ma))
-					{
-						colors.Add(ma);
-					}
-
-					if (!colors.Contains(mi))
-					{
-						colors.Add(mi);
-					}
-
-					//variate reds in max
-					ma.RawR += 1;
-					if (!colors.Contains(ma))
-					{
-						colors.Add(ma);
-					}
-					ma.RawR -= 2;
-					if (!colors.Contains(ma))
-					{
-						colors.Add(ma);
-					}
-
-					//variate blues in max
-					ma.RawR += 1;
-					ma.RawB += 1;
-					if (!colors.Contains(ma))
-					{
-						colors.Add(ma);
-					}
-					ma.RawB -= 2;
-					if (!colors.Contains(ma))
-					{
-						colors.Add(ma);
-					}
-
-					//variate reds in min
-					mi.RawR += 1;
-					if (!colors.Contains(mi))
-					{
-						colors.Add(mi);
-					}
-					ma.RawR -= 2;
-					if (!colors.Contains(ma))
-					{
-						colors.Add(ma);
-					}
-
-					//variate blues in min
-					mi.RawR += 1;
-					mi.RawB += 1;
-					if (!colors.Contains(mi))
-					{
-						colors.Add(mi);
-					}
-					mi.RawB -= 2;
-					if (!colors.Contains(mi))
-					{
-						colors.Add(mi);
-					}
-
-				}
-			}
-
 			internal static Bc1Block EncodeBlock(RawBlock4X4Rgba32 rawBlock)
 			{
 				var pixels = rawBlock.AsSpan;
@@ -612,10 +389,8 @@ namespace BCnEnc.Net.Encoder
 
 				var minYcbcr = new ColorYCbCr(min);
 				var maxYcbcr = new ColorYCbCr(max);
-				List<ColorRgb565> uniqueColors = new List<ColorRgb565>();
-				uniqueColors.Add(minYcbcr.ToColorRgb565());
-				uniqueColors.Add(maxYcbcr.ToColorRgb565());
-				GenerateVariations(minYcbcr, maxYcbcr, uniqueColors);
+				List<ColorRgb565> uniqueColors =
+					ColorVariationGenerator.GenerateVariationsSidewaysMinMax(variations, minYcbcr, maxYcbcr);
 
 
 				Bc1Block best = new Bc1Block();
@@ -667,53 +442,6 @@ namespace BCnEnc.Net.Encoder
 		{
 			private const int variations = 2;
 
-			private static void GenerateVariations(ColorYCbCr min, ColorYCbCr max, List<ColorRgb565> colors)
-			{
-
-				for (int i = 0; i < variations; i++)
-				{
-					max.y -= 0.05f;
-					min.y += 0.05f;
-
-					var ma = max.ToColorRgb565();
-					var mi = min.ToColorRgb565();
-					if (!colors.Contains(ma))
-					{
-						colors.Add(ma);
-					}
-
-					if (!colors.Contains(mi))
-					{
-						colors.Add(mi);
-					}
-
-					//variate reds in max
-					ma.RawR += 1;
-					if (!colors.Contains(ma))
-					{
-						colors.Add(ma);
-					}
-					ma.RawR -= 2;
-					if (!colors.Contains(ma))
-					{
-						colors.Add(ma);
-					}
-
-					//variate blues in max
-					ma.RawR += 1;
-					ma.RawB += 1;
-					if (!colors.Contains(ma))
-					{
-						colors.Add(ma);
-					}
-					ma.RawB -= 2;
-					if (!colors.Contains(ma))
-					{
-						colors.Add(ma);
-					}
-
-				}
-			}
 
 			internal static Bc1Block EncodeBlock(RawBlock4X4Rgba32 rawBlock)
 			{
@@ -726,11 +454,8 @@ namespace BCnEnc.Net.Encoder
 
 				var minYcbcr = new ColorYCbCr(min);
 				var maxYcbcr = new ColorYCbCr(max);
-				List<ColorRgb565> uniqueColors = new List<ColorRgb565>();
-				uniqueColors.Add(minYcbcr.ToColorRgb565());
-				uniqueColors.Add(maxYcbcr.ToColorRgb565());
-				GenerateVariations(minYcbcr, maxYcbcr, uniqueColors);
-
+				List<ColorRgb565> uniqueColors =
+					ColorVariationGenerator.GenerateVariationsSidewaysMax(variations, minYcbcr, maxYcbcr);
 
 				Bc1Block best = new Bc1Block();
 				float bestError = 0;

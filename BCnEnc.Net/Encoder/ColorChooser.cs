@@ -82,5 +82,8 @@ namespace BCnEnc.Net.Encoder
 			}
 			return closest;
 		}
+
+		public static int ChooseClosestColor(Span<ColorYCbCr> colors, Rgba32 color, float luminanceMultiplier = 4)
+			=> ChooseClosestColor(colors, new ColorYCbCr(color), luminanceMultiplier);
 	}
 }
