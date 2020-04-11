@@ -47,8 +47,10 @@ image.SaveAsPng(outFs);
 
 - [x] BC1 / DXT1 Encoding Without Alpha
 - [x] BC1 / DXT1 Encoding With 1bit of alpha
-- [ ] BC2 / DXT2 & DXT3 Encoding
-- [ ] BC3 / DXT4 & DXT5 Encoding
+- [x] BC2 / DXT3 Encoding
+- [x] BC3 / DXT5 Encoding
+- [ ] BC4 Encoding
+- [ ] BC5 Encoding
 - [ ] Implement PCA to remove Accord.Statistics dependecy
 - [ ] Implement saving and loading basic image formats to remove ImageSharp dependency
 

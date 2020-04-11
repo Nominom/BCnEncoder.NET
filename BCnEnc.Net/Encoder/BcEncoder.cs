@@ -40,6 +40,10 @@ namespace BCnEnc.Net.Encoder
 					return new Bc1BlockEncoder();
 				case CompressionFormat.BC1WithAlpha:
 					return new Bc1AlphaBlockEncoder();
+				case CompressionFormat.BC2:
+					return new Bc2BlockEncoder();
+				case CompressionFormat.BC3:
+					return new Bc3BlockEncoder();
 				default:
 					return null;
 			}

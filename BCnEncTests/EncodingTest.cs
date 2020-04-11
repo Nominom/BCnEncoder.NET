@@ -20,63 +20,40 @@ namespace BCnEncTests
 		}
 
 		[Fact]
-		public void Bc1GradientBestQuality() {
+		public void Bc1GradientBestQuality()
+		{
 			var image = ImageLoader.testGradient1;
 			
-			BcEncoder encoder = new BcEncoder();
-			encoder.OutputOptions.quality = EncodingQuality.BestQuality;
-			encoder.OutputOptions.generateMipMaps = true;
-			encoder.OutputOptions.format = CompressionFormat.BC1;
-
-			using FileStream fs = File.OpenWrite("encoding_bc1_gradient_bestQuality.ktx");
-			encoder.Encode(image, fs);
-			fs.Close();
-			var psnr = DecodeCheckPSNR("encoding_bc1_gradient_bestQuality.ktx", image);
-			output.WriteLine("PSNR: "+psnr+"db");
+			TestHelper.ExecuteEncodingTest(image,
+				CompressionFormat.BC1,
+				EncodingQuality.BestQuality, 
+				"encoding_bc1_gradient_bestQuality.ktx",
+				output);
 		}
 
 		[Fact]
-		public void Bc1GradientBalanced() {
+		public void Bc1GradientBalanced()
+		{
 			var image = ImageLoader.testGradient1;
+
 			
-			BcEncoder encoder = new BcEncoder();
-
-			encoder.OutputOptions.quality = EncodingQuality.Balanced;
-			encoder.OutputOptions.generateMipMaps = true;
-			encoder.OutputOptions.format = CompressionFormat.BC1;
-
-			using FileStream fs = File.OpenWrite("encoding_bc1_gradient_balanced.ktx");
-			encoder.Encode(image, fs);
-			fs.Close();
-			var psnr = DecodeCheckPSNR("encoding_bc1_gradient_balanced.ktx", image);
-			output.WriteLine("PSNR: "+psnr+"db");
+			TestHelper.ExecuteEncodingTest(image,
+				CompressionFormat.BC1,
+				EncodingQuality.Balanced, 
+				"encoding_bc1_gradient_balanced.ktx",
+				output);
 		}
 
 		[Fact]
-		public void Bc1GradientFast() {
+		public void Bc1GradientFast()
+		{
 			var image = ImageLoader.testGradient1;
-			
-			BcEncoder encoder = new BcEncoder();
-			encoder.OutputOptions.quality = EncodingQuality.Fast;
-			encoder.OutputOptions.generateMipMaps = true;
-			encoder.OutputOptions.format = CompressionFormat.BC1;
 
-			using FileStream fs = File.OpenWrite("encoding_bc1_gradient_fast.ktx");
-			encoder.Encode(image, fs);
-			fs.Close();
-			var psnr = DecodeCheckPSNR("encoding_bc1_gradient_fast.ktx", image);
-			output.WriteLine("PSNR: "+psnr+"db");
-		}
-
-		private float DecodeCheckPSNR(string filename, Image<Rgba32> original) {
-			using FileStream fs = File.OpenRead(filename);
-			var ktx = KtxFile.Load(fs);
-			var decoder = new BcDecoder();
-			using var img = decoder.Decode(ktx);
-			var pixels = original.GetPixelSpan();
-			var pixels2 = img.GetPixelSpan();
-
-			return ImageQuality.PeakSignalToNoiseRatio(pixels, pixels2, false);
+			TestHelper.ExecuteEncodingTest(image,
+				CompressionFormat.BC1,
+				EncodingQuality.Fast, 
+				"encoding_bc1_gradient_fast.ktx",
+				output);
 		}
 	}
 
@@ -92,63 +69,42 @@ namespace BCnEncTests
 
 
 		[Fact]
-		public void Bc1DiffuseBestQuality() {
+		public void Bc1DiffuseBestQuality()
+		{
 			var image = ImageLoader.testDiffuse1;
-			
-			BcEncoder encoder = new BcEncoder();
-			encoder.OutputOptions.quality = EncodingQuality.BestQuality;
-			encoder.OutputOptions.generateMipMaps = true;
-			encoder.OutputOptions.format = CompressionFormat.BC1;
 
-			using FileStream fs = File.OpenWrite("encoding_bc1_diffuse_bestQuality.ktx");
-			encoder.Encode(image, fs);
-			fs.Close();
-			var psnr = DecodeCheckPSNR("encoding_bc1_diffuse_bestQuality.ktx", image);
-			output.WriteLine("PSNR: "+psnr+"db");
+			TestHelper.ExecuteEncodingTest(image,
+				CompressionFormat.BC1,
+				EncodingQuality.BestQuality, 
+				"encoding_bc1_diffuse_bestQuality.ktx",
+				output);
 		}
 
 		[Fact]
-		public void Bc1DiffuseBalanced() {
+		public void Bc1DiffuseBalanced()
+		{
 			var image = ImageLoader.testDiffuse1;
 			
-			BcEncoder encoder = new BcEncoder();
-			encoder.OutputOptions.quality = EncodingQuality.Balanced;
-			encoder.OutputOptions.generateMipMaps = true;
-			encoder.OutputOptions.format = CompressionFormat.BC1;
-
-			using FileStream fs = File.OpenWrite("encoding_bc1_diffuse_balanced.ktx");
-			encoder.Encode(image, fs);
-			fs.Close();
-			var psnr = DecodeCheckPSNR("encoding_bc1_diffuse_balanced.ktx", image);
-			output.WriteLine("PSNR: "+psnr+"db");
+			TestHelper.ExecuteEncodingTest(image,
+				CompressionFormat.BC1,
+				EncodingQuality.Balanced, 
+				"encoding_bc1_diffuse_balanced.ktx",
+				output);
 		}
 
 		[Fact]
-		public void Bc1DiffuseFast() {
+		public void Bc1DiffuseFast()
+		{
 			var image = ImageLoader.testDiffuse1;
-			
-			BcEncoder encoder = new BcEncoder();
-			encoder.OutputOptions.quality = EncodingQuality.Fast;
-			encoder.OutputOptions.generateMipMaps = true;
-			encoder.OutputOptions.format = CompressionFormat.BC1;
 
-			using FileStream fs = File.OpenWrite("encoding_bc1_diffuse_fast.ktx");
-			encoder.Encode(image, fs);
-			fs.Close();
-			var psnr = DecodeCheckPSNR("encoding_bc1_diffuse_fast.ktx", image);
-			output.WriteLine("PSNR: "+psnr+"db");
+			TestHelper.ExecuteEncodingTest(image,
+				CompressionFormat.BC1,
+				EncodingQuality.Fast, 
+				"encoding_bc1_diffuse_fast.ktx",
+				output);
 		}
 
-		private float DecodeCheckPSNR(string filename, Image<Rgba32> original) {
-			using FileStream fs = File.OpenRead(filename);
-			var ktx = KtxFile.Load(fs);
-			var decoder = new BcDecoder();
-			using var img = decoder.Decode(ktx);
-			var pixels = original.GetPixelSpan();
-			var pixels2 = img.GetPixelSpan();
 
-			return ImageQuality.PeakSignalToNoiseRatio(pixels, pixels2, false);
-		}
 	}
 
 
@@ -162,64 +118,41 @@ namespace BCnEncTests
 		}
 
 		[Fact]
-		public void Bc1BlurBestQuality() {
+		public void Bc1BlurBestQuality()
+		{
 			var image = ImageLoader.testBlur1;
 			
-			BcEncoder encoder = new BcEncoder();
-			encoder.OutputOptions.quality = EncodingQuality.BestQuality;
-			encoder.OutputOptions.generateMipMaps = true;
-			encoder.OutputOptions.format = CompressionFormat.BC1;
-
-			using FileStream fs = File.OpenWrite("encoding_bc1_blur_bestQuality.ktx");
-			encoder.Encode(image, fs);
-			fs.Close();
-			var psnr = DecodeCheckPSNR("encoding_bc1_blur_bestQuality.ktx", image);
-			output.WriteLine("PSNR: "+psnr+"db");
+			TestHelper.ExecuteEncodingTest(image,
+				CompressionFormat.BC1,
+				EncodingQuality.BestQuality, 
+				"encoding_bc1_blur_bestQuality.ktx",
+				output);
 		}
 
 		[Fact]
-		public void Bc1BlurBalanced() {
+		public void Bc1BlurBalanced()
+		{
 			var image = ImageLoader.testBlur1;
-			
-			BcEncoder encoder = new BcEncoder();
 
-			encoder.OutputOptions.quality = EncodingQuality.Balanced;
-			encoder.OutputOptions.generateMipMaps = true;
-			encoder.OutputOptions.format = CompressionFormat.BC1;
-
-			using FileStream fs = File.OpenWrite("encoding_bc1_blur_balanced.ktx");
-			encoder.Encode(image, fs);
-			fs.Close();
-			var psnr = DecodeCheckPSNR("encoding_bc1_blur_balanced.ktx", image);
-			output.WriteLine("PSNR: "+psnr+"db");
+			TestHelper.ExecuteEncodingTest(image,
+				CompressionFormat.BC1,
+				EncodingQuality.Balanced, 
+				"encoding_bc1_blur_balanced.ktx",
+				output);
 		}
 
 		[Fact]
-		public void Bc1BlurFast() {
+		public void Bc1BlurFast()
+		{
 			var image = ImageLoader.testBlur1;
-			
-			BcEncoder encoder = new BcEncoder();
-			encoder.OutputOptions.quality = EncodingQuality.Fast;
-			encoder.OutputOptions.generateMipMaps = true;
-			encoder.OutputOptions.format = CompressionFormat.BC1;
 
-			using FileStream fs = File.OpenWrite("encoding_bc1_blur_fast.ktx");
-			encoder.Encode(image, fs);
-			fs.Close();
-			var psnr = DecodeCheckPSNR("encoding_bc1_blur_fast.ktx", image);
-			output.WriteLine("PSNR: "+psnr+"db");
+			TestHelper.ExecuteEncodingTest(image,
+				CompressionFormat.BC1,
+				EncodingQuality.Fast, 
+				"encoding_bc1_blur_fast.ktx",
+				output);
 		}
 
-		private float DecodeCheckPSNR(string filename, Image<Rgba32> original) {
-			using FileStream fs = File.OpenRead(filename);
-			var ktx = KtxFile.Load(fs);
-			var decoder = new BcDecoder();
-			using var img = decoder.Decode(ktx);
-			var pixels = original.GetPixelSpan();
-			var pixels2 = img.GetPixelSpan();
-
-			return ImageQuality.PeakSignalToNoiseRatio(pixels, pixels2, false);
-		}
 	}
 
 	public class Bc1ASpriteTest
@@ -234,62 +167,138 @@ namespace BCnEncTests
 
 
 		[Fact]
-		public void Bc1aSpriteBestQuality() {
+		public void Bc1aSpriteBestQuality()
+		{
 			var image = ImageLoader.testTransparentSprite1;
-			
-			BcEncoder encoder = new BcEncoder();
-			encoder.OutputOptions.quality = EncodingQuality.BestQuality;
-			encoder.OutputOptions.generateMipMaps = true;
-			encoder.OutputOptions.format = CompressionFormat.BC1WithAlpha;
 
-			using FileStream fs = File.OpenWrite("encoding_bc1a_sprite_bestQuality.ktx");
-			encoder.Encode(image, fs);
-			fs.Close();
-			var psnr = DecodeCheckPSNR("encoding_bc1a_sprite_bestQuality.ktx", image);
-			output.WriteLine("PSNR: "+psnr+"db");
+			TestHelper.ExecuteEncodingTest(image,
+				CompressionFormat.BC1WithAlpha,
+				EncodingQuality.BestQuality, 
+				"encoding_bc1a_sprite_bestQuality.ktx",
+				output);
 		}
 
 		[Fact]
-		public void Bc1aSpriteBalanced() {
+		public void Bc1aSpriteBalanced()
+		{
 			var image = ImageLoader.testTransparentSprite1;
-			
-			BcEncoder encoder = new BcEncoder();
-			encoder.OutputOptions.quality = EncodingQuality.Balanced;
-			encoder.OutputOptions.generateMipMaps = true;
-			encoder.OutputOptions.format = CompressionFormat.BC1WithAlpha;
 
-			using FileStream fs = File.OpenWrite("encoding_bc1a_sprite_balanced.ktx");
-			encoder.Encode(image, fs);
-			fs.Close();
-			var psnr = DecodeCheckPSNR("encoding_bc1a_sprite_balanced.ktx", image);
-			output.WriteLine("PSNR: "+psnr+"db");
+			TestHelper.ExecuteEncodingTest(image,
+				CompressionFormat.BC1WithAlpha,
+				EncodingQuality.Balanced, 
+				"encoding_bc1a_sprite_balanced.ktx",
+				output);
 		}
 
 		[Fact]
-		public void Bc1aSpriteFast() {
+		public void Bc1aSpriteFast()
+		{
 			var image = ImageLoader.testTransparentSprite1;
-			
-			BcEncoder encoder = new BcEncoder();
-			encoder.OutputOptions.quality = EncodingQuality.Fast;
-			encoder.OutputOptions.generateMipMaps = true;
-			encoder.OutputOptions.format = CompressionFormat.BC1WithAlpha;
 
-			using FileStream fs = File.OpenWrite("encoding_bc1a_sprite_fast.ktx");
-			encoder.Encode(image, fs);
-			fs.Close();
-			var psnr = DecodeCheckPSNR("encoding_bc1a_sprite_fast.ktx", image);
-			output.WriteLine("PSNR: "+psnr+"db");
+			TestHelper.ExecuteEncodingTest(image,
+				CompressionFormat.BC1WithAlpha,
+				EncodingQuality.Fast, 
+				"encoding_bc1a_sprite_fast.ktx",
+				output);
 		}
 
-		private float DecodeCheckPSNR(string filename, Image<Rgba32> original) {
-			using FileStream fs = File.OpenRead(filename);
-			var ktx = KtxFile.Load(fs);
-			var decoder = new BcDecoder();
-			using var img = decoder.Decode(ktx);
-			var pixels = original.GetPixelSpan();
-			var pixels2 = img.GetPixelSpan();
+	}
 
-			return ImageQuality.PeakSignalToNoiseRatio(pixels, pixels2, false);
+	public class Bc2GradientTest
+	{
+
+		private readonly ITestOutputHelper output;
+
+		public Bc2GradientTest(ITestOutputHelper output)
+		{
+			this.output = output;
 		}
+
+
+		[Fact]
+		public void Bc2GradientBestQuality()
+		{
+			var image = ImageLoader.testAlphaGradient1;
+
+			TestHelper.ExecuteEncodingTest(image,
+				CompressionFormat.BC2,
+				EncodingQuality.BestQuality, 
+				"encoding_bc2_gradient_bestQuality.ktx",
+				output);
+		}
+
+		[Fact]
+		public void Bc2GradientBalanced()
+		{
+			var image = ImageLoader.testAlphaGradient1;
+
+			TestHelper.ExecuteEncodingTest(image,
+				CompressionFormat.BC2,
+				EncodingQuality.Balanced, 
+				"encoding_bc2_gradient_balanced.ktx",
+				output);
+		}
+
+		[Fact]
+		public void Bc2GradientFast()
+		{
+			var image = ImageLoader.testAlphaGradient1;
+
+			TestHelper.ExecuteEncodingTest(image,
+				CompressionFormat.BC2,
+				EncodingQuality.Fast, 
+				"encoding_bc2_gradient_fast.ktx",
+				output);
+		}
+
+	}
+
+	public class Bc3GradientTest
+	{
+
+		private readonly ITestOutputHelper output;
+
+		public Bc3GradientTest(ITestOutputHelper output)
+		{
+			this.output = output;
+		}
+
+
+		[Fact]
+		public void Bc3GradientBestQuality()
+		{
+			var image = ImageLoader.testAlphaGradient1;
+
+			TestHelper.ExecuteEncodingTest(image,
+				CompressionFormat.BC3,
+				EncodingQuality.BestQuality, 
+				"encoding_bc3_gradient_bestQuality.ktx",
+				output);
+		}
+
+		[Fact]
+		public void Bc3GradientBalanced()
+		{
+			var image = ImageLoader.testAlphaGradient1;
+
+			TestHelper.ExecuteEncodingTest(image,
+				CompressionFormat.BC3,
+				EncodingQuality.Balanced, 
+				"encoding_bc3_gradient_balanced.ktx",
+				output);
+		}
+
+		[Fact]
+		public void Bc3GradientFast()
+		{
+			var image = ImageLoader.testAlphaGradient1;
+
+			TestHelper.ExecuteEncodingTest(image,
+				CompressionFormat.BC3,
+				EncodingQuality.Fast, 
+				"encoding_bc3_gradient_fast.ktx",
+				output);
+		}
+
 	}
 }
