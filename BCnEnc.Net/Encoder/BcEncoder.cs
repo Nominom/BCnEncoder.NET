@@ -47,6 +47,10 @@ namespace BCnEnc.Net.Encoder
 					return new Bc2BlockEncoder();
 				case CompressionFormat.BC3:
 					return new Bc3BlockEncoder();
+				case CompressionFormat.BC4:
+					return new Bc4BlockEncoder(InputOptions.luminanceAsRed);
+				case CompressionFormat.BC5:
+					return new Bc5BlockEncoder();
 				default:
 					return null;
 			}

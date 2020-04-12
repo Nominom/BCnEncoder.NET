@@ -301,4 +301,101 @@ namespace BCnEncTests
 		}
 
 	}
+
+	public class Bc4RedTest
+	{
+
+		private readonly ITestOutputHelper output;
+
+		public Bc4RedTest(ITestOutputHelper output)
+		{
+			this.output = output;
+		}
+
+
+		[Fact]
+		public void Bc4RedBestQuality()
+		{
+			var image = ImageLoader.testRedGreen1;
+
+			TestHelper.ExecuteEncodingTest(image,
+				CompressionFormat.BC4,
+				EncodingQuality.BestQuality, 
+				"encoding_bc4_red_bestQuality.ktx",
+				output);
+		}
+
+		[Fact]
+		public void Bc4RedBalanced()
+		{
+			var image = ImageLoader.testRedGreen1;
+
+			TestHelper.ExecuteEncodingTest(image,
+				CompressionFormat.BC4,
+				EncodingQuality.Balanced, 
+				"encoding_bc4_red_balanced.ktx",
+				output);
+		}
+
+		[Fact]
+		public void Bc4RedFast()
+		{
+			var image = ImageLoader.testRedGreen1;
+
+			TestHelper.ExecuteEncodingTest(image,
+				CompressionFormat.BC4,
+				EncodingQuality.Fast, 
+				"encoding_bc4_red_fast.ktx",
+				output);
+		}
+
+	}
+
+	public class Bc5RedGreenTest
+	{
+
+		private readonly ITestOutputHelper output;
+
+		public Bc5RedGreenTest(ITestOutputHelper output)
+		{
+			this.output = output;
+		}
+
+
+		[Fact]
+		public void Bc5RedGreenBestQuality()
+		{
+			var image = ImageLoader.testRedGreen1;
+
+			TestHelper.ExecuteEncodingTest(image,
+				CompressionFormat.BC5,
+				EncodingQuality.BestQuality, 
+				"encoding_bc5_red_green_bestQuality.ktx",
+				output);
+		}
+
+		[Fact]
+		public void Bc5RedGreenBalanced()
+		{
+			var image = ImageLoader.testRedGreen1;
+
+			TestHelper.ExecuteEncodingTest(image,
+				CompressionFormat.BC5,
+				EncodingQuality.Balanced, 
+				"encoding_bc5_red_green_balanced.ktx",
+				output);
+		}
+
+		[Fact]
+		public void Bc5RedGreenFast()
+		{
+			var image = ImageLoader.testRedGreen1;
+
+			TestHelper.ExecuteEncodingTest(image,
+				CompressionFormat.BC5,
+				EncodingQuality.Fast, 
+				"encoding_bc5_red_green_fast.ktx",
+				output);
+		}
+	}
 }

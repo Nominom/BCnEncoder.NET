@@ -11,6 +11,7 @@ namespace BCnEncTests
 		public static Image<Rgba32> testGradient1 { get; } = LoadTestImage("../../../testImages/test_gradient_1_512.jpg");
 		public static Image<Rgba32> testTransparentSprite1 { get; } = LoadTestImage("../../../testImages/test_transparent.png");
 		public static Image<Rgba32> testAlphaGradient1 { get; } = LoadTestImage("../../../testImages/test_alphagradient_1_512.png");
+		public static Image<Rgba32> testRedGreen1 { get; } = LoadTestImage("../../../testImages/test_red_green_1_64.png");
 
 		private static Image<Rgba32> LoadTestImage(string filename) {
 			return Image.Load<Rgba32>(filename);
