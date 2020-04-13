@@ -49,6 +49,8 @@ namespace BCnEnc.Net.Decoder
 					return new Bc4Decoder(OutputOptions.redAsLuminance);
 				case GlInternalFormat.GL_COMPRESSED_RED_GREEN_RGTC2_EXT:
 					return new Bc5Decoder();
+				case GlInternalFormat.GL_COMPRESSED_RGBA_BPTC_UNORM_ARB:
+					return new Bc7Decoder();
 				default:
 					return null;
 			}

@@ -111,5 +111,22 @@ namespace BCnEncTests
 			using FileStream outFs = File.OpenWrite("decoding_test_bc5.png");
 			image.SaveAsPng(outFs);
 		}
+
+		[Fact]
+		public void Bc7Decode() {
+			using FileStream fs = File.OpenRead(@"..\..\..\testImages\test_decompress_bc7_rgb.ktx");
+			KtxFile file = KtxFile.Load(fs);
+			Assert.True(file.Header.VerifyHeader());
+			Assert.Equal((uint)1, file.Header.NumberOfFaces);
+
+			BcDecoder decoder = new BcDecoder();
+			using var image = decoder.Decode(file);
+
+			Assert.Equal((uint)image.Width, file.Header.PixelWidth);
+			Assert.Equal((uint)image.Height, file.Header.PixelHeight);
+
+			using FileStream outFs = File.OpenWrite("decoding_test_bc7_rgb.png");
+			image.SaveAsPng(outFs);
+		}
 	}
 }

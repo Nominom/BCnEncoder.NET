@@ -218,8 +218,90 @@ namespace BCnEnc.Net.Shared
 			);
 		}
 
+		/// <summary>
+		/// Component-wise left shift
+		/// </summary>
+		public static ColorRgba32 operator <<(ColorRgba32 left, int right)
+		{
+			return new ColorRgba32(
+				ByteHelper.ClampToByte((left.r << right)),
+				ByteHelper.ClampToByte((left.g << right)),
+				ByteHelper.ClampToByte((left.b << right)),
+				ByteHelper.ClampToByte((left.a << right))
+			);
+		}
+
+		/// <summary>
+		/// Component-wise right shift
+		/// </summary>
+		public static ColorRgba32 operator >>(ColorRgba32 left, int right)
+		{
+			return new ColorRgba32(
+				ByteHelper.ClampToByte((left.r >> right)),
+				ByteHelper.ClampToByte((left.g >> right)),
+				ByteHelper.ClampToByte((left.b >> right)),
+				ByteHelper.ClampToByte((left.a >> right))
+			);
+		}
+
+		/// <summary>
+		/// Component-wise bitwise OR operation
+		/// </summary>
+		public static ColorRgba32 operator |(ColorRgba32 left, ColorRgba32 right)
+		{
+			return new ColorRgba32(
+				ByteHelper.ClampToByte((left.r | right.r)),
+				ByteHelper.ClampToByte((left.g | right.g)),
+				ByteHelper.ClampToByte((left.b | right.b)),
+				ByteHelper.ClampToByte((left.a | right.a))
+			);
+		}
+
+		/// <summary>
+		/// Component-wise bitwise OR operation
+		/// </summary>
+		public static ColorRgba32 operator |(ColorRgba32 left, int right)
+		{
+			return new ColorRgba32(
+				ByteHelper.ClampToByte((left.r | right)),
+				ByteHelper.ClampToByte((left.g | right)),
+				ByteHelper.ClampToByte((left.b | right)),
+				ByteHelper.ClampToByte((left.a | right))
+			);
+		}
+
+		/// <summary>
+		/// Component-wise bitwise AND operation
+		/// </summary>
+		public static ColorRgba32 operator &(ColorRgba32 left, ColorRgba32 right)
+		{
+			return new ColorRgba32(
+				ByteHelper.ClampToByte((left.r & right.r)),
+				ByteHelper.ClampToByte((left.g & right.g)),
+				ByteHelper.ClampToByte((left.b & right.b)),
+				ByteHelper.ClampToByte((left.a & right.a))
+			);
+		}
+
+		/// <summary>
+		/// Component-wise bitwise AND operation
+		/// </summary>
+		public static ColorRgba32 operator &(ColorRgba32 left, int right)
+		{
+			return new ColorRgba32(
+				ByteHelper.ClampToByte((left.r & right)),
+				ByteHelper.ClampToByte((left.g & right)),
+				ByteHelper.ClampToByte((left.b & right)),
+				ByteHelper.ClampToByte((left.a & right))
+			);
+		}
+
 		public override string ToString() {
 			return $"r : {r} g : {g} b : {b} a : {a}";
+		}
+
+		public Rgba32 ToRgba32() {
+			return new Rgba32(r, g, b, a);
 		}
 	}
 
