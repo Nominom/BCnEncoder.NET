@@ -51,6 +51,9 @@ namespace BCnEnc.Net.Decoder
 					return new Bc5Decoder();
 				case GlInternalFormat.GL_COMPRESSED_RGBA_BPTC_UNORM_ARB:
 					return new Bc7Decoder();
+				// TODO: Not sure what to do with SRGB input.
+				case GlInternalFormat.GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM_ARB:
+					return new Bc7Decoder();
 				default:
 					return null;
 			}

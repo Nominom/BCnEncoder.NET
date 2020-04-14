@@ -128,9 +128,6 @@ namespace BCnEnc.Net.Encoder
 				image.Dispose();
 			}
 
-			output.Header.NumberOfFaces = 1;
-			output.Header.NumberOfMipmapLevels = 1;
-
 			output.Write(outputStream);
 		}
 	}

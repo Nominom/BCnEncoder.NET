@@ -18,12 +18,12 @@
 			return (byte)((source >> index) & mask);
 		}
 
-		public static ulong Store1(ulong source, int index, byte value)
+		public static ulong Store1(ulong dest, int index, byte value)
 		{
 			const ulong mask = 0b1UL;
-			source &= ~(mask << index);
-			source |= (value & mask) << index;
-			return source;
+			dest &= ~(mask << index);
+			dest |= (value & mask) << index;
+			return dest;
 		}
 
 		public static byte Extract2(ulong source, int index)
@@ -32,12 +32,12 @@
 			return (byte)((source >> index) & mask);
 		}
 
-		public static ulong Store2(ulong source, int index, byte value)
+		public static ulong Store2(ulong dest, int index, byte value)
 		{
 			const ulong mask = 0b11UL;
-			source &= ~(mask << index);
-			source |= (value & mask) << index;
-			return source;
+			dest &= ~(mask << index);
+			dest |= (value & mask) << index;
+			return dest;
 		}
 
 		public static byte Extract3(ulong source, int index)
@@ -46,12 +46,12 @@
 			return (byte)((source >> index) & mask);
 		}
 
-		public static ulong Store3(ulong source, int index, byte value)
+		public static ulong Store3(ulong dest, int index, byte value)
 		{
 			const ulong mask = 0b111UL;
-			source &= ~(mask << index);
-			source |= (value & mask) << index;
-			return source;
+			dest &= ~(mask << index);
+			dest |= (value & mask) << index;
+			return dest;
 		}
 
 		public static byte Extract4(ulong source, int index)
@@ -60,12 +60,12 @@
 			return (byte)((source >> index) & mask);
 		}
 
-		public static ulong Store4(ulong source, int index, byte value)
+		public static ulong Store4(ulong dest, int index, byte value)
 		{
 			const ulong mask = 0b1111UL;
-			source &= ~(mask << index);
-			source |= (value & mask) << index;
-			return source;
+			dest &= ~(mask << index);
+			dest |= (value & mask) << index;
+			return dest;
 		}
 
 		public static byte Extract5(ulong source, int index)
@@ -74,12 +74,12 @@
 			return (byte)((source >> index) & mask);
 		}
 
-		public static ulong Store5(ulong source, int index, byte value)
+		public static ulong Store5(ulong dest, int index, byte value)
 		{
 			const ulong mask = 0b1_1111UL;
-			source &= ~(mask << index);
-			source |= (value & mask) << index;
-			return source;
+			dest &= ~(mask << index);
+			dest |= (value & mask) << index;
+			return dest;
 		}
 
 		public static byte Extract6(ulong source, int index)
@@ -88,12 +88,12 @@
 			return (byte)((source >> index) & mask);
 		}
 
-		public static ulong Store6(ulong source, int index, byte value)
+		public static ulong Store6(ulong dest, int index, byte value)
 		{
 			const ulong mask = 0b11_1111UL;
-			source &= ~(mask << index);
-			source |= (value & mask) << index;
-			return source;
+			dest &= ~(mask << index);
+			dest |= (value & mask) << index;
+			return dest;
 		}
 
 		public static byte Extract7(ulong source, int index)
@@ -102,12 +102,12 @@
 			return (byte)((source >> index) & mask);
 		}
 
-		public static ulong Store7(ulong source, int index, byte value)
+		public static ulong Store7(ulong dest, int index, byte value)
 		{
 			const ulong mask = 0b111_1111UL;
-			source &= ~(mask << index);
-			source |= (value & mask) << index;
-			return source;
+			dest &= ~(mask << index);
+			dest |= (value & mask) << index;
+			return dest;
 		}
 
 		public static byte Extract8(ulong source, int index)
@@ -116,12 +116,12 @@
 			return (byte)((source >> index) & mask);
 		}
 
-		public static ulong Store8(ulong source, int index, byte value)
+		public static ulong Store8(ulong dest, int index, byte value)
 		{
 			const ulong mask = 0b1111_1111UL;
-			source &= ~(mask << index);
-			source |= (value & mask) << index;
-			return source;
+			dest &= ~(mask << index);
+			dest |= (value & mask) << index;
+			return dest;
 		}
 
 		public static ulong Extract(ulong source, int index, int bitCount)
@@ -133,14 +133,14 @@
 			}
 		}
 
-		public static ulong Store(ulong source, int index, int bitCount, ulong value)
+		public static ulong Store(ulong dest, int index, int bitCount, ulong value)
 		{
 			unchecked
 			{
 				ulong mask = (0b1UL << bitCount) - 1;
-				source &= ~(mask << index);
-				source |= (value & mask) << index;
-				return source;
+				dest &= ~(mask << index);
+				dest |= (value & mask) << index;
+				return dest;
 			}
 		}
 
