@@ -21,13 +21,9 @@ namespace BCnEnc.Net.Decoder
 
 			RawBlock4X4Rgba32[,] output = new RawBlock4X4Rgba32[blockWidth, blockHeight];
 
-			int[] types = new int[9];
-
  			for (int x = 0; x < blockWidth; x++) {
 				for (int y = 0; y < blockHeight; y++) {
 					var rawBlock = encodedBlocks[x + y * blockWidth];
-					var type = rawBlock.Type;
-					types[(int) type]++;
 					output[x, y] = rawBlock.Decode();
 				}
 			}
