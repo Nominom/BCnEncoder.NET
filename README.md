@@ -51,7 +51,9 @@ image.SaveAsPng(outFs);
 - [x] BC3 / DXT5 Encoding
 - [x] BC4 Encoding
 - [x] BC5 Encoding
-- [ ] Implement PCA to remove Accord.Statistics dependecy
+- [ ] BC7 / BPTC Encoding
+- [ ] DXT file support
+- [ ] Implement PCA to remove Accord.Statistics dependency
 - [ ] Implement saving and loading basic image formats to remove ImageSharp dependency
 
 # License
