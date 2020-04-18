@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using BCnEnc.Net.Shared;
 using SixLabors.ImageSharp;
@@ -51,6 +52,8 @@ namespace BCnEnc.Net.Encoder
 					return new Bc4BlockEncoder(InputOptions.luminanceAsRed);
 				case CompressionFormat.BC5:
 					return new Bc5BlockEncoder();
+				case CompressionFormat.BC7:
+					return new Bc7Encoder();
 				default:
 					return null;
 			}
@@ -109,8 +112,9 @@ namespace BCnEnc.Net.Encoder
 			for (int i = 0; i < numMipMaps; i++) {
 				byte[] encoded = null;
 				if (OutputOptions.format.IsCompressedFormat()) {
+					compressedEncoder.SetReferenceData(mipChain[i].GetPixelSpan(), mipChain[i].Width, mipChain[i].Height);
 					var blocks = ImageToBlocks.ImageTo4X4(mipChain[i].Frames[0], out int blocksWidth, out int blocksHeight);
-					encoded = compressedEncoder.Encode(blocks, blocksWidth, blocksHeight, OutputOptions.quality, true);
+					encoded = compressedEncoder.Encode(blocks, blocksWidth, blocksHeight, OutputOptions.quality, !Debugger.IsAttached);
 				}
 				else {
 					encoded = uncompressedEncoder.Encode(mipChain[i].GetPixelSpan());

@@ -26,7 +26,7 @@ namespace BCnEnc.Net.Shared
 		public ulong lowBits;
 		public ulong highBits;
 
-		public static readonly int[][] Bit2PartitionTable = {
+		public static readonly int[][] Subsets2PartitionTable = {
 			new[] {0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1},
 			new[] {0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1},
 			new[] {0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1},
@@ -93,7 +93,7 @@ namespace BCnEnc.Net.Shared
 			new[] {0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 1, 1, 1}
 		};
 
-		public static readonly int[][] Bit3PartitionTable = {
+		public static readonly int[][] Subsets3PartitionTable = {
 			new[] {0, 0, 1, 1, 0, 0, 1, 1, 0, 2, 2, 1, 2, 2, 2, 2},
 			new[] {0, 0, 0, 1, 0, 0, 1, 1, 2, 2, 1, 1, 2, 2, 2, 1},
 			new[] {0, 0, 0, 0, 2, 0, 0, 1, 2, 2, 1, 1, 2, 2, 1, 1},
@@ -160,7 +160,7 @@ namespace BCnEnc.Net.Shared
 			new[] {0, 1, 1, 1, 2, 0, 1, 1, 2, 2, 0, 1, 2, 2, 2, 0},
 		};
 
-		public static readonly int[] Bit2AnchorIndices = {
+		public static readonly int[] Subsets2AnchorIndices = {
 			15, 15, 15, 15, 15, 15, 15, 15,
 			15, 15, 15, 15, 15, 15, 15, 15,
 			15, 2, 8, 2, 2, 8, 8, 15,
@@ -171,7 +171,7 @@ namespace BCnEnc.Net.Shared
 			15, 15, 15, 15, 15, 2, 2, 15
 		};
 
-		public static readonly int[] Bit3AnchorIndices2 = {
+		public static readonly int[] Subsets3AnchorIndices2 = {
 			3, 3, 15, 15, 8, 3, 15, 15,
 			8, 8, 6, 6, 6, 5, 3, 3,
 			3, 3, 8, 15, 3, 3, 6, 10,
@@ -182,7 +182,7 @@ namespace BCnEnc.Net.Shared
 			5, 10, 8, 13, 15, 12, 3, 3
 		};
 
-		public static readonly int[] Bit3AnchorIndices3 = {
+		public static readonly int[] Subsets3AnchorIndices3 = {
 			15, 8, 8, 3, 15, 15, 3, 8,
 			15, 15, 15, 15, 15, 15, 15, 8,
 			15, 8, 15, 3, 15, 8, 15, 8,
@@ -595,9 +595,9 @@ namespace BCnEnc.Net.Shared
 				case 1:
 					return 0;
 				case 2:
-					return Bit2PartitionTable[partitionSetId][i];
+					return Subsets2PartitionTable[partitionSetId][i];
 				case 3:
-					return Bit3PartitionTable[partitionSetId][i];
+					return Subsets3PartitionTable[partitionSetId][i];
 				default:
 					throw new ArgumentOutOfRangeException(nameof(numSubsets), numSubsets, "Number of subsets can only be 1, 2 or 3");
 			}
@@ -612,7 +612,7 @@ namespace BCnEnc.Net.Shared
 			}
 			if (numSubsets == 2)
 			{
-				int anchorIndex = Bit2AnchorIndices[partitionIndex];
+				int anchorIndex = Subsets2AnchorIndices[partitionIndex];
 				if (index <= anchorIndex)
 				{
 					return bitCount * index - 1;
@@ -624,8 +624,8 @@ namespace BCnEnc.Net.Shared
 			}
 			if (numSubsets == 3)
 			{
-				int anchor2Index = Bit3AnchorIndices2[partitionIndex];
-				int anchor3Index = Bit3AnchorIndices3[partitionIndex];
+				int anchor2Index = Subsets3AnchorIndices2[partitionIndex];
+				int anchor3Index = Subsets3AnchorIndices3[partitionIndex];
 
 				if (index <= anchor2Index && index <= anchor3Index)
 				{
@@ -651,7 +651,7 @@ namespace BCnEnc.Net.Shared
 			if (index == 0) return bitCount - 1;
 			if (numSubsets == 2)
 			{
-				int anchorIndex = Bit2AnchorIndices[partitionIndex];
+				int anchorIndex = Subsets2AnchorIndices[partitionIndex];
 				if (index == anchorIndex)
 				{
 					return bitCount - 1;
@@ -659,8 +659,8 @@ namespace BCnEnc.Net.Shared
 			}
 			else if (numSubsets == 3)
 			{
-				int anchor2Index = Bit3AnchorIndices2[partitionIndex];
-				int anchor3Index = Bit3AnchorIndices3[partitionIndex];
+				int anchor2Index = Subsets3AnchorIndices2[partitionIndex];
+				int anchor3Index = Subsets3AnchorIndices3[partitionIndex];
 				if (index == anchor2Index)
 				{
 					return bitCount - 1;
@@ -827,32 +827,6 @@ namespace BCnEnc.Net.Shared
 				pixels[i] = outputColor.ToRgba32();
 			}
 
-			////endpoints are now complete.
-			//UINT8 endpoint_start[4] = endpoint_array[2 * subset_index];
-			//UINT8 endpoint_end[4]   = endpoint_array[2 * subset_index + 1];
-
-			////Determine the palette index for this pixel
-			//alpha_index     = get_alpha_index(block, mode, x, y);
-			//alpha_bitcount  = get_alpha_bitcount(block, mode);
-			//color_index     = get_color_index(block, mode, x, y);
-			//color_bitcount  = get_color_bitcount(block, mode);
-
-			////determine output
-			//UINT8 output[4];
-			//output.rgb = interpolate(endpoint_start.rgb, endpoint_end.rgb, color_index, color_bitcount);
-			//output.a   = interpolate(endpoint_start.a,   endpoint_end.a,   alpha_index, alpha_bitcount);
-
-			//if (mode.type == 4 OR == 5)
-			//{
-			//	//Decode the 2 color rotation bits as follows:
-			//	// 00 – Block format is Scalar(A) Vector(RGB) - no swapping
-			//	// 01 – Block format is Scalar(R) Vector(AGB) - swap A and R
-			//	// 10 – Block format is Scalar(G) Vector(RAB) - swap A and G
-			//	// 11 - Block format is Scalar(B) Vector(RGA) - swap A and B
-			//	rotation = extract_rot_bits(mode, block);
-			//	output = swap_channels(output, rotation);
-			//}
-
 			return output;
 		}
 
@@ -899,7 +873,6 @@ namespace BCnEnc.Net.Shared
 			}
 		}
 
-
 		public void PackType1(int partitionIndex6Bit, byte[][] subsetEndpoints, byte[] pBits, byte[] indices) {
 			Debug.Assert(partitionIndex6Bit < 64, "Mode 1 should have 6bit partition index");
 			Debug.Assert(subsetEndpoints.Length == 4, "Mode 1 should have 4 endpoints");
@@ -941,7 +914,6 @@ namespace BCnEnc.Net.Shared
 					indexBegin + indexOffset, indexBitCount, indices[i]);
 			}
 		}
-
 
 		public void PackType2(int partitionIndex6Bit, byte[][] subsetEndpoints,  byte[] indices) {
 			Debug.Assert(partitionIndex6Bit < 64, "Mode 2 should have 6bit partition index");

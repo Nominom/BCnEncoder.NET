@@ -398,4 +398,52 @@ namespace BCnEncTests
 				output);
 		}
 	}
+
+	public class Bc7RgbTest
+	{
+
+		private readonly ITestOutputHelper output;
+
+		public Bc7RgbTest(ITestOutputHelper output)
+		{
+			this.output = output;
+		}
+
+
+		[Fact]
+		public void Bc7RgbBestQuality()
+		{
+			var image = ImageLoader.testGradient1;
+
+			TestHelper.ExecuteEncodingTest(image,
+				CompressionFormat.BC7,
+				EncodingQuality.BestQuality, 
+				"encoding_bc7_rgb_bestQuality.ktx",
+				output);
+		}
+
+		[Fact]
+		public void Bc7RgbBalanced()
+		{
+			var image = ImageLoader.testGradient1;
+
+			TestHelper.ExecuteEncodingTest(image,
+				CompressionFormat.BC7,
+				EncodingQuality.Balanced, 
+				"encoding_bc7_rgb_balanced.ktx",
+				output);
+		}
+
+		[Fact]
+		public void Bc7RgbFast()
+		{
+			var image = ImageLoader.testGradient1;
+
+			TestHelper.ExecuteEncodingTest(image,
+				CompressionFormat.BC7,
+				EncodingQuality.Fast, 
+				"encoding_bc7_rgb_fast.ktx",
+				output);
+		}
+	}
 }
