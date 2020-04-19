@@ -31,6 +31,32 @@ namespace BCnEnc.Net.Shared
 			principalAxis.Z = (float)eigenVectors[0][2];
 		}
 
+		public static void CreateWithAlpha(Span<Rgba32> colors, out Vector4 mean, out Vector4 principalAxis)
+		{
+			double[][] data = new double[colors.Length][];
+			for (int i = 0; i < colors.Length; i++)
+			{
+				data[i] = new double[4];
+				data[i][0] = colors[i].R / 255.0;
+				data[i][1] = colors[i].G / 255.0;
+				data[i][2] = colors[i].B / 255.0;
+				data[i][3] = colors[i].A / 255.0;
+			}
+			PrincipalComponentAnalysis pca = new PrincipalComponentAnalysis();
+			pca.Learn(data);
+			var eigenVectors = pca.ComponentVectors;
+			var pcaMeans = pca.Means;
+			mean.X = (float)pcaMeans[0];
+			mean.Y = (float)pcaMeans[1];
+			mean.Z = (float)pcaMeans[2];
+			mean.W = (float)pcaMeans[3];
+
+			principalAxis.X = (float)eigenVectors[0][0];
+			principalAxis.Y = (float)eigenVectors[0][1];
+			principalAxis.Z = (float)eigenVectors[0][2];
+			principalAxis.W = (float)eigenVectors[0][3];
+		}
+
 
 		public static void GetExtremePoints(Span<Rgba32> colors, Vector3 mean, Vector3 principalAxis, out Vector3 min,
 			out Vector3 max)
@@ -45,6 +71,27 @@ namespace BCnEnc.Net.Shared
 
 				var v = colorVec - mean;
 				var d = Vector3.Dot(v, principalAxis);
+				if (d < minD) minD = d;
+				if (d > maxD) maxD = d;
+			}
+
+			min = mean + (principalAxis * minD);
+			max = mean + (principalAxis * maxD);
+		}
+
+		public static void GetExtremePointsWithAlpha(Span<Rgba32> colors, Vector4 mean, Vector4 principalAxis, out Vector4 min,
+			out Vector4 max)
+		{
+
+			float minD = 0;
+			float maxD = 0;
+
+			for (int i = 0; i < colors.Length; i++)
+			{
+				var colorVec = new Vector4(colors[i].R / 255f, colors[i].G / 255f, colors[i].B / 255f, colors[i].A / 255f);
+
+				var v = colorVec - mean;
+				var d = Vector4.Dot(v, principalAxis);
 				if (d < minD) minD = d;
 				if (d > maxD) maxD = d;
 			}

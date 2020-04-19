@@ -26,9 +26,9 @@ namespace BCnEnc.Net.Shared
 		public ulong lowBits;
 		public ulong highBits;
 
-		public static ReadOnlySpan<ushort> colorInterpolationWeights2 => new ushort[] { 0, 21, 43, 64 };
-		public static ReadOnlySpan<ushort> colorInterpolationWeights3 => new ushort[] { 0, 9, 18, 27, 37, 46, 55, 64 };
-		public static ReadOnlySpan<ushort> colorInterpolationWeights4 => new ushort[] { 0, 4, 9, 13, 17, 21, 26, 30, 34, 38, 43, 47, 51, 55, 60, 64 };
+		public static ReadOnlySpan<byte> colorInterpolationWeights2 => new byte[] { 0, 21, 43, 64 };
+		public static ReadOnlySpan<byte> colorInterpolationWeights3 => new byte[] { 0, 9, 18, 27, 37, 46, 55, 64 };
+		public static ReadOnlySpan<byte> colorInterpolationWeights4 => new byte[] { 0, 4, 9, 13, 17, 21, 26, 30, 34, 38, 43, 47, 51, 55, 60, 64 };
 
 
 		public static readonly int[][] Subsets2PartitionTable = {
@@ -739,16 +739,16 @@ namespace BCnEnc.Net.Shared
 			
 			byte InterpolateByte(byte e0, byte e1, int index, int indexPrecision) {
 				if (indexPrecision == 0) return e0;
-				ReadOnlySpan<ushort> aWeights2 = colorInterpolationWeights2;
-				ReadOnlySpan<ushort> aWeights3 = colorInterpolationWeights3;
-				ReadOnlySpan<ushort> aWeights4 = colorInterpolationWeights4;
+				ReadOnlySpan<byte> aWeights2 = colorInterpolationWeights2;
+				ReadOnlySpan<byte> aWeights3 = colorInterpolationWeights3;
+				ReadOnlySpan<byte> aWeights4 = colorInterpolationWeights4;
 
 				if(indexPrecision == 2)
-					return (byte) (((64 - aWeights2[index])* (ushort)(e0) + aWeights2[index]*(ushort)(e1) + 32) >> 6);
+					return (byte) (((64 - aWeights2[index])* (e0) + aWeights2[index]*(e1) + 32) >> 6);
 				else if(indexPrecision == 3)
-					return (byte) (((64 - aWeights3[index])*(ushort)(e0) + aWeights3[index]*(ushort)(e1) + 32) >> 6);
+					return (byte) (((64 - aWeights3[index])*(e0) + aWeights3[index]*(e1) + 32) >> 6);
 				else // indexprecision == 4
-					return (byte) (((64 - aWeights4[index])*(ushort)(e0) + aWeights4[index]*(ushort)(e1) + 32) >> 6);
+					return (byte) (((64 - aWeights4[index])*(e0) + aWeights4[index]*(e1) + 32) >> 6);
 			}
 
 			ColorRgba32 result = new ColorRgba32(

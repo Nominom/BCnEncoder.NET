@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Numerics;
+using System.Security;
 using SixLabors.ImageSharp.PixelFormats;
 
 namespace BCnEnc.Net.Shared
@@ -146,6 +147,14 @@ namespace BCnEnc.Net.Shared
 			this.g = g;
 			this.b = b;
 			this.a = a;
+		}
+
+		public ColorRgba32(Rgba32 color)
+		{
+			this.r = color.R;
+			this.g = color.G;
+			this.b = color.B;
+			this.a = color.A;
 		}
 
 		public bool Equals(ColorRgba32 other)
@@ -516,6 +525,122 @@ namespace BCnEnc.Net.Shared
 			float b = Math.Max(0.0f, Math.Min(1.0f, (float)(y + 1.7710 * cb + 0.0000 * cr)));
 
 			return new Rgba32((byte)(r * 255), (byte)(g * 255), (byte)(b * 255), 255);
+		}
+	}
+
+	internal struct ColorYCbCrAlpha
+	{
+		public float y;
+		public float cb;
+		public float cr;
+		public float alpha;
+
+		public ColorYCbCrAlpha(float y, float cb, float cr, float alpha)
+		{
+			this.y = y;
+			this.cb = cb;
+			this.cr = cr;
+			this.alpha = alpha;
+		}
+
+		public ColorYCbCrAlpha(ColorRgb24 rgb)
+		{
+			float fr = (float)rgb.r / 255;
+			float fg = (float)rgb.g / 255;
+			float fb = (float)rgb.b / 255;
+
+			y = (0.2989f * fr + 0.5866f * fg + 0.1145f * fb);
+			cb = (-0.1687f * fr - 0.3313f * fg + 0.5000f * fb);
+			cr = (0.5000f * fr - 0.4184f * fg - 0.0816f * fb);
+			alpha = 1;
+		}
+
+		public ColorYCbCrAlpha(ColorRgb565 rgb)
+		{
+			float fr = (float)rgb.R / 255;
+			float fg = (float)rgb.G / 255;
+			float fb = (float)rgb.B / 255;
+
+			y = (0.2989f * fr + 0.5866f * fg + 0.1145f * fb);
+			cb = (-0.1687f * fr - 0.3313f * fg + 0.5000f * fb);
+			cr = (0.5000f * fr - 0.4184f * fg - 0.0816f * fb);
+			alpha = 1;
+		}
+
+		public ColorYCbCrAlpha(ColorRgba32 rgba)
+		{
+			float fr = (float)rgba.r / 255;
+			float fg = (float)rgba.g / 255;
+			float fb = (float)rgba.b / 255;
+
+			y = (0.2989f * fr + 0.5866f * fg + 0.1145f * fb);
+			cb = (-0.1687f * fr - 0.3313f * fg + 0.5000f * fb);
+			cr = (0.5000f * fr - 0.4184f * fg - 0.0816f * fb);
+			alpha = rgba.a / 255f;
+		}
+
+		public ColorYCbCrAlpha(Rgba32 rgb)
+		{
+			float fr = (float)rgb.R / 255;
+			float fg = (float)rgb.G / 255;
+			float fb = (float)rgb.B / 255;
+
+			y = (0.2989f * fr + 0.5866f * fg + 0.1145f * fb);
+			cb = (-0.1687f * fr - 0.3313f * fg + 0.5000f * fb);
+			cr = (0.5000f * fr - 0.4184f * fg - 0.0816f * fb);
+			alpha = rgb.A / 255f;
+		}
+
+
+		public ColorRgb565 ToColorRgb565() {
+			float r = Math.Max(0.0f, Math.Min(1.0f, (float)(y + 0.0000 * cb + 1.4022 * cr)));
+			float g = Math.Max(0.0f, Math.Min(1.0f, (float)(y - 0.3456 * cb - 0.7145 * cr)));
+			float b = Math.Max(0.0f, Math.Min(1.0f, (float)(y + 1.7710 * cb + 0.0000 * cr)));
+
+			return new ColorRgb565((byte)(r * 255), (byte)(g * 255), (byte)(b * 255));
+		}
+
+		public override string ToString() {
+			float r = Math.Max(0.0f, Math.Min(1.0f, (float)(y + 0.0000 * cb + 1.4022 * cr)));
+			float g = Math.Max(0.0f, Math.Min(1.0f, (float)(y - 0.3456 * cb - 0.7145 * cr)));
+			float b = Math.Max(0.0f, Math.Min(1.0f, (float)(y + 1.7710 * cb + 0.0000 * cr)));
+
+			return $"r : {r * 255} g : {g * 255} b : {b * 255}";
+		}
+
+		public float CalcDistWeighted(ColorYCbCrAlpha other, float yWeight = 4, float aWeight = 1) {
+			float dy = (y - other.y) * (y - other.y) * yWeight;
+			float dcb = (cb - other.cb) * (cb - other.cb);
+			float dcr = (cr - other.cr) * (cr - other.cr);
+			float da = (alpha - other.alpha) * (alpha - other.alpha) * aWeight;
+
+			return MathF.Sqrt(dy + dcb + dcr + da);
+		}
+
+		public static ColorYCbCrAlpha operator+(ColorYCbCrAlpha left, ColorYCbCrAlpha right)
+		{
+			return new ColorYCbCrAlpha(
+				left.y + right.y,
+				left.cb + right.cb,
+				left.cr + right.cr,
+				left.alpha + right.alpha);
+		}
+
+		public static ColorYCbCrAlpha operator/(ColorYCbCrAlpha left, float right)
+		{
+			return new ColorYCbCrAlpha(
+				left.y / right,
+				left.cb / right,
+				left.cr / right,
+				left.alpha / right);
+		}
+
+		public Rgba32 ToRgba32() {
+			float r = Math.Max(0.0f, Math.Min(1.0f, (float)(y + 0.0000 * cb + 1.4022 * cr)));
+			float g = Math.Max(0.0f, Math.Min(1.0f, (float)(y - 0.3456 * cb - 0.7145 * cr)));
+			float b = Math.Max(0.0f, Math.Min(1.0f, (float)(y + 1.7710 * cb + 0.0000 * cr)));
+
+			return new Rgba32((byte)(r * 255), (byte)(g * 255), (byte)(b * 255), (byte)(alpha * 255));
 		}
 	}
 

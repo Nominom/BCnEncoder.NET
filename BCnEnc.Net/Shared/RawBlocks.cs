@@ -85,6 +85,37 @@ namespace BCnEnc.Net.Shared
 			return error;
 		}
 
+		public float CalculateYCbCrAlphaError(RawBlock4X4Rgba32 other, float yMultiplier = 2, float alphaMultiplier = 1) {
+			float yError = 0;
+			float cbError = 0;
+			float crError = 0;
+			float alphaError = 0;
+			var pix1 = AsSpan;
+			var pix2 = other.AsSpan;
+			for (int i = 0; i < pix1.Length; i++) {
+				var col1 = new ColorYCbCrAlpha(pix1[i]);
+				var col2 = new ColorYCbCrAlpha(pix2[i]);
+
+				var ye = (col1.y - col2.y) * yMultiplier;
+				var cbe = col1.cb - col2.cb;
+				var cre = col1.cr - col2.cr;
+				var ae = (col1.alpha - col2.alpha) * alphaMultiplier;
+
+				yError += ye * ye;
+				cbError += cbe * cbe;
+				crError += cre * cre;
+				alphaError += ae * ae;
+			}
+
+			yError /= 16;
+			cbError /= 16;
+			crError /= 16;
+			alphaError /= 16;
+
+			var error = yError + cbError + crError + alphaError;
+			return error;
+		}
+
 		public float CalculateSsimQuality(RawBlock4X4Rgba32 other)
 			=> SSIM.CalculateSSIM(other.AsSpan, AsSpan);
 
