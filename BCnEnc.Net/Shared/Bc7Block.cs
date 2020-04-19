@@ -26,6 +26,11 @@ namespace BCnEnc.Net.Shared
 		public ulong lowBits;
 		public ulong highBits;
 
+		public static ReadOnlySpan<ushort> colorInterpolationWeights2 => new ushort[] { 0, 21, 43, 64 };
+		public static ReadOnlySpan<ushort> colorInterpolationWeights3 => new ushort[] { 0, 9, 18, 27, 37, 46, 55, 64 };
+		public static ReadOnlySpan<ushort> colorInterpolationWeights4 => new ushort[] { 0, 4, 9, 13, 17, 21, 26, 30, 34, 38, 43, 47, 51, 55, 60, 64 };
+
+
 		public static readonly int[][] Subsets2PartitionTable = {
 			new[] {0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1},
 			new[] {0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1},
@@ -734,10 +739,10 @@ namespace BCnEnc.Net.Shared
 			
 			byte InterpolateByte(byte e0, byte e1, int index, int indexPrecision) {
 				if (indexPrecision == 0) return e0;
-				ReadOnlySpan<ushort> aWeights2 = new ushort[]{0, 21, 43, 64};
-				ReadOnlySpan<ushort> aWeights3 = new ushort[]{0, 9, 18, 27, 37, 46, 55, 64};
-				ReadOnlySpan<ushort> aWeights4 = new ushort[]{0, 4, 9, 13, 17, 21, 26, 30, 34, 38, 43, 47, 51, 55, 60, 64};
-				
+				ReadOnlySpan<ushort> aWeights2 = colorInterpolationWeights2;
+				ReadOnlySpan<ushort> aWeights3 = colorInterpolationWeights3;
+				ReadOnlySpan<ushort> aWeights4 = colorInterpolationWeights4;
+
 				if(indexPrecision == 2)
 					return (byte) (((64 - aWeights2[index])* (ushort)(e0) + aWeights2[index]*(ushort)(e1) + 32) >> 6);
 				else if(indexPrecision == 3)
@@ -1052,7 +1057,7 @@ namespace BCnEnc.Net.Shared
 			}
 
 			int alphaBitCount = AlphaIndexBitCount;
-			int alphaIndexBegin = GetIndexBegin(Bc7BlockType.Type4, colorBitCount, true);
+			int alphaIndexBegin = GetIndexBegin(Bc7BlockType.Type4, alphaBitCount, true);
 			for (int i = 0; i < 16; i++) {
 				int indexOffset = GetIndexOffset(Bc7BlockType.Type4, NumSubsets, 
 					0, alphaBitCount, i);
@@ -1118,7 +1123,7 @@ namespace BCnEnc.Net.Shared
 			}
 
 			int alphaBitCount = AlphaIndexBitCount;
-			int alphaIndexBegin = GetIndexBegin(Bc7BlockType.Type5, colorBitCount, true);
+			int alphaIndexBegin = GetIndexBegin(Bc7BlockType.Type5, alphaBitCount, true);
 			for (int i = 0; i < 16; i++) {
 				int indexOffset = GetIndexOffset(Bc7BlockType.Type5, NumSubsets, 
 					0, alphaBitCount, i);
