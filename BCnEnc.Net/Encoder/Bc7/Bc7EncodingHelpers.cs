@@ -97,6 +97,18 @@ namespace BCnEnc.Net.Encoder
 
 	internal static class Bc7EncodingHelpers
 	{
+		private static int[] varPatternRAlpha = new int[] { 1, -1, 1, 0, 0, -1, 0, 0, 0, 0 };
+		private static int[] varPatternRNoAlpha = new int[] { 1, -1, 1, 0, 0, -1, 0, 0 };
+			
+		private static int[] varPatternGAlpha = new int[] { 1, -1, 0, 1, 0, 0, -1, 0, 0, 0 };
+		private static int[] varPatternGNoAlpha = new int[] { 1, -1, 0, 1, 0, 0, -1, 0 };
+			
+		private static int[] varPatternBAlpha = new int[] { 1, -1, 0, 0, 1, 0, 0, -1, 0, 0 };
+		private static int[] varPatternBNoAlpha = new int[] { 1, -1, 0, 0, 1, 0, 0, -1 };
+			
+		private static int[] varPatternAAlpha = new int[] { 0, 0, 0, 0, 0, 0, 0, 0, 1, -1 };
+		private static int[] varPatternANoAlpha = new int[] { 0, 0, 0, 0, 0, 0, 0, 0 };
+
 		public static bool TypeHasPBits(Bc7BlockType type) => type switch
 		{
 			Bc7BlockType.Type0 => true,
@@ -592,7 +604,7 @@ namespace BCnEnc.Net.Encoder
 			if (endpoint.a > alphaMax) endpoint.a = alphaMax;
 		}
 
-		private static int FindClosestColorIndex(ColorYCbCrAlpha color, ColorYCbCrAlpha[] colors, out float bestError)
+		private static int FindClosestColorIndex(ColorYCbCrAlpha color, ReadOnlySpan<ColorYCbCrAlpha> colors, out float bestError)
 		{
 			bestError = color.CalcDistWeighted(colors[0], 4, 2);
 			int bestIndex = 0;
@@ -608,7 +620,7 @@ namespace BCnEnc.Net.Encoder
 			return bestIndex;
 		}
 
-		private static int FindClosestColorIndex(ColorYCbCr color, ColorYCbCr[] colors, out float bestError)
+		private static int FindClosestColorIndex(ColorYCbCr color, ReadOnlySpan<ColorYCbCr> colors, out float bestError)
 		{
 			bestError = color.CalcDistWeighted(colors[0], 4);
 			int bestIndex = 0;
@@ -628,7 +640,7 @@ namespace BCnEnc.Net.Encoder
 			return bestIndex;
 		}
 
-		private static int FindClosestAlphaIndex(byte alpha, byte[] alphas, out float bestError)
+		private static int FindClosestAlphaIndex(byte alpha, ReadOnlySpan<byte> alphas, out float bestError)
 		{
 			bestError = (alpha - alphas[0]) * (alpha - alphas[0]);
 			int bestIndex = 0;
@@ -658,8 +670,8 @@ namespace BCnEnc.Net.Encoder
 
 			if (type == Bc7BlockType.Type4 || type == Bc7BlockType.Type5)
 			{ //separate indices for color and alpha
-				var colors = new ColorYCbCr[1 << colorIndexPrecision];
-				var alphas = new byte[1 << alphaIndexPrecision];
+				Span<ColorYCbCr> colors = stackalloc ColorYCbCr[1 << colorIndexPrecision];
+				Span<byte> alphas = stackalloc byte[1 << alphaIndexPrecision];
 
 				for (int i = 0; i < colors.Length; i++)
 				{
@@ -690,7 +702,7 @@ namespace BCnEnc.Net.Encoder
 			}
 			else
 			{
-				var colors = new ColorYCbCrAlpha[1 << colorIndexPrecision];
+				Span<ColorYCbCrAlpha> colors = stackalloc ColorYCbCrAlpha[1 << colorIndexPrecision];
 				for (int i = 0; i < colors.Length; i++)
 				{
 					colors[i] = new ColorYCbCrAlpha(InterpolateColor(ep0, ep1, i,
@@ -731,7 +743,7 @@ namespace BCnEnc.Net.Encoder
 			}
 			else
 			{
-				var colors = new ColorYCbCrAlpha[1 << colorIndexPrecision];
+				Span<ColorYCbCrAlpha> colors = stackalloc ColorYCbCrAlpha[1 << colorIndexPrecision];
 				for (int i = 0; i < colors.Length; i++)
 				{
 					colors[i] = new ColorYCbCrAlpha(InterpolateColor(ep0, ep1, i,
@@ -764,8 +776,8 @@ namespace BCnEnc.Net.Encoder
 
 			if (type == Bc7BlockType.Type4 || type == Bc7BlockType.Type5)
 			{
-				var colors = new ColorYCbCr[1 << colorIndexPrecision];
-				var alphas = new byte[1 << alphaIndexPrecision];
+				Span<ColorYCbCr> colors = stackalloc ColorYCbCr[1 << colorIndexPrecision];
+				Span<byte> alphas = stackalloc byte[1 << alphaIndexPrecision];
 
 				for (int i = 0; i < colors.Length; i++)
 				{
@@ -811,17 +823,17 @@ namespace BCnEnc.Net.Encoder
 			);
 
 			ReadOnlySpan<int> varPatternR = variateAlpha
-				? new int[] { 1, -1, 1, 0, 0, -1, 0, 0, 0, 0 }
-				: new int[] { 1, -1, 1, 0, 0, -1, 0, 0 };
+				? varPatternRAlpha
+				: varPatternRNoAlpha;
 			ReadOnlySpan<int> varPatternG = variateAlpha
-				? new int[] { 1, -1, 0, 1, 0, 0, -1, 0, 0, 0 }
-				: new int[] { 1, -1, 0, 1, 0, 0, -1, 0 };
+				? varPatternGAlpha
+				: varPatternGNoAlpha;
 			ReadOnlySpan<int> varPatternB = variateAlpha
-				? new int[] { 1, -1, 0, 0, 1, 0, 0, -1, 0, 0 }
-				: new int[] { 1, -1, 0, 0, 1, 0, 0, -1 };
+				? varPatternBAlpha
+				: varPatternBNoAlpha;
 			ReadOnlySpan<int> varPatternA = variateAlpha
-				? new int[] { 0, 0, 0, 0, 0, 0, 0, 0, 1, -1 }
-				: new int[] { 0, 0, 0, 0, 0, 0, 0, 0 };
+				? varPatternAAlpha
+				: varPatternANoAlpha;
 
 
 			while (variation > 0)
