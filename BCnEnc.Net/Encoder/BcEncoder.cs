@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using BCnEnc.Net.Shared;
 using SixLabors.ImageSharp;
@@ -23,6 +24,9 @@ namespace BCnEnc.Net.Encoder
 		public EncodingQuality quality = EncodingQuality.Balanced;
 	}
 
+	/// <summary>
+	/// Handles all encoding of images into compressed or uncompressed formats. For decoding, <see cref="Decoder.BcDecoder"/>
+	/// </summary>
 	public class BcEncoder
 	{
 		public EncoderInputOptions InputOptions { get; set; } = new EncoderInputOptions();
@@ -51,6 +55,8 @@ namespace BCnEnc.Net.Encoder
 					return new Bc4BlockEncoder(InputOptions.luminanceAsRed);
 				case CompressionFormat.BC5:
 					return new Bc5BlockEncoder();
+				case CompressionFormat.BC7:
+					return new Bc7Encoder();
 				default:
 					return null;
 			}
@@ -109,8 +115,9 @@ namespace BCnEnc.Net.Encoder
 			for (int i = 0; i < numMipMaps; i++) {
 				byte[] encoded = null;
 				if (OutputOptions.format.IsCompressedFormat()) {
+					compressedEncoder.SetReferenceData(mipChain[i].GetPixelSpan(), mipChain[i].Width, mipChain[i].Height);
 					var blocks = ImageToBlocks.ImageTo4X4(mipChain[i].Frames[0], out int blocksWidth, out int blocksHeight);
-					encoded = compressedEncoder.Encode(blocks, blocksWidth, blocksHeight, OutputOptions.quality, true);
+					encoded = compressedEncoder.Encode(blocks, blocksWidth, blocksHeight, OutputOptions.quality, !Debugger.IsAttached);
 				}
 				else {
 					encoded = uncompressedEncoder.Encode(mipChain[i].GetPixelSpan());
@@ -127,9 +134,6 @@ namespace BCnEnc.Net.Encoder
 			foreach (var image in mipChain) {
 				image.Dispose();
 			}
-
-			output.Header.NumberOfFaces = 1;
-			output.Header.NumberOfMipmapLevels = 1;
 
 			output.Write(outputStream);
 		}

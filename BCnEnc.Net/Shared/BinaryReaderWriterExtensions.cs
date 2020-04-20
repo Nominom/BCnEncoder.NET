@@ -5,7 +5,7 @@ using System.Text;
 
 namespace BCnEnc.Net.Shared
 {
-	public static class BinaryReaderWriterExtensions
+	internal static class BinaryReaderWriterExtensions
 	{
 		public static unsafe void WriteStruct<T>(this BinaryWriter bw, T t) where T : unmanaged
 		{

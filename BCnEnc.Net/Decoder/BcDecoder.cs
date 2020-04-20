@@ -15,6 +15,9 @@ namespace BCnEnc.Net.Decoder
 		public bool redAsLuminance = true;
 	}
 
+	/// <summary>
+	/// Decodes compressed files into Rgba format.
+	/// </summary>
 	public class BcDecoder
 	{
 		public DecoderOutputOptions OutputOptions { get; set; } = new DecoderOutputOptions();
@@ -49,6 +52,11 @@ namespace BCnEnc.Net.Decoder
 					return new Bc4Decoder(OutputOptions.redAsLuminance);
 				case GlInternalFormat.GL_COMPRESSED_RED_GREEN_RGTC2_EXT:
 					return new Bc5Decoder();
+				case GlInternalFormat.GL_COMPRESSED_RGBA_BPTC_UNORM_ARB:
+					return new Bc7Decoder();
+				// TODO: Not sure what to do with SRGB input.
+				case GlInternalFormat.GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM_ARB:
+					return new Bc7Decoder();
 				default:
 					return null;
 			}
@@ -71,6 +79,9 @@ namespace BCnEnc.Net.Decoder
 			}
 		}
 
+		/// <summary>
+		/// Read a KtxFile and decode it.
+		/// </summary>
 		public Image<Rgba32> Decode(KtxFile file)
 		{
 			if (IsSupportedRawFormat(file.Header.GlInternalFormat)) {

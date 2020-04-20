@@ -398,4 +398,100 @@ namespace BCnEncTests
 				output);
 		}
 	}
+
+	public class Bc7RgbTest
+	{
+
+		private readonly ITestOutputHelper output;
+
+		public Bc7RgbTest(ITestOutputHelper output)
+		{
+			this.output = output;
+		}
+
+
+		[Fact]
+		public void Bc7RgbBestQuality()
+		{
+			var image = ImageLoader.testRgbHard1;
+
+			TestHelper.ExecuteEncodingTest(image,
+				CompressionFormat.BC7,
+				EncodingQuality.BestQuality, 
+				"encoding_bc7_rgb_bestQuality.ktx",
+				output);
+		}
+
+		[Fact]
+		public void Bc7RgbBalanced()
+		{
+			var image = ImageLoader.testRgbHard1;
+
+			TestHelper.ExecuteEncodingTest(image,
+				CompressionFormat.BC7,
+				EncodingQuality.Balanced, 
+				"encoding_bc7_rgb_balanced.ktx",
+				output);
+		}
+
+		[Fact]
+		public void Bc7RgbFast()
+		{
+			var image = ImageLoader.testRgbHard1;
+
+			TestHelper.ExecuteEncodingTest(image,
+				CompressionFormat.BC7,
+				EncodingQuality.Fast, 
+				"encoding_bc7_rgb_fast.ktx",
+				output);
+		}
+	}
+
+	public class Bc7RgbaTest
+	{
+
+		private readonly ITestOutputHelper output;
+
+		public Bc7RgbaTest(ITestOutputHelper output)
+		{
+			this.output = output;
+		}
+
+
+		[Fact]
+		public void Bc7RgbaBestQuality()
+		{
+			var image = ImageLoader.testAlpha1;
+
+			TestHelper.ExecuteEncodingTest(image,
+				CompressionFormat.BC7,
+				EncodingQuality.BestQuality, 
+				"encoding_bc7_rgba_bestQuality.ktx",
+				output);
+		}
+
+		[Fact]
+		public void Bc7RgbaBalanced()
+		{
+			var image = ImageLoader.testAlpha1;
+
+			TestHelper.ExecuteEncodingTest(image,
+				CompressionFormat.BC7,
+				EncodingQuality.Balanced, 
+				"encoding_bc7_rgba_balanced.ktx",
+				output);
+		}
+
+		[Fact]
+		public void Bc7RgbaFast()
+		{
+			var image = ImageLoader.testAlpha1;
+
+			TestHelper.ExecuteEncodingTest(image,
+				CompressionFormat.BC7,
+				EncodingQuality.Fast, 
+				"encoding_bc7_rgba_fast.ktx",
+				output);
+		}
+	}
 }
