@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.IO;
 using BCnEnc.Net.Shared;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Advanced;
@@ -77,6 +78,14 @@ namespace BCnEnc.Net.Decoder
 				default:
 					return null;
 			}
+		}
+
+		/// <summary>
+		/// Read a KtxFile from a stream and decode it.
+		/// </summary>
+		public Image<Rgba32> Decode(Stream inputStream) {
+			KtxFile file = KtxFile.Load(inputStream);
+			return Decode(file);
 		}
 
 		/// <summary>

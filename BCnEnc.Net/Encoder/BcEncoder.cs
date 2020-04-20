@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using BCnEnc.Net.Shared;
@@ -8,7 +9,8 @@ using SixLabors.ImageSharp.PixelFormats;
 
 namespace BCnEnc.Net.Encoder
 {
-	public class EncoderInputOptions {
+	public class EncoderInputOptions
+	{
 		/// <summary>
 		/// If true, when encoding to a format that only includes a red channel,
 		/// use the pixel luminance instead of just the red channel. Default is false.
@@ -19,6 +21,9 @@ namespace BCnEnc.Net.Encoder
 	public class EncoderOutputOptions
 	{
 		public bool generateMipMaps = true;
+		/// <summary>
+		/// The maximum number of mipmap levels to generate. -1 is unbounded.
+		/// </summary>
 		public int maxMipMapLevel = -1;
 		public CompressionFormat format = CompressionFormat.BC1;
 		public EncodingQuality quality = EncodingQuality.Balanced;
@@ -64,7 +69,8 @@ namespace BCnEnc.Net.Encoder
 
 		private IRawEncoder GetRawEncoder(CompressionFormat format)
 		{
-			switch (format) {
+			switch (format)
+			{
 				case CompressionFormat.R:
 					return new RawLuminanceEncoder(InputOptions.luminanceAsRed);
 				case CompressionFormat.RG:
@@ -78,22 +84,37 @@ namespace BCnEnc.Net.Encoder
 			}
 		}
 
+		/// <summary>
+		/// Encodes all mipmap levels into a Ktx file and writes it to the output stream.
+		/// </summary>
 		public void Encode(Image<Rgba32> inputImage, Stream outputStream)
+		{
+			KtxFile output = Encode(inputImage);
+			output.Write(outputStream);
+		}
+
+		/// <summary>
+		/// Encodes all mipmap levels into a Ktx file.
+		/// </summary>
+		public KtxFile Encode(Image<Rgba32> inputImage)
 		{
 			KtxFile output;
 			IBcBlockEncoder compressedEncoder = null;
 			IRawEncoder uncompressedEncoder = null;
-			if (OutputOptions.format.IsCompressedFormat()) {
+			if (OutputOptions.format.IsCompressedFormat())
+			{
 				compressedEncoder = GetEncoder(OutputOptions.format);
-				if (compressedEncoder == null) {
+				if (compressedEncoder == null)
+				{
 					throw new NotSupportedException($"This format is not supported: {OutputOptions.format}");
 				}
 				output = new KtxFile(
 					KtxHeader.InitializeCompressed(inputImage.Width, inputImage.Height,
-						compressedEncoder.GetInternalFormat(), 
+						compressedEncoder.GetInternalFormat(),
 						compressedEncoder.GetBaseInternalFormat()));
 			}
-			else {
+			else
+			{
 				uncompressedEncoder = GetRawEncoder(OutputOptions.format);
 				output = new KtxFile(
 					KtxHeader.InitializeUncompressed(inputImage.Width, inputImage.Height,
@@ -106,36 +127,277 @@ namespace BCnEnc.Net.Encoder
 			}
 
 			uint numMipMaps = (uint)OutputOptions.maxMipMapLevel;
-			if (!OutputOptions.generateMipMaps) {
+			if (!OutputOptions.generateMipMaps)
+			{
 				numMipMaps = 1;
 			}
 
 			var mipChain = MipMapper.GenerateMipChain(inputImage, ref numMipMaps);
 
-			for (int i = 0; i < numMipMaps; i++) {
+			for (int i = 0; i < numMipMaps; i++)
+			{
 				byte[] encoded = null;
-				if (OutputOptions.format.IsCompressedFormat()) {
+				if (OutputOptions.format.IsCompressedFormat())
+				{
 					compressedEncoder.SetReferenceData(mipChain[i].GetPixelSpan(), mipChain[i].Width, mipChain[i].Height);
 					var blocks = ImageToBlocks.ImageTo4X4(mipChain[i].Frames[0], out int blocksWidth, out int blocksHeight);
 					encoded = compressedEncoder.Encode(blocks, blocksWidth, blocksHeight, OutputOptions.quality, !Debugger.IsAttached);
 				}
-				else {
+				else
+				{
 					encoded = uncompressedEncoder.Encode(mipChain[i].GetPixelSpan());
 				}
 
-				output.MipMaps.Add(new KtxMipmap((uint)encoded.Length, 
-					(uint)inputImage.Width, 
+				output.MipMaps.Add(new KtxMipmap((uint)encoded.Length,
+					(uint)inputImage.Width,
 					(uint)inputImage.Height, 1));
-				output.MipMaps[i].Faces[0] = new KtxMipFace(encoded, 
-					(uint)inputImage.Width, 
+				output.MipMaps[i].Faces[0] = new KtxMipFace(encoded,
+					(uint)inputImage.Width,
 					(uint)inputImage.Height);
 			}
 
-			foreach (var image in mipChain) {
+			foreach (var image in mipChain)
+			{
 				image.Dispose();
 			}
 
+			output.Header.NumberOfFaces = 1;
+			output.Header.NumberOfMipmapLevels = numMipMaps;
+
+			return output;
+		}
+
+		/// <summary>
+		/// Encodes all mipmap levels into a list of byte buffers.
+		/// </summary>
+		public List<byte[]> EncodeToRawBytes(Image<Rgba32> inputImage)
+		{
+			List<byte[]> output = new List<byte[]>();
+			IBcBlockEncoder compressedEncoder = null;
+			IRawEncoder uncompressedEncoder = null;
+			if (OutputOptions.format.IsCompressedFormat())
+			{
+				compressedEncoder = GetEncoder(OutputOptions.format);
+				if (compressedEncoder == null)
+				{
+					throw new NotSupportedException($"This format is not supported: {OutputOptions.format}");
+				}
+
+			}
+			else
+			{
+				uncompressedEncoder = GetRawEncoder(OutputOptions.format);
+
+			}
+
+			uint numMipMaps = (uint)OutputOptions.maxMipMapLevel;
+			if (!OutputOptions.generateMipMaps)
+			{
+				numMipMaps = 1;
+			}
+
+			var mipChain = MipMapper.GenerateMipChain(inputImage, ref numMipMaps);
+
+			for (int i = 0; i < numMipMaps; i++)
+			{
+				byte[] encoded = null;
+				if (OutputOptions.format.IsCompressedFormat())
+				{
+					compressedEncoder.SetReferenceData(mipChain[i].GetPixelSpan(), mipChain[i].Width, mipChain[i].Height);
+					var blocks = ImageToBlocks.ImageTo4X4(mipChain[i].Frames[0], out int blocksWidth, out int blocksHeight);
+					encoded = compressedEncoder.Encode(blocks, blocksWidth, blocksHeight, OutputOptions.quality, !Debugger.IsAttached);
+				}
+				else
+				{
+					encoded = uncompressedEncoder.Encode(mipChain[i].GetPixelSpan());
+				}
+
+				output.Add(encoded);
+			}
+
+			foreach (var image in mipChain)
+			{
+				image.Dispose();
+			}
+
+			return output;
+		}
+
+		/// <summary>
+		/// Encodes a single mip level of the input image to a byte buffer.
+		/// </summary>
+		public byte[] EncodeToRawBytes(Image<Rgba32> inputImage, int mipLevel)
+		{
+			if (mipLevel < 0)
+			{
+				throw new ArgumentException($"{nameof(mipLevel)} cannot be less than zero.");
+			}
+
+			MemoryStream output = new MemoryStream();
+			IBcBlockEncoder compressedEncoder = null;
+			IRawEncoder uncompressedEncoder = null;
+			if (OutputOptions.format.IsCompressedFormat())
+			{
+				compressedEncoder = GetEncoder(OutputOptions.format);
+				if (compressedEncoder == null)
+				{
+					throw new NotSupportedException($"This format is not supported: {OutputOptions.format}");
+				}
+			}
+			else
+			{
+				uncompressedEncoder = GetRawEncoder(OutputOptions.format);
+
+			}
+
+			uint numMipMaps = (uint)OutputOptions.maxMipMapLevel;
+			if (!OutputOptions.generateMipMaps)
+			{
+				numMipMaps = 1;
+			}
+
+			var mipChain = MipMapper.GenerateMipChain(inputImage, ref numMipMaps);
+
+			if (mipLevel > numMipMaps - 1)
+			{
+				foreach (var image in mipChain)
+				{
+					image.Dispose();
+				}
+				throw new ArgumentException($"{nameof(mipLevel)} cannot be more than number of mipmaps");
+			}
+
+			for (int i = 0; i < numMipMaps; i++)
+			{
+				byte[] encoded = null;
+				if (OutputOptions.format.IsCompressedFormat())
+				{
+					compressedEncoder.SetReferenceData(mipChain[i].GetPixelSpan(), mipChain[i].Width, mipChain[i].Height);
+					var blocks = ImageToBlocks.ImageTo4X4(mipChain[i].Frames[0], out int blocksWidth, out int blocksHeight);
+					encoded = compressedEncoder.Encode(blocks, blocksWidth, blocksHeight, OutputOptions.quality, !Debugger.IsAttached);
+				}
+				else
+				{
+					encoded = uncompressedEncoder.Encode(mipChain[i].GetPixelSpan());
+				}
+
+				output.Write(encoded);
+			}
+
+			foreach (var image in mipChain)
+			{
+				image.Dispose();
+			}
+
+			return output.ToArray();
+		}
+
+		/// <summary>
+		/// Encodes all cubemap faces and mipmap levels into Ktx file and writes it to the output stream.
+		/// Order is +X, -X, +Y, -Y, +Z, -Z
+		/// </summary>
+		public void EncodeCubeMap(Image<Rgba32> right, Image<Rgba32> left, Image<Rgba32> top, Image<Rgba32> down,
+			Image<Rgba32> back, Image<Rgba32> front, Stream outputStream) {
+			var output = EncodeCubeMap(right, left, top, down, back, front);
 			output.Write(outputStream);
+		}
+
+		/// <summary>
+		/// Encodes all cubemap faces and mipmap levels into a Ktx file.
+		/// Order is +X, -X, +Y, -Y, +Z, -Z
+		/// </summary>
+		public KtxFile EncodeCubeMap(Image<Rgba32> right, Image<Rgba32> left, Image<Rgba32> top, Image<Rgba32> down,
+			Image<Rgba32> back, Image<Rgba32> front)
+		{
+			KtxFile output;
+			IBcBlockEncoder compressedEncoder = null;
+			IRawEncoder uncompressedEncoder = null;
+
+			if (right.Width != left.Width || right.Width != top.Width || right.Width != down.Width
+				|| right.Width != back.Width || right.Width != front.Width ||
+				right.Height != left.Height || right.Height != top.Height || right.Height != down.Height
+				|| right.Height != back.Height || right.Height != front.Height)
+			{
+				throw new ArgumentException("All input images of a cubemap should be the same size.");
+			}
+
+			Image<Rgba32>[] faces = new[] { right, left, top, down, back, front };
+
+			if (OutputOptions.format.IsCompressedFormat())
+			{
+				compressedEncoder = GetEncoder(OutputOptions.format);
+				if (compressedEncoder == null)
+				{
+					throw new NotSupportedException($"This format is not supported: {OutputOptions.format}");
+				}
+				output = new KtxFile(
+					KtxHeader.InitializeCompressed(right.Width, right.Height,
+						compressedEncoder.GetInternalFormat(),
+						compressedEncoder.GetBaseInternalFormat()));
+			}
+			else
+			{
+				uncompressedEncoder = GetRawEncoder(OutputOptions.format);
+				output = new KtxFile(
+					KtxHeader.InitializeUncompressed(right.Width, right.Height,
+						uncompressedEncoder.GetGlType(),
+						uncompressedEncoder.GetGlFormat(),
+						uncompressedEncoder.GetGlTypeSize(),
+						uncompressedEncoder.GetInternalFormat(),
+						uncompressedEncoder.GetBaseInternalFormat()));
+
+			}
+			uint numMipMaps = (uint)OutputOptions.maxMipMapLevel;
+			if (!OutputOptions.generateMipMaps)
+			{
+				numMipMaps = 1;
+			}
+
+			uint mipLength = MipMapper.CalculateMipChainLength(right.Width, right.Height, numMipMaps);
+			for (uint i = 0; i < mipLength; i++) {
+				output.MipMaps.Add(new KtxMipmap(0, 0, 0, (uint)faces.Length));
+			}
+
+			for (int f = 0; f < faces.Length; f++)
+			{
+
+				var mipChain = MipMapper.GenerateMipChain(faces[f], ref numMipMaps);
+
+				for (int i = 0; i < numMipMaps; i++)
+				{
+					byte[] encoded = null;
+					if (OutputOptions.format.IsCompressedFormat())
+					{
+						compressedEncoder.SetReferenceData(mipChain[i].GetPixelSpan(), mipChain[i].Width, mipChain[i].Height);
+						var blocks = ImageToBlocks.ImageTo4X4(mipChain[i].Frames[0], out int blocksWidth, out int blocksHeight);
+						encoded = compressedEncoder.Encode(blocks, blocksWidth, blocksHeight, OutputOptions.quality, !Debugger.IsAttached);
+					}
+					else
+					{
+						encoded = uncompressedEncoder.Encode(mipChain[i].GetPixelSpan());
+					}
+
+					if (f == 0) {
+						output.MipMaps[i] = new KtxMipmap((uint)encoded.Length,
+							(uint)mipChain[i].Width,
+							(uint)mipChain[i].Height, (uint)faces.Length);
+					}
+					
+					output.MipMaps[i].Faces[f] = new KtxMipFace(encoded,
+						(uint)mipChain[i].Width,
+						(uint)mipChain[i].Height);
+				}
+
+				foreach (var image in mipChain)
+				{
+					image.Dispose();
+				}
+			}
+
+			output.Header.NumberOfFaces = (uint)faces.Length;
+			output.Header.NumberOfMipmapLevels = mipLength;
+
+			return output;
 		}
 	}
 }

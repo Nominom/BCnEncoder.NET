@@ -8,6 +8,26 @@ namespace BCnEnc.Net.Shared
 {
 	public static class MipMapper
 	{
+
+		public static uint CalculateMipChainLength(int width, int height, uint maxNumMipMaps) {
+			if (maxNumMipMaps == 1) {
+				return 1;
+			}
+			if (maxNumMipMaps == 0) {
+				maxNumMipMaps = 999;
+			}
+			uint output = 0;
+			for (uint mipLevel = 1; mipLevel < maxNumMipMaps; mipLevel++) {
+				int mipWidth = Math.Max(1, width / (int)(Math.Pow(2, mipLevel)));
+				int mipHeight = Math.Max(1, height / (int)(Math.Pow(2, mipLevel)));
+				if (mipWidth == 1 && mipHeight == 1) {
+					output = mipLevel + 1;
+					break;
+				}
+			}
+			return output;
+		}
+
 		public static List<Image<Rgba32>> GenerateMipChain(Image<Rgba32> sourceImage, ref uint numMipMaps) {
 			List<Image<Rgba32>> result = new List<Image<Rgba32>>();
 			result.Add(sourceImage.Clone());

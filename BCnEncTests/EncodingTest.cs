@@ -494,4 +494,25 @@ namespace BCnEncTests
 				output);
 		}
 	}
+
+	public class CubemapTest
+	{
+
+		[Fact]
+		public void WriteCubeMapFile()
+		{
+			var images = ImageLoader.testCubemap;
+
+			string filename = "encoding_bc1_cubemap.ktx";
+
+			BcEncoder encoder = new BcEncoder();
+			encoder.OutputOptions.quality = EncodingQuality.Fast;
+			encoder.OutputOptions.generateMipMaps = true;
+			encoder.OutputOptions.format = CompressionFormat.BC1;
+
+			using FileStream fs = File.OpenWrite(filename);
+			encoder.EncodeCubeMap(images[0],images[1],images[2],images[3],images[4],images[5], fs);
+			fs.Close();
+		}
+	}
 }
