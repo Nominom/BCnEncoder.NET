@@ -7,7 +7,11 @@ using static System.Text.Encoding;
 
 namespace BCnEnc.Net.Shared
 {
-
+	/// <summary>
+	/// A representation of a ktx file.
+	/// This class handles loading and saving ktx files into streams.
+	/// The full spec can be found here: https://www.khronos.org/opengles/sdk/tools/KTX/file_format_spec/
+	/// </summary>
 	public class KtxFile
 	{
 
@@ -21,6 +25,9 @@ namespace BCnEnc.Net.Shared
 			Header = header;
 		}
 
+		/// <summary>
+		/// Writes this ktx file into a stream.
+		/// </summary>
 		public void Write(Stream s)
 		{
 			if (MipMaps.Count < 1 || MipMaps[0].NumberOfFaces < 1)
@@ -72,6 +79,9 @@ namespace BCnEnc.Net.Shared
 			}
 		}
 
+		/// <summary>
+		/// Loads a KTX file from a stream.
+		/// </summary>
 		public static KtxFile Load(Stream s)
 		{
 
@@ -104,17 +114,17 @@ namespace BCnEnc.Net.Shared
 
 					ktx.MipMaps.Add(new KtxMipmap(imageSize, mipWidth, mipHeight, numberOfFaces));
 
-					bool cubemap = header.NumberOfFaces == 6 && header.NumberOfArrayElements == 0;
+					bool cubemap = header.NumberOfFaces > 1 && header.NumberOfArrayElements == 0;
 					for (uint face = 0; face < numberOfFaces; face++)
 					{
 						byte[] faceData = br.ReadBytes((int)imageSize);
 						ktx.MipMaps[(int)mipLevel].Faces[(int)face] = new KtxMipFace(faceData, mipWidth, mipHeight);
-						uint cubePadding = 0u;
 						if (cubemap)
 						{
+							uint cubePadding = 0u;
 							cubePadding = 3 - ((imageSize + 3) % 4);
+							br.SkipPadding(cubePadding);
 						}
-						br.SkipPadding(cubePadding);
 					}
 
 					uint mipPaddingBytes = 3 - ((imageSize + 3) % 4);
@@ -125,6 +135,9 @@ namespace BCnEnc.Net.Shared
 			}
 		}
 
+		/// <summary>
+		/// Gets the total size of all mipmaps and faces.
+		/// </summary>
 		public ulong GetTotalSize()
 		{
 			ulong totalSize = 0;
@@ -144,7 +157,6 @@ namespace BCnEnc.Net.Shared
 		/// <summary>
 		/// Gets all texture data of the file in face-major order (face0_mip0 ... face0_mip1 ... face1_mip0 ...)
 		/// </summary>
-		/// <returns></returns>
 		public byte[] GetAllTextureDataFaceMajor()
 		{
 			byte[] result = new byte[GetTotalSize()];
@@ -165,7 +177,6 @@ namespace BCnEnc.Net.Shared
 		/// <summary>
 		/// Gets all texture data of the file in MipMap-major order (face0_mip0 ... face1_mip0 ... face0_mip1 ...)
 		/// </summary>
-		/// <returns></returns>
 		public byte[] GetAllTextureDataMipMajor()
 		{
 			byte[] result = new byte[GetTotalSize()];

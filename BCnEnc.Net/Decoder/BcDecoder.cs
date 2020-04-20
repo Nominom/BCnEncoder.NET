@@ -15,6 +15,9 @@ namespace BCnEnc.Net.Decoder
 		public bool redAsLuminance = true;
 	}
 
+	/// <summary>
+	/// Decodes compressed files into Rgba format.
+	/// </summary>
 	public class BcDecoder
 	{
 		public DecoderOutputOptions OutputOptions { get; set; } = new DecoderOutputOptions();
@@ -76,6 +79,9 @@ namespace BCnEnc.Net.Decoder
 			}
 		}
 
+		/// <summary>
+		/// Read a KtxFile and decode it.
+		/// </summary>
 		public Image<Rgba32> Decode(KtxFile file)
 		{
 			if (IsSupportedRawFormat(file.Header.GlInternalFormat)) {

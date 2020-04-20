@@ -9,7 +9,7 @@ using SixLabors.ImageSharp.Processing;
 namespace BCnEnc.Net.Shared
 {
 	/// <summary>
-	/// Simple Linear Iterative Clustering
+	/// Simple Linear Iterative Clustering.
 	/// </summary>
 	public static class LinearClustering
 	{

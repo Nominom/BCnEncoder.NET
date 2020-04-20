@@ -24,6 +24,9 @@ namespace BCnEnc.Net.Encoder
 		public EncodingQuality quality = EncodingQuality.Balanced;
 	}
 
+	/// <summary>
+	/// Handles all encoding of images into compressed or uncompressed formats. For decoding, <see cref="Decoder.BcDecoder"/>
+	/// </summary>
 	public class BcEncoder
 	{
 		public EncoderInputOptions InputOptions { get; set; } = new EncoderInputOptions();
