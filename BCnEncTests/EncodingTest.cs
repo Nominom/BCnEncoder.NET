@@ -461,7 +461,7 @@ namespace BCnEncTests
 		[Fact]
 		public void Bc7RgbaBestQuality()
 		{
-			var image = ImageLoader.testAlphaGradient1;
+			var image = ImageLoader.testAlpha1;
 
 			TestHelper.ExecuteEncodingTest(image,
 				CompressionFormat.BC7,
@@ -473,7 +473,7 @@ namespace BCnEncTests
 		[Fact]
 		public void Bc7RgbaBalanced()
 		{
-			var image = ImageLoader.testAlphaGradient1;
+			var image = ImageLoader.testAlpha1;
 
 			TestHelper.ExecuteEncodingTest(image,
 				CompressionFormat.BC7,
@@ -485,7 +485,7 @@ namespace BCnEncTests
 		[Fact]
 		public void Bc7RgbaFast()
 		{
-			var image = ImageLoader.testAlphaGradient1;
+			var image = ImageLoader.testAlpha1;
 
 			TestHelper.ExecuteEncodingTest(image,
 				CompressionFormat.BC7,
