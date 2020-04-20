@@ -71,7 +71,6 @@ namespace BCnEnc.Net.Encoder
 			int next = 0;
 			for (int i = 0; i < 16; i++)
 			{
-				var index = 0;
 				var cluster = indices[i];
 				bool found = false;
 				for (int j = 0; j < next; j++)

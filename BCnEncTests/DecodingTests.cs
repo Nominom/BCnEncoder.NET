@@ -12,7 +12,7 @@ namespace BCnEncTests
 	{
 		[Fact]
 		public void Bc1Decode() {
-			using FileStream fs = File.OpenRead(@"..\..\..\testImages\test_decompress_bc1.ktx");
+			using FileStream fs = File.OpenRead(@"../../../testImages/test_decompress_bc1.ktx");
 			KtxFile file = KtxFile.Load(fs);
 			Assert.True(file.Header.VerifyHeader());
 			Assert.Equal((uint)1, file.Header.NumberOfFaces);
@@ -29,7 +29,7 @@ namespace BCnEncTests
 
 		[Fact]
 		public void Bc1AlphaDecode() {
-			using FileStream fs = File.OpenRead(@"..\..\..\testImages\test_decompress_bc1a.ktx");
+			using FileStream fs = File.OpenRead(@"../../../testImages/test_decompress_bc1a.ktx");
 			KtxFile file = KtxFile.Load(fs);
 			Assert.True(file.Header.VerifyHeader());
 			Assert.Equal((uint)1, file.Header.NumberOfFaces);
@@ -46,7 +46,7 @@ namespace BCnEncTests
 
 		[Fact]
 		public void Bc2Decode() {
-			using FileStream fs = File.OpenRead(@"..\..\..\testImages\test_decompress_bc2.ktx");
+			using FileStream fs = File.OpenRead(@"../../../testImages/test_decompress_bc2.ktx");
 			KtxFile file = KtxFile.Load(fs);
 			Assert.True(file.Header.VerifyHeader());
 			Assert.Equal((uint)1, file.Header.NumberOfFaces);
@@ -63,7 +63,7 @@ namespace BCnEncTests
 
 		[Fact]
 		public void Bc3Decode() {
-			using FileStream fs = File.OpenRead(@"..\..\..\testImages\test_decompress_bc3.ktx");
+			using FileStream fs = File.OpenRead(@"../../../testImages/test_decompress_bc3.ktx");
 			KtxFile file = KtxFile.Load(fs);
 			Assert.True(file.Header.VerifyHeader());
 			Assert.Equal((uint)1, file.Header.NumberOfFaces);
@@ -80,7 +80,7 @@ namespace BCnEncTests
 
 		[Fact]
 		public void Bc4Decode() {
-			using FileStream fs = File.OpenRead(@"..\..\..\testImages\test_decompress_bc4_unorm.ktx");
+			using FileStream fs = File.OpenRead(@"../../../testImages/test_decompress_bc4_unorm.ktx");
 			KtxFile file = KtxFile.Load(fs);
 			Assert.True(file.Header.VerifyHeader());
 			Assert.Equal((uint)1, file.Header.NumberOfFaces);
@@ -97,7 +97,7 @@ namespace BCnEncTests
 
 		[Fact]
 		public void Bc5Decode() {
-			using FileStream fs = File.OpenRead(@"..\..\..\testImages\test_decompress_bc5_unorm.ktx");
+			using FileStream fs = File.OpenRead(@"../../../testImages/test_decompress_bc5_unorm.ktx");
 			KtxFile file = KtxFile.Load(fs);
 			Assert.True(file.Header.VerifyHeader());
 			Assert.Equal((uint)1, file.Header.NumberOfFaces);
@@ -114,7 +114,7 @@ namespace BCnEncTests
 
 		[Fact]
 		public void Bc7DecodeRgb() {
-			using FileStream fs = File.OpenRead(@"..\..\..\testImages\test_decompress_bc7_rgb.ktx");
+			using FileStream fs = File.OpenRead(@"../../../testImages/test_decompress_bc7_rgb.ktx");
 			KtxFile file = KtxFile.Load(fs);
 			Assert.True(file.Header.VerifyHeader());
 			Assert.Equal((uint)1, file.Header.NumberOfFaces);
@@ -131,7 +131,7 @@ namespace BCnEncTests
 
 		[Fact]
 		public void Bc7DecodeUnorm() {
-			using FileStream fs = File.OpenRead(@"..\..\..\testImages\test_decompress_bc7_unorm.ktx");
+			using FileStream fs = File.OpenRead(@"../../../testImages/test_decompress_bc7_unorm.ktx");
 			KtxFile file = KtxFile.Load(fs);
 			Assert.True(file.Header.VerifyHeader());
 			Assert.Equal((uint)1, file.Header.NumberOfFaces);
@@ -148,7 +148,7 @@ namespace BCnEncTests
 
 		[Fact]
 		public void Bc7DecodeEveryBlockType() {
-			using FileStream fs = File.OpenRead(@"..\..\..\testImages\test_decompress_bc7_types.ktx");
+			using FileStream fs = File.OpenRead(@"../../../testImages/test_decompress_bc7_types.ktx");
 			KtxFile file = KtxFile.Load(fs);
 			Assert.True(file.Header.VerifyHeader());
 			Assert.Equal((uint)1, file.Header.NumberOfFaces);
