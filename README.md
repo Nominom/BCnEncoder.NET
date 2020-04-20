@@ -2,11 +2,20 @@
 A Cross-platform BCn / DXT encoding libary for .NET
 
 # What is it?
-This library is my attempt at writing a texture block compression library. 
+BCnEncoder.NET is a library for compressing rgba images to different block-compressed formats. It has no native dependencies and is .NET Standard 2.1 compatible.
+
+Supported formats are:
+ - Raw unsigned byte R, RG, RGB and RGBA formats
+ - BC1 (S3TC DXT1)
+ - BC2 (S3TC DXT3)
+ - BC3 (S3TC DXT5)
+ - BC4 (RGTC1)
+ - BC5 (RGTC2)
+ - BC7 (BPTC)
 
 # Current state
-The current state of this library is in early development, but I'm planning on implementing support for more codecs and 
-different algorithms. The current version is capable of encoding and decoding BC1-BC5 images in KTX format.
+The current state of this library is in development but quite usable. I'm planning on implementing support for more codecs and 
+different algorithms. The current version is capable of encoding and decoding BC1-BC5 and BC7 images in KTX format.
 Only KTX format is supported for compressed images, but I might implement DDS support later.
 
 # Dependencies
@@ -56,6 +65,12 @@ image.SaveAsPng(outFs);
 - [ ] Implement PCA to remove Accord.Statistics dependency
 - [ ] Implement saving and loading basic image formats to remove ImageSharp dependency
 
+# Contributing
+All contributions are welcome. I'll try to respond to bug reports and feature requests as fast as possible, but you can also fix things yourself and submit a pull request. Please note, that by submitting a pull request you accept that your code will be dual licensed under MIT and public domain Unlicense.
+
 # License
-This library is licenced under the [Unlicense](https://unlicense.org/), which means that it's under public domain. 
+This library is dual-licensed under the [Unlicense](https://unlicense.org/), and [MIT](https://opensource.org/licenses/MIT) licenses.
+
+You may use this code under the terms of either license.
+
 Please note, that any dependencies of this project are licensed under their own respective licenses.
