@@ -2,6 +2,34 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
+    
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+
+    <PackageLicenseExpression>MIT OR Unlicense</PackageLicenseExpression>
+    <Copyright />
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <Version>1.0.0</Version>
+    <Authors>Nominom</Authors>
+    <Company />
+    <Product>BCnEncoder.Net</Product>
+    <Description>BCnEncoder.NET is a library for compressing rgba images to different block-compressed formats. Currently only KTX output file format is supported. It has no native dependencies and is .NET Standard 2.1 compatible.
+
+Supported formats are:
+    Raw unsigned byte R, RG, RGB and RGBA formats
+    BC1 (S3TC DXT1)
+    BC2 (S3TC DXT3)
+    BC3 (S3TC DXT5)
+    BC4 (RGTC1)
+    BC5 (RGTC2)
+    BC7 (BPTC)</Description>
+    <PackageId>BCnEncoder.Net</PackageId>
+    <RepositoryUrl>https://github.com/Nominom/BCnEncoder.NET</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>BCn BC BC1 BC2 BC3 BC4 BC5 BC7 BPTC RGTC S3TC DXT1 DXT3 DXT5 ktx texture compression encoding decoding decompression image gpu</PackageTags>
+    <PackageProjectUrl>https://github.com/Nominom/BCnEncoder.NET</PackageProjectUrl>
+    <PackageReleaseNotes>Initial nuget release</PackageReleaseNotes>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
@@ -15,6 +43,7 @@
   <ItemGroup>
     <PackageReference Include="Accord.Statistics" Version="3.8.0" />
     <PackageReference Include="SixLabors.ImageSharp" Version="1.0.0-beta0007" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
   </ItemGroup>
 
 </Project>
