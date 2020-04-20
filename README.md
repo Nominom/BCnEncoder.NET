@@ -1,4 +1,5 @@
 [![Nuget](https://img.shields.io/nuget/v/BCnEncoder.Net)](https://www.nuget.org/packages/BCnEncoder.Net/)
+![Tests](https://github.com/Nominom/BCnEncoder.NET/workflows/Tests/badge.svg)
 
 # BCnEncoder.NET
 A Cross-platform BCn / DXT encoding libary for .NET

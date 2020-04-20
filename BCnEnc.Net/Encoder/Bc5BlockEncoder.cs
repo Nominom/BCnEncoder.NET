@@ -191,7 +191,8 @@ namespace BCnEnc.Net.Encoder
 				//colorBlock.Red1 = 255;
 				colorBlock = col0Setter(colorBlock, 0);
 				colorBlock = col1Setter(colorBlock, 255);
-				Debug.Assert(0 == SelectIndices(ref colorBlock));
+				var error = SelectIndices(ref colorBlock);
+				Debug.Assert(0 == error);
 				return colorBlock;
 			}
 

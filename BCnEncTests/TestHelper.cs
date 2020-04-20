@@ -8,6 +8,7 @@ using BCnEnc.Net.Shared;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Advanced;
 using SixLabors.ImageSharp.PixelFormats;
+using Xunit;
 using Xunit.Abstractions;
 
 namespace BCnEncTests
@@ -22,7 +23,7 @@ namespace BCnEncTests
 			var pixels = original.GetPixelSpan();
 			var pixels2 = img.GetPixelSpan();
 
-			return ImageQuality.PeakSignalToNoiseRatio(pixels, pixels2, false);
+			return ImageQuality.PeakSignalToNoiseRatio(pixels, pixels2, true);
 		}
 
 		public static void ExecuteEncodingTest(Image<Rgba32> image, CompressionFormat format, EncodingQuality quality, string filename, ITestOutputHelper output) {
@@ -35,7 +36,15 @@ namespace BCnEncTests
 			encoder.Encode(image, fs);
 			fs.Close();
 			var psnr = TestHelper.DecodeCheckPSNR(filename, image);
-			output.WriteLine("PSNR: " + psnr + "db");
+			output.WriteLine("RGBA PSNR: " + psnr + "db");
+			if(quality == EncodingQuality.Fast)
+			{
+				Assert.True(psnr > 25);
+			}
+			else
+			{
+				Assert.True(psnr > 30);
+			}
 		}
 	}
 }

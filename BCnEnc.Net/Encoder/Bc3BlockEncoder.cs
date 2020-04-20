@@ -157,7 +157,8 @@ namespace BCnEnc.Net.Encoder
 			if (hasExtremeValues && minAlpha == 255 && maxAlpha == 0) {
 				colorBlock.Alpha0 = 0;
 				colorBlock.Alpha1 = 255;
-				Debug.Assert(0 == SelectAlphaIndices(ref colorBlock));
+				var error = SelectAlphaIndices(ref colorBlock);
+				Debug.Assert(0 == error);
 				return colorBlock;
 			}
 

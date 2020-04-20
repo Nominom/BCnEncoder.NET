@@ -316,7 +316,7 @@ namespace BCnEncTests
 		[Fact]
 		public void Bc4RedBestQuality()
 		{
-			var image = ImageLoader.testRedGreen1;
+			var image = ImageLoader.testHeight1;
 
 			TestHelper.ExecuteEncodingTest(image,
 				CompressionFormat.BC4,
@@ -328,7 +328,7 @@ namespace BCnEncTests
 		[Fact]
 		public void Bc4RedBalanced()
 		{
-			var image = ImageLoader.testRedGreen1;
+			var image = ImageLoader.testHeight1;
 
 			TestHelper.ExecuteEncodingTest(image,
 				CompressionFormat.BC4,
@@ -340,7 +340,7 @@ namespace BCnEncTests
 		[Fact]
 		public void Bc4RedFast()
 		{
-			var image = ImageLoader.testRedGreen1;
+			var image = ImageLoader.testHeight1;
 
 			TestHelper.ExecuteEncodingTest(image,
 				CompressionFormat.BC4,

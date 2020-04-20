@@ -116,9 +116,6 @@ namespace BCnEnc.Net.Shared
 			return error;
 		}
 
-		public float CalculateSsimQuality(RawBlock4X4Rgba32 other)
-			=> SSIM.CalculateSSIM(other.AsSpan, AsSpan);
-
 		public RawBlock4X4Ycbcr ToRawBlockYcbcr() {
 			RawBlock4X4Ycbcr rawYcbcr = new RawBlock4X4Ycbcr();
 			var pixels = AsSpan;

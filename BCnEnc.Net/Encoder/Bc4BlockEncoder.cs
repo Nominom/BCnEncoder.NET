@@ -139,7 +139,8 @@ namespace BCnEnc.Net.Encoder
 			if (hasExtremeValues && min == 255 && max == 0) {
 				colorBlock.Red0 = 0;
 				colorBlock.Red1 = 255;
-				Debug.Assert(0 == SelectIndices(ref colorBlock));
+				var error = SelectIndices(ref colorBlock);
+				Debug.Assert(0 == error);
 				return colorBlock;
 			}
 
