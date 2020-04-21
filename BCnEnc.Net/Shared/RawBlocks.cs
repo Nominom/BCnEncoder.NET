@@ -70,18 +70,8 @@ namespace BCnEnc.Net.Shared
 				crError += cre * cre;
 			}
 
-			yError /= 16;
-			cbError /= 16;
-			crError /= 16;
-
-			yError = MathF.Sqrt(yError);
-			cbError = MathF.Sqrt(cbError);
-			crError = MathF.Sqrt(crError);
-
 			var error = yError * 2 + cbError / 2 + crError / 2;
-			if (error > 1) {
-				error = 1;
-			}
+
 			return error;
 		}
 
@@ -106,11 +96,6 @@ namespace BCnEnc.Net.Shared
 				crError += cre * cre;
 				alphaError += ae * ae;
 			}
-
-			yError /= 16;
-			cbError /= 16;
-			crError /= 16;
-			alphaError /= 16;
 
 			var error = yError + cbError + crError + alphaError;
 			return error;
@@ -167,18 +152,8 @@ namespace BCnEnc.Net.Shared
 				crError += cre * cre;
 			}
 
-			yError /= 16;
-			cbError /= 16;
-			crError /= 16;
-
-			yError = MathF.Sqrt(yError);
-			cbError = MathF.Sqrt(cbError);
-			crError = MathF.Sqrt(crError);
-
 			var error = yError * 2 + cbError / 2 + crError / 2;
-			if (error > 1) {
-				error = 1;
-			}
+
 			return error;
 		}
 	}

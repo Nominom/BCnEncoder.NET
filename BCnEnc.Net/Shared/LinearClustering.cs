@@ -126,7 +126,7 @@ namespace BCnEnc.Net.Shared
 		/// M should be in range of 1 to 20.
 		/// </summary>
 		public static int[] ClusterPixels(ReadOnlySpan<Rgba32> pixels, int width, int height,
-			int clusters, float m = 10, int maxIterations = 10)
+			int clusters, float m = 10, int maxIterations = 10, bool enforceConnectivity = true)
 		{
 
 			if (clusters < 2)
@@ -193,7 +193,9 @@ namespace BCnEnc.Net.Shared
 				Error = RecalculateCenters(clusters, m, labXys, clusterIndices, previousCenters, S, ref clusterCenters);
 			}
 
-			clusterIndices = EnforceConnectivity(clusterIndices, width, height, clusters);
+			if (enforceConnectivity) {
+				clusterIndices = EnforceConnectivity(clusterIndices, width, height, clusters);
+			}
 			
 			return clusterIndices;
 		}
@@ -243,23 +245,54 @@ namespace BCnEnc.Net.Shared
 		private static ClusterCenter[] InitialClusterCenters(int width, int height, int clusters, float S, LabXy[] labXys)
 		{
 			ClusterCenter[] clusterCenters = new ClusterCenter[clusters];
-			int cIdx = 0;
-			//Choose initial centers
-			for (float x = S / 2; x < width; x += S)
-			{
-				for (float y = S / 2; y < height; y += S)
-				{
-					if (cIdx >= clusterCenters.Length)
-					{
-						break;
-					}
 
-					int i = (int)x + (int)y * width;
-					clusterCenters[cIdx] = new ClusterCenter(labXys[i]);
-					cIdx++;
+			if (clusters == 2) {
+				int x0 = (int)MathF.Floor(width * 0.333f);
+				int y0 = (int)MathF.Floor(height * 0.333f);
+
+				int x1 = (int)MathF.Floor(width * 0.666f);
+				int y1 = (int)MathF.Floor(height * 0.666f);
+
+				int i0 = x0 + y0 * width;
+				clusterCenters[0] = new ClusterCenter(labXys[i0]);
+
+				int i1 = x1 + y1 * width;
+				clusterCenters[1] = new ClusterCenter(labXys[i1]);
+			}else if(clusters == 3)
+			{
+				int x0 = (int)MathF.Floor(width * 0.333f);
+				int y0 = (int)MathF.Floor(height * 0.333f);
+				int i0 = x0 + y0 * width;
+				clusterCenters[0] = new ClusterCenter(labXys[i0]);
+
+				int x1 = (int)MathF.Floor(width * 0.666f);
+				int y1 = (int)MathF.Floor(height * 0.333f);
+				int i1 = x1 + y1 * width;
+				clusterCenters[1] = new ClusterCenter(labXys[i1]);
+
+				int x2 = (int)MathF.Floor(width * 0.5f);
+				int y2 = (int)MathF.Floor(height * 0.666f);
+				int i2 = x2 + y2 * width;
+				clusterCenters[2] = new ClusterCenter(labXys[i2]);
+			}
+			else {
+				int cIdx = 0;
+				//Choose initial centers
+				for (float x = S / 2; x < width; x += S)
+				{
+					for (float y = S / 2; y < height; y += S)
+					{
+						if (cIdx >= clusterCenters.Length)
+						{
+							break;
+						}
+
+						int i = (int)x + (int)y * width;
+						clusterCenters[cIdx] = new ClusterCenter(labXys[i]);
+						cIdx++;
+					}
 				}
 			}
-
 			return clusterCenters;
 		}
 
@@ -353,7 +386,7 @@ namespace BCnEnc.Net.Shared
 
 						// If this is unusually small cluster or this label is already used,
 						// merge with adjacent cluster
-						if (clusterX.Count <= (sSquared / 4) || usedLabels[label])
+						if (clusterX.Count < (sSquared / 4) || usedLabels[label])
 						{
 							for (int i = 0; i < clusterX.Count; ++i)
 							{

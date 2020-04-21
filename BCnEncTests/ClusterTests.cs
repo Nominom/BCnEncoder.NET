@@ -15,7 +15,7 @@ namespace BCnEncTests
 	{
 		[Fact]
 		public void Clusterize() {
-			var testImage = ImageLoader.testBlur1;
+			using var testImage = ImageLoader.testBlur1.Clone();
 			var pixels = testImage.GetPixelSpan();
 			int numClusters = (testImage.Width / 32) * (testImage.Height / 32);
 			

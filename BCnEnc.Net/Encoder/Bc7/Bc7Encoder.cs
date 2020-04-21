@@ -15,76 +15,29 @@ namespace BCnEnc.Net.Encoder
 	internal class Bc7Encoder : IBcBlockEncoder
 	{
 
-		private int numClusters;
-		private int[] clusterIndices;
-		private int pixelWidth;
-		private int pixelHeight;
-
-		void IBcBlockEncoder.SetReferenceData(ReadOnlySpan<Rgba32> originalPixels, int pixelWidth, int pixelHeight)
-		{
-			this.pixelWidth = pixelWidth;
-			this.pixelHeight = pixelHeight;
-			numClusters = (pixelWidth / 4) * (pixelHeight / 4);
-			if (numClusters > 4)
-			{
-				clusterIndices = LinearClustering.ClusterPixels(originalPixels, pixelWidth, pixelHeight,
-					numClusters, 10f, 5);
-			}
-			else
-			{
-				clusterIndices = new int[originalPixels.Length];
-			}
-		}
 		public byte[] Encode(RawBlock4X4Rgba32[,] blocks, int blockWidth, int blockHeight, EncodingQuality quality,
 			bool parallel = true)
 		{
 
-			if (clusterIndices == null)
-			{
-				throw new InvalidOperationException("Reference data needs to be passed before calling Encode");
-			}
-
 			byte[] outputData = new byte[blockWidth * blockHeight * Marshal.SizeOf<Bc7Block>()];
 			RawBlock4X4Rgba32[] inputBlocks = blocks.Reshape(MatrixOrder.FortranColumnMajor);
-			ClusterIndices4X4[] inputClusterIndices = CreateClusterIndexBlocks(blockWidth, blockHeight);
 
 			Span<Bc7Block> outputBlocks = MemoryMarshal.Cast<byte, Bc7Block>(outputData);
 
-			Debug.Assert(inputBlocks.Length == inputClusterIndices.Length);
-
-#if DEBUG
-			int[] subsetCounts = new int[3];
-			foreach (var indices4X4 in inputClusterIndices)
-			{
-				var count = indices4X4.NumClusters;
-				if (count == 1)
-				{
-					subsetCounts[0]++;
-				}
-				else if (count == 2)
-				{
-					subsetCounts[1]++;
-				}
-				else
-				{
-					subsetCounts[2]++;
-				}
-			}
-#endif
 
 			if (parallel)
 			{
 				Parallel.For(0, inputBlocks.Length, i =>
 				{
 					Span<Bc7Block> outputBlocks = MemoryMarshal.Cast<byte, Bc7Block>(outputData);
-					outputBlocks[i] = EncodeBlock(inputBlocks[i], inputClusterIndices[i], quality);
+					outputBlocks[i] = EncodeBlock(inputBlocks[i], quality);
 				});
 			}
 			else
 			{
 				for (int i = 0; i < inputBlocks.Length; i++)
 				{
-					outputBlocks[i] = EncodeBlock(inputBlocks[i], inputClusterIndices[i], quality);
+					outputBlocks[i] = EncodeBlock(inputBlocks[i], quality);
 				}
 			}
 
@@ -102,41 +55,42 @@ namespace BCnEnc.Net.Encoder
 			return GLFormat.GL_RGBA;
 		}
 
-		private ClusterIndices4X4[] CreateClusterIndexBlocks(int blockWidth, int blockHeight)
+		private static ClusterIndices4X4 CreateClusterIndexBlock(RawBlock4X4Rgba32 raw, out int outputNumClusters, 
+			int numClusters = 3)
 		{
 
-			ClusterIndices4X4[] indexBlocks = new ClusterIndices4X4[blockWidth * blockHeight];
+			ClusterIndices4X4 indexBlock = new ClusterIndices4X4();
 
-			for (int x = 0; x < pixelWidth; x++)
+			var indices = LinearClustering.ClusterPixels(raw.AsSpan, 4, 4,
+				numClusters, 1, 10, false);
+
+			var output = indexBlock.AsSpan;
+			for (int i = 0; i < output.Length; i++)
 			{
-				for (int y = 0; y < pixelHeight; y++)
-				{
-					int index = clusterIndices[x + y * pixelWidth];
-					int blockIndexX = (int)MathF.Floor(x / 4.0f);
-					int blockIndexY = (int)MathF.Floor(y / 4.0f);
-					int bI = blockIndexX + blockIndexY * blockWidth;
-
-					int blockInternalIndexX = x % 4;
-					int blockInternalIndexY = y % 4;
-
-					indexBlocks[bI][blockInternalIndexX, blockInternalIndexY] = index;
-				}
+				output[i] = indices[i];
 			}
 
-			return indexBlocks;
+			int nClusters = indexBlock.NumClusters;
+			if (nClusters < numClusters)
+			{
+				indexBlock = indexBlock.Reduce(out nClusters);
+			}
+
+			outputNumClusters = nClusters;
+			return indexBlock;
 		}
 
 
-		private Bc7Block EncodeBlock(RawBlock4X4Rgba32 rawBlock, ClusterIndices4X4 indicesBlock, EncodingQuality quality)
+		private static Bc7Block EncodeBlock(RawBlock4X4Rgba32 rawBlock, EncodingQuality quality)
 		{
 			switch (quality)
 			{
 				case EncodingQuality.Fast:
-					return Bc7EncoderFast.EncodeBlock(rawBlock, indicesBlock);
+					return Bc7EncoderFast.EncodeBlock(rawBlock);
 				case EncodingQuality.Balanced:
-					return Bc7EncoderBalanced.EncodeBlock(rawBlock, indicesBlock);
+					return Bc7EncoderBalanced.EncodeBlock(rawBlock);
 				case EncodingQuality.BestQuality:
-					return Bc7EncoderBestQuality.EncodeBlock(rawBlock, indicesBlock);
+					return Bc7EncoderBestQuality.EncodeBlock(rawBlock);
 				default:
 					throw new ArgumentOutOfRangeException(nameof(quality), quality, null);
 			}
@@ -144,172 +98,214 @@ namespace BCnEnc.Net.Encoder
 
 		private static class Bc7EncoderFast
 		{
+			private const float errorThreshold = 0.005f;
+			private const int maxTries = 5;
 
-
-			public static Bc7Block EncodeBlock(RawBlock4X4Rgba32 rawBlock, ClusterIndices4X4 indicesBlock)
+			private static IEnumerable<Bc7Block> TryMethods(RawBlock4X4Rgba32 rawBlock, int[] best2SubsetPartitions, int[] best3SubsetPartitions, bool alpha)
 			{
-				bool hasAlpha = rawBlock.HasTransparentPixels();
-
-				var reduced = indicesBlock.Reduce(out int numDistinctClusters);
-
-				int best2SubsetPartition = Bc7EncodingHelpers.SelectBest2SubsetPartition(reduced, numDistinctClusters, out int subset2Error);
-				int best3SubsetPartition = Bc7EncodingHelpers.SelectBest3SubsetPartition(reduced, numDistinctClusters, out int subset3Error);
-
-				List<Bc7Block> blocks = new List<Bc7Block>();
-
-				if (hasAlpha)
+				if (alpha)
 				{
-					blocks.Add(Bc7Mode5Encoder.EncodeBlock(rawBlock, 5));
-					blocks.Add(Bc7Mode6Encoder.EncodeBlock(rawBlock, 3));
+					yield return Bc7Mode6Encoder.EncodeBlock(rawBlock, 5);
+					yield return Bc7Mode5Encoder.EncodeBlock(rawBlock, 3);
 				}
 				else
 				{
-
-					blocks.Add(Bc7Mode6Encoder.EncodeBlock(rawBlock, 4));
-
-					blocks.Add(Bc7Mode1Encoder.EncodeBlock(rawBlock, 2, best2SubsetPartition));
-					//blocks.Add(Bc7Mode6Encoder.EncodeBlock(rawBlock, 3));
-				}
-
-				int bestIndex = 0;
-				float bestError = 0;
-				bool first = true;
-
-
-				for (int i = 0; i < blocks.Count; i++)
-				{
-					var decoded = blocks[i].Decode();
-
-					float error = rawBlock.CalculateYCbCrAlphaError(decoded);
-					if (error < bestError || first)
-					{
-						first = false;
-						bestError = error;
-						bestIndex = i;
+					yield return Bc7Mode6Encoder.EncodeBlock(rawBlock, 6);
+					for (int i = 0; i < 64; i++) {
+						if(best3SubsetPartitions[i] < 16) {
+							yield return Bc7Mode0Encoder.EncodeBlock(rawBlock, 3, best3SubsetPartitions[i]);
+						}
+						
+						yield return Bc7Mode1Encoder.EncodeBlock(rawBlock, 4, best2SubsetPartitions[i]);
+						
 					}
 				}
+			}
 
-				return blocks[bestIndex];
+			public static Bc7Block EncodeBlock(RawBlock4X4Rgba32 rawBlock)
+			{
+				bool hasAlpha = rawBlock.HasTransparentPixels();
+
+				var indexBlock2 = CreateClusterIndexBlock(rawBlock, out int clusters2, 2);
+				var indexBlock3 = CreateClusterIndexBlock(rawBlock, out int clusters3, 3);
+
+				if (clusters2 < 2) {
+					clusters2 = clusters3;
+					indexBlock2 = indexBlock3;
+				}
+
+				int[] best2SubsetPartitions = Bc7EncodingHelpers.Rank2SubsetPartitions(indexBlock2, clusters2);
+				int[] best3SubsetPartitions = Bc7EncodingHelpers.Rank3SubsetPartitions(indexBlock3, clusters3);
+
+				float bestError = 99999;
+				Bc7Block best = new Bc7Block();
+				int tries = 0;
+				foreach (Bc7Block block in TryMethods(rawBlock, best2SubsetPartitions, best3SubsetPartitions, hasAlpha)) {
+					var decoded = block.Decode();
+					float error = rawBlock.CalculateYCbCrAlphaError(decoded);
+					tries++;
+
+					if(error < bestError) {
+						best = block;
+						bestError = error;
+					}
+
+					if (error < errorThreshold || tries > maxTries) {
+						break;
+					}
+
+				}
+
+				return best;
 			}
 		}
 
 		private static class Bc7EncoderBalanced
 		{
+			private const float errorThreshold = 0.005f;
+			private const int maxTries = 25;
 
-			public static Bc7Block EncodeBlock(RawBlock4X4Rgba32 rawBlock, ClusterIndices4X4 indicesBlock)
+			private static IEnumerable<Bc7Block> TryMethods(RawBlock4X4Rgba32 rawBlock, int[] best2SubsetPartitions, int[] best3SubsetPartitions, bool alpha)
 			{
-				bool hasAlpha = rawBlock.HasTransparentPixels();
-
-				var reduced = indicesBlock.Reduce(out int numDistinctClusters);
-
-				int best2SubsetPartition = Bc7EncodingHelpers.SelectBest2SubsetPartition(reduced, numDistinctClusters, out int subset2Error);
-				int best3SubsetPartition = Bc7EncodingHelpers.SelectBest3SubsetPartition(reduced, numDistinctClusters, out int subset3Error);
-
-				List<Bc7Block> blocks = new List<Bc7Block>();
-
-				if (hasAlpha)
+				if (alpha)
 				{
-					blocks.Add(Bc7Mode5Encoder.EncodeBlock(rawBlock, 5));
-					blocks.Add(Bc7Mode6Encoder.EncodeBlock(rawBlock, 5));
-					blocks.Add(Bc7Mode7Encoder.EncodeBlock(rawBlock, 3, best2SubsetPartition));
+					yield return Bc7Mode6Encoder.EncodeBlock(rawBlock, 6);
+					yield return Bc7Mode5Encoder.EncodeBlock(rawBlock, 4);
+					yield return Bc7Mode4Encoder.EncodeBlock(rawBlock, 4);
+					for (int i = 0; i < 64; i++)
+					{
+						yield return Bc7Mode7Encoder.EncodeBlock(rawBlock, 3, best2SubsetPartitions[i]);
+					}
 				}
 				else
 				{
-					if (best3SubsetPartition < 16)
-					{
-						blocks.Add(Bc7Mode0Encoder.EncodeBlock(rawBlock, 3, best3SubsetPartition));
+					yield return Bc7Mode6Encoder.EncodeBlock(rawBlock, 6);
+					yield return Bc7Mode5Encoder.EncodeBlock(rawBlock, 4);
+					yield return Bc7Mode4Encoder.EncodeBlock(rawBlock, 4);
+					for (int i = 0; i < 64; i++) {
+						if(best3SubsetPartitions[i] < 16) {
+							yield return Bc7Mode0Encoder.EncodeBlock(rawBlock, 3, best3SubsetPartitions[i]);
+						}
+						else {
+							yield return Bc7Mode2Encoder.EncodeBlock(rawBlock, 5, best3SubsetPartitions[i]);
+						}
+
+						yield return Bc7Mode1Encoder.EncodeBlock(rawBlock, 4, best2SubsetPartitions[i]);
 					}
-					else
-					{
-						blocks.Add(Bc7Mode2Encoder.EncodeBlock(rawBlock, 3, best3SubsetPartition));
-					}
+				}
+			}
 
-					blocks.Add(Bc7Mode6Encoder.EncodeBlock(rawBlock, 5));
+			public static Bc7Block EncodeBlock(RawBlock4X4Rgba32 rawBlock)
+			{
+				bool hasAlpha = rawBlock.HasTransparentPixels();
 
-					blocks.Add(Bc7Mode1Encoder.EncodeBlock(rawBlock, 3, best2SubsetPartition));
-					blocks.Add(Bc7Mode3Encoder.EncodeBlock(rawBlock, 5, best2SubsetPartition));
+				var indexBlock2 = CreateClusterIndexBlock(rawBlock, out int clusters2, 2);
+				var indexBlock3 = CreateClusterIndexBlock(rawBlock, out int clusters3, 3);
 
+				if (clusters2 < 2) {
+					clusters2 = clusters3;
+					indexBlock2 = indexBlock3;
 				}
 
-				int bestIndex = 0;
-				float bestError = 0;
-				bool first = true;
+				int[] best2SubsetPartitions = Bc7EncodingHelpers.Rank2SubsetPartitions(indexBlock2, clusters2);
+				int[] best3SubsetPartitions = Bc7EncodingHelpers.Rank3SubsetPartitions(indexBlock3, clusters3);
 
-
-				for (int i = 0; i < blocks.Count; i++)
-				{
-					var decoded = blocks[i].Decode();
-
+				float bestError = 99999;
+				Bc7Block best = new Bc7Block();
+				int tries = 0;
+				foreach (Bc7Block block in TryMethods(rawBlock, best2SubsetPartitions, best3SubsetPartitions, hasAlpha)) {
+					var decoded = block.Decode();
 					float error = rawBlock.CalculateYCbCrAlphaError(decoded);
-					if (error < bestError || first)
-					{
-						first = false;
+					tries++;
+
+					if(error < bestError) {
+						best = block;
 						bestError = error;
-						bestIndex = i;
 					}
+
+					if (error < errorThreshold || tries > maxTries) {
+						break;
+					}
+
 				}
 
-				return blocks[bestIndex];
+				return best;
 			}
 		}
 
 		private static class Bc7EncoderBestQuality
 		{
 
-			public static Bc7Block EncodeBlock(RawBlock4X4Rgba32 rawBlock, ClusterIndices4X4 indicesBlock)
+			private const float errorThreshold = 0.001f;
+			private const int maxTries = 40;
+
+			private static IEnumerable<Bc7Block> TryMethods(RawBlock4X4Rgba32 rawBlock, int[] best2SubsetPartitions, int[] best3SubsetPartitions, bool alpha)
 			{
-				bool hasAlpha = rawBlock.HasTransparentPixels();
-
-				var reduced = indicesBlock.Reduce(out int numDistinctClusters);
-
-				int best2SubsetPartition = Bc7EncodingHelpers.SelectBest2SubsetPartition(reduced, numDistinctClusters, out int subset2Error);
-				int best3SubsetPartition = Bc7EncodingHelpers.SelectBest3SubsetPartition(reduced, numDistinctClusters, out int subset3Error);
-
-				List<Bc7Block> blocks = new List<Bc7Block>();
-
-				if (hasAlpha)
+				if (alpha)
 				{
-					blocks.Add(Bc7Mode4Encoder.EncodeBlock(rawBlock, 5));
-					blocks.Add(Bc7Mode5Encoder.EncodeBlock(rawBlock, 5));
-					blocks.Add(Bc7Mode6Encoder.EncodeBlock(rawBlock, 8));
-					blocks.Add(Bc7Mode7Encoder.EncodeBlock(rawBlock, 4, best2SubsetPartition));
+					yield return Bc7Mode6Encoder.EncodeBlock(rawBlock, 8);
+					yield return Bc7Mode5Encoder.EncodeBlock(rawBlock, 5);
+					yield return Bc7Mode4Encoder.EncodeBlock(rawBlock, 5);
+					for (int i = 0; i < 64; i++)
+					{
+						yield return Bc7Mode7Encoder.EncodeBlock(rawBlock, 4, best2SubsetPartitions[i]);
+
+					}
 				}
 				else
 				{
-					if (best3SubsetPartition < 16)
-					{
-						blocks.Add(Bc7Mode0Encoder.EncodeBlock(rawBlock, 4, best3SubsetPartition));
+					yield return Bc7Mode6Encoder.EncodeBlock(rawBlock, 8);
+					yield return Bc7Mode5Encoder.EncodeBlock(rawBlock, 5);
+					yield return Bc7Mode4Encoder.EncodeBlock(rawBlock, 5);
+					for (int i = 0; i < 64; i++) {
+						if(best3SubsetPartitions[i] < 16) {
+							yield return Bc7Mode0Encoder.EncodeBlock(rawBlock, 4, best3SubsetPartitions[i]);
+						}
+						yield return Bc7Mode2Encoder.EncodeBlock(rawBlock, 5, best3SubsetPartitions[i]);
+
+						yield return Bc7Mode1Encoder.EncodeBlock(rawBlock, 4, best2SubsetPartitions[i]);
+						yield return Bc7Mode3Encoder.EncodeBlock(rawBlock, 5, best2SubsetPartitions[i]);
+
 					}
-					blocks.Add(Bc7Mode2Encoder.EncodeBlock(rawBlock, 5, best3SubsetPartition));
+				}
+			}
 
-					blocks.Add(Bc7Mode4Encoder.EncodeBlock(rawBlock, 5));
-					blocks.Add(Bc7Mode5Encoder.EncodeBlock(rawBlock, 5));
+			public static Bc7Block EncodeBlock(RawBlock4X4Rgba32 rawBlock)
+			{
+				bool hasAlpha = rawBlock.HasTransparentPixels();
 
-					blocks.Add(Bc7Mode6Encoder.EncodeBlock(rawBlock, 8));
+				var indexBlock2 = CreateClusterIndexBlock(rawBlock, out int clusters2, 2);
+				var indexBlock3 = CreateClusterIndexBlock(rawBlock, out int clusters3, 3);
 
-					blocks.Add(Bc7Mode1Encoder.EncodeBlock(rawBlock, 4, best2SubsetPartition));
-					blocks.Add(Bc7Mode3Encoder.EncodeBlock(rawBlock, 5, best2SubsetPartition));
+				if (clusters2 < 2) {
+					clusters2 = clusters3;
+					indexBlock2 = indexBlock3;
 				}
 
-				int bestIndex = 0;
-				float bestError = 0;
-				bool first = true;
+				int[] best2SubsetPartitions = Bc7EncodingHelpers.Rank2SubsetPartitions(indexBlock2, clusters2);
+				int[] best3SubsetPartitions = Bc7EncodingHelpers.Rank3SubsetPartitions(indexBlock3, clusters3);
 
 
-				for (int i = 0; i < blocks.Count; i++)
-				{
-					var decoded = blocks[i].Decode();
-
+				float bestError = 99999;
+				Bc7Block best = new Bc7Block();
+				int tries = 0;
+				foreach (Bc7Block block in TryMethods(rawBlock, best2SubsetPartitions, best3SubsetPartitions, hasAlpha)) {
+					var decoded = block.Decode();
 					float error = rawBlock.CalculateYCbCrAlphaError(decoded);
-					if (error < bestError || first)
-					{
-						first = false;
+					tries++;
+
+					if(error < bestError) {
+						best = block;
 						bestError = error;
-						bestIndex = i;
 					}
+
+					if (error < errorThreshold || tries > maxTries) {
+						break;
+					}
+
 				}
 
-				return blocks[bestIndex];
+				return best;
 			}
 		}
 	}

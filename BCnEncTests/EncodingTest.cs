@@ -435,6 +435,18 @@ namespace BCnEncTests
 		}
 
 		[Fact]
+		public void Bc7LennaBalanced()
+		{
+			var image = ImageLoader.testLenna;
+
+			TestHelper.ExecuteEncodingTest(image,
+				CompressionFormat.BC7,
+				EncodingQuality.Balanced, 
+				"encoding_bc7_lenna_balanced.ktx",
+				output);
+		}
+
+		[Fact]
 		public void Bc7RgbFast()
 		{
 			var image = ImageLoader.testRgbHard1;

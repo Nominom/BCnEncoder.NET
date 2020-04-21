@@ -14,6 +14,7 @@ namespace BCnEncTests
 		public static Image<Rgba32> testAlpha1 { get; } = LoadTestImage("../../../testImages/test_alpha_1_512.png");
 		public static Image<Rgba32> testRedGreen1 { get; } = LoadTestImage("../../../testImages/test_red_green_1_64.png");
 		public static Image<Rgba32> testRgbHard1 { get; } = LoadTestImage("../../../testImages/test_rgb_hard_1.png");
+		public static Image<Rgba32> testLenna { get; } = LoadTestImage("../../../testImages/test_lenna_512.png");
 		
 		public static Image<Rgba32>[] testCubemap { get; } = new [] {
 			LoadTestImage("../../../testImages/cubemap/right.png"),

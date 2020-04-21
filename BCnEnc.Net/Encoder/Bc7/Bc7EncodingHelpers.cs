@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using BCnEnc.Net.Shared;
@@ -374,6 +375,66 @@ namespace BCnEnc.Net.Encoder
 			return bestPartition;
 		}
 
+		public static int[] Rank2SubsetPartitions(ClusterIndices4X4 reducedIndicesBlock, int numDistinctClusters)
+		{
+			int[] output = Enumerable.Range(0, 64).ToArray();
+
+			
+			int CalculatePartitionError(int partitionIndex)
+			{
+				int error = 0;
+				ReadOnlySpan<int> partitionTable = Bc7Block.Subsets2PartitionTable[partitionIndex];
+				Span<int> subset0 = stackalloc int[numDistinctClusters];
+				Span<int> subset1 = stackalloc int[numDistinctClusters];
+				int max0Idx = 0;
+				int max1Idx = 0;
+
+				//Calculate largest cluster index for each subset 
+				for (int i = 0; i < 16; i++)
+				{
+					if (partitionTable[i] == 0)
+					{
+						int r = reducedIndicesBlock[i];
+						subset0[r]++;
+						int count = subset0[r];
+						if (count > subset0[max0Idx])
+						{
+							max0Idx = r;
+						}
+					}
+					else
+					{
+						int r = reducedIndicesBlock[i];
+						subset1[r]++;
+						int count = subset1[r];
+						if (count > subset1[max1Idx])
+						{
+							max1Idx = r;
+						}
+					}
+				}
+
+				// Calculate error by counting as error everything that does not match the largest cluster
+				for (int i = 0; i < 16; i++)
+				{
+					if (partitionTable[i] == 0)
+					{
+						if (reducedIndicesBlock[i] != max0Idx) error++;
+					}
+					else
+					{
+						if (reducedIndicesBlock[i] != max1Idx) error++;
+					}
+				}
+
+				return error;
+			}
+
+			output = output.OrderBy(CalculatePartitionError).ToArray();
+
+			return output;
+		}
+
 		public static int SelectBest3SubsetPartition(ClusterIndices4X4 reducedIndicesBlock, int numDistinctClusters, out int bestError)
 		{
 			bool first = true;
@@ -471,6 +532,82 @@ namespace BCnEnc.Net.Encoder
 			}
 
 			return bestPartition;
+		}
+
+		public static int[] Rank3SubsetPartitions(ClusterIndices4X4 reducedIndicesBlock, int numDistinctClusters)
+		{
+			int[] output = Enumerable.Range(0, 64).ToArray();
+
+			int CalculatePartitionError(int partitionIndex)
+			{
+				int error = 0;
+				ReadOnlySpan<int> partitionTable = Bc7Block.Subsets3PartitionTable[partitionIndex];
+
+				Span<int> subset0 = stackalloc int[numDistinctClusters];
+				Span<int> subset1 = stackalloc int[numDistinctClusters];
+				Span<int> subset2 = stackalloc int[numDistinctClusters];
+				int max0Idx = 0;
+				int max1Idx = 0;
+				int max2Idx = 0;
+
+				//Calculate largest cluster index for each subset 
+				for (int i = 0; i < 16; i++)
+				{
+					if (partitionTable[i] == 0)
+					{
+						int r = reducedIndicesBlock[i];
+						subset0[r]++;
+						int count = subset0[r];
+						if (count > subset0[max0Idx])
+						{
+							max0Idx = r;
+						}
+					}
+					else if (partitionTable[i] == 1)
+					{
+						int r = reducedIndicesBlock[i];
+						subset1[r]++;
+						int count = subset1[r];
+						if (count > subset1[max1Idx])
+						{
+							max1Idx = r;
+						}
+					}
+					else
+					{
+						int r = reducedIndicesBlock[i];
+						subset2[r]++;
+						int count = subset2[r];
+						if (count > subset2[max2Idx])
+						{
+							max2Idx = r;
+						}
+					}
+				}
+
+				// Calculate error by counting as error everything that does not match the largest cluster
+				for (int i = 0; i < 16; i++)
+				{
+					if (partitionTable[i] == 0)
+					{
+						if (reducedIndicesBlock[i] != max0Idx) error++;
+					}
+					else if (partitionTable[i] == 1)
+					{
+						if (reducedIndicesBlock[i] != max1Idx) error++;
+					}
+					else
+					{
+						if (reducedIndicesBlock[i] != max2Idx) error++;
+					}
+				}
+
+				return error;
+			}
+
+			output = output.OrderBy(CalculatePartitionError).ToArray();
+
+			return output;
 		}
 
 
@@ -838,6 +975,37 @@ namespace BCnEnc.Net.Encoder
 			while (variation > 0)
 			{
 				bool foundBetter = false;
+
+				for (int i = 0; i < varPatternR.Length; i++)
+				{
+					ColorRgba32 testEndPoint0 = new ColorRgba32(
+						(byte)(ep0.r - variation * varPatternR[i]),
+						(byte)(ep0.g - variation * varPatternG[i]),
+						(byte)(ep0.b - variation * varPatternB[i]),
+						(byte)(ep0.a - variation * varPatternA[i])
+					);
+
+					ColorRgba32 testEndPoint1 = new ColorRgba32(
+						(byte)(ep1.r + variation * varPatternR[i]),
+						(byte)(ep1.g + variation * varPatternG[i]),
+						(byte)(ep1.b + variation * varPatternB[i]),
+						(byte)(ep1.a + variation * varPatternA[i])
+					);
+					ClampEndpoint(ref testEndPoint0, colorMax, alphaMax);
+					ClampEndpoint(ref testEndPoint1, colorMax, alphaMax);
+
+					float error = TrySubsetEndpoints(type, raw,
+						ExpandEndpoint(type, testEndPoint0, pBit0),
+						ExpandEndpoint(type, testEndPoint1, pBit1), partitionTable, subsetIndex, type4IdxMode
+					);
+					if (error < bestError)
+					{
+						bestError = error;
+						ep0 = testEndPoint0;
+						ep1 = testEndPoint1;
+						foundBetter = true;
+					}
+				}
 
 				for (int i = 0; i < varPatternR.Length; i++)
 				{
