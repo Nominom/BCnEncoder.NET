@@ -38,6 +38,7 @@ BcEncoder encoder = new BcEncoder();
 encoder.OutputOptions.generateMipMaps = true;
 encoder.OutputOptions.quality = EncodingQuality.Balanced;
 encoder.OutputOptions.format = CompressionFormat.BC1;
+encoder.OutputOptions.fileFormat = OutputFileFormat.Ktx; //Change to Dds for a dds file.
 
 using FileStream fs = File.OpenWrite("example.ktx");
 encoder.Encode(image, fs);
@@ -64,7 +65,7 @@ image.SaveAsPng(outFs);
 - [x] BC4 Encoding
 - [x] BC5 Encoding
 - [x] BC7 / BPTC Encoding
-- [ ] DDS file support
+- [x] DDS file support
 - [ ] Implement PCA to remove Accord.Statistics dependency
 - [ ] Implement saving and loading basic image formats to remove ImageSharp dependency
 
