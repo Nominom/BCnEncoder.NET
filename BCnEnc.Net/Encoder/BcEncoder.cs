@@ -28,6 +28,14 @@ namespace BCnEnc.Net.Encoder
 		public CompressionFormat format = CompressionFormat.BC1;
 		public EncodingQuality quality = EncodingQuality.Balanced;
 		public OutputFileFormat fileFormat = OutputFileFormat.Ktx;
+		/// <summary>
+		/// The DDS file format doesn't seem to have a standard for indicating whether a BC1 texture
+		/// includes 1bit of alpha. This option will write DDPF_ALPHAPIXELS flag to the header
+		/// to indicate the presence of an alpha channel. Some programs read and write this flag,
+		/// but some programs don't like it and get confused. Your mileage may vary.
+		/// Default is false.
+		/// </summary>
+		public bool ddsBc1WriteAlphaFlag = false;
 	}
 
 	/// <summary>
@@ -90,10 +98,12 @@ namespace BCnEnc.Net.Encoder
 		/// </summary>
 		public void Encode(Image<Rgba32> inputImage, Stream outputStream)
 		{
-			if (OutputOptions.fileFormat == OutputFileFormat.Ktx) {
+			if (OutputOptions.fileFormat == OutputFileFormat.Ktx)
+			{
 				KtxFile output = EncodeToKtx(inputImage);
 				output.Write(outputStream);
-			}else if(OutputOptions.fileFormat == OutputFileFormat.Dds)
+			}
+			else if (OutputOptions.fileFormat == OutputFileFormat.Dds)
 			{
 				DdsFile output = EncodeToDds(inputImage);
 				output.Write(outputStream);
@@ -193,6 +203,12 @@ namespace BCnEnc.Net.Encoder
 				var (ddsHeader, dxt10Header) = DdsHeader.InitializeCompressed(inputImage.Width, inputImage.Height,
 					compressedEncoder.GetDxgiFormat());
 				output = new DdsFile(ddsHeader, dxt10Header);
+
+				if (OutputOptions.ddsBc1WriteAlphaFlag &&
+					OutputOptions.format == CompressionFormat.BC1WithAlpha)
+				{
+					output.Header.ddsPixelFormat.dwFlags |= PixelFormatFlags.DDPF_ALPHAPIXELS;
+				}
 			}
 			else
 			{
@@ -224,8 +240,9 @@ namespace BCnEnc.Net.Encoder
 					encoded = uncompressedEncoder.Encode(mipChain[mip].GetPixelSpan());
 				}
 
-				if (mip == 0) {
-					output.Faces.Add(new DdsFace((uint)inputImage.Width, (uint)inputImage.Height, 
+				if (mip == 0)
+				{
+					output.Faces.Add(new DdsFace((uint)inputImage.Width, (uint)inputImage.Height,
 						(uint)encoded.Length, (int)numMipMaps));
 				}
 
@@ -240,13 +257,14 @@ namespace BCnEnc.Net.Encoder
 			}
 
 			output.Header.dwMipMapCount = numMipMaps;
-			if (numMipMaps > 1) {
+			if (numMipMaps > 1)
+			{
 				output.Header.dwCaps |= HeaderCaps.DDSCAPS_COMPLEX | HeaderCaps.DDSCAPS_MIPMAP;
 			}
 
 			return output;
 		}
-		
+
 		/// <summary>
 		/// Encodes all mipmap levels into a list of byte buffers.
 		/// </summary>
@@ -374,11 +392,14 @@ namespace BCnEnc.Net.Encoder
 		/// Order is +X, -X, +Y, -Y, +Z, -Z
 		/// </summary>
 		public void EncodeCubeMap(Image<Rgba32> right, Image<Rgba32> left, Image<Rgba32> top, Image<Rgba32> down,
-			Image<Rgba32> back, Image<Rgba32> front, Stream outputStream) {
-			if (OutputOptions.fileFormat == OutputFileFormat.Ktx) {
+			Image<Rgba32> back, Image<Rgba32> front, Stream outputStream)
+		{
+			if (OutputOptions.fileFormat == OutputFileFormat.Ktx)
+			{
 				KtxFile output = EncodeCubeMapToKtx(right, left, top, down, back, front);
 				output.Write(outputStream);
-			}else if(OutputOptions.fileFormat == OutputFileFormat.Dds)
+			}
+			else if (OutputOptions.fileFormat == OutputFileFormat.Dds)
 			{
 				DdsFile output = EncodeCubeMapToDds(right, left, top, down, back, front);
 				output.Write(outputStream);
@@ -437,7 +458,8 @@ namespace BCnEnc.Net.Encoder
 			}
 
 			uint mipLength = MipMapper.CalculateMipChainLength(right.Width, right.Height, numMipMaps);
-			for (uint i = 0; i < mipLength; i++) {
+			for (uint i = 0; i < mipLength; i++)
+			{
 				output.MipMaps.Add(new KtxMipmap(0, 0, 0, (uint)faces.Length));
 			}
 
@@ -460,12 +482,13 @@ namespace BCnEnc.Net.Encoder
 						encoded = uncompressedEncoder.Encode(mipChain[i].GetPixelSpan());
 					}
 
-					if (f == 0) {
+					if (f == 0)
+					{
 						output.MipMaps[i] = new KtxMipmap((uint)encoded.Length,
 							(uint)mipChain[i].Width,
 							(uint)mipChain[i].Height, (uint)faces.Length);
 					}
-					
+
 					output.MipMaps[i].Faces[f] = new KtxMipFace(encoded,
 						(uint)mipChain[i].Width,
 						(uint)mipChain[i].Height);
@@ -511,6 +534,12 @@ namespace BCnEnc.Net.Encoder
 				var (ddsHeader, dxt10Header) = DdsHeader.InitializeCompressed(right.Width, right.Height,
 					compressedEncoder.GetDxgiFormat());
 				output = new DdsFile(ddsHeader, dxt10Header);
+
+				if (OutputOptions.ddsBc1WriteAlphaFlag &&
+				    OutputOptions.format == CompressionFormat.BC1WithAlpha)
+				{
+					output.Header.ddsPixelFormat.dwFlags |= PixelFormatFlags.DDPF_ALPHAPIXELS;
+				}
 			}
 			else
 			{
@@ -531,7 +560,7 @@ namespace BCnEnc.Net.Encoder
 
 				var mipChain = MipMapper.GenerateMipChain(faces[f], ref numMipMaps);
 
-				
+
 				for (int mip = 0; mip < numMipMaps; mip++)
 				{
 					byte[] encoded = null;
@@ -546,11 +575,12 @@ namespace BCnEnc.Net.Encoder
 						encoded = uncompressedEncoder.Encode(mipChain[mip].GetPixelSpan());
 					}
 
-					if (mip == 0) {
-						output.Faces.Add(new DdsFace((uint)mipChain[mip].Width, (uint)mipChain[mip].Height, 
+					if (mip == 0)
+					{
+						output.Faces.Add(new DdsFace((uint)mipChain[mip].Width, (uint)mipChain[mip].Height,
 							(uint)encoded.Length, mipChain.Count));
 					}
-					
+
 					output.Faces[f].MipMaps[mip] = new DdsMipMap(encoded,
 						(uint)mipChain[mip].Width,
 						(uint)mipChain[mip].Height);
@@ -564,16 +594,17 @@ namespace BCnEnc.Net.Encoder
 
 			output.Header.dwCaps |= HeaderCaps.DDSCAPS_COMPLEX;
 			output.Header.dwMipMapCount = numMipMaps;
-			if (numMipMaps > 1) {
+			if (numMipMaps > 1)
+			{
 				output.Header.dwCaps |= HeaderCaps.DDSCAPS_MIPMAP;
 			}
 			output.Header.dwCaps2 |= HeaderCaps2.DDSCAPS2_CUBEMAP |
-			                  HeaderCaps2.DDSCAPS2_CUBEMAP_POSITIVEX |
-			                  HeaderCaps2.DDSCAPS2_CUBEMAP_NEGATIVEX |
-			                  HeaderCaps2.DDSCAPS2_CUBEMAP_POSITIVEY |
-			                  HeaderCaps2.DDSCAPS2_CUBEMAP_NEGATIVEY |
-			                  HeaderCaps2.DDSCAPS2_CUBEMAP_POSITIVEZ |
-			                  HeaderCaps2.DDSCAPS2_CUBEMAP_NEGATIVEZ;
+							  HeaderCaps2.DDSCAPS2_CUBEMAP_POSITIVEX |
+							  HeaderCaps2.DDSCAPS2_CUBEMAP_NEGATIVEX |
+							  HeaderCaps2.DDSCAPS2_CUBEMAP_POSITIVEY |
+							  HeaderCaps2.DDSCAPS2_CUBEMAP_NEGATIVEY |
+							  HeaderCaps2.DDSCAPS2_CUBEMAP_POSITIVEZ |
+							  HeaderCaps2.DDSCAPS2_CUBEMAP_NEGATIVEZ;
 
 			return output;
 		}

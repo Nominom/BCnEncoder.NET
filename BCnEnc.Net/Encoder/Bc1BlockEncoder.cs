@@ -323,7 +323,9 @@ namespace BCnEnc.Net.Encoder
 			var c0 = color0.ToColorRgba32();
 			var c1 = color1.ToColorRgba32();
 
-			Span<ColorRgba32> colors = output.HasAlphaOrBlack
+			bool hasAlpha = output.HasAlphaOrBlack;
+
+			Span<ColorRgba32> colors = hasAlpha
 				? stackalloc ColorRgba32[] {
 				c0,
 				c1,
@@ -340,7 +342,13 @@ namespace BCnEnc.Net.Encoder
 			for (int i = 0; i < 16; i++)
 			{
 				var color = pixels[i];
-				output[i] = ColorChooser.ChooseClosestColorAlphaCutOff(colors, color);
+				if (hasAlpha) {
+					output[i] = ColorChooser.ChooseClosestColorAlphaCutOff(colors, color);
+				}
+				else {
+					output[i] = ColorChooser.ChooseClosestColor(colors, color);
+				}
+				
 			}
 
 			return output;

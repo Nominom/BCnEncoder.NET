@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using BCnEnc.Net.Decoder;
 using BCnEnc.Net.Shared;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Advanced;
+using SixLabors.ImageSharp.PixelFormats;
 using Xunit;
 
 namespace BCnEncTests
@@ -50,6 +53,28 @@ namespace BCnEncTests
 				images[i].SaveAsPng(outFs);
 				images[i].Dispose();
 			}
+		}
+
+		[Fact]
+		public void ReadBc1a() {
+			using FileStream fs = File.OpenRead(@"../../../testImages/test_decompress_bc1a.dds");
+			DdsFile file = DdsFile.Load(fs);
+			Assert.Equal(DXGI_FORMAT.DXGI_FORMAT_BC1_UNORM, file.Header.ddsPixelFormat.DxgiFormat);
+			Assert.Equal(file.Header.dwMipMapCount, (uint)file.Faces[0].MipMaps.Length);
+
+
+			BcDecoder decoder = new BcDecoder();
+			decoder.InputOptions.ddsBc1ExpectAlpha = true;
+			var image = decoder.Decode(file);
+
+			Assert.Equal((uint)image.Width, file.Header.dwWidth);
+			Assert.Equal((uint)image.Height, file.Header.dwHeight);
+
+			Assert.Contains(image.GetPixelSpan().ToArray(), x => x.A == 0);
+
+			using FileStream outFs = File.OpenWrite($"decoding_test_dds_bc1a.png");
+			image.SaveAsPng(outFs);
+			image.Dispose();
 		}
 
 		[Fact]

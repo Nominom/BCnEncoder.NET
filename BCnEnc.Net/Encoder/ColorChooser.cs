@@ -31,9 +31,35 @@ namespace BCnEnc.Net.Encoder
 			return closest;
 		}
 
+		public static int ChooseClosestColor(Span<ColorRgba32> colors, Rgba32 color)
+		{
+			int closest = 0;
+			int closestError =
+				Math.Abs(colors[0].r - color.R)
+				+ Math.Abs(colors[0].g - color.G)
+				+ Math.Abs(colors[0].b - color.B)
+				+ Math.Abs(colors[0].a - color.A);
+
+			for (int i = 1; i < colors.Length; i++)
+			{
+				int error =
+					Math.Abs(colors[i].r - color.R)
+					+ Math.Abs(colors[i].g - color.G)
+					+ Math.Abs(colors[i].b - color.B)
+					+ Math.Abs(colors[i].a - color.A);
+				if (error < closestError)
+				{
+					closest = i;
+					closestError = error;
+				}
+			}
+			return closest;
+		}
+
 		public static int ChooseClosestColorAlphaCutOff(Span<ColorRgba32> colors, Rgba32 color, byte alphaCutOff = 255 / 2)
 		{
-			if (color.A <= alphaCutOff) {
+			if (color.A <= alphaCutOff)
+			{
 				return 3;
 			}
 
@@ -45,6 +71,7 @@ namespace BCnEnc.Net.Encoder
 
 			for (int i = 1; i < colors.Length; i++)
 			{
+				if (i == 3) continue; // Skip transparent
 				int error =
 					Math.Abs(colors[i].r - color.R)
 					+ Math.Abs(colors[i].g - color.G)
@@ -67,8 +94,8 @@ namespace BCnEnc.Net.Encoder
 			for (int i = 0; i < colors.Length; i++)
 			{
 				float error = MathF.Abs(colors[i].y - color.y) * luminanceMultiplier
-				              + MathF.Abs(colors[i].cb - color.cb)
-				              + MathF.Abs(colors[i].cr - color.cr);
+							  + MathF.Abs(colors[i].cb - color.cb)
+							  + MathF.Abs(colors[i].cr - color.cr);
 				if (first)
 				{
 					closestError = error;

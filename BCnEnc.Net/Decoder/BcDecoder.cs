@@ -9,6 +9,16 @@ using SixLabors.ImageSharp.PixelFormats;
 
 namespace BCnEnc.Net.Decoder
 {
+	public class DecoderInputOptions {
+		/// <summary>
+		/// The DDS file format doesn't seem to have a standard for indicating whether a BC1 texture
+		/// includes 1bit of alpha. This option will assume that all Bc1 textures contain alpha.
+		/// If this option is false, but the dds header includes a DDPF_ALPHAPIXELS flag, alpha will be included.
+		/// Default is true.
+		/// </summary>
+		public bool ddsBc1ExpectAlpha = true;
+	}
+
 	public class DecoderOutputOptions {
 		/// <summary>
 		/// If true, when decoding from a format that only includes a red channel,
@@ -23,6 +33,7 @@ namespace BCnEnc.Net.Decoder
 	public class BcDecoder
 	{
 		public DecoderOutputOptions OutputOptions { get; set; } = new DecoderOutputOptions();
+		public DecoderInputOptions InputOptions { get; set; } = new DecoderInputOptions();
 
 		private bool IsSupportedRawFormat(GlInternalFormat format)
 		{
@@ -77,14 +88,23 @@ namespace BCnEnc.Net.Decoder
 			}
 		}
 
-		private IBcBlockDecoder GetDecoder(DXGI_FORMAT format)
+		private IBcBlockDecoder GetDecoder(DXGI_FORMAT format, DdsHeader header)
 		{
 			switch (format)
 			{
 				case DXGI_FORMAT.DXGI_FORMAT_BC1_UNORM:
 				case DXGI_FORMAT.DXGI_FORMAT_BC1_UNORM_SRGB:
 				case DXGI_FORMAT.DXGI_FORMAT_BC1_TYPELESS:
-					return new Bc1ADecoder();
+					if ((header.ddsPixelFormat.dwFlags & PixelFormatFlags.DDPF_ALPHAPIXELS) != 0) {
+						return new Bc1ADecoder();
+					}
+					else if(InputOptions.ddsBc1ExpectAlpha){
+						return new Bc1ADecoder();
+					}
+					else {
+						return new Bc1NoAlphaDecoder();
+					}
+					
 				case DXGI_FORMAT.DXGI_FORMAT_BC2_UNORM:
 				case DXGI_FORMAT.DXGI_FORMAT_BC2_UNORM_SRGB:
 				case DXGI_FORMAT.DXGI_FORMAT_BC2_TYPELESS:
@@ -341,7 +361,7 @@ namespace BCnEnc.Net.Decoder
 				else {
 					format = file.Header.ddsPixelFormat.DxgiFormat;
 				}
-				IBcBlockDecoder decoder = GetDecoder(format);
+				IBcBlockDecoder decoder = GetDecoder(format, file.Header);
 				
 				if (decoder == null)
 				{
@@ -391,7 +411,7 @@ namespace BCnEnc.Net.Decoder
 				else {
 					format = file.Header.ddsPixelFormat.DxgiFormat;
 				}
-				IBcBlockDecoder decoder = GetDecoder(format);
+				IBcBlockDecoder decoder = GetDecoder(format, file.Header);
 				
 				if (decoder == null)
 				{
