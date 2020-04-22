@@ -14,6 +14,7 @@ namespace BCnEnc.Net.Encoder
 		GLFormat GetGlFormat();
 		GLType GetGlType();
 		uint GetGlTypeSize();
+		DXGI_FORMAT GetDxgiFormat();
 	}
 
 	internal class RawLuminanceEncoder : IRawEncoder {
@@ -50,6 +51,8 @@ namespace BCnEnc.Net.Encoder
 
 		public uint GetGlTypeSize()
 			=> 1;
+
+		public DXGI_FORMAT GetDxgiFormat() => DXGI_FORMAT.DXGI_FORMAT_R8_UNORM;
 	}
 
 	internal class RawRGEncoder : IRawEncoder
@@ -76,6 +79,8 @@ namespace BCnEnc.Net.Encoder
 
 		public uint GetGlTypeSize()
 			=> 1;
+
+		public DXGI_FORMAT GetDxgiFormat() => DXGI_FORMAT.DXGI_FORMAT_R8G8_UNORM;
 	}
 
 	internal class RawRGBEncoder : IRawEncoder
@@ -103,6 +108,8 @@ namespace BCnEnc.Net.Encoder
 
 		public uint GetGlTypeSize()
 			=> 1;
+
+		public DXGI_FORMAT GetDxgiFormat() => throw new NotSupportedException("RGB format is not supported for dds files.");
 	}
 
 	internal class RawRGBAEncoder : IRawEncoder
@@ -131,5 +138,7 @@ namespace BCnEnc.Net.Encoder
 
 		public uint GetGlTypeSize()
 			=> 1;
+
+		public DXGI_FORMAT GetDxgiFormat() => DXGI_FORMAT.DXGI_FORMAT_R8G8B8A8_UNORM;
 	}
 }

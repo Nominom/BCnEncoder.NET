@@ -71,6 +71,10 @@ namespace BCnEnc.Net.Encoder
 			return GLFormat.GL_RED;
 		}
 
+		public DXGI_FORMAT GetDxgiFormat() {
+			return DXGI_FORMAT.DXGI_FORMAT_BC4_UNORM;
+		}
+
 		#region Encoding private stuff
 
 		private static Bc4Block FindRedValues(Bc4Block colorBlock, byte[] pixels, int variations) {

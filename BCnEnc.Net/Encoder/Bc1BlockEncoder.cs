@@ -63,6 +63,10 @@ namespace BCnEnc.Net.Encoder
 			return GLFormat.GL_RGB;
 		}
 
+		public DXGI_FORMAT GetDxgiFormat() {
+			return DXGI_FORMAT.DXGI_FORMAT_BC1_UNORM;
+		}
+
 		#region Encoding private stuff
 
 		private static Bc1Block TryColors(RawBlock4X4Ycbcr rawBlock, ColorRgb565 color0, ColorRgb565 color1)
@@ -301,6 +305,10 @@ namespace BCnEnc.Net.Encoder
 		public GLFormat GetBaseInternalFormat()
 		{
 			return GLFormat.GL_RGBA;
+		}
+
+		public DXGI_FORMAT GetDxgiFormat() {
+			return DXGI_FORMAT.DXGI_FORMAT_BC1_UNORM;
 		}
 
 		private static Bc1Block TryColors(RawBlock4X4Rgba32 rawBlock, ColorRgb565 color0, ColorRgb565 color1)

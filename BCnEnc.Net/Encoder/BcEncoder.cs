@@ -27,6 +27,7 @@ namespace BCnEnc.Net.Encoder
 		public int maxMipMapLevel = -1;
 		public CompressionFormat format = CompressionFormat.BC1;
 		public EncodingQuality quality = EncodingQuality.Balanced;
+		public OutputFileFormat fileFormat = OutputFileFormat.Ktx;
 	}
 
 	/// <summary>
@@ -85,18 +86,24 @@ namespace BCnEnc.Net.Encoder
 		}
 
 		/// <summary>
-		/// Encodes all mipmap levels into a Ktx file and writes it to the output stream.
+		/// Encodes all mipmap levels into a ktx or a dds file and writes it to the output stream.
 		/// </summary>
 		public void Encode(Image<Rgba32> inputImage, Stream outputStream)
 		{
-			KtxFile output = Encode(inputImage);
-			output.Write(outputStream);
+			if (OutputOptions.fileFormat == OutputFileFormat.Ktx) {
+				KtxFile output = EncodeToKtx(inputImage);
+				output.Write(outputStream);
+			}else if(OutputOptions.fileFormat == OutputFileFormat.Dds)
+			{
+				DdsFile output = EncodeToDds(inputImage);
+				output.Write(outputStream);
+			}
 		}
 
 		/// <summary>
 		/// Encodes all mipmap levels into a Ktx file.
 		/// </summary>
-		public KtxFile Encode(Image<Rgba32> inputImage)
+		public KtxFile EncodeToKtx(Image<Rgba32> inputImage)
 		{
 			KtxFile output;
 			IBcBlockEncoder compressedEncoder = null;
@@ -167,6 +174,79 @@ namespace BCnEnc.Net.Encoder
 			return output;
 		}
 
+		/// <summary>
+		/// Encodes all mipmap levels into a Ktx file.
+		/// </summary>
+		public DdsFile EncodeToDds(Image<Rgba32> inputImage)
+		{
+			DdsFile output;
+			IBcBlockEncoder compressedEncoder = null;
+			IRawEncoder uncompressedEncoder = null;
+			if (OutputOptions.format.IsCompressedFormat())
+			{
+				compressedEncoder = GetEncoder(OutputOptions.format);
+				if (compressedEncoder == null)
+				{
+					throw new NotSupportedException($"This format is not supported: {OutputOptions.format}");
+				}
+
+				var (ddsHeader, dxt10Header) = DdsHeader.InitializeCompressed(inputImage.Width, inputImage.Height,
+					compressedEncoder.GetDxgiFormat());
+				output = new DdsFile(ddsHeader, dxt10Header);
+			}
+			else
+			{
+				uncompressedEncoder = GetRawEncoder(OutputOptions.format);
+				var ddsHeader = DdsHeader.InitializeUncompressed(inputImage.Width, inputImage.Height,
+					uncompressedEncoder.GetDxgiFormat());
+				output = new DdsFile(ddsHeader);
+			}
+
+			uint numMipMaps = (uint)OutputOptions.maxMipMapLevel;
+			if (!OutputOptions.generateMipMaps)
+			{
+				numMipMaps = 1;
+			}
+
+			var mipChain = MipMapper.GenerateMipChain(inputImage, ref numMipMaps);
+
+			for (int mip = 0; mip < numMipMaps; mip++)
+			{
+				byte[] encoded = null;
+				if (OutputOptions.format.IsCompressedFormat())
+				{
+					compressedEncoder.SetReferenceData(mipChain[mip].GetPixelSpan(), mipChain[mip].Width, mipChain[mip].Height);
+					var blocks = ImageToBlocks.ImageTo4X4(mipChain[mip].Frames[0], out int blocksWidth, out int blocksHeight);
+					encoded = compressedEncoder.Encode(blocks, blocksWidth, blocksHeight, OutputOptions.quality, !Debugger.IsAttached);
+				}
+				else
+				{
+					encoded = uncompressedEncoder.Encode(mipChain[mip].GetPixelSpan());
+				}
+
+				if (mip == 0) {
+					output.Faces.Add(new DdsFace((uint)inputImage.Width, (uint)inputImage.Height, 
+						(uint)encoded.Length, (int)numMipMaps));
+				}
+
+				output.Faces[0].MipMaps[mip] = new DdsMipMap(encoded,
+					(uint)inputImage.Width,
+					(uint)inputImage.Height);
+			}
+
+			foreach (var image in mipChain)
+			{
+				image.Dispose();
+			}
+
+			output.Header.dwMipMapCount = numMipMaps;
+			if (numMipMaps > 1) {
+				output.Header.dwCaps |= HeaderCaps.DDSCAPS_COMPLEX | HeaderCaps.DDSCAPS_MIPMAP;
+			}
+
+			return output;
+		}
+		
 		/// <summary>
 		/// Encodes all mipmap levels into a list of byte buffers.
 		/// </summary>
@@ -298,7 +378,7 @@ namespace BCnEnc.Net.Encoder
 		/// </summary>
 		public void EncodeCubeMap(Image<Rgba32> right, Image<Rgba32> left, Image<Rgba32> top, Image<Rgba32> down,
 			Image<Rgba32> back, Image<Rgba32> front, Stream outputStream) {
-			var output = EncodeCubeMap(right, left, top, down, back, front);
+			var output = EncodeCubeMapToKtx(right, left, top, down, back, front);
 			output.Write(outputStream);
 		}
 
@@ -306,7 +386,7 @@ namespace BCnEnc.Net.Encoder
 		/// Encodes all cubemap faces and mipmap levels into a Ktx file.
 		/// Order is +X, -X, +Y, -Y, +Z, -Z
 		/// </summary>
-		public KtxFile EncodeCubeMap(Image<Rgba32> right, Image<Rgba32> left, Image<Rgba32> top, Image<Rgba32> down,
+		public KtxFile EncodeCubeMapToKtx(Image<Rgba32> right, Image<Rgba32> left, Image<Rgba32> top, Image<Rgba32> down,
 			Image<Rgba32> back, Image<Rgba32> front)
 		{
 			KtxFile output;

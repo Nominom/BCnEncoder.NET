@@ -55,6 +55,10 @@ namespace BCnEnc.Net.Encoder
 			return GLFormat.GL_RGBA;
 		}
 
+		public DXGI_FORMAT GetDxgiFormat() {
+			return DXGI_FORMAT.DXGI_FORMAT_BC7_UNORM;
+		}
+
 		private static ClusterIndices4X4 CreateClusterIndexBlock(RawBlock4X4Rgba32 raw, out int outputNumClusters, 
 			int numClusters = 3)
 		{

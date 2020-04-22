@@ -113,6 +113,10 @@ namespace BCnEnc.Net.Encoder
 			return GLFormat.GL_RG;
 		}
 
+		public DXGI_FORMAT GetDxgiFormat() {
+			return DXGI_FORMAT.DXGI_FORMAT_BC5_UNORM;
+		}
+
 		#region Encoding private stuff
 
 		private static Bc5Block FindValues(Bc5Block colorBlock, byte[] pixels, int variations, int errorThreshold, 

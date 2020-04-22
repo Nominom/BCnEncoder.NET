@@ -35,7 +35,8 @@ namespace BCnEnc.Net.Shared
 				}
 				DdsHeader header = br.ReadStruct<DdsHeader>();
 				DdsHeaderDxt10 dxt10Header = default;
-				if (header.dwSize != 124) {
+				if (header.dwSize != 124)
+				{
 					throw new FormatException("The file header contains invalid dwSize.");
 				}
 
@@ -43,11 +44,13 @@ namespace BCnEnc.Net.Shared
 
 				DdsFile output;
 
-				if (dxt10Format) {
+				if (dxt10Format)
+				{
 					dxt10Header = br.ReadStruct<DdsHeaderDxt10>();
 					output = new DdsFile(header, dxt10Header);
 				}
-				else {
+				else
+				{
 					output = new DdsFile(header);
 				}
 
@@ -56,54 +59,70 @@ namespace BCnEnc.Net.Shared
 				uint width = header.dwWidth;
 				uint height = header.dwHeight;
 
-				for (int face = 0; face < faceCount; face++) {
+				for (int face = 0; face < faceCount; face++)
+				{
 					uint sizeInBytes = Math.Max(1, ((width + 3) / 4)) * Math.Max(1, ((height + 3) / 4));
-					if (!dxt10Format) {
-						if (header.ddsPixelFormat.IsDxt1To5CompressedFormat) {
-							if (header.ddsPixelFormat.DxgiFormat == DXGI_FORMAT.DXGI_FORMAT_BC1_UNORM) {
+					if (!dxt10Format)
+					{
+						if (header.ddsPixelFormat.IsDxt1To5CompressedFormat)
+						{
+							if (header.ddsPixelFormat.DxgiFormat == DXGI_FORMAT.DXGI_FORMAT_BC1_UNORM)
+							{
 								sizeInBytes *= 8;
 							}
-							else {
+							else
+							{
 								sizeInBytes *= 16;
 							}
 						}
-						else {
+						else
+						{
 							sizeInBytes = header.dwPitchOrLinearSize * height;
 						}
 					}
-					else if(dxt10Header.dxgiFormat.IsCompressedFormat()){
+					else if (dxt10Header.dxgiFormat.IsCompressedFormat())
+					{
 						sizeInBytes = (uint)(sizeInBytes * dxt10Header.dxgiFormat.GetByteSize());
 					}
-					else {
+					else
+					{
 						sizeInBytes = header.dwPitchOrLinearSize * height;
 					}
 					output.Faces.Add(new DdsFace(width, height, sizeInBytes, (int)mipMapCount));
 
-					for (int mip = 0; mip < mipMapCount; mip++) {
+					for (int mip = 0; mip < mipMapCount; mip++)
+					{
 						uint mipWidth = header.dwWidth / (uint)(Math.Pow(2, mip));
 						uint mipHeight = header.dwHeight / (uint)(Math.Pow(2, mip));
 
 						if (mip > 0) //Calculate new byteSize
 						{
 							sizeInBytes = Math.Max(1, ((mipWidth + 3) / 4)) * Math.Max(1, ((mipHeight + 3) / 4));
-							if (!dxt10Format) {
-								if (header.ddsPixelFormat.IsDxt1To5CompressedFormat) {
-									if (header.ddsPixelFormat.DxgiFormat == DXGI_FORMAT.DXGI_FORMAT_BC1_UNORM) {
+							if (!dxt10Format)
+							{
+								if (header.ddsPixelFormat.IsDxt1To5CompressedFormat)
+								{
+									if (header.ddsPixelFormat.DxgiFormat == DXGI_FORMAT.DXGI_FORMAT_BC1_UNORM)
+									{
 										sizeInBytes *= 8;
 									}
-									else {
+									else
+									{
 										sizeInBytes *= 16;
 									}
 								}
-								else {
-									sizeInBytes = header.dwPitchOrLinearSize / (uint) (Math.Pow(2, mip)) * mipHeight;
+								else
+								{
+									sizeInBytes = header.dwPitchOrLinearSize / (uint)(Math.Pow(2, mip)) * mipHeight;
 								}
 							}
-							else if(dxt10Header.dxgiFormat.IsCompressedFormat()){
+							else if (dxt10Header.dxgiFormat.IsCompressedFormat())
+							{
 								sizeInBytes = (uint)(sizeInBytes * dxt10Header.dxgiFormat.GetByteSize());
 							}
-							else {
-								sizeInBytes = header.dwPitchOrLinearSize / (uint) (Math.Pow(2, mip)) * mipHeight;
+							else
+							{
+								sizeInBytes = header.dwPitchOrLinearSize / (uint)(Math.Pow(2, mip)) * mipHeight;
 							}
 						}
 						byte[] data = new byte[sizeInBytes];
@@ -115,11 +134,75 @@ namespace BCnEnc.Net.Shared
 				return output;
 			}
 		}
+
+		public void Write(Stream outputStream)
+		{
+			if (Faces.Count < 1 || Faces[0].MipMaps.Length < 1)
+			{
+				throw new InvalidOperationException("The DDS structure should have at least 1 mipmap level and 1 Face before writing to file.");
+			}
+
+			Header.dwFlags |= HeaderFlags.REQUIRED;
+
+			Header.dwMipMapCount = (uint)Faces[0].MipMaps.Length;
+			if (Header.dwMipMapCount > 1) // MipMaps
+			{
+				Header.dwCaps |= HeaderCaps.DDSCAPS_MIPMAP | HeaderCaps.DDSCAPS_COMPLEX;
+			}
+			if (Faces.Count == 6) // CubeMap
+			{
+				Header.dwCaps |= HeaderCaps.DDSCAPS_COMPLEX;
+				Header.dwCaps2 |= HeaderCaps2.DDSCAPS2_CUBEMAP |
+								  HeaderCaps2.DDSCAPS2_CUBEMAP_POSITIVEX |
+								  HeaderCaps2.DDSCAPS2_CUBEMAP_NEGATIVEX |
+								  HeaderCaps2.DDSCAPS2_CUBEMAP_POSITIVEY |
+								  HeaderCaps2.DDSCAPS2_CUBEMAP_NEGATIVEY |
+								  HeaderCaps2.DDSCAPS2_CUBEMAP_POSITIVEZ |
+								  HeaderCaps2.DDSCAPS2_CUBEMAP_NEGATIVEZ;
+			}
+
+			Header.dwWidth = Faces[0].Width;
+			Header.dwHeight = Faces[0].Height;
+
+			for (int i = 0; i < Faces.Count; i++)
+			{
+				if (Faces[i].Width != Header.dwWidth || Faces[i].Height != Header.dwHeight)
+				{
+					throw new InvalidOperationException("Faces with different sizes are not supported.");
+				}
+			}
+
+			int faceCount = Faces.Count;
+			int mipCount = (int)Header.dwMipMapCount;
+
+			using (BinaryWriter bw = new BinaryWriter(outputStream, Encoding.UTF8, true))
+			{
+				bw.Write(0x20534444U); // magic 'DDS '
+
+				bw.WriteStruct(Header);
+
+				if (Header.ddsPixelFormat.IsDxt10Format)
+				{
+					bw.WriteStruct(Dxt10Header);
+				}
+
+				for (int face = 0; face < faceCount; face++)
+				{
+					for (int mip = 0; mip < mipCount; mip++)
+					{
+						bw.Write(Faces[face].MipMaps[mip].Data);
+					}
+				}
+			}
+		}
 	}
 
 	[StructLayout(LayoutKind.Sequential)]
 	public unsafe struct DdsHeader
 	{
+		/// <summary>
+		/// Has to be 124
+		/// </summary>
 		public uint dwSize;
 		public HeaderFlags dwFlags;
 		public uint dwHeight;
@@ -134,10 +217,130 @@ namespace BCnEnc.Net.Shared
 		public uint dwCaps3;
 		public uint dwCaps4;
 		public uint dwReserved2;
+
+		public static (DdsHeader, DdsHeaderDxt10) InitializeCompressed(int width, int height, DXGI_FORMAT format)
+		{
+			DdsHeader header = new DdsHeader();
+			DdsHeaderDxt10 dxt10Header = new DdsHeaderDxt10();
+
+			header.dwSize = 124;
+			header.dwFlags = HeaderFlags.REQUIRED;
+			header.dwWidth = (uint)width;
+			header.dwHeight = (uint)height;
+			header.dwDepth = 1;
+			header.dwMipMapCount = 1;
+			header.dwCaps = HeaderCaps.DDSCAPS_TEXTURE;
+
+			if (format == DXGI_FORMAT.DXGI_FORMAT_BC1_UNORM)
+			{
+				header.ddsPixelFormat = new DdsPixelFormat()
+				{
+					dwSize = 32,
+					dwFlags = PixelFormatFlags.DDPF_FOURCC,
+					dwFourCC = DdsPixelFormat.DXT1
+				};
+			}
+			else if (format == DXGI_FORMAT.DXGI_FORMAT_BC2_UNORM)
+			{
+				header.ddsPixelFormat = new DdsPixelFormat()
+				{
+					dwSize = 32,
+					dwFlags = PixelFormatFlags.DDPF_FOURCC,
+					dwFourCC = DdsPixelFormat.DXT3
+				};
+			}
+			else if (format == DXGI_FORMAT.DXGI_FORMAT_BC3_UNORM)
+			{
+				header.ddsPixelFormat = new DdsPixelFormat()
+				{
+					dwSize = 32,
+					dwFlags = PixelFormatFlags.DDPF_FOURCC,
+					dwFourCC = DdsPixelFormat.DXT5
+				};
+			}
+			else
+			{
+				header.ddsPixelFormat = new DdsPixelFormat()
+				{
+					dwSize = 32,
+					dwFlags = PixelFormatFlags.DDPF_FOURCC,
+					dwFourCC = DdsPixelFormat.DX10
+				};
+				dxt10Header.arraySize = 1;
+				dxt10Header.dxgiFormat = format;
+				dxt10Header.resourceDimension = D3D10_RESOURCE_DIMENSION.D3D10_RESOURCE_DIMENSION_TEXTURE2D;
+			}
+
+			return (header, dxt10Header);
+		}
+
+		public static DdsHeader InitializeUncompressed(int width, int height, DXGI_FORMAT format)
+		{
+			DdsHeader header = new DdsHeader();
+
+			header.dwSize = 124;
+			header.dwFlags = HeaderFlags.REQUIRED | HeaderFlags.DDSD_PITCH;
+			header.dwWidth = (uint)width;
+			header.dwHeight = (uint)height;
+			header.dwDepth = 1;
+			header.dwMipMapCount = 1;
+			header.dwCaps = HeaderCaps.DDSCAPS_TEXTURE;
+
+			if (format == DXGI_FORMAT.DXGI_FORMAT_R8_UNORM)
+			{
+				header.ddsPixelFormat = new DdsPixelFormat()
+				{
+					dwSize = 32,
+					dwFlags = PixelFormatFlags.DDPF_LUMINANCE,
+					dwRGBBitCount = 8,
+					dwRBitMask = 0xFF
+				};
+				header.dwPitchOrLinearSize = (uint)((width * 8 + 7) / 8);
+			}
+			else if (format == DXGI_FORMAT.DXGI_FORMAT_R8G8_UNORM)
+			{
+				header.ddsPixelFormat = new DdsPixelFormat()
+				{
+					dwSize = 32,
+					dwFlags = PixelFormatFlags.DDPF_LUMINANCE | PixelFormatFlags.DDPF_ALPHAPIXELS,
+					dwRGBBitCount = 16,
+					dwRBitMask = 0xFF,
+					dwGBitMask = 0xFF00
+				};
+				header.dwPitchOrLinearSize = (uint)((width * 16 + 7) / 8);
+			}
+			else if (format == DXGI_FORMAT.DXGI_FORMAT_R8G8B8A8_UNORM)
+			{
+				header.ddsPixelFormat = new DdsPixelFormat()
+				{
+					dwSize = 32,
+					dwFlags = PixelFormatFlags.DDPF_RGB | PixelFormatFlags.DDPF_ALPHAPIXELS,
+					dwRGBBitCount = 32,
+					dwRBitMask = 0xFF,
+					dwGBitMask = 0xFF00,
+					dwBBitMask = 0xFF0000,
+					dwABitMask = 0xFF000000,
+				};
+				header.dwPitchOrLinearSize = (uint)((width * 32 + 7) / 8);
+			}
+			else
+			{
+				throw new NotImplementedException("This format is not implemented in this method");
+			}
+
+			return header;
+		}
 	}
 
 	public struct DdsPixelFormat
 	{
+		public const uint DXT1 = 0x31545844U;
+		public const uint DXT2 = 0x32545844U;
+		public const uint DXT3 = 0x33545844U;
+		public const uint DXT4 = 0x34545844U;
+		public const uint DXT5 = 0x35545844U;
+		public const uint DX10 = 0x30315844U;
+
 		public uint dwSize;
 		public PixelFormatFlags dwFlags;
 		public uint dwFourCC;
@@ -223,14 +426,14 @@ namespace BCnEnc.Net.Shared
 		}
 
 		public bool IsDxt10Format => ((dwFlags & PixelFormatFlags.DDPF_FOURCC) == PixelFormatFlags.DDPF_FOURCC)
-									 && dwFourCC == 0x30315844U;
+									 && dwFourCC == DX10;
 
 		public bool IsDxt1To5CompressedFormat => ((dwFlags & PixelFormatFlags.DDPF_FOURCC) == PixelFormatFlags.DDPF_FOURCC)
-		                             && (dwFourCC == 0x31545844U 
-		                                 || dwFourCC == 0x32545844U
-		                                 || dwFourCC == 0x33545844U
-		                                 || dwFourCC == 0x34545844U
-		                                 || dwFourCC == 0x35545844U);
+									 && (dwFourCC == DXT1
+										 || dwFourCC == DXT2
+										 || dwFourCC == DXT3
+										 || dwFourCC == DXT4
+										 || dwFourCC == DXT5);
 	}
 
 	public struct DdsHeaderDxt10
@@ -311,7 +514,9 @@ namespace BCnEnc.Net.Shared
 		/// <summary>
 		/// Required in a depth texture.
 		/// </summary>
-		DDSD_DEPTH = 0x800000
+		DDSD_DEPTH = 0x800000,
+
+		REQUIRED = DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH | DDSD_PIXELFORMAT
 	}
 
 	/// <summary>
@@ -536,49 +741,52 @@ namespace BCnEnc.Net.Shared
 		DXGI_FORMAT_FORCE_UINT
 	};
 
-	public static class DxgiFormatExtensions {
-		public static int GetByteSize(this DXGI_FORMAT format) {
-			switch (format) {
+	public static class DxgiFormatExtensions
+	{
+		public static int GetByteSize(this DXGI_FORMAT format)
+		{
+			switch (format)
+			{
 				case DXGI_FORMAT.DXGI_FORMAT_UNKNOWN:
 					return 4;
 				case DXGI_FORMAT.DXGI_FORMAT_R32G32B32A32_TYPELESS:
-					return 4*4;
+					return 4 * 4;
 				case DXGI_FORMAT.DXGI_FORMAT_R32G32B32A32_FLOAT:
-					return 4*4;
+					return 4 * 4;
 				case DXGI_FORMAT.DXGI_FORMAT_R32G32B32A32_UINT:
-					return 4*4;
+					return 4 * 4;
 				case DXGI_FORMAT.DXGI_FORMAT_R32G32B32A32_SINT:
-					return 4*4;
+					return 4 * 4;
 				case DXGI_FORMAT.DXGI_FORMAT_R32G32B32_TYPELESS:
-					return 4*3;
+					return 4 * 3;
 				case DXGI_FORMAT.DXGI_FORMAT_R32G32B32_FLOAT:
-					return 4*3;
+					return 4 * 3;
 				case DXGI_FORMAT.DXGI_FORMAT_R32G32B32_UINT:
-					return 4*3;
+					return 4 * 3;
 				case DXGI_FORMAT.DXGI_FORMAT_R32G32B32_SINT:
-					return 4*3;
+					return 4 * 3;
 				case DXGI_FORMAT.DXGI_FORMAT_R16G16B16A16_TYPELESS:
-					return 4*2;
+					return 4 * 2;
 				case DXGI_FORMAT.DXGI_FORMAT_R16G16B16A16_FLOAT:
-					return 4*2;
+					return 4 * 2;
 				case DXGI_FORMAT.DXGI_FORMAT_R16G16B16A16_UNORM:
-					return 4*2;
+					return 4 * 2;
 				case DXGI_FORMAT.DXGI_FORMAT_R16G16B16A16_UINT:
-					return 4*2;
+					return 4 * 2;
 				case DXGI_FORMAT.DXGI_FORMAT_R16G16B16A16_SNORM:
-					return 4*2;
+					return 4 * 2;
 				case DXGI_FORMAT.DXGI_FORMAT_R16G16B16A16_SINT:
-					return 4*2;
+					return 4 * 2;
 				case DXGI_FORMAT.DXGI_FORMAT_R32G32_TYPELESS:
-					return 4*2;
+					return 4 * 2;
 				case DXGI_FORMAT.DXGI_FORMAT_R32G32_FLOAT:
-					return 4*2;
+					return 4 * 2;
 				case DXGI_FORMAT.DXGI_FORMAT_R32G32_UINT:
-					return 4*2;
+					return 4 * 2;
 				case DXGI_FORMAT.DXGI_FORMAT_R32G32_SINT:
-					return 4*2;
+					return 4 * 2;
 				case DXGI_FORMAT.DXGI_FORMAT_R32G8X24_TYPELESS:
-					return 4*2;
+					return 4 * 2;
 				case DXGI_FORMAT.DXGI_FORMAT_D32_FLOAT_S8X24_UINT:
 					return 4;
 				case DXGI_FORMAT.DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS:
@@ -749,8 +957,10 @@ namespace BCnEnc.Net.Shared
 			return 4;
 		}
 
-		public static bool IsCompressedFormat(this DXGI_FORMAT format) {
-			switch (format) {
+		public static bool IsCompressedFormat(this DXGI_FORMAT format)
+		{
+			switch (format)
+			{
 				case DXGI_FORMAT.DXGI_FORMAT_BC1_TYPELESS:
 				case DXGI_FORMAT.DXGI_FORMAT_BC1_UNORM:
 				case DXGI_FORMAT.DXGI_FORMAT_BC1_UNORM_SRGB:
