@@ -89,5 +89,19 @@ namespace BCnEncTests
 				images[i].Dispose();
 			}
 		}
+
+		[Fact]
+		public void ReadFromStream() {
+			using FileStream fs = File.OpenRead(@"../../../testImages/test_decompress_bc1.dds");
+
+			BcDecoder decoder = new BcDecoder();
+			var images = decoder.DecodeAllMipMaps(fs);
+
+			for (int i = 0; i < images.Length; i++) {
+				using FileStream outFs = File.OpenWrite($"decoding_test_dds_stream_bc1_mip{i}.png");
+				images[i].SaveAsPng(outFs);
+				images[i].Dispose();
+			}
+		}
 	}
 }

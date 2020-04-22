@@ -18,8 +18,7 @@ Supported formats are:
 
 # Current state
 The current state of this library is in development but quite usable. I'm planning on implementing support for more codecs and 
-different algorithms. The current version is capable of encoding and decoding BC1-BC5 and BC7 images in KTX format.
-Only KTX format is supported for compressed images, but I might implement DDS support later.
+different algorithms. The current version is capable of encoding and decoding BC1-BC5 and BC7 images in both KTX or DDS formats.
 
 # Dependencies
 Current dependencies are:
@@ -47,10 +46,9 @@ encoder.Encode(image, fs);
 And how to decode a compressed image from a KTX file and save it to png format.
 ```CSharp
 using FileStream fs = File.OpenRead("compressed_bc1.ktx");
-KtxFile file = KtxFile.Load(fs);
 
 BcDecoder decoder = new BcDecoder();
-using Image<Rgba32> image = decoder.Decode(file);
+using Image<Rgba32> image = decoder.Decode(fs);
 
 using FileStream outFs = File.OpenWrite("decoding_test_bc1.png");
 image.SaveAsPng(outFs);
