@@ -199,11 +199,10 @@ namespace BCnEnc.Net.Decoder
 					return Decode(ktx);
 				}
 			}
-			catch (Exception ex) {
+			catch (Exception) {
 				inputStream.Seek(position, SeekOrigin.Begin);
+				throw;
 			}
-
-			return null;
 		}
 
 		/// <summary>
@@ -243,11 +242,10 @@ namespace BCnEnc.Net.Decoder
 					return DecodeAllMipMaps(ktx);
 				}
 			}
-			catch (Exception ex) {
+			catch (Exception) {
 				inputStream.Seek(position, SeekOrigin.Begin);
+				throw;
 			}
-
-			return null;
 		}
 
 		/// <summary>
