@@ -375,8 +375,14 @@ namespace BCnEnc.Net.Encoder
 		/// </summary>
 		public void EncodeCubeMap(Image<Rgba32> right, Image<Rgba32> left, Image<Rgba32> top, Image<Rgba32> down,
 			Image<Rgba32> back, Image<Rgba32> front, Stream outputStream) {
-			var output = EncodeCubeMapToKtx(right, left, top, down, back, front);
-			output.Write(outputStream);
+			if (OutputOptions.fileFormat == OutputFileFormat.Ktx) {
+				KtxFile output = EncodeCubeMapToKtx(right, left, top, down, back, front);
+				output.Write(outputStream);
+			}else if(OutputOptions.fileFormat == OutputFileFormat.Dds)
+			{
+				DdsFile output = EncodeCubeMapToDds(right, left, top, down, back, front);
+				output.Write(outputStream);
+			}
 		}
 
 		/// <summary>
@@ -473,6 +479,101 @@ namespace BCnEnc.Net.Encoder
 
 			output.Header.NumberOfFaces = (uint)faces.Length;
 			output.Header.NumberOfMipmapLevels = mipLength;
+
+			return output;
+		}
+
+		public DdsFile EncodeCubeMapToDds(Image<Rgba32> right, Image<Rgba32> left, Image<Rgba32> top, Image<Rgba32> down,
+			Image<Rgba32> back, Image<Rgba32> front)
+		{
+			DdsFile output;
+			IBcBlockEncoder compressedEncoder = null;
+			IRawEncoder uncompressedEncoder = null;
+
+			if (right.Width != left.Width || right.Width != top.Width || right.Width != down.Width
+				|| right.Width != back.Width || right.Width != front.Width ||
+				right.Height != left.Height || right.Height != top.Height || right.Height != down.Height
+				|| right.Height != back.Height || right.Height != front.Height)
+			{
+				throw new ArgumentException("All input images of a cubemap should be the same size.");
+			}
+
+			Image<Rgba32>[] faces = new[] { right, left, top, down, back, front };
+
+			if (OutputOptions.format.IsCompressedFormat())
+			{
+				compressedEncoder = GetEncoder(OutputOptions.format);
+				if (compressedEncoder == null)
+				{
+					throw new NotSupportedException($"This format is not supported: {OutputOptions.format}");
+				}
+
+				var (ddsHeader, dxt10Header) = DdsHeader.InitializeCompressed(right.Width, right.Height,
+					compressedEncoder.GetDxgiFormat());
+				output = new DdsFile(ddsHeader, dxt10Header);
+			}
+			else
+			{
+				uncompressedEncoder = GetRawEncoder(OutputOptions.format);
+				var ddsHeader = DdsHeader.InitializeUncompressed(right.Width, right.Height,
+					uncompressedEncoder.GetDxgiFormat());
+				output = new DdsFile(ddsHeader);
+			}
+
+			uint numMipMaps = (uint)OutputOptions.maxMipMapLevel;
+			if (!OutputOptions.generateMipMaps)
+			{
+				numMipMaps = 1;
+			}
+
+			for (int f = 0; f < faces.Length; f++)
+			{
+
+				var mipChain = MipMapper.GenerateMipChain(faces[f], ref numMipMaps);
+
+				
+				for (int mip = 0; mip < numMipMaps; mip++)
+				{
+					byte[] encoded = null;
+					if (OutputOptions.format.IsCompressedFormat())
+					{
+						compressedEncoder.SetReferenceData(mipChain[mip].GetPixelSpan(), mipChain[mip].Width, mipChain[mip].Height);
+						var blocks = ImageToBlocks.ImageTo4X4(mipChain[mip].Frames[0], out int blocksWidth, out int blocksHeight);
+						encoded = compressedEncoder.Encode(blocks, blocksWidth, blocksHeight, OutputOptions.quality, !Debugger.IsAttached);
+					}
+					else
+					{
+						encoded = uncompressedEncoder.Encode(mipChain[mip].GetPixelSpan());
+					}
+
+					if (mip == 0) {
+						output.Faces.Add(new DdsFace((uint)mipChain[mip].Width, (uint)mipChain[mip].Height, 
+							(uint)encoded.Length, mipChain.Count));
+					}
+					
+					output.Faces[f].MipMaps[mip] = new DdsMipMap(encoded,
+						(uint)mipChain[mip].Width,
+						(uint)mipChain[mip].Height);
+				}
+
+				foreach (var image in mipChain)
+				{
+					image.Dispose();
+				}
+			}
+
+			output.Header.dwCaps |= HeaderCaps.DDSCAPS_COMPLEX;
+			output.Header.dwMipMapCount = numMipMaps;
+			if (numMipMaps > 1) {
+				output.Header.dwCaps |= HeaderCaps.DDSCAPS_MIPMAP;
+			}
+			output.Header.dwCaps2 |= HeaderCaps2.DDSCAPS2_CUBEMAP |
+			                  HeaderCaps2.DDSCAPS2_CUBEMAP_POSITIVEX |
+			                  HeaderCaps2.DDSCAPS2_CUBEMAP_NEGATIVEX |
+			                  HeaderCaps2.DDSCAPS2_CUBEMAP_POSITIVEY |
+			                  HeaderCaps2.DDSCAPS2_CUBEMAP_NEGATIVEY |
+			                  HeaderCaps2.DDSCAPS2_CUBEMAP_POSITIVEZ |
+			                  HeaderCaps2.DDSCAPS2_CUBEMAP_NEGATIVEZ;
 
 			return output;
 		}

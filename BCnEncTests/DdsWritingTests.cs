@@ -114,5 +114,20 @@ namespace BCnEncTests
 			encoder.Encode(image, fs);
 			fs.Close();
 		}
+
+		[Fact]
+		public void DdsWriteCubemap() {
+			var images = ImageLoader.testCubemap;
+
+			BcEncoder encoder = new BcEncoder();
+			encoder.OutputOptions.quality = EncodingQuality.Fast;
+			encoder.OutputOptions.generateMipMaps = true;
+			encoder.OutputOptions.format = CompressionFormat.BC1;
+			encoder.OutputOptions.fileFormat = OutputFileFormat.Dds;
+
+			using FileStream fs = File.OpenWrite("encoding_dds_cubemap_bc1.dds");
+			encoder.EncodeCubeMap(images[0],images[1],images[2],images[3],images[4],images[5], fs);
+			fs.Close();
+		}
 	}
 }
