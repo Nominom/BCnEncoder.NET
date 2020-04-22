@@ -63,6 +63,10 @@ namespace BCnEnc.Net.Encoder
 			return GLFormat.GL_RGB;
 		}
 
+		public DXGI_FORMAT GetDxgiFormat() {
+			return DXGI_FORMAT.DXGI_FORMAT_BC1_UNORM;
+		}
+
 		#region Encoding private stuff
 
 		private static Bc1Block TryColors(RawBlock4X4Ycbcr rawBlock, ColorRgb565 color0, ColorRgb565 color1)
@@ -303,6 +307,10 @@ namespace BCnEnc.Net.Encoder
 			return GLFormat.GL_RGBA;
 		}
 
+		public DXGI_FORMAT GetDxgiFormat() {
+			return DXGI_FORMAT.DXGI_FORMAT_BC1_UNORM;
+		}
+
 		private static Bc1Block TryColors(RawBlock4X4Rgba32 rawBlock, ColorRgb565 color0, ColorRgb565 color1)
 		{
 			Bc1Block output = new Bc1Block();
@@ -315,7 +323,9 @@ namespace BCnEnc.Net.Encoder
 			var c0 = color0.ToColorRgba32();
 			var c1 = color1.ToColorRgba32();
 
-			Span<ColorRgba32> colors = output.HasAlphaOrBlack
+			bool hasAlpha = output.HasAlphaOrBlack;
+
+			Span<ColorRgba32> colors = hasAlpha
 				? stackalloc ColorRgba32[] {
 				c0,
 				c1,
@@ -332,7 +342,13 @@ namespace BCnEnc.Net.Encoder
 			for (int i = 0; i < 16; i++)
 			{
 				var color = pixels[i];
-				output[i] = ColorChooser.ChooseClosestColorAlphaCutOff(colors, color);
+				if (hasAlpha) {
+					output[i] = ColorChooser.ChooseClosestColorAlphaCutOff(colors, color);
+				}
+				else {
+					output[i] = ColorChooser.ChooseClosestColor(colors, color);
+				}
+				
 			}
 
 			return output;

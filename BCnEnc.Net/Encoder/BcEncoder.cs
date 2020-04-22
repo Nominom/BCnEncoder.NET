@@ -27,6 +27,15 @@ namespace BCnEnc.Net.Encoder
 		public int maxMipMapLevel = -1;
 		public CompressionFormat format = CompressionFormat.BC1;
 		public EncodingQuality quality = EncodingQuality.Balanced;
+		public OutputFileFormat fileFormat = OutputFileFormat.Ktx;
+		/// <summary>
+		/// The DDS file format doesn't seem to have a standard for indicating whether a BC1 texture
+		/// includes 1bit of alpha. This option will write DDPF_ALPHAPIXELS flag to the header
+		/// to indicate the presence of an alpha channel. Some programs read and write this flag,
+		/// but some programs don't like it and get confused. Your mileage may vary.
+		/// Default is false.
+		/// </summary>
+		public bool ddsBc1WriteAlphaFlag = false;
 	}
 
 	/// <summary>
@@ -85,18 +94,26 @@ namespace BCnEnc.Net.Encoder
 		}
 
 		/// <summary>
-		/// Encodes all mipmap levels into a Ktx file and writes it to the output stream.
+		/// Encodes all mipmap levels into a ktx or a dds file and writes it to the output stream.
 		/// </summary>
 		public void Encode(Image<Rgba32> inputImage, Stream outputStream)
 		{
-			KtxFile output = Encode(inputImage);
-			output.Write(outputStream);
+			if (OutputOptions.fileFormat == OutputFileFormat.Ktx)
+			{
+				KtxFile output = EncodeToKtx(inputImage);
+				output.Write(outputStream);
+			}
+			else if (OutputOptions.fileFormat == OutputFileFormat.Dds)
+			{
+				DdsFile output = EncodeToDds(inputImage);
+				output.Write(outputStream);
+			}
 		}
 
 		/// <summary>
 		/// Encodes all mipmap levels into a Ktx file.
 		/// </summary>
-		public KtxFile Encode(Image<Rgba32> inputImage)
+		public KtxFile EncodeToKtx(Image<Rgba32> inputImage)
 		{
 			KtxFile output;
 			IBcBlockEncoder compressedEncoder = null;
@@ -168,6 +185,87 @@ namespace BCnEnc.Net.Encoder
 		}
 
 		/// <summary>
+		/// Encodes all mipmap levels into a Ktx file.
+		/// </summary>
+		public DdsFile EncodeToDds(Image<Rgba32> inputImage)
+		{
+			DdsFile output;
+			IBcBlockEncoder compressedEncoder = null;
+			IRawEncoder uncompressedEncoder = null;
+			if (OutputOptions.format.IsCompressedFormat())
+			{
+				compressedEncoder = GetEncoder(OutputOptions.format);
+				if (compressedEncoder == null)
+				{
+					throw new NotSupportedException($"This format is not supported: {OutputOptions.format}");
+				}
+
+				var (ddsHeader, dxt10Header) = DdsHeader.InitializeCompressed(inputImage.Width, inputImage.Height,
+					compressedEncoder.GetDxgiFormat());
+				output = new DdsFile(ddsHeader, dxt10Header);
+
+				if (OutputOptions.ddsBc1WriteAlphaFlag &&
+					OutputOptions.format == CompressionFormat.BC1WithAlpha)
+				{
+					output.Header.ddsPixelFormat.dwFlags |= PixelFormatFlags.DDPF_ALPHAPIXELS;
+				}
+			}
+			else
+			{
+				uncompressedEncoder = GetRawEncoder(OutputOptions.format);
+				var ddsHeader = DdsHeader.InitializeUncompressed(inputImage.Width, inputImage.Height,
+					uncompressedEncoder.GetDxgiFormat());
+				output = new DdsFile(ddsHeader);
+			}
+
+			uint numMipMaps = (uint)OutputOptions.maxMipMapLevel;
+			if (!OutputOptions.generateMipMaps)
+			{
+				numMipMaps = 1;
+			}
+
+			var mipChain = MipMapper.GenerateMipChain(inputImage, ref numMipMaps);
+
+			for (int mip = 0; mip < numMipMaps; mip++)
+			{
+				byte[] encoded = null;
+				if (OutputOptions.format.IsCompressedFormat())
+				{
+					compressedEncoder.SetReferenceData(mipChain[mip].GetPixelSpan(), mipChain[mip].Width, mipChain[mip].Height);
+					var blocks = ImageToBlocks.ImageTo4X4(mipChain[mip].Frames[0], out int blocksWidth, out int blocksHeight);
+					encoded = compressedEncoder.Encode(blocks, blocksWidth, blocksHeight, OutputOptions.quality, !Debugger.IsAttached);
+				}
+				else
+				{
+					encoded = uncompressedEncoder.Encode(mipChain[mip].GetPixelSpan());
+				}
+
+				if (mip == 0)
+				{
+					output.Faces.Add(new DdsFace((uint)inputImage.Width, (uint)inputImage.Height,
+						(uint)encoded.Length, (int)numMipMaps));
+				}
+
+				output.Faces[0].MipMaps[mip] = new DdsMipMap(encoded,
+					(uint)inputImage.Width,
+					(uint)inputImage.Height);
+			}
+
+			foreach (var image in mipChain)
+			{
+				image.Dispose();
+			}
+
+			output.Header.dwMipMapCount = numMipMaps;
+			if (numMipMaps > 1)
+			{
+				output.Header.dwCaps |= HeaderCaps.DDSCAPS_COMPLEX | HeaderCaps.DDSCAPS_MIPMAP;
+			}
+
+			return output;
+		}
+
+		/// <summary>
 		/// Encodes all mipmap levels into a list of byte buffers.
 		/// </summary>
 		public List<byte[]> EncodeToRawBytes(Image<Rgba32> inputImage)
@@ -226,14 +324,13 @@ namespace BCnEnc.Net.Encoder
 		/// <summary>
 		/// Encodes a single mip level of the input image to a byte buffer.
 		/// </summary>
-		public byte[] EncodeToRawBytes(Image<Rgba32> inputImage, int mipLevel)
+		public byte[] EncodeToRawBytes(Image<Rgba32> inputImage, int mipLevel, out int mipWidth, out int mipHeight)
 		{
 			if (mipLevel < 0)
 			{
 				throw new ArgumentException($"{nameof(mipLevel)} cannot be less than zero.");
 			}
 
-			MemoryStream output = new MemoryStream();
 			IBcBlockEncoder compressedEncoder = null;
 			IRawEncoder uncompressedEncoder = null;
 			if (OutputOptions.format.IsCompressedFormat())
@@ -267,29 +364,27 @@ namespace BCnEnc.Net.Encoder
 				throw new ArgumentException($"{nameof(mipLevel)} cannot be more than number of mipmaps");
 			}
 
-			for (int i = 0; i < numMipMaps; i++)
+			byte[] encoded = null;
+			if (OutputOptions.format.IsCompressedFormat())
 			{
-				byte[] encoded = null;
-				if (OutputOptions.format.IsCompressedFormat())
-				{
-					compressedEncoder.SetReferenceData(mipChain[i].GetPixelSpan(), mipChain[i].Width, mipChain[i].Height);
-					var blocks = ImageToBlocks.ImageTo4X4(mipChain[i].Frames[0], out int blocksWidth, out int blocksHeight);
-					encoded = compressedEncoder.Encode(blocks, blocksWidth, blocksHeight, OutputOptions.quality, !Debugger.IsAttached);
-				}
-				else
-				{
-					encoded = uncompressedEncoder.Encode(mipChain[i].GetPixelSpan());
-				}
-
-				output.Write(encoded);
+				compressedEncoder.SetReferenceData(mipChain[mipLevel].GetPixelSpan(), mipChain[mipLevel].Width, mipChain[mipLevel].Height);
+				var blocks = ImageToBlocks.ImageTo4X4(mipChain[mipLevel].Frames[0], out int blocksWidth, out int blocksHeight);
+				encoded = compressedEncoder.Encode(blocks, blocksWidth, blocksHeight, OutputOptions.quality, !Debugger.IsAttached);
 			}
+			else
+			{
+				encoded = uncompressedEncoder.Encode(mipChain[mipLevel].GetPixelSpan());
+			}
+
+			mipWidth = mipChain[mipLevel].Width;
+			mipHeight = mipChain[mipLevel].Height;
 
 			foreach (var image in mipChain)
 			{
 				image.Dispose();
 			}
 
-			return output.ToArray();
+			return encoded;
 		}
 
 		/// <summary>
@@ -297,16 +392,25 @@ namespace BCnEnc.Net.Encoder
 		/// Order is +X, -X, +Y, -Y, +Z, -Z
 		/// </summary>
 		public void EncodeCubeMap(Image<Rgba32> right, Image<Rgba32> left, Image<Rgba32> top, Image<Rgba32> down,
-			Image<Rgba32> back, Image<Rgba32> front, Stream outputStream) {
-			var output = EncodeCubeMap(right, left, top, down, back, front);
-			output.Write(outputStream);
+			Image<Rgba32> back, Image<Rgba32> front, Stream outputStream)
+		{
+			if (OutputOptions.fileFormat == OutputFileFormat.Ktx)
+			{
+				KtxFile output = EncodeCubeMapToKtx(right, left, top, down, back, front);
+				output.Write(outputStream);
+			}
+			else if (OutputOptions.fileFormat == OutputFileFormat.Dds)
+			{
+				DdsFile output = EncodeCubeMapToDds(right, left, top, down, back, front);
+				output.Write(outputStream);
+			}
 		}
 
 		/// <summary>
 		/// Encodes all cubemap faces and mipmap levels into a Ktx file.
 		/// Order is +X, -X, +Y, -Y, +Z, -Z
 		/// </summary>
-		public KtxFile EncodeCubeMap(Image<Rgba32> right, Image<Rgba32> left, Image<Rgba32> top, Image<Rgba32> down,
+		public KtxFile EncodeCubeMapToKtx(Image<Rgba32> right, Image<Rgba32> left, Image<Rgba32> top, Image<Rgba32> down,
 			Image<Rgba32> back, Image<Rgba32> front)
 		{
 			KtxFile output;
@@ -354,7 +458,8 @@ namespace BCnEnc.Net.Encoder
 			}
 
 			uint mipLength = MipMapper.CalculateMipChainLength(right.Width, right.Height, numMipMaps);
-			for (uint i = 0; i < mipLength; i++) {
+			for (uint i = 0; i < mipLength; i++)
+			{
 				output.MipMaps.Add(new KtxMipmap(0, 0, 0, (uint)faces.Length));
 			}
 
@@ -377,12 +482,13 @@ namespace BCnEnc.Net.Encoder
 						encoded = uncompressedEncoder.Encode(mipChain[i].GetPixelSpan());
 					}
 
-					if (f == 0) {
+					if (f == 0)
+					{
 						output.MipMaps[i] = new KtxMipmap((uint)encoded.Length,
 							(uint)mipChain[i].Width,
 							(uint)mipChain[i].Height, (uint)faces.Length);
 					}
-					
+
 					output.MipMaps[i].Faces[f] = new KtxMipFace(encoded,
 						(uint)mipChain[i].Width,
 						(uint)mipChain[i].Height);
@@ -396,6 +502,109 @@ namespace BCnEnc.Net.Encoder
 
 			output.Header.NumberOfFaces = (uint)faces.Length;
 			output.Header.NumberOfMipmapLevels = mipLength;
+
+			return output;
+		}
+
+		public DdsFile EncodeCubeMapToDds(Image<Rgba32> right, Image<Rgba32> left, Image<Rgba32> top, Image<Rgba32> down,
+			Image<Rgba32> back, Image<Rgba32> front)
+		{
+			DdsFile output;
+			IBcBlockEncoder compressedEncoder = null;
+			IRawEncoder uncompressedEncoder = null;
+
+			if (right.Width != left.Width || right.Width != top.Width || right.Width != down.Width
+				|| right.Width != back.Width || right.Width != front.Width ||
+				right.Height != left.Height || right.Height != top.Height || right.Height != down.Height
+				|| right.Height != back.Height || right.Height != front.Height)
+			{
+				throw new ArgumentException("All input images of a cubemap should be the same size.");
+			}
+
+			Image<Rgba32>[] faces = new[] { right, left, top, down, back, front };
+
+			if (OutputOptions.format.IsCompressedFormat())
+			{
+				compressedEncoder = GetEncoder(OutputOptions.format);
+				if (compressedEncoder == null)
+				{
+					throw new NotSupportedException($"This format is not supported: {OutputOptions.format}");
+				}
+
+				var (ddsHeader, dxt10Header) = DdsHeader.InitializeCompressed(right.Width, right.Height,
+					compressedEncoder.GetDxgiFormat());
+				output = new DdsFile(ddsHeader, dxt10Header);
+
+				if (OutputOptions.ddsBc1WriteAlphaFlag &&
+				    OutputOptions.format == CompressionFormat.BC1WithAlpha)
+				{
+					output.Header.ddsPixelFormat.dwFlags |= PixelFormatFlags.DDPF_ALPHAPIXELS;
+				}
+			}
+			else
+			{
+				uncompressedEncoder = GetRawEncoder(OutputOptions.format);
+				var ddsHeader = DdsHeader.InitializeUncompressed(right.Width, right.Height,
+					uncompressedEncoder.GetDxgiFormat());
+				output = new DdsFile(ddsHeader);
+			}
+
+			uint numMipMaps = (uint)OutputOptions.maxMipMapLevel;
+			if (!OutputOptions.generateMipMaps)
+			{
+				numMipMaps = 1;
+			}
+
+			for (int f = 0; f < faces.Length; f++)
+			{
+
+				var mipChain = MipMapper.GenerateMipChain(faces[f], ref numMipMaps);
+
+
+				for (int mip = 0; mip < numMipMaps; mip++)
+				{
+					byte[] encoded = null;
+					if (OutputOptions.format.IsCompressedFormat())
+					{
+						compressedEncoder.SetReferenceData(mipChain[mip].GetPixelSpan(), mipChain[mip].Width, mipChain[mip].Height);
+						var blocks = ImageToBlocks.ImageTo4X4(mipChain[mip].Frames[0], out int blocksWidth, out int blocksHeight);
+						encoded = compressedEncoder.Encode(blocks, blocksWidth, blocksHeight, OutputOptions.quality, !Debugger.IsAttached);
+					}
+					else
+					{
+						encoded = uncompressedEncoder.Encode(mipChain[mip].GetPixelSpan());
+					}
+
+					if (mip == 0)
+					{
+						output.Faces.Add(new DdsFace((uint)mipChain[mip].Width, (uint)mipChain[mip].Height,
+							(uint)encoded.Length, mipChain.Count));
+					}
+
+					output.Faces[f].MipMaps[mip] = new DdsMipMap(encoded,
+						(uint)mipChain[mip].Width,
+						(uint)mipChain[mip].Height);
+				}
+
+				foreach (var image in mipChain)
+				{
+					image.Dispose();
+				}
+			}
+
+			output.Header.dwCaps |= HeaderCaps.DDSCAPS_COMPLEX;
+			output.Header.dwMipMapCount = numMipMaps;
+			if (numMipMaps > 1)
+			{
+				output.Header.dwCaps |= HeaderCaps.DDSCAPS_MIPMAP;
+			}
+			output.Header.dwCaps2 |= HeaderCaps2.DDSCAPS2_CUBEMAP |
+							  HeaderCaps2.DDSCAPS2_CUBEMAP_POSITIVEX |
+							  HeaderCaps2.DDSCAPS2_CUBEMAP_NEGATIVEX |
+							  HeaderCaps2.DDSCAPS2_CUBEMAP_POSITIVEY |
+							  HeaderCaps2.DDSCAPS2_CUBEMAP_NEGATIVEY |
+							  HeaderCaps2.DDSCAPS2_CUBEMAP_POSITIVEZ |
+							  HeaderCaps2.DDSCAPS2_CUBEMAP_NEGATIVEZ;
 
 			return output;
 		}

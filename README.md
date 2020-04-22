@@ -18,8 +18,7 @@ Supported formats are:
 
 # Current state
 The current state of this library is in development but quite usable. I'm planning on implementing support for more codecs and 
-different algorithms. The current version is capable of encoding and decoding BC1-BC5 and BC7 images in KTX format.
-Only KTX format is supported for compressed images, but I might implement DDS support later.
+different algorithms. The current version is capable of encoding and decoding BC1-BC5 and BC7 images in both KTX or DDS formats.
 
 # Dependencies
 Current dependencies are:
@@ -38,6 +37,7 @@ BcEncoder encoder = new BcEncoder();
 encoder.OutputOptions.generateMipMaps = true;
 encoder.OutputOptions.quality = EncodingQuality.Balanced;
 encoder.OutputOptions.format = CompressionFormat.BC1;
+encoder.OutputOptions.fileFormat = OutputFileFormat.Ktx; //Change to Dds for a dds file.
 
 using FileStream fs = File.OpenWrite("example.ktx");
 encoder.Encode(image, fs);
@@ -46,10 +46,9 @@ encoder.Encode(image, fs);
 And how to decode a compressed image from a KTX file and save it to png format.
 ```CSharp
 using FileStream fs = File.OpenRead("compressed_bc1.ktx");
-KtxFile file = KtxFile.Load(fs);
 
 BcDecoder decoder = new BcDecoder();
-using Image<Rgba32> image = decoder.Decode(file);
+using Image<Rgba32> image = decoder.Decode(fs);
 
 using FileStream outFs = File.OpenWrite("decoding_test_bc1.png");
 image.SaveAsPng(outFs);
@@ -64,7 +63,7 @@ image.SaveAsPng(outFs);
 - [x] BC4 Encoding
 - [x] BC5 Encoding
 - [x] BC7 / BPTC Encoding
-- [ ] DDS file support
+- [x] DDS file support
 - [ ] Implement PCA to remove Accord.Statistics dependency
 - [ ] Implement saving and loading basic image formats to remove ImageSharp dependency
 
