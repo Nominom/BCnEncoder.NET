@@ -306,14 +306,13 @@ namespace BCnEnc.Net.Encoder
 		/// <summary>
 		/// Encodes a single mip level of the input image to a byte buffer.
 		/// </summary>
-		public byte[] EncodeToRawBytes(Image<Rgba32> inputImage, int mipLevel)
+		public byte[] EncodeToRawBytes(Image<Rgba32> inputImage, int mipLevel, out int mipWidth, out int mipHeight)
 		{
 			if (mipLevel < 0)
 			{
 				throw new ArgumentException($"{nameof(mipLevel)} cannot be less than zero.");
 			}
 
-			MemoryStream output = new MemoryStream();
 			IBcBlockEncoder compressedEncoder = null;
 			IRawEncoder uncompressedEncoder = null;
 			if (OutputOptions.format.IsCompressedFormat())
@@ -347,29 +346,27 @@ namespace BCnEnc.Net.Encoder
 				throw new ArgumentException($"{nameof(mipLevel)} cannot be more than number of mipmaps");
 			}
 
-			for (int i = 0; i < numMipMaps; i++)
+			byte[] encoded = null;
+			if (OutputOptions.format.IsCompressedFormat())
 			{
-				byte[] encoded = null;
-				if (OutputOptions.format.IsCompressedFormat())
-				{
-					compressedEncoder.SetReferenceData(mipChain[i].GetPixelSpan(), mipChain[i].Width, mipChain[i].Height);
-					var blocks = ImageToBlocks.ImageTo4X4(mipChain[i].Frames[0], out int blocksWidth, out int blocksHeight);
-					encoded = compressedEncoder.Encode(blocks, blocksWidth, blocksHeight, OutputOptions.quality, !Debugger.IsAttached);
-				}
-				else
-				{
-					encoded = uncompressedEncoder.Encode(mipChain[i].GetPixelSpan());
-				}
-
-				output.Write(encoded);
+				compressedEncoder.SetReferenceData(mipChain[mipLevel].GetPixelSpan(), mipChain[mipLevel].Width, mipChain[mipLevel].Height);
+				var blocks = ImageToBlocks.ImageTo4X4(mipChain[mipLevel].Frames[0], out int blocksWidth, out int blocksHeight);
+				encoded = compressedEncoder.Encode(blocks, blocksWidth, blocksHeight, OutputOptions.quality, !Debugger.IsAttached);
 			}
+			else
+			{
+				encoded = uncompressedEncoder.Encode(mipChain[mipLevel].GetPixelSpan());
+			}
+
+			mipWidth = mipChain[mipLevel].Width;
+			mipHeight = mipChain[mipLevel].Height;
 
 			foreach (var image in mipChain)
 			{
 				image.Dispose();
 			}
 
-			return output.ToArray();
+			return encoded;
 		}
 
 		/// <summary>
