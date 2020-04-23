@@ -42,38 +42,35 @@ namespace BCnEnc.Net.Shared
 
 		public byte R {
 			readonly get {
-				double rd = ((data & RedMask) >> RedShift) / (double)((1 << 5) - 1);
-				return (byte)(rd * 255);
+				int r5 = ((data & RedMask) >> RedShift);
+				return (byte)((r5 << 3) | (r5 >> 2));
 			}
 			set {
-				double rd = value / 255.0;
-				byte r5 = (byte)(rd * ((1 << 5) - 1));
+				int r5 = value >> 3;
 				data = (ushort)(data & ~RedMask);
-				data = (ushort)(data | ((r5) << RedShift));
+				data = (ushort)(data | (r5 << RedShift));
 			}
 		}
 
 		public byte G {
 			readonly get {
-				double gd = ((data & GreenMask) >> GreenShift) / (double)((1 << 6) - 1);
-				return (byte)(gd * 255);
+				int g6 = ((data & GreenMask) >> GreenShift);
+				return (byte)((g6 << 2) | (g6 >> 4));
 			}
 			set {
-				double gd = value / 255.0;
-				byte g6 = (byte)(gd * ((1 << 6) - 1));
+				int g6 = value >> 2;
 				data = (ushort)(data & ~GreenMask);
-				data = (ushort)(data | ((g6) << GreenShift));
+				data = (ushort)(data | (g6 << GreenShift));
 			}
 		}
 
 		public byte B {
 			readonly get {
-				double bd = ((data & BlueMask)) / (double)((1 << 5) - 1);
-				return (byte)(bd * 255);
+				int b5 = (data & BlueMask);
+				return (byte)((b5 << 3) | (b5 >> 2));
 			}
 			set {
-				double bd = value / 255.0;
-				byte b5 = (byte)(bd * ((1 << 5) - 1));
+				int b5 = value >> 3;
 				data = (ushort)(data & ~BlueMask);
 				data = (ushort)(data | b5);
 			}
@@ -122,6 +119,13 @@ namespace BCnEnc.Net.Shared
 			R = ByteHelper.ClampToByte(colorVector.X * 255);
 			G = ByteHelper.ClampToByte(colorVector.Y * 255);
 			B = ByteHelper.ClampToByte(colorVector.Z * 255);
+		}
+
+		public ColorRgb565(ColorRgb24 color) {
+			data = 0;
+			R = color.r;
+			G = color.g;
+			B = color.b;
 		}
 
 		public readonly ColorRgb24 ToColorRgb24()

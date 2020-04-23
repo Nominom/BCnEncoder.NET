@@ -84,20 +84,20 @@ namespace BCnEncTests
 			block[15] = 1;
 
 			var raw = block.Decode(false);
-			Assert.Equal(new Rgba32(197, 198, 197), raw.p00);
-			Assert.Equal(new Rgba32(197, 198, 197), raw.p10);
-			Assert.Equal(new Rgba32(197, 198, 197), raw.p20);
-			Assert.Equal(new Rgba32(197, 198, 197), raw.p30);
+			Assert.Equal(new Rgba32(206, 203, 206), raw.p00);
+			Assert.Equal(new Rgba32(206, 203, 206), raw.p10);
+			Assert.Equal(new Rgba32(206, 203, 206), raw.p20);
+			Assert.Equal(new Rgba32(206, 203, 206), raw.p30);
 
 			Assert.Equal(Rgba32.Black, raw.p01);
 			Assert.Equal(Rgba32.Black, raw.p11);
 			Assert.Equal(Rgba32.Black, raw.p21);
 			Assert.Equal(Rgba32.Black, raw.p31);
 
-			Assert.Equal(new Rgba32(225, 226, 225), raw.p02);
-			Assert.Equal(new Rgba32(225, 226, 225), raw.p12);
-			Assert.Equal(new Rgba32(225, 226, 225), raw.p22);
-			Assert.Equal(new Rgba32(225, 226, 225), raw.p32);
+			Assert.Equal(new Rgba32(230, 228, 230), raw.p02);
+			Assert.Equal(new Rgba32(230, 228, 230), raw.p12);
+			Assert.Equal(new Rgba32(230, 228, 230), raw.p22);
+			Assert.Equal(new Rgba32(230, 228, 230), raw.p32);
 
 			Assert.Equal(Rgba32.White, raw.p03);
 			Assert.Equal(Rgba32.White, raw.p13);
@@ -133,20 +133,20 @@ namespace BCnEncTests
 			block[15] = 1;
 
 			var raw = block.Decode(true);
-			Assert.Equal(new Rgba32(197, 198, 197), raw.p00);
-			Assert.Equal(new Rgba32(197, 198, 197), raw.p10);
-			Assert.Equal(new Rgba32(197, 198, 197), raw.p20);
-			Assert.Equal(new Rgba32(197, 198, 197), raw.p30);
+			Assert.Equal(new Rgba32(206, 203, 206), raw.p00);
+			Assert.Equal(new Rgba32(206, 203, 206), raw.p10);
+			Assert.Equal(new Rgba32(206, 203, 206), raw.p20);
+			Assert.Equal(new Rgba32(206, 203, 206), raw.p30);
 
 			Assert.Equal(new Rgba32(0,0,0,0), raw.p01);
 			Assert.Equal(new Rgba32(0,0,0,0), raw.p11);
 			Assert.Equal(new Rgba32(0,0,0,0), raw.p21);
 			Assert.Equal(new Rgba32(0,0,0,0), raw.p31);
 
-			Assert.Equal(new Rgba32(225, 226, 225), raw.p02);
-			Assert.Equal(new Rgba32(225, 226, 225), raw.p12);
-			Assert.Equal(new Rgba32(225, 226, 225), raw.p22);
-			Assert.Equal(new Rgba32(225, 226, 225), raw.p32);
+			Assert.Equal(new Rgba32(230, 228, 230), raw.p02);
+			Assert.Equal(new Rgba32(230, 228, 230), raw.p12);
+			Assert.Equal(new Rgba32(230, 228, 230), raw.p22);
+			Assert.Equal(new Rgba32(230, 228, 230), raw.p32);
 
 			Assert.Equal(Rgba32.White, raw.p03);
 			Assert.Equal(Rgba32.White, raw.p13);
