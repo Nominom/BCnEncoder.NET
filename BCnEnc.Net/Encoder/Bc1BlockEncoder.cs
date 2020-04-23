@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Accord.Diagnostics;
@@ -44,9 +45,9 @@ namespace BCnEnc.Net.Encoder
 				case EncodingQuality.Fast:
 					return Bc1BlockEncoderFast.EncodeBlock(block);
 				case EncodingQuality.Balanced:
-					return Bc1BlockEncoderYcbcrBalanced.EncodeBlock(block);
+					return Bc1BlockEncoderBalanced.EncodeBlock(block);
 				case EncodingQuality.BestQuality:
-					return Bc1BlockEncoderYcbcrSlowBest.EncodeBlock(block);
+					return Bc1BlockEncoderSlow.EncodeBlock(block);
 
 				default:
 					throw new ArgumentOutOfRangeException(nameof(quality), quality, null);
@@ -63,7 +64,8 @@ namespace BCnEnc.Net.Encoder
 			return GLFormat.GL_RGB;
 		}
 
-		public DXGI_FORMAT GetDxgiFormat() {
+		public DXGI_FORMAT GetDxgiFormat()
+		{
 			return DXGI_FORMAT.DXGI_FORMAT_BC1_UNORM;
 		}
 
@@ -103,6 +105,42 @@ namespace BCnEnc.Net.Encoder
 			return output;
 		}
 
+		private static Bc1Block TryColors(RawBlock4X4Rgba32 rawBlock, ColorRgb565 color0, ColorRgb565 color1, out float error, float rWeight = 0.3f, float gWeight = 0.6f, float bWeight = 0.1f)
+		{
+			Bc1Block output = new Bc1Block();
+
+			var pixels = rawBlock.AsSpan;
+
+			output.color0 = color0;
+			output.color1 = color1;
+
+			var c0 = color0.ToColorRgb24();
+			var c1 = color1.ToColorRgb24();
+
+			ReadOnlySpan<ColorRgb24> colors = output.HasAlphaOrBlack ?
+				stackalloc ColorRgb24[] {
+				c0,
+				c1,
+				c0 * (1.0 / 2.0) + c1 * (1.0 / 2.0),
+				new ColorRgb24(0, 0, 0)
+			} : stackalloc ColorRgb24[] {
+				c0,
+				c1,
+				c0 * (2.0 / 3.0) + c1 * (1.0 / 3.0),
+				c0 * (1.0 / 3.0) + c1 * (2.0 / 3.0)
+			};
+
+			error = 0;
+			for (int i = 0; i < 16; i++)
+			{
+				var color = pixels[i];
+				output[i] = ColorChooser.ChooseClosestColor4(colors, color, rWeight, gWeight, bWeight, out var e);
+				error += e;
+			}
+
+			return output;
+		}
+
 
 		#endregion
 
@@ -117,137 +155,153 @@ namespace BCnEnc.Net.Encoder
 
 				var pixels = rawBlock.AsSpan;
 
-				PcaVectors.Create(pixels, out var mean, out var principalAxis);
-				//PcaVectors.GetExtremePoints(pixels, mean, principalAxis, out var min, out var max);
-				PcaVectors.OptimizeEndpoints(pixels, mean, principalAxis, out var min, out var max);
+				RgbBoundingBox.Create565(pixels, out var min, out var max);
 
-				ColorRgb565 c0 = min;
-				ColorRgb565 c1 = max;
+				ColorRgb565 c0 = max;
+				ColorRgb565 c1 = min;
 
-				if (c0.data <= c1.data)
-				{
-					var c = c0;
-					c0 = c1;
-					c1 = c;
-				}
-
-				output = TryColors(rawBlock.ToRawBlockYcbcr(), c0, c1);
+				output = TryColors(rawBlock, c0, c1, out var error);
 
 				return output;
 			}
 		}
 
-		private static class Bc1BlockEncoderYcbcrSlowBest
+		private static class Bc1BlockEncoderBalanced
 		{
-			private const int variations = 2;
 
 			internal static Bc1Block EncodeBlock(RawBlock4X4Rgba32 rawBlock)
 			{
-				var rawBlockYcbcr = rawBlock.ToRawBlockYcbcr();
 				var pixels = rawBlock.AsSpan;
 
-				PcaVectors.Create(pixels, out var mean, out var principalAxis);
-				PcaVectors.GetExtremePoints(pixels, mean, principalAxis, out var min, out var max);
+				RgbBoundingBox.Create565(pixels, out var min, out var max);
 
-				var minYcbcr = new ColorYCbCr(min);
-				var maxYcbcr = new ColorYCbCr(max);
-				List<ColorRgb565> uniqueColors =
-					ColorVariationGenerator.GenerateVariationsSidewaysMinMax(variations, minYcbcr, maxYcbcr);
+				var c0565 = max;
+				var c1565 = min;
+				Span<ColorRgb565> c0 = stackalloc ColorRgb565[] {
+					new ColorRgb565(c0565.R, c0565.G, c0565.B),
+					new ColorRgb565(c0565.R, ByteHelper.ClampToByte(c0565.G + 8), c0565.B),
+					new ColorRgb565(c0565.R, ByteHelper.ClampToByte(c0565.G + 4), c0565.B),
+					new ColorRgb565(ByteHelper.ClampToByte(c0565.R + 8), ByteHelper.ClampToByte(c0565.G + 8), c0565.B),
+					new ColorRgb565(ByteHelper.ClampToByte(c0565.R + 8), ByteHelper.ClampToByte(c0565.G + 4), c0565.B),
+					new ColorRgb565(ByteHelper.ClampToByte(c0565.R + 8), ByteHelper.ClampToByte(c0565.G + 8), ByteHelper.ClampToByte(c0565.B + 8)),
+					new ColorRgb565(ByteHelper.ClampToByte(c0565.R + 8), ByteHelper.ClampToByte(c0565.G + 4), ByteHelper.ClampToByte(c0565.B + 8)),
+					new ColorRgb565(ByteHelper.ClampToByte(c0565.R + 8), ByteHelper.ClampToByte(c0565.G + 12), ByteHelper.ClampToByte(c0565.B + 8)),
 
-				Bc1Block best = new Bc1Block();
-				float bestError = 0;
-				bool first = true;
-				for (int i = 0; i < uniqueColors.Count - 1; i++)
+					new ColorRgb565(ByteHelper.ClampToByte(c0565.R + 8), ByteHelper.ClampToByte(c0565.G + 8), ByteHelper.ClampToByte(c0565.B + 8)),
+					new ColorRgb565(ByteHelper.ClampToByte(c0565.R + 8), ByteHelper.ClampToByte(c0565.G + 4), ByteHelper.ClampToByte(c0565.B + 8)),
+					new ColorRgb565(ByteHelper.ClampToByte(c0565.R + 8), ByteHelper.ClampToByte(c0565.G + 12), ByteHelper.ClampToByte(c0565.B + 8)),
+
+					new ColorRgb565(c0565.R, c0565.G, c0565.B),
+					new ColorRgb565(c0565.R, c0565.G, c0565.B),
+					new ColorRgb565(c0565.R, c0565.G, c0565.B),
+				};
+				Span<ColorRgb565> c1 = stackalloc ColorRgb565[] {
+					new ColorRgb565(c1565.R, c1565.G, c1565.B),
+					new ColorRgb565(c1565.R, ByteHelper.ClampToByte(c1565.G - 8), c1565.B),
+					new ColorRgb565(c1565.R, ByteHelper.ClampToByte(c1565.G - 4), c1565.B),
+					new ColorRgb565(ByteHelper.ClampToByte(c1565.R - 8), ByteHelper.ClampToByte(c1565.G - 8), c1565.B),
+					new ColorRgb565(ByteHelper.ClampToByte(c1565.R - 8), ByteHelper.ClampToByte(c1565.G - 4), c1565.B),
+					new ColorRgb565(ByteHelper.ClampToByte(c1565.R - 8), ByteHelper.ClampToByte(c1565.G - 8), ByteHelper.ClampToByte(c1565.B - 8)),
+					new ColorRgb565(ByteHelper.ClampToByte(c1565.R - 8), ByteHelper.ClampToByte(c1565.G - 4), ByteHelper.ClampToByte(c1565.B - 8)),
+					new ColorRgb565(ByteHelper.ClampToByte(c1565.R - 8), ByteHelper.ClampToByte(c1565.G - 12), ByteHelper.ClampToByte(c1565.B - 8)),
+
+					new ColorRgb565(c1565.R, c1565.G, c1565.B),
+					new ColorRgb565(c1565.R, c1565.G, c1565.B),
+					new ColorRgb565(c1565.R, c1565.G, c1565.B),
+
+					new ColorRgb565(ByteHelper.ClampToByte(c1565.R - 8), ByteHelper.ClampToByte(c1565.G - 8), ByteHelper.ClampToByte(c1565.B - 8)),
+					new ColorRgb565(ByteHelper.ClampToByte(c1565.R - 8), ByteHelper.ClampToByte(c1565.G - 4), ByteHelper.ClampToByte(c1565.B - 8)),
+					new ColorRgb565(ByteHelper.ClampToByte(c1565.R - 8), ByteHelper.ClampToByte(c1565.G - 12), ByteHelper.ClampToByte(c1565.B - 8)),
+				};
+
+				float bestError = 999;
+				Bc1Block best = default;
+				for (int i = 0; i < c0.Length; i++)
 				{
-					for (int j = i + 1; j < uniqueColors.Count; j++)
+					var block = TryColors(rawBlock, c0[i], c1[i], out var error);
+					if (error < bestError)
 					{
-						var color0 = uniqueColors[i];
-						var color1 = uniqueColors[j];
-
-
-						if (color0.data < color1.data)
-						{
-							var c = color0;
-							color0 = color1;
-							color1 = c;
-						}
-
-						var encoded = TryColors(rawBlockYcbcr, color0, color1);
-						var decoded = encoded.Decode(false);
-						var error = rawBlockYcbcr.CalculateError(decoded);
-
-						if (first)
-						{
-							best = encoded;
-							bestError = error;
-							first = false;
-						}
-						else if (error < bestError)
-						{
-							best = encoded;
-							bestError = error;
-						}
+						best = block;
+						bestError = error;
 					}
 				}
 
 				return best;
 			}
 		}
-		private static class Bc1BlockEncoderYcbcrBalanced
+
+		private static class Bc1BlockEncoderSlow
 		{
-			private const int variations = 2;
+			private const int maxTries = 500;
+			private const float errorThreshold = 0.01f;
+
+			private static IEnumerable<(ColorRgb565, ColorRgb565)> VariateEndpoints(ColorRgb565 ep0, ColorRgb565 ep1)
+			{
+				yield return (ep0, ep1);
+
+				Random r = new Random(0);
+				byte[] randoms = new byte[6];
+				while (true) {
+					r.NextBytes(randoms);
+
+					var newEp0 = ep0;
+					newEp0.RawR = newEp0.RawR + ((randoms[0] >> 6) - 2);
+					newEp0.RawG = newEp0.RawG + ((randoms[1] >> 5) - 4);
+					newEp0.RawB = newEp0.RawB + ((randoms[2] >> 6) - 2);
+
+					yield return (newEp0, ep1);
+
+					var newEp1 = ep1;
+					newEp1.RawR = newEp1.RawR - ((randoms[3] >> 6) - 2);
+					newEp1.RawG = newEp1.RawG - ((randoms[4] >> 5) - 4);
+					newEp1.RawB = newEp1.RawB - ((randoms[5] >> 6) - 2);
+
+					yield return (ep0, newEp1);
+
+					yield return (newEp0, newEp1);
+				}
+			}
 
 			internal static Bc1Block EncodeBlock(RawBlock4X4Rgba32 rawBlock)
 			{
-				var rawBlockYcbcr = rawBlock.ToRawBlockYcbcr();
 				var pixels = rawBlock.AsSpan;
 
-				PcaVectors.Create(pixels, out var mean, out var principalAxis);
-				PcaVectors.GetExtremePoints(pixels, mean, principalAxis, out var min, out var max);
+				RgbBoundingBox.Create565(pixels, out var min, out var max);
 
-				var minYcbcr = new ColorYCbCr(min);
-				var maxYcbcr = new ColorYCbCr(max);
-				List<ColorRgb565> uniqueColors =
-					ColorVariationGenerator.GenerateVariationsSidewaysMax(variations, minYcbcr, maxYcbcr);
+				float bestError = 999;
+				Bc1Block best = default;
+				int tries = 0;
+				foreach (var (c0, c1) in VariateEndpoints(max, min)) {
+					Bc1Block block;
+					float error;
+					if (c0.data < c1.data) {
+						block = TryColors(rawBlock, c1, c0, out error,
+							0.1f, 0.85f, 0.05f);
+						
+					}
+					else {
+						block = TryColors(rawBlock, c0, c1, out error,
+							0.1f, 0.85f, 0.05f);
 
-				Bc1Block best = new Bc1Block();
-				float bestError = 0;
-				bool first = true;
-				for (int i = 0; i < uniqueColors.Count - 1; i++)
-				{
-					for (int j = i + 1; j < uniqueColors.Count; j++)
+					}
+
+					if (error < bestError)
 					{
-						var color0 = uniqueColors[i];
-						var color1 = uniqueColors[j];
-
-						if (color0.data < color1.data)
-						{
-							var c = color0;
-							color0 = color1;
-							color1 = c;
-						}
-
-						var encoded = TryColors(rawBlockYcbcr, color0, color1);
-						var decoded = encoded.Decode(false);
-						var error = rawBlockYcbcr.CalculateError(decoded);
-
-						if (first)
-						{
-							best = encoded;
-							bestError = error;
-							first = false;
-						}
-						else if (error < bestError)
-						{
-							best = encoded;
-							bestError = error;
-						}
+						best = block;
+						bestError = error;
+					}
+					
+					tries++;
+					if (tries > maxTries || bestError < errorThreshold)
+					{
+						break;
 					}
 				}
 
 				return best;
 			}
 		}
+		
 		#endregion
 	}
 
@@ -288,9 +342,9 @@ namespace BCnEnc.Net.Encoder
 				case EncodingQuality.Fast:
 					return Bc1AlphaBlockEncoderFast.EncodeBlock(block);
 				case EncodingQuality.Balanced:
-					return Bc1BlockEncoderYcbcrBalanced.EncodeBlock(block);
+					return Bc1AlphaBlockEncoderBalanced.EncodeBlock(block);
 				case EncodingQuality.BestQuality:
-					return Bc1BlockEncoderYcbcrSlowBest.EncodeBlock(block);
+					return Bc1AlphaBlockEncoderSlow.EncodeBlock(block);
 
 				default:
 					throw new ArgumentOutOfRangeException(nameof(quality), quality, null);
@@ -307,11 +361,12 @@ namespace BCnEnc.Net.Encoder
 			return GLFormat.GL_RGBA;
 		}
 
-		public DXGI_FORMAT GetDxgiFormat() {
+		public DXGI_FORMAT GetDxgiFormat()
+		{
 			return DXGI_FORMAT.DXGI_FORMAT_BC1_UNORM;
 		}
 
-		private static Bc1Block TryColors(RawBlock4X4Rgba32 rawBlock, ColorRgb565 color0, ColorRgb565 color1)
+		private static Bc1Block TryColors(RawBlock4X4Rgba32 rawBlock, ColorRgb565 color0, ColorRgb565 color1, out float error, float rWeight = 0.3f, float gWeight = 0.6f, float bWeight = 0.1f)
 		{
 			Bc1Block output = new Bc1Block();
 
@@ -320,202 +375,226 @@ namespace BCnEnc.Net.Encoder
 			output.color0 = color0;
 			output.color1 = color1;
 
-			var c0 = color0.ToColorRgba32();
-			var c1 = color1.ToColorRgba32();
+			var c0 = color0.ToColorRgb24();
+			var c1 = color1.ToColorRgb24();
 
 			bool hasAlpha = output.HasAlphaOrBlack;
 
-			Span<ColorRgba32> colors = hasAlpha
-				? stackalloc ColorRgba32[] {
-				c0,
-				c1,
-				c0 * (1.0 / 2.0) + c1 * (1.0 / 2.0),
-				new ColorRgba32(0, 0, 0, 0)
-			}
-				: stackalloc ColorRgba32[] {
-				c0,
-				c1,
-				c0 * (2.0 / 3.0) + c1 * (1.0 / 3.0),
-				c0 * (1.0 / 3.0) + c1 * (2.0 / 3.0)
-			};
+			ReadOnlySpan<ColorRgb24> colors = hasAlpha ?
+				stackalloc ColorRgb24[] {
+					c0,
+					c1,
+					c0 * (1.0 / 2.0) + c1 * (1.0 / 2.0),
+					new ColorRgb24(0, 0, 0)
+				} : stackalloc ColorRgb24[] {
+					c0,
+					c1,
+					c0 * (2.0 / 3.0) + c1 * (1.0 / 3.0),
+					c0 * (1.0 / 3.0) + c1 * (2.0 / 3.0)
+				};
 
+			error = 0;
 			for (int i = 0; i < 16; i++)
 			{
 				var color = pixels[i];
-				if (hasAlpha) {
-					output[i] = ColorChooser.ChooseClosestColorAlphaCutOff(colors, color);
-				}
-				else {
-					output[i] = ColorChooser.ChooseClosestColor(colors, color);
-				}
-				
+				output[i] = ColorChooser.ChooseClosestColor4AlphaCutoff(colors, color, rWeight, gWeight, bWeight, 
+					128, hasAlpha, out var e);
+				error += e;
 			}
 
 			return output;
 		}
+
+		
+		#region Encoders
 
 		private static class Bc1AlphaBlockEncoderFast
 		{
 
 			internal static Bc1Block EncodeBlock(RawBlock4X4Rgba32 rawBlock)
 			{
-
+				Bc1Block output = new Bc1Block();
 
 				var pixels = rawBlock.AsSpan;
 
-				bool hasTransparency = rawBlock.HasTransparentPixels();
+				bool hasAlpha = rawBlock.HasTransparentPixels();
 
-				PcaVectors.Create(pixels, out var mean, out var principalAxis);
-				PcaVectors.OptimizeEndpoints(pixels, mean, principalAxis, out var min, out var max);
+				RgbBoundingBox.Create565AlphaCutoff(pixels, out var min, out var max);
 
-				ColorRgb565 c0 = min;
-				ColorRgb565 c1 = max;
+				ColorRgb565 c0 = max;
+				ColorRgb565 c1 = min;
 
-				if (!hasTransparency && c0.data < c1.data)
-				{
-					var c = c0;
-					c0 = c1;
-					c1 = c;
-				}
-				else if (hasTransparency && c0.data > c1.data)
-				{
+				if (hasAlpha && c0.data > c1.data) {
 					var c = c0;
 					c0 = c1;
 					c1 = c;
 				}
 
-				Bc1Block output = TryColors(rawBlock, c0, c1);
+				output = TryColors(rawBlock, c0, c1, out var error);
 
 				return output;
 			}
 		}
 
-		private static class Bc1BlockEncoderYcbcrSlowBest
+		private static class Bc1AlphaBlockEncoderBalanced
 		{
-			private const int variations = 2;
 
 			internal static Bc1Block EncodeBlock(RawBlock4X4Rgba32 rawBlock)
 			{
 				var pixels = rawBlock.AsSpan;
 
-				bool hasTransparency = rawBlock.HasTransparentPixels();
+				bool hasAlpha = rawBlock.HasTransparentPixels();
 
-				PcaVectors.Create(pixels, out var mean, out var principalAxis);
-				PcaVectors.GetExtremePoints(pixels, mean, principalAxis, out var min, out var max);
+				RgbBoundingBox.Create565AlphaCutoff(pixels, out var min, out var max);
 
-				var minYcbcr = new ColorYCbCr(min);
-				var maxYcbcr = new ColorYCbCr(max);
-				List<ColorRgb565> uniqueColors =
-					ColorVariationGenerator.GenerateVariationsSidewaysMinMax(variations, minYcbcr, maxYcbcr);
+				var c0565 = max;
+				var c1565 = min;
+				Span<ColorRgb565> c0 = stackalloc ColorRgb565[] {
+					new ColorRgb565(c0565.R, c0565.G, c0565.B),
+					new ColorRgb565(c0565.R, ByteHelper.ClampToByte(c0565.G + 8), c0565.B),
+					new ColorRgb565(c0565.R, ByteHelper.ClampToByte(c0565.G + 4), c0565.B),
+					new ColorRgb565(ByteHelper.ClampToByte(c0565.R + 8), ByteHelper.ClampToByte(c0565.G + 8), c0565.B),
+					new ColorRgb565(ByteHelper.ClampToByte(c0565.R + 8), ByteHelper.ClampToByte(c0565.G + 4), c0565.B),
+					new ColorRgb565(ByteHelper.ClampToByte(c0565.R + 8), ByteHelper.ClampToByte(c0565.G + 8), ByteHelper.ClampToByte(c0565.B + 8)),
+					new ColorRgb565(ByteHelper.ClampToByte(c0565.R + 8), ByteHelper.ClampToByte(c0565.G + 4), ByteHelper.ClampToByte(c0565.B + 8)),
+					new ColorRgb565(ByteHelper.ClampToByte(c0565.R + 8), ByteHelper.ClampToByte(c0565.G + 12), ByteHelper.ClampToByte(c0565.B + 8)),
 
+					new ColorRgb565(ByteHelper.ClampToByte(c0565.R + 8), ByteHelper.ClampToByte(c0565.G + 8), ByteHelper.ClampToByte(c0565.B + 8)),
+					new ColorRgb565(ByteHelper.ClampToByte(c0565.R + 8), ByteHelper.ClampToByte(c0565.G + 4), ByteHelper.ClampToByte(c0565.B + 8)),
+					new ColorRgb565(ByteHelper.ClampToByte(c0565.R + 8), ByteHelper.ClampToByte(c0565.G + 12), ByteHelper.ClampToByte(c0565.B + 8)),
 
-				Bc1Block best = new Bc1Block();
-				float bestError = 0;
-				bool first = true;
-				for (int i = 0; i < uniqueColors.Count - 1; i++)
+					new ColorRgb565(c0565.R, c0565.G, c0565.B),
+					new ColorRgb565(c0565.R, c0565.G, c0565.B),
+					new ColorRgb565(c0565.R, c0565.G, c0565.B),
+				};
+				Span<ColorRgb565> c1 = stackalloc ColorRgb565[] {
+					new ColorRgb565(c1565.R, c1565.G, c1565.B),
+					new ColorRgb565(c1565.R, ByteHelper.ClampToByte(c1565.G - 8), c1565.B),
+					new ColorRgb565(c1565.R, ByteHelper.ClampToByte(c1565.G - 4), c1565.B),
+					new ColorRgb565(ByteHelper.ClampToByte(c1565.R - 8), ByteHelper.ClampToByte(c1565.G - 8), c1565.B),
+					new ColorRgb565(ByteHelper.ClampToByte(c1565.R - 8), ByteHelper.ClampToByte(c1565.G - 4), c1565.B),
+					new ColorRgb565(ByteHelper.ClampToByte(c1565.R - 8), ByteHelper.ClampToByte(c1565.G - 8), ByteHelper.ClampToByte(c1565.B - 8)),
+					new ColorRgb565(ByteHelper.ClampToByte(c1565.R - 8), ByteHelper.ClampToByte(c1565.G - 4), ByteHelper.ClampToByte(c1565.B - 8)),
+					new ColorRgb565(ByteHelper.ClampToByte(c1565.R - 8), ByteHelper.ClampToByte(c1565.G - 12), ByteHelper.ClampToByte(c1565.B - 8)),
+
+					new ColorRgb565(c1565.R, c1565.G, c1565.B),
+					new ColorRgb565(c1565.R, c1565.G, c1565.B),
+					new ColorRgb565(c1565.R, c1565.G, c1565.B),
+
+					new ColorRgb565(ByteHelper.ClampToByte(c1565.R - 8), ByteHelper.ClampToByte(c1565.G - 8), ByteHelper.ClampToByte(c1565.B - 8)),
+					new ColorRgb565(ByteHelper.ClampToByte(c1565.R - 8), ByteHelper.ClampToByte(c1565.G - 4), ByteHelper.ClampToByte(c1565.B - 8)),
+					new ColorRgb565(ByteHelper.ClampToByte(c1565.R - 8), ByteHelper.ClampToByte(c1565.G - 12), ByteHelper.ClampToByte(c1565.B - 8)),
+				};
+
+				float bestError = 999;
+				Bc1Block best = default;
+				for (int i = 0; i < c0.Length; i++)
 				{
-					for (int j = i + 1; j < uniqueColors.Count; j++)
+
+					if (hasAlpha && c0[i].data > c1[i].data) {
+						var c = c0[i];
+						c0[i] = c1[i];
+						c1[i] = c;
+					}
+
+					var block = TryColors(rawBlock, c0[i], c1[i], out var error);
+					if (error < bestError)
 					{
-						var c0 = uniqueColors[i];
-						var c1 = uniqueColors[j];
+						best = block;
+						bestError = error;
+					}
+				}
 
+				if (best.Decode(true).AsSpan.ToArray().All(x =>
+					x.R == 0 &&
+					x.G == 0 &&
+					x.B == 0 &&
+					x.A == 255
+				)) {
+					Console.Write("");
+				}
 
-						if (!hasTransparency && c0.data < c1.data)
-						{
-							var c = c0;
-							c0 = c1;
-							c1 = c;
-						}
-						else if (hasTransparency && c0.data > c1.data)
-						{
-							var c = c0;
-							c0 = c1;
-							c1 = c;
-						}
+				return best;
+			}
+		}
 
-						var encoded = TryColors(rawBlock, c0, c1);
-						var decoded = encoded.Decode(true);
-						var error = rawBlock.CalculateError(decoded, true);
+		private static class Bc1AlphaBlockEncoderSlow
+		{
+			private const int maxTries = 500;
+			private const float errorThreshold = 0.01f;
 
-						if (first)
-						{
-							best = encoded;
-							bestError = error;
-							first = false;
-						}
-						else if (error < bestError)
-						{
-							best = encoded;
-							bestError = error;
-						}
+			private static IEnumerable<(ColorRgb565, ColorRgb565)> VariateEndpoints(ColorRgb565 ep0, ColorRgb565 ep1)
+			{
+				yield return (ep0, ep1);
+
+				Random r = new Random(0);
+				byte[] randoms = new byte[6];
+				while (true) {
+					r.NextBytes(randoms);
+
+					var newEp0 = ep0;
+					newEp0.RawR = newEp0.RawR + ((randoms[0] >> 6) - 2);
+					newEp0.RawG = newEp0.RawG + ((randoms[1] >> 5) - 4);
+					newEp0.RawB = newEp0.RawB + ((randoms[2] >> 6) - 2);
+
+					yield return (newEp0, ep1);
+
+					var newEp1 = ep1;
+					newEp1.RawR = newEp1.RawR - ((randoms[3] >> 6) - 2);
+					newEp1.RawG = newEp1.RawG - ((randoms[4] >> 5) - 4);
+					newEp1.RawB = newEp1.RawB - ((randoms[5] >> 6) - 2);
+
+					yield return (ep0, newEp1);
+
+					yield return (newEp0, newEp1);
+				}
+			}
+
+			internal static Bc1Block EncodeBlock(RawBlock4X4Rgba32 rawBlock)
+			{
+				var pixels = rawBlock.AsSpan;
+
+				bool hasAlpha = rawBlock.HasTransparentPixels();
+
+				RgbBoundingBox.Create565(pixels, out var min, out var max);
+
+				float bestError = 999;
+				Bc1Block best = default;
+				int tries = 0;
+				foreach (var (c0, c1) in VariateEndpoints(max, min)) {
+					Bc1Block block;
+					float error;
+					if (!hasAlpha && c0.data < c1.data) {
+						block = TryColors(rawBlock, c1, c0, out error);
+					}
+					else if(!hasAlpha) {
+						block = TryColors(rawBlock, c0, c1, out error);
+
+					}else if (c0.data > c1.data) {
+						block = TryColors(rawBlock, c1, c0, out error);
+					}
+					else {
+						block = TryColors(rawBlock, c0, c1, out error);
+					}
+
+					if (error < bestError)
+					{
+						best = block;
+						bestError = error;
+					}
+					
+					tries++;
+					if (tries > maxTries || bestError < errorThreshold)
+					{
+						break;
 					}
 				}
 
 				return best;
 			}
 		}
-		private static class Bc1BlockEncoderYcbcrBalanced
-		{
-			private const int variations = 2;
-
-
-			internal static Bc1Block EncodeBlock(RawBlock4X4Rgba32 rawBlock)
-			{
-				var pixels = rawBlock.AsSpan;
-
-				bool hasTransparency = rawBlock.HasTransparentPixels();
-
-				PcaVectors.Create(pixels, out var mean, out var principalAxis);
-				PcaVectors.GetExtremePoints(pixels, mean, principalAxis, out var min, out var max);
-
-				var minYcbcr = new ColorYCbCr(min);
-				var maxYcbcr = new ColorYCbCr(max);
-				List<ColorRgb565> uniqueColors =
-					ColorVariationGenerator.GenerateVariationsSidewaysMax(variations, minYcbcr, maxYcbcr);
-
-				Bc1Block best = new Bc1Block();
-				float bestError = 0;
-				bool first = true;
-				for (int i = 0; i < uniqueColors.Count - 1; i++)
-				{
-					for (int j = i + 1; j < uniqueColors.Count; j++)
-					{
-						var c0 = uniqueColors[i];
-						var c1 = uniqueColors[j];
-
-						if (!hasTransparency && c0.data < c1.data)
-						{
-							var c = c0;
-							c0 = c1;
-							c1 = c;
-						}
-						else if (hasTransparency && c0.data > c1.data)
-						{
-							var c = c0;
-							c0 = c1;
-							c1 = c;
-						}
-
-						var encoded = TryColors(rawBlock, c0, c1);
-						var decoded = encoded.Decode(true);
-						var error = rawBlock.CalculateError(decoded, true);
-
-						if (first)
-						{
-							best = encoded;
-							bestError = error;
-							first = false;
-						}
-						else if (error < bestError)
-						{
-							best = encoded;
-							bestError = error;
-						}
-					}
-				}
-
-				return best;
-			}
-		}
+		
+		#endregion
+	
 	}
 }
