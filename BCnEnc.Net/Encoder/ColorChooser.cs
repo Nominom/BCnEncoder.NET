@@ -8,6 +8,80 @@ namespace BCnEnc.Net.Encoder
 {
 	internal static class ColorChooser
 	{
+
+		public static int ChooseClosestColor4(ReadOnlySpan<ColorRgb24> colors, Rgba32 color, float rWeight, float gWeight, float bWeight, out float error)
+		{
+			ReadOnlySpan<float> d = stackalloc float[4] {
+				MathF.Abs(colors[0].r - color.R) * rWeight
+				+ MathF.Abs(colors[0].g - color.G) * gWeight
+				+ MathF.Abs(colors[0].b - color.B) * bWeight,
+				MathF.Abs(colors[1].r - color.R) * rWeight
+				+ MathF.Abs(colors[1].g - color.G) * gWeight
+				+ MathF.Abs(colors[1].b - color.B) * bWeight,
+				MathF.Abs(colors[2].r - color.R) * rWeight
+				+ MathF.Abs(colors[2].g - color.G) * gWeight
+				+ MathF.Abs(colors[2].b - color.B) * bWeight,
+				MathF.Abs(colors[3].r - color.R) * rWeight
+				+ MathF.Abs(colors[3].g - color.G) * gWeight
+				+ MathF.Abs(colors[3].b - color.B) * bWeight,
+			};
+
+			int b0 = d[0] > d[3] ? 1 : 0;
+			int b1 = d[1] > d[2] ? 1 : 0;
+			int b2 = d[0] > d[2] ? 1 : 0;
+			int b3 = d[1] > d[3] ? 1 : 0;
+			int b4 = d[2] > d[3] ? 1 : 0;
+
+			int x0 = b1 & b2;
+			int x1 = b0 & b3;
+			int x2 = b0 & b4;
+
+			int idx = (x2 | ((x0 | x1) << 1));
+			error = d[idx];
+			return idx;
+		}
+
+
+		public static int ChooseClosestColor4AlphaCutoff(ReadOnlySpan<ColorRgb24> colors, Rgba32 color, float rWeight, float gWeight, float bWeight, int alphaCutoff, bool hasAlpha, out float error)
+		{
+
+			if (hasAlpha && color.A < alphaCutoff)
+			{
+				error = 0;
+				return 3;
+			}
+
+			ReadOnlySpan<float> d = stackalloc float[4] {
+				MathF.Abs(colors[0].r - color.R) * rWeight
+				+ MathF.Abs(colors[0].g - color.G) * gWeight
+				+ MathF.Abs(colors[0].b - color.B) * bWeight,
+				MathF.Abs(colors[1].r - color.R) * rWeight
+				+ MathF.Abs(colors[1].g - color.G) * gWeight
+				+ MathF.Abs(colors[1].b - color.B) * bWeight,
+				MathF.Abs(colors[2].r - color.R) * rWeight
+				+ MathF.Abs(colors[2].g - color.G) * gWeight
+				+ MathF.Abs(colors[2].b - color.B) * bWeight,
+
+				hasAlpha ? 999 :
+				MathF.Abs(colors[3].r - color.R) * rWeight
+				+ MathF.Abs(colors[3].g - color.G) * gWeight
+				+ MathF.Abs(colors[3].b - color.B) * bWeight,
+			};
+
+			int b0 = d[0] > d[2] ? 1 : 0;
+			int b1 = d[1] > d[3] ? 1 : 0;
+			int b2 = d[0] > d[3] ? 1 : 0;
+			int b3 = d[1] > d[2] ? 1 : 0;
+			int nb3 = d[1] > d[2] ? 0 : 1;
+			int b4 = d[0] > d[1] ? 1 : 0;
+			int b5 = d[2] > d[3] ? 1 : 0;
+
+			int idx = (nb3 & b4) | (b2 & b5) | (((b0 & b3) | (b1 & b2)) << 1);
+
+			error = d[idx];
+			return idx;
+		}
+
 		public static int ChooseClosestColor(Span<ColorRgb24> colors, Rgba32 color)
 		{
 			int closest = 0;

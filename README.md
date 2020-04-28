@@ -23,7 +23,6 @@ different algorithms. The current version is capable of encoding and decoding BC
 # Dependencies
 Current dependencies are:
 * [SixLabors.ImageSharp](https://github.com/SixLabors/ImageSharp) licenced under the [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0) licence for image loading and saving
-* [Accord.Statistics](http://accord-framework.net/) licenced under the [LGPL 2.1](https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html) licence for Principal Component Analysis (PCA).
 
 # API
 For more detailed usage examples, you can go look at the unit tests. 
@@ -64,7 +63,7 @@ image.SaveAsPng(outFs);
 - [x] BC5 Encoding
 - [x] BC7 / BPTC Encoding
 - [x] DDS file support
-- [ ] Implement PCA to remove Accord.Statistics dependency
+- [x] Implement PCA to remove Accord.Statistics dependency
 - [ ] Implement saving and loading basic image formats to remove ImageSharp dependency
 
 # Contributing
