@@ -5,7 +5,6 @@ using System.Runtime.InteropServices;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
-using Accord.Math;
 using BCnEnc.Net.Encoder.Bc7;
 using BCnEnc.Net.Shared;
 using SixLabors.ImageSharp.PixelFormats;
@@ -15,29 +14,25 @@ namespace BCnEnc.Net.Encoder
 	internal class Bc7Encoder : IBcBlockEncoder
 	{
 
-		public byte[] Encode(RawBlock4X4Rgba32[,] blocks, int blockWidth, int blockHeight, EncodingQuality quality,
-			bool parallel = true)
+		public byte[] Encode(RawBlock4X4Rgba32[] blocks, int blockWidth, int blockHeight, EncodingQuality quality, bool parallel)
 		{
-
 			byte[] outputData = new byte[blockWidth * blockHeight * Marshal.SizeOf<Bc7Block>()];
-			RawBlock4X4Rgba32[] inputBlocks = blocks.Reshape(MatrixOrder.FortranColumnMajor);
-
 			Span<Bc7Block> outputBlocks = MemoryMarshal.Cast<byte, Bc7Block>(outputData);
 
 
 			if (parallel)
 			{
-				Parallel.For(0, inputBlocks.Length, i =>
+				Parallel.For(0, blocks.Length, i =>
 				{
 					Span<Bc7Block> outputBlocks = MemoryMarshal.Cast<byte, Bc7Block>(outputData);
-					outputBlocks[i] = EncodeBlock(inputBlocks[i], quality);
+					outputBlocks[i] = EncodeBlock(blocks[i], quality);
 				});
 			}
 			else
 			{
-				for (int i = 0; i < inputBlocks.Length; i++)
+				for (int i = 0; i < blocks.Length; i++)
 				{
-					outputBlocks[i] = EncodeBlock(inputBlocks[i], quality);
+					outputBlocks[i] = EncodeBlock(blocks[i], quality);
 				}
 			}
 

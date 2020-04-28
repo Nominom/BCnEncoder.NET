@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using Accord.Statistics.Analysis;
 using SixLabors.ImageSharp.PixelFormats;
 
 namespace BCnEnc.Net.Shared

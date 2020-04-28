@@ -51,7 +51,7 @@ namespace BCnEncTests
 
 			for (int x = 0; x < blocksWidth; x++) {
 				for (int y = 0; y < blocksHeight; y++) {
-					foreach (var color in blocks[x,y].AsSpan) {
+					foreach (var color in blocks[x + y * blocksWidth].AsSpan) {
 						Assert.Equal(Rgba32.Aquamarine, color);
 					}
 				}
@@ -95,8 +95,8 @@ namespace BCnEncTests
 
 			var blocks = ImageToBlocks.ImageTo4X4(testImage.Frames[0], out var blocksWidth, out var blocksHeight);
 
-			var block1 = blocks[2, 2];
-			var block2 = blocks[2, 2];
+			var block1 = blocks[2 + 2 * blocksWidth];
+			var block2 = blocks[2 + 2 * blocksWidth];
 
 			Assert.Equal(0, block1.CalculateError(block2));
 

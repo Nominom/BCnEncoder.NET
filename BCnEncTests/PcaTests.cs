@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using Accord.Math;
-using Accord.Statistics;
-using Accord.Statistics.Analysis;
 using BCnEnc.Net.Shared;
 using Xunit;
 using Vector4 = System.Numerics.Vector4;

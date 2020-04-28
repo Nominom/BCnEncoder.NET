@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-using Accord.Diagnostics;
-using Accord.Math;
 using BCnEnc.Net.Shared;
 using SixLabors.ImageSharp.PixelFormats;
 
@@ -13,25 +11,24 @@ namespace BCnEnc.Net.Encoder
 	internal class Bc1BlockEncoder : IBcBlockEncoder
 	{
 
-		public byte[] Encode(RawBlock4X4Rgba32[,] blocks, int blockWidth, int blockHeight, EncodingQuality quality, bool parallel)
+		public byte[] Encode(RawBlock4X4Rgba32[] blocks, int blockWidth, int blockHeight, EncodingQuality quality, bool parallel)
 		{
 			byte[] outputData = new byte[blockWidth * blockHeight * Marshal.SizeOf<Bc1Block>()];
-			Memory<RawBlock4X4Rgba32> inputBlocks = new Memory<RawBlock4X4Rgba32>(blocks.Reshape(MatrixOrder.FortranColumnMajor));
 			Span<Bc1Block> outputBlocks = MemoryMarshal.Cast<byte, Bc1Block>(outputData);
 
 			if (parallel)
 			{
-				Parallel.For(0, inputBlocks.Length, i =>
+				Parallel.For(0, blocks.Length, i =>
 				{
 					Span<Bc1Block> outputBlocks = MemoryMarshal.Cast<byte, Bc1Block>(outputData);
-					outputBlocks[i] = EncodeBlock(inputBlocks.Span[i], quality);
+					outputBlocks[i] = EncodeBlock(blocks[i], quality);
 				});
 			}
 			else
 			{
-				for (int i = 0; i < inputBlocks.Length; i++)
+				for (int i = 0; i < blocks.Length; i++)
 				{
-					outputBlocks[i] = EncodeBlock(inputBlocks.Span[i], quality);
+					outputBlocks[i] = EncodeBlock(blocks[i], quality);
 				}
 			}
 
@@ -248,27 +245,24 @@ namespace BCnEnc.Net.Encoder
 	internal class Bc1AlphaBlockEncoder : IBcBlockEncoder
 	{
 
-		public byte[] Encode(RawBlock4X4Rgba32[,] blocks, int blockWidth, int blockHeight, EncodingQuality quality,
-			bool parallel)
+		public byte[] Encode(RawBlock4X4Rgba32[] blocks, int blockWidth, int blockHeight, EncodingQuality quality, bool parallel)
 		{
 			byte[] outputData = new byte[blockWidth * blockHeight * Marshal.SizeOf<Bc1Block>()];
-			Memory<RawBlock4X4Rgba32> inputBlocks =
-				new Memory<RawBlock4X4Rgba32>(blocks.Reshape(MatrixOrder.FortranColumnMajor));
 			Span<Bc1Block> outputBlocks = MemoryMarshal.Cast<byte, Bc1Block>(outputData);
 
 			if (parallel)
 			{
-				Parallel.For(0, inputBlocks.Length, i =>
+				Parallel.For(0, blocks.Length, i =>
 				{
 					Span<Bc1Block> outputBlocks = MemoryMarshal.Cast<byte, Bc1Block>(outputData);
-					outputBlocks[i] = EncodeBlock(inputBlocks.Span[i], quality);
+					outputBlocks[i] = EncodeBlock(blocks[i], quality);
 				});
 			}
 			else
 			{
-				for (int i = 0; i < inputBlocks.Length; i++)
+				for (int i = 0; i < blocks.Length; i++)
 				{
-					outputBlocks[i] = EncodeBlock(inputBlocks.Span[i], quality);
+					outputBlocks[i] = EncodeBlock(blocks[i], quality);
 				}
 			}
 

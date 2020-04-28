@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Linq;
-using Accord.Math;
-using Accord.Statistics.Analysis;
 using SixLabors.ImageSharp.PixelFormats;
 using Vector = System.Numerics.Vector;
 using Vector3 = System.Numerics.Vector3;

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
-using Accord.Math;
 using BCnEnc.Net.Shared;
 
 namespace BCnEnc.Net.Encoder
@@ -11,25 +10,24 @@ namespace BCnEnc.Net.Encoder
 	internal class Bc2BlockEncoder : IBcBlockEncoder
 	{
 
-		public byte[] Encode(RawBlock4X4Rgba32[,] blocks, int blockWidth, int blockHeight, EncodingQuality quality, bool parallel)
+		public byte[] Encode(RawBlock4X4Rgba32[] blocks, int blockWidth, int blockHeight, EncodingQuality quality, bool parallel)
 		{
 			byte[] outputData = new byte[blockWidth * blockHeight * Marshal.SizeOf<Bc2Block>()];
-			Memory<RawBlock4X4Rgba32> inputBlocks = new Memory<RawBlock4X4Rgba32>(blocks.Reshape(MatrixOrder.FortranColumnMajor));
 			Span<Bc2Block> outputBlocks = MemoryMarshal.Cast<byte, Bc2Block>(outputData);
 
 			if (parallel)
 			{
-				Parallel.For(0, inputBlocks.Length, i =>
+				Parallel.For(0, blocks.Length, i =>
 				{
 					Span<Bc2Block> outputBlocks = MemoryMarshal.Cast<byte, Bc2Block>(outputData);
-					outputBlocks[i] = EncodeBlock(inputBlocks.Span[i], quality);
+					outputBlocks[i] = EncodeBlock(blocks[i], quality);
 				});
 			}
 			else
 			{
-				for (int i = 0; i < inputBlocks.Length; i++)
+				for (int i = 0; i < blocks.Length; i++)
 				{
-					outputBlocks[i] = EncodeBlock(inputBlocks.Span[i], quality);
+					outputBlocks[i] = EncodeBlock(blocks[i], quality);
 				}
 			}
 
