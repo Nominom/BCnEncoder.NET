@@ -44,6 +44,7 @@ namespace BCnEnc.Net.Shared
 			int insetG = (maxG - minG) >> colorInsetShift;
 			int insetB = (maxB - minB) >> colorInsetShift;
 
+			// Inset by 1/16th
 			minR = ((minR << colorInsetShift) + insetR) >> colorInsetShift;
 			minG = ((minG << colorInsetShift) + insetG) >> colorInsetShift;
 			minB = ((minB << colorInsetShift) + insetB) >> colorInsetShift;
@@ -60,6 +61,7 @@ namespace BCnEnc.Net.Shared
 			maxG = (maxG <= 255) ? maxG : 255;
 			maxB = (maxB <= 255) ? maxB : 255;
 
+			// Optimal rounding
 			minR = (minR & c565_5_mask) | (minR >> 5);
 			minG = (minG & c565_6_mask) | (minG >> 6);
 			minB = (minB & c565_5_mask) | (minB >> 5);
