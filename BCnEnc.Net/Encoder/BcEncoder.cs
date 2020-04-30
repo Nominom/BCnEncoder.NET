@@ -23,11 +23,24 @@ namespace BCnEncoder.Encoder
 	{
 		public bool generateMipMaps = true;
 		/// <summary>
-		/// The maximum number of mipmap levels to generate. -1 is unbounded.
+		/// The maximum number of mipmap levels to generate. -1 or 0 is unbounded.
+		/// Default is -1.
 		/// </summary>
 		public int maxMipMapLevel = -1;
+		/// <summary>
+		/// The compression format to use. Default is BC1.
+		/// </summary>
 		public CompressionFormat format = CompressionFormat.BC1;
+		/// <summary>
+		/// The quality of the encoding. Use either fast or balanced for testing.
+		/// Fast can be used for near real-time encoding for most algorithms.
+		/// Use bestQuality when needed. Default is balanced.
+		/// </summary>
 		public EncodingQuality quality = EncodingQuality.Balanced;
+		/// <summary>
+		/// The output file format of the data. Either Ktx or Dds.
+		/// Default is Ktx.
+		/// </summary>
 		public OutputFileFormat fileFormat = OutputFileFormat.Ktx;
 		/// <summary>
 		/// The DDS file format doesn't seem to have a standard for indicating whether a BC1 texture
@@ -39,6 +52,16 @@ namespace BCnEncoder.Encoder
 		public bool ddsBc1WriteAlphaFlag = false;
 	}
 
+	public class EncoderOptions {
+		/// <summary>
+		/// Whether the blocks should be encoded in parallel. This can be much faster than single-threaded encoding,
+		/// but is slow if multiple textures are being processed at the same time.
+		/// When a debugger is attached, the encoder defaults to single-threaded operation to ease debugging.
+		/// Default is true.
+		/// </summary>
+		public bool multiThreaded = true;
+	}
+
 	/// <summary>
 	/// Handles all encoding of images into compressed or uncompressed formats. For decoding, <see cref="Decoder.BcDecoder"/>
 	/// </summary>
@@ -46,7 +69,7 @@ namespace BCnEncoder.Encoder
 	{
 		public EncoderInputOptions InputOptions { get; set; } = new EncoderInputOptions();
 		public EncoderOutputOptions OutputOptions { get; set; } = new EncoderOutputOptions();
-
+		public EncoderOptions Options { get; set; } = new EncoderOptions();
 
 		public BcEncoder() { }
 		public BcEncoder(CompressionFormat format)
@@ -157,9 +180,9 @@ namespace BCnEncoder.Encoder
 				byte[] encoded = null;
 				if (OutputOptions.format.IsCompressedFormat())
 				{
-					compressedEncoder.SetReferenceData(mipChain[i].GetPixelSpan(), mipChain[i].Width, mipChain[i].Height);
 					var blocks = ImageToBlocks.ImageTo4X4(mipChain[i].Frames[0], out int blocksWidth, out int blocksHeight);
-					encoded = compressedEncoder.Encode(blocks, blocksWidth, blocksHeight, OutputOptions.quality, !Debugger.IsAttached);
+					encoded = compressedEncoder.Encode(blocks, blocksWidth, blocksHeight, OutputOptions.quality, 
+						!Debugger.IsAttached && Options.multiThreaded);
 				}
 				else
 				{
@@ -232,9 +255,9 @@ namespace BCnEncoder.Encoder
 				byte[] encoded = null;
 				if (OutputOptions.format.IsCompressedFormat())
 				{
-					compressedEncoder.SetReferenceData(mipChain[mip].GetPixelSpan(), mipChain[mip].Width, mipChain[mip].Height);
 					var blocks = ImageToBlocks.ImageTo4X4(mipChain[mip].Frames[0], out int blocksWidth, out int blocksHeight);
-					encoded = compressedEncoder.Encode(blocks, blocksWidth, blocksHeight, OutputOptions.quality, !Debugger.IsAttached);
+					encoded = compressedEncoder.Encode(blocks, blocksWidth, blocksHeight, OutputOptions.quality, 
+						!Debugger.IsAttached && Options.multiThreaded);
 				}
 				else
 				{
@@ -302,9 +325,9 @@ namespace BCnEncoder.Encoder
 				byte[] encoded = null;
 				if (OutputOptions.format.IsCompressedFormat())
 				{
-					compressedEncoder.SetReferenceData(mipChain[i].GetPixelSpan(), mipChain[i].Width, mipChain[i].Height);
 					var blocks = ImageToBlocks.ImageTo4X4(mipChain[i].Frames[0], out int blocksWidth, out int blocksHeight);
-					encoded = compressedEncoder.Encode(blocks, blocksWidth, blocksHeight, OutputOptions.quality, !Debugger.IsAttached);
+					encoded = compressedEncoder.Encode(blocks, blocksWidth, blocksHeight, OutputOptions.quality, 
+						!Debugger.IsAttached && Options.multiThreaded);
 				}
 				else
 				{
@@ -368,9 +391,9 @@ namespace BCnEncoder.Encoder
 			byte[] encoded = null;
 			if (OutputOptions.format.IsCompressedFormat())
 			{
-				compressedEncoder.SetReferenceData(mipChain[mipLevel].GetPixelSpan(), mipChain[mipLevel].Width, mipChain[mipLevel].Height);
 				var blocks = ImageToBlocks.ImageTo4X4(mipChain[mipLevel].Frames[0], out int blocksWidth, out int blocksHeight);
-				encoded = compressedEncoder.Encode(blocks, blocksWidth, blocksHeight, OutputOptions.quality, !Debugger.IsAttached);
+				encoded = compressedEncoder.Encode(blocks, blocksWidth, blocksHeight, OutputOptions.quality, 
+					!Debugger.IsAttached && Options.multiThreaded);
 			}
 			else
 			{
@@ -409,7 +432,7 @@ namespace BCnEncoder.Encoder
 
 		/// <summary>
 		/// Encodes all cubemap faces and mipmap levels into a Ktx file.
-		/// Order is +X, -X, +Y, -Y, +Z, -Z
+		/// Order is +X, -X, +Y, -Y, +Z, -Z. Back maps to positive Z and front to negative Z.
 		/// </summary>
 		public KtxFile EncodeCubeMapToKtx(Image<Rgba32> right, Image<Rgba32> left, Image<Rgba32> top, Image<Rgba32> down,
 			Image<Rgba32> back, Image<Rgba32> front)
@@ -474,9 +497,9 @@ namespace BCnEncoder.Encoder
 					byte[] encoded = null;
 					if (OutputOptions.format.IsCompressedFormat())
 					{
-						compressedEncoder.SetReferenceData(mipChain[i].GetPixelSpan(), mipChain[i].Width, mipChain[i].Height);
 						var blocks = ImageToBlocks.ImageTo4X4(mipChain[i].Frames[0], out int blocksWidth, out int blocksHeight);
-						encoded = compressedEncoder.Encode(blocks, blocksWidth, blocksHeight, OutputOptions.quality, !Debugger.IsAttached);
+						encoded = compressedEncoder.Encode(blocks, blocksWidth, blocksHeight, OutputOptions.quality, 
+							!Debugger.IsAttached && Options.multiThreaded);
 					}
 					else
 					{
@@ -507,6 +530,10 @@ namespace BCnEncoder.Encoder
 			return output;
 		}
 
+		/// <summary>
+		/// Encodes all cubemap faces and mipmap levels into a Dds file.
+		/// Order is +X, -X, +Y, -Y, +Z, -Z. Back maps to positive Z and front to negative Z.
+		/// </summary>
 		public DdsFile EncodeCubeMapToDds(Image<Rgba32> right, Image<Rgba32> left, Image<Rgba32> top, Image<Rgba32> down,
 			Image<Rgba32> back, Image<Rgba32> front)
 		{
@@ -567,9 +594,9 @@ namespace BCnEncoder.Encoder
 					byte[] encoded = null;
 					if (OutputOptions.format.IsCompressedFormat())
 					{
-						compressedEncoder.SetReferenceData(mipChain[mip].GetPixelSpan(), mipChain[mip].Width, mipChain[mip].Height);
 						var blocks = ImageToBlocks.ImageTo4X4(mipChain[mip].Frames[0], out int blocksWidth, out int blocksHeight);
-						encoded = compressedEncoder.Encode(blocks, blocksWidth, blocksHeight, OutputOptions.quality, !Debugger.IsAttached);
+						encoded = compressedEncoder.Encode(blocks, blocksWidth, blocksHeight, OutputOptions.quality, 
+							!Debugger.IsAttached && Options.multiThreaded);
 					}
 					else
 					{
