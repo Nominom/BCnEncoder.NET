@@ -21,6 +21,9 @@ namespace BCnEncoder.Encoder
 
 	public class EncoderOutputOptions
 	{
+		/// <summary>
+		/// Whether to generate mipMaps. Default is true.
+		/// </summary>
 		public bool generateMipMaps = true;
 		/// <summary>
 		/// The maximum number of mipmap levels to generate. -1 or 0 is unbounded.
