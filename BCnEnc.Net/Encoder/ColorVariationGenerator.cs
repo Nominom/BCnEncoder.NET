@@ -1,9 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using BCnEnc.Net.Shared;
+﻿using System.Collections.Generic;
+using BCnEncoder.Shared;
 
-namespace BCnEnc.Net.Encoder
+namespace BCnEncoder.Encoder
 {
 	internal static class ColorVariationGenerator
 	{

@@ -4,7 +4,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace BCnEnc.Net.Shared
+namespace BCnEncoder.Shared
 {
 	public class DdsFile
 	{

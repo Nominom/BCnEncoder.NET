@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using BCnEnc.Net.Encoder;
-using BCnEnc.Net.Shared;
+using BCnEncoder.Encoder;
+using BCnEncoder.Shared;
 using Xunit;
 
 namespace BCnEncTests

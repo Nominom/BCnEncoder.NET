@@ -1,8 +1,8 @@
 ﻿using System;
-using BCnEnc.Net.Shared;
+using BCnEncoder.Shared;
 using SixLabors.ImageSharp.PixelFormats;
 
-namespace BCnEnc.Net.Encoder
+namespace BCnEncoder.Encoder
 {
 	internal interface IBcBlockEncoder
 	{

@@ -10,7 +10,7 @@
     <PackageLicenseExpression>MIT OR Unlicense</PackageLicenseExpression>
     <Copyright />
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-    <Version>1.1.1</Version>
+    <Version>1.2.0</Version>
     <Authors>Nominom</Authors>
     <Company />
     <Product>BCnEncoder.Net</Product>
@@ -29,7 +29,7 @@ Supported formats are:
     <RepositoryType>git</RepositoryType>
     <PackageTags>BCn BC BC1 BC2 BC3 BC4 BC5 BC7 BPTC RGTC S3TC DXT1 DXT3 DXT5 ktx dds texture compression encoding decoding decompression image gpu</PackageTags>
     <PackageProjectUrl>https://github.com/Nominom/BCnEncoder.NET</PackageProjectUrl>
-    <PackageReleaseNotes>Removed Accord.Statistics dependency</PackageReleaseNotes>
+    <PackageReleaseNotes>Changed project namespace</PackageReleaseNotes>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">

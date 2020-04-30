@@ -5,7 +5,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
-using BCnEnc.Net.Shared;
+using BCnEncoder.Shared;
 using Xunit;
 
 namespace BCnEncTests

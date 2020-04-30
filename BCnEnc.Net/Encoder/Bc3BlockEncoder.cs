@@ -1,12 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Threading.Tasks;
-using BCnEnc.Net.Shared;
+using BCnEncoder.Shared;
 
-namespace BCnEnc.Net.Encoder
+namespace BCnEncoder.Encoder
 {
 	internal class Bc3BlockEncoder : IBcBlockEncoder
 	{

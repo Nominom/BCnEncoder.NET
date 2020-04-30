@@ -1,10 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using BCnEnc.Net.Shared;
+using BCnEncoder.Shared;
 using SixLabors.ImageSharp.PixelFormats;
 
-namespace BCnEnc.Net.Encoder
+namespace BCnEncoder.Encoder
 {
 	internal interface IRawEncoder
 	{

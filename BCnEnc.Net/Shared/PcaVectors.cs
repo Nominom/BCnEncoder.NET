@@ -1,13 +1,10 @@
 ﻿using System;
-using System.Collections;
-using System.Linq;
 using SixLabors.ImageSharp.PixelFormats;
-using Vector = System.Numerics.Vector;
 using Vector3 = System.Numerics.Vector3;
 using Vector4 = System.Numerics.Vector4;
 using Matrix4x4 = System.Numerics.Matrix4x4;
 
-namespace BCnEnc.Net.Shared
+namespace BCnEncoder.Shared
 {
 	internal static class PcaVectors
 	{

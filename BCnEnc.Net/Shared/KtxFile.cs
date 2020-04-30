@@ -5,7 +5,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using static System.Text.Encoding;
 
-namespace BCnEnc.Net.Shared
+namespace BCnEncoder.Shared
 {
 	/// <summary>
 	/// A representation of a ktx file.

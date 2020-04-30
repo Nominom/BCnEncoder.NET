@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29311.281
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BCnEnc.Net", "BCnEnc.Net\BCnEnc.Net.csproj", "{92C54AF8-D727-4060-8118-2C809D1FF9E0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BCnEncoder", "BCnEnc.Net\BCnEncoder.csproj", "{92C54AF8-D727-4060-8118-2C809D1FF9E0}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BCnEncTests", "BCnEncTests\BCnEncTests.csproj", "{8E5E366B-9782-4194-AC85-602E8387496A}"
 EndProject

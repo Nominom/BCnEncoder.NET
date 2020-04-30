@@ -2,7 +2,7 @@
 using System.Runtime.InteropServices;
 using SixLabors.ImageSharp.PixelFormats;
 
-namespace BCnEnc.Net.Shared
+namespace BCnEncoder.Shared
 {
 	[StructLayout(LayoutKind.Sequential)]
 	internal unsafe struct Bc1Block

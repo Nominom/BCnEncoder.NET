@@ -1,11 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
-using System.Text;
-using BCnEnc.Net.Shared;
+using BCnEncoder.Shared;
 
-namespace BCnEnc.Net.Decoder
+namespace BCnEncoder.Decoder
 {
 	internal class Bc7Decoder : IBcBlockDecoder
 	{

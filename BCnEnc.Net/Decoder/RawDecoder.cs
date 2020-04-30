@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using SixLabors.ImageSharp.PixelFormats;
 
-namespace BCnEnc.Net.Decoder
+namespace BCnEncoder.Decoder
 {
 	internal interface IRawDecoder {
 		Rgba32[] Decode(ReadOnlySpan<byte> data, int pixelWidth, int pixelHeight);

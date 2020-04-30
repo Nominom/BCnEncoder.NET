@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace BCnEnc.Net.Shared
+﻿namespace BCnEncoder.Shared
 {
 	public enum OutputFileFormat
 	{

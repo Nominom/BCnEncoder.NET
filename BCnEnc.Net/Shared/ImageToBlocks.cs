@@ -3,7 +3,7 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Advanced;
 using SixLabors.ImageSharp.PixelFormats;
 
-namespace BCnEnc.Net.Shared
+namespace BCnEncoder.Shared
 {
 	internal static class ImageToBlocks
 	{

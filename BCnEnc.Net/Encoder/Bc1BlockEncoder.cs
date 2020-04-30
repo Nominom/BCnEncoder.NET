@@ -1,12 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-using BCnEnc.Net.Shared;
-using SixLabors.ImageSharp.PixelFormats;
+using BCnEncoder.Shared;
 
-namespace BCnEnc.Net.Encoder
+namespace BCnEncoder.Encoder
 {
 	internal class Bc1BlockEncoder : IBcBlockEncoder
 	{

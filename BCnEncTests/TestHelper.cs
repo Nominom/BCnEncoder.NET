@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using BCnEnc.Net.Decoder;
-using BCnEnc.Net.Encoder;
-using BCnEnc.Net.Shared;
+using BCnEncoder.Decoder;
+using BCnEncoder.Encoder;
+using BCnEncoder.Shared;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Advanced;
 using SixLabors.ImageSharp.PixelFormats;

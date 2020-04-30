@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using BCnEnc.Net.Shared;
+using BCnEncoder.Shared;
 
-namespace BCnEnc.Net.Encoder.Bc7
+namespace BCnEncoder.Encoder.Bc7
 {
 	internal static class Bc7Mode7Encoder
 	{

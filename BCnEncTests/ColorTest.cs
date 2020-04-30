@@ -1,4 +1,4 @@
-﻿using BCnEnc.Net.Shared;
+﻿using BCnEncoder.Shared;
 using Xunit;
 
 namespace BCnEncTests

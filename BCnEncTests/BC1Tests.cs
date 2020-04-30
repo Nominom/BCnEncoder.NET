@@ -1,4 +1,4 @@
-﻿using BCnEnc.Net.Shared;
+﻿using BCnEncoder.Shared;
 using SixLabors.ImageSharp.PixelFormats;
 using Xunit;
 

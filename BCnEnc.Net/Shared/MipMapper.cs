@@ -4,7 +4,7 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
-namespace BCnEnc.Net.Shared
+namespace BCnEncoder.Shared
 {
 	public static class MipMapper
 	{

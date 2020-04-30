@@ -14,7 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\BCnEnc.Net\BCnEnc.Net.csproj" />
+    <ProjectReference Include="..\BCnEnc.Net\BCnEncoder.csproj" />
   </ItemGroup>
 
 </Project>

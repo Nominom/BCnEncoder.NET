@@ -3,7 +3,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
 
-namespace BCnEnc.Net.Shared
+namespace BCnEncoder.Shared
 {
 	internal static class BinaryReaderWriterExtensions
 	{

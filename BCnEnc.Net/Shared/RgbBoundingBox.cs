@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using SixLabors.ImageSharp.PixelFormats;
 
-namespace BCnEnc.Net.Shared
+namespace BCnEncoder.Shared
 {
 	/// <summary>
 	/// Calculate the bounding box of rgb values as described in

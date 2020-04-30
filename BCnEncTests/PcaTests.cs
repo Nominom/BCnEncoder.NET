@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using BCnEnc.Net.Shared;
+using BCnEncoder.Shared;
 using Xunit;
 using Vector4 = System.Numerics.Vector4;
 

@@ -1,13 +1,12 @@
 ﻿using System;
-using System.Diagnostics;
 using System.IO;
 using System.Text;
-using BCnEnc.Net.Shared;
+using BCnEncoder.Shared;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Advanced;
 using SixLabors.ImageSharp.PixelFormats;
 
-namespace BCnEnc.Net.Decoder
+namespace BCnEncoder.Decoder
 {
 	public class DecoderInputOptions {
 		/// <summary>

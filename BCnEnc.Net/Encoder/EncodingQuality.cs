@@ -1,4 +1,4 @@
-﻿namespace BCnEnc.Net.Encoder
+﻿namespace BCnEncoder.Encoder
 {
 	public enum EncodingQuality
 	{

@@ -1,9 +1,8 @@
 ﻿using System;
-using System.ComponentModel.Design;
 using System.Runtime.InteropServices;
 using SixLabors.ImageSharp.PixelFormats;
 
-namespace BCnEnc.Net.Shared
+namespace BCnEncoder.Shared
 {
 
 	internal struct RawBlock4X4Rgba32 {

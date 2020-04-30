@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using SixLabors.ImageSharp.PixelFormats;
-using SixLabors.ImageSharp.Processing;
 
-namespace BCnEnc.Net.Shared
+namespace BCnEncoder.Shared
 {
 	/// <summary>
 	/// Simple Linear Iterative Clustering.

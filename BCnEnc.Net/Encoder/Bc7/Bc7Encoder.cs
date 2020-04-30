@@ -1,15 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Runtime.InteropServices;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using System.Threading.Tasks;
-using BCnEnc.Net.Encoder.Bc7;
-using BCnEnc.Net.Shared;
-using SixLabors.ImageSharp.PixelFormats;
+using BCnEncoder.Shared;
 
-namespace BCnEnc.Net.Encoder
+namespace BCnEncoder.Encoder.Bc7
 {
 	internal class Bc7Encoder : IBcBlockEncoder
 	{
