@@ -900,7 +900,7 @@ namespace BCnEncoder.Encoder.Bc7
 		}
 
 		/// <summary>
-		/// Used for Modes 4 & 5
+		/// Used for Modes 4 and 5
 		/// </summary>
 		public static void FillAlphaColorIndices(Bc7BlockType type, RawBlock4X4Rgba32 raw, ColorRgba32 ep0, ColorRgba32 ep1,
 			Span<byte> colorIndicesToFill, Span<byte> alphaIndicesToFill, int idxMode = 0)
