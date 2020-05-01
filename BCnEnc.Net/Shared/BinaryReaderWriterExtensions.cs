@@ -42,28 +42,5 @@ namespace BCnEncoder.Shared
 
 		public static void SkipPadding(this BinaryReader br, int padding)
 			=> SkipPadding(br, (uint) padding);
-
-		public static void WriteString(this BinaryWriter writer, string input, Encoding encoding = null) {
-			encoding ??= Encoding.UTF8;
-
-			var inputSpan = input.AsSpan();
-			int inputByteCount = encoding.GetByteCount(input);
-			Span<byte> inputBytes = stackalloc byte[inputByteCount];
-
-			encoding.GetBytes(inputSpan, inputBytes);
-
-			writer.Write(inputByteCount);
-			writer.Write(inputBytes);
-		}
-
-		public static string ReadString(this BinaryReader reader, Encoding encoding = null) {
-			encoding ??= Encoding.UTF8;
-
-			int byteCount = reader.ReadInt32();
-			Span<byte> bytes = stackalloc byte[byteCount];
-			reader.Read(bytes);
-
-			return encoding.GetString(bytes);
-		}
 	}
 }
