@@ -9,7 +9,7 @@ namespace BCnEncoder.Encoder.Bc7
 	internal class Bc7Encoder : IBcBlockEncoder
 	{
 
-		public byte[] Encode(RawBlock4X4Rgba32[] blocks, int blockWidth, int blockHeight, EncodingQuality quality, bool parallel)
+		public byte[] Encode(RawBlock4X4Rgba32[] blocks, int blockWidth, int blockHeight, CompressionQuality quality, bool parallel)
 		{
 			byte[] outputData = new byte[blockWidth * blockHeight * Marshal.SizeOf<Bc7Block>()];
 			Span<Bc7Block> outputBlocks = MemoryMarshal.Cast<byte, Bc7Block>(outputData);
@@ -75,15 +75,15 @@ namespace BCnEncoder.Encoder.Bc7
 		}
 
 
-		private static Bc7Block EncodeBlock(RawBlock4X4Rgba32 rawBlock, EncodingQuality quality)
+		private static Bc7Block EncodeBlock(RawBlock4X4Rgba32 rawBlock, CompressionQuality quality)
 		{
 			switch (quality)
 			{
-				case EncodingQuality.Fast:
+				case CompressionQuality.Fast:
 					return Bc7EncoderFast.EncodeBlock(rawBlock);
-				case EncodingQuality.Balanced:
+				case CompressionQuality.Balanced:
 					return Bc7EncoderBalanced.EncodeBlock(rawBlock);
-				case EncodingQuality.BestQuality:
+				case CompressionQuality.BestQuality:
 					return Bc7EncoderBestQuality.EncodeBlock(rawBlock);
 				default:
 					throw new ArgumentOutOfRangeException(nameof(quality), quality, null);

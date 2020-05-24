@@ -8,7 +8,7 @@ namespace BCnEncoder.Encoder
 {
 	internal class Bc5BlockEncoder : IBcBlockEncoder {
 
-		public byte[] Encode(RawBlock4X4Rgba32[] blocks, int blockWidth, int blockHeight, EncodingQuality quality, bool parallel)
+		public byte[] Encode(RawBlock4X4Rgba32[] blocks, int blockWidth, int blockHeight, CompressionQuality quality, bool parallel)
 		{
 			byte[] outputData = new byte[blockWidth * blockHeight * Marshal.SizeOf<Bc5Block>()];
 			Span<Bc5Block> outputBlocks = MemoryMarshal.Cast<byte, Bc5Block>(outputData);
@@ -28,7 +28,7 @@ namespace BCnEncoder.Encoder
 			return outputData;
 		}
 
-		private Bc5Block EncodeBlock(RawBlock4X4Rgba32 block, EncodingQuality quality) {
+		private Bc5Block EncodeBlock(RawBlock4X4Rgba32 block, CompressionQuality quality) {
 			Bc5Block output = new Bc5Block();
 			byte[] reds = new byte[16];
 			byte[] greens = new byte[16];
@@ -41,15 +41,15 @@ namespace BCnEncoder.Encoder
 			int variations = 0;
 			int errorThreshold = 0;
  			switch (quality) {
-				case EncodingQuality.Fast:
+				case CompressionQuality.Fast:
 					variations = 3;
 					errorThreshold = 5;
 					break;
-				case EncodingQuality.Balanced:
+				case CompressionQuality.Balanced:
 					variations = 5;
 					errorThreshold = 1;
 					break;
-				case EncodingQuality.BestQuality:
+				case CompressionQuality.BestQuality:
 					variations = 8;
 					errorThreshold = 0;
 					break;

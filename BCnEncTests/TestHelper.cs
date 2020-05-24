@@ -26,7 +26,7 @@ namespace BCnEncTests
 			return ImageQuality.PeakSignalToNoiseRatio(pixels, pixels2, true);
 		}
 
-		public static void ExecuteEncodingTest(Image<Rgba32> image, CompressionFormat format, EncodingQuality quality, string filename, ITestOutputHelper output) {
+		public static void ExecuteEncodingTest(Image<Rgba32> image, CompressionFormat format, CompressionQuality quality, string filename, ITestOutputHelper output) {
 			BcEncoder encoder = new BcEncoder();
 			encoder.OutputOptions.quality = quality;
 			encoder.OutputOptions.generateMipMaps = true;
@@ -37,7 +37,7 @@ namespace BCnEncTests
 			fs.Close();
 			var psnr = TestHelper.DecodeCheckPSNR(filename, image);
 			output.WriteLine("RGBA PSNR: " + psnr + "db");
-			if(quality == EncodingQuality.Fast)
+			if(quality == CompressionQuality.Fast)
 			{
 				Assert.True(psnr > 25);
 			}

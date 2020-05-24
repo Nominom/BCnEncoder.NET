@@ -13,7 +13,7 @@ namespace BCnEncoder.Encoder
 			this.luminanceAsRed = luminanceAsRed;
 		}
 
-		public byte[] Encode(RawBlock4X4Rgba32[] blocks, int blockWidth, int blockHeight, EncodingQuality quality,
+		public byte[] Encode(RawBlock4X4Rgba32[] blocks, int blockWidth, int blockHeight, CompressionQuality quality,
 			bool parallel) {
 			byte[] outputData = new byte[blockWidth * blockHeight * Marshal.SizeOf<Bc4Block>()];
 			Span<Bc4Block> outputBlocks = MemoryMarshal.Cast<byte, Bc4Block>(outputData);
@@ -33,7 +33,7 @@ namespace BCnEncoder.Encoder
 			return outputData;
 		}
 
-		private Bc4Block EncodeBlock(RawBlock4X4Rgba32 block, EncodingQuality quality) {
+		private Bc4Block EncodeBlock(RawBlock4X4Rgba32 block, CompressionQuality quality) {
 			Bc4Block output = new Bc4Block();
 			byte[] colors = new byte[16];
 			var pixels = block.AsSpan;
@@ -46,11 +46,11 @@ namespace BCnEncoder.Encoder
 				}
 			}
  			switch (quality) {
-				case EncodingQuality.Fast:
+				case CompressionQuality.Fast:
 					return FindRedValues(output, colors, 3);
-				case EncodingQuality.Balanced:
+				case CompressionQuality.Balanced:
 					return FindRedValues(output, colors, 4);
-				case EncodingQuality.BestQuality:
+				case CompressionQuality.BestQuality:
 					return FindRedValues(output, colors, 8);
 
 				default:

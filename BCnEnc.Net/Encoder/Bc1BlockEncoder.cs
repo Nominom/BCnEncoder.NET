@@ -8,7 +8,7 @@ namespace BCnEncoder.Encoder
 	internal class Bc1BlockEncoder : IBcBlockEncoder
 	{
 
-		public byte[] Encode(RawBlock4X4Rgba32[] blocks, int blockWidth, int blockHeight, EncodingQuality quality, bool parallel)
+		public byte[] Encode(RawBlock4X4Rgba32[] blocks, int blockWidth, int blockHeight, CompressionQuality quality, bool parallel)
 		{
 			byte[] outputData = new byte[blockWidth * blockHeight * Marshal.SizeOf<Bc1Block>()];
 			Span<Bc1Block> outputBlocks = MemoryMarshal.Cast<byte, Bc1Block>(outputData);
@@ -32,15 +32,15 @@ namespace BCnEncoder.Encoder
 			return outputData;
 		}
 
-		private Bc1Block EncodeBlock(RawBlock4X4Rgba32 block, EncodingQuality quality)
+		private Bc1Block EncodeBlock(RawBlock4X4Rgba32 block, CompressionQuality quality)
 		{
 			switch (quality)
 			{
-				case EncodingQuality.Fast:
+				case CompressionQuality.Fast:
 					return Bc1BlockEncoderFast.EncodeBlock(block);
-				case EncodingQuality.Balanced:
+				case CompressionQuality.Balanced:
 					return Bc1BlockEncoderBalanced.EncodeBlock(block);
-				case EncodingQuality.BestQuality:
+				case CompressionQuality.BestQuality:
 					return Bc1BlockEncoderSlow.EncodeBlock(block);
 
 				default:
@@ -242,7 +242,7 @@ namespace BCnEncoder.Encoder
 	internal class Bc1AlphaBlockEncoder : IBcBlockEncoder
 	{
 
-		public byte[] Encode(RawBlock4X4Rgba32[] blocks, int blockWidth, int blockHeight, EncodingQuality quality, bool parallel)
+		public byte[] Encode(RawBlock4X4Rgba32[] blocks, int blockWidth, int blockHeight, CompressionQuality quality, bool parallel)
 		{
 			byte[] outputData = new byte[blockWidth * blockHeight * Marshal.SizeOf<Bc1Block>()];
 			Span<Bc1Block> outputBlocks = MemoryMarshal.Cast<byte, Bc1Block>(outputData);
@@ -266,15 +266,15 @@ namespace BCnEncoder.Encoder
 			return outputData;
 		}
 
-		private Bc1Block EncodeBlock(RawBlock4X4Rgba32 block, EncodingQuality quality)
+		private Bc1Block EncodeBlock(RawBlock4X4Rgba32 block, CompressionQuality quality)
 		{
 			switch (quality)
 			{
-				case EncodingQuality.Fast:
+				case CompressionQuality.Fast:
 					return Bc1AlphaBlockEncoderFast.EncodeBlock(block);
-				case EncodingQuality.Balanced:
+				case CompressionQuality.Balanced:
 					return Bc1AlphaBlockEncoderBalanced.EncodeBlock(block);
-				case EncodingQuality.BestQuality:
+				case CompressionQuality.BestQuality:
 					return Bc1AlphaBlockEncoderSlow.EncodeBlock(block);
 
 				default:

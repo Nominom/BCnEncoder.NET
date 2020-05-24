@@ -15,7 +15,7 @@ namespace BCnEncTests
 			var image = ImageLoader.testLenna;
 
 			BcEncoder encoder = new BcEncoder();
-			encoder.OutputOptions.quality = EncodingQuality.Fast;
+			encoder.OutputOptions.quality = CompressionQuality.Fast;
 			encoder.OutputOptions.generateMipMaps = true;
 			encoder.OutputOptions.format = CompressionFormat.RGBA;
 			encoder.OutputOptions.fileFormat = OutputFileFormat.Dds;
@@ -30,7 +30,7 @@ namespace BCnEncTests
 			var image = ImageLoader.testLenna;
 
 			BcEncoder encoder = new BcEncoder();
-			encoder.OutputOptions.quality = EncodingQuality.Fast;
+			encoder.OutputOptions.quality = CompressionQuality.Fast;
 			encoder.OutputOptions.generateMipMaps = true;
 			encoder.OutputOptions.format = CompressionFormat.BC1;
 			encoder.OutputOptions.fileFormat = OutputFileFormat.Dds;
@@ -45,7 +45,7 @@ namespace BCnEncTests
 			var image = ImageLoader.testAlpha1;
 
 			BcEncoder encoder = new BcEncoder();
-			encoder.OutputOptions.quality = EncodingQuality.Fast;
+			encoder.OutputOptions.quality = CompressionQuality.Fast;
 			encoder.OutputOptions.generateMipMaps = true;
 			encoder.OutputOptions.format = CompressionFormat.BC2;
 			encoder.OutputOptions.fileFormat = OutputFileFormat.Dds;
@@ -60,7 +60,7 @@ namespace BCnEncTests
 			var image = ImageLoader.testAlpha1;
 
 			BcEncoder encoder = new BcEncoder();
-			encoder.OutputOptions.quality = EncodingQuality.Fast;
+			encoder.OutputOptions.quality = CompressionQuality.Fast;
 			encoder.OutputOptions.generateMipMaps = true;
 			encoder.OutputOptions.format = CompressionFormat.BC3;
 			encoder.OutputOptions.fileFormat = OutputFileFormat.Dds;
@@ -75,7 +75,7 @@ namespace BCnEncTests
 			var image = ImageLoader.testHeight1;
 
 			BcEncoder encoder = new BcEncoder();
-			encoder.OutputOptions.quality = EncodingQuality.Fast;
+			encoder.OutputOptions.quality = CompressionQuality.Fast;
 			encoder.OutputOptions.generateMipMaps = true;
 			encoder.OutputOptions.format = CompressionFormat.BC4;
 			encoder.OutputOptions.fileFormat = OutputFileFormat.Dds;
@@ -90,7 +90,7 @@ namespace BCnEncTests
 			var image = ImageLoader.testRedGreen1;
 
 			BcEncoder encoder = new BcEncoder();
-			encoder.OutputOptions.quality = EncodingQuality.Fast;
+			encoder.OutputOptions.quality = CompressionQuality.Fast;
 			encoder.OutputOptions.generateMipMaps = true;
 			encoder.OutputOptions.format = CompressionFormat.BC5;
 			encoder.OutputOptions.fileFormat = OutputFileFormat.Dds;
@@ -105,7 +105,7 @@ namespace BCnEncTests
 			var image = ImageLoader.testLenna;
 
 			BcEncoder encoder = new BcEncoder();
-			encoder.OutputOptions.quality = EncodingQuality.Fast;
+			encoder.OutputOptions.quality = CompressionQuality.Fast;
 			encoder.OutputOptions.generateMipMaps = true;
 			encoder.OutputOptions.format = CompressionFormat.BC7;
 			encoder.OutputOptions.fileFormat = OutputFileFormat.Dds;
@@ -120,7 +120,7 @@ namespace BCnEncTests
 			var images = ImageLoader.testCubemap;
 
 			BcEncoder encoder = new BcEncoder();
-			encoder.OutputOptions.quality = EncodingQuality.Fast;
+			encoder.OutputOptions.quality = CompressionQuality.Fast;
 			encoder.OutputOptions.generateMipMaps = true;
 			encoder.OutputOptions.format = CompressionFormat.BC1;
 			encoder.OutputOptions.fileFormat = OutputFileFormat.Dds;

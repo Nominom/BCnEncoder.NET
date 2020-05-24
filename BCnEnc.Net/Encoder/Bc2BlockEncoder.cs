@@ -8,7 +8,7 @@ namespace BCnEncoder.Encoder
 	internal class Bc2BlockEncoder : IBcBlockEncoder
 	{
 
-		public byte[] Encode(RawBlock4X4Rgba32[] blocks, int blockWidth, int blockHeight, EncodingQuality quality, bool parallel)
+		public byte[] Encode(RawBlock4X4Rgba32[] blocks, int blockWidth, int blockHeight, CompressionQuality quality, bool parallel)
 		{
 			byte[] outputData = new byte[blockWidth * blockHeight * Marshal.SizeOf<Bc2Block>()];
 			Span<Bc2Block> outputBlocks = MemoryMarshal.Cast<byte, Bc2Block>(outputData);
@@ -32,15 +32,15 @@ namespace BCnEncoder.Encoder
 			return outputData;
 		}
 
-		private Bc2Block EncodeBlock(RawBlock4X4Rgba32 block, EncodingQuality quality)
+		private Bc2Block EncodeBlock(RawBlock4X4Rgba32 block, CompressionQuality quality)
 		{
 			switch (quality)
 			{
-				case EncodingQuality.Fast:
+				case CompressionQuality.Fast:
 					return Bc2BlockEncoderFast.EncodeBlock(block);
-				case EncodingQuality.Balanced:
+				case CompressionQuality.Balanced:
 					return Bc2BlockEncoderBalanced.EncodeBlock(block);
-				case EncodingQuality.BestQuality:
+				case CompressionQuality.BestQuality:
 					return Bc2BlockEncoderSlow.EncodeBlock(block);
 
 				default:

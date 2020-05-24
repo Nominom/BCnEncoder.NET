@@ -35,11 +35,11 @@ namespace BCnEncoder.Encoder
 		/// </summary>
 		public CompressionFormat format = CompressionFormat.BC1;
 		/// <summary>
-		/// The quality of the encoding. Use either fast or balanced for testing.
+		/// The quality of the compression. Use either fast or balanced for testing.
 		/// Fast can be used for near real-time encoding for most algorithms.
 		/// Use bestQuality when needed. Default is balanced.
 		/// </summary>
-		public EncodingQuality quality = EncodingQuality.Balanced;
+		public CompressionQuality quality = CompressionQuality.Balanced;
 		/// <summary>
 		/// The output file format of the data. Either Ktx or Dds.
 		/// Default is Ktx.

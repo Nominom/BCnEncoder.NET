@@ -20,6 +20,7 @@ Supported formats are:
 The current state of this library is in development but quite usable. I'm planning on implementing support for more codecs and 
 different algorithms. The current version is capable of encoding and decoding BC1-BC5 and BC7 images in both KTX or DDS formats.
 
+Please note, that the API might change between versions. I'm still trying to figure it out as I go.
 # Dependencies
 Current dependencies are:
 * [SixLabors.ImageSharp](https://github.com/SixLabors/ImageSharp) licenced under the [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0) licence for image loading and saving
@@ -34,7 +35,7 @@ using Image<Rgba32> image = Image.Load<Rgba32>("example.png");
 BcEncoder encoder = new BcEncoder();
 
 encoder.OutputOptions.generateMipMaps = true;
-encoder.OutputOptions.quality = EncodingQuality.Balanced;
+encoder.OutputOptions.quality = CompressionQuality.Balanced;
 encoder.OutputOptions.format = CompressionFormat.BC1;
 encoder.OutputOptions.fileFormat = OutputFileFormat.Ktx; //Change to Dds for a dds file.
 

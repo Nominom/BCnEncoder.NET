@@ -25,7 +25,7 @@ namespace BCnEncTests
 			
 			TestHelper.ExecuteEncodingTest(image,
 				CompressionFormat.BC1,
-				EncodingQuality.BestQuality, 
+				CompressionQuality.BestQuality, 
 				"encoding_bc1_gradient_bestQuality.ktx",
 				output);
 		}
@@ -38,7 +38,7 @@ namespace BCnEncTests
 			
 			TestHelper.ExecuteEncodingTest(image,
 				CompressionFormat.BC1,
-				EncodingQuality.Balanced, 
+				CompressionQuality.Balanced, 
 				"encoding_bc1_gradient_balanced.ktx",
 				output);
 		}
@@ -50,7 +50,7 @@ namespace BCnEncTests
 
 			TestHelper.ExecuteEncodingTest(image,
 				CompressionFormat.BC1,
-				EncodingQuality.Fast, 
+				CompressionQuality.Fast, 
 				"encoding_bc1_gradient_fast.ktx",
 				output);
 		}
@@ -74,7 +74,7 @@ namespace BCnEncTests
 
 			TestHelper.ExecuteEncodingTest(image,
 				CompressionFormat.BC1,
-				EncodingQuality.BestQuality, 
+				CompressionQuality.BestQuality, 
 				"encoding_bc1_diffuse_bestQuality.ktx",
 				output);
 		}
@@ -86,7 +86,7 @@ namespace BCnEncTests
 			
 			TestHelper.ExecuteEncodingTest(image,
 				CompressionFormat.BC1,
-				EncodingQuality.Balanced, 
+				CompressionQuality.Balanced, 
 				"encoding_bc1_diffuse_balanced.ktx",
 				output);
 		}
@@ -98,7 +98,7 @@ namespace BCnEncTests
 
 			TestHelper.ExecuteEncodingTest(image,
 				CompressionFormat.BC1,
-				EncodingQuality.Fast, 
+				CompressionQuality.Fast, 
 				"encoding_bc1_diffuse_fast.ktx",
 				output);
 		}
@@ -123,7 +123,7 @@ namespace BCnEncTests
 			
 			TestHelper.ExecuteEncodingTest(image,
 				CompressionFormat.BC1,
-				EncodingQuality.BestQuality, 
+				CompressionQuality.BestQuality, 
 				"encoding_bc1_blur_bestQuality.ktx",
 				output);
 		}
@@ -135,7 +135,7 @@ namespace BCnEncTests
 
 			TestHelper.ExecuteEncodingTest(image,
 				CompressionFormat.BC1,
-				EncodingQuality.Balanced, 
+				CompressionQuality.Balanced, 
 				"encoding_bc1_blur_balanced.ktx",
 				output);
 		}
@@ -147,7 +147,7 @@ namespace BCnEncTests
 
 			TestHelper.ExecuteEncodingTest(image,
 				CompressionFormat.BC1,
-				EncodingQuality.Fast, 
+				CompressionQuality.Fast, 
 				"encoding_bc1_blur_fast.ktx",
 				output);
 		}
@@ -172,7 +172,7 @@ namespace BCnEncTests
 
 			TestHelper.ExecuteEncodingTest(image,
 				CompressionFormat.BC1WithAlpha,
-				EncodingQuality.BestQuality, 
+				CompressionQuality.BestQuality, 
 				"encoding_bc1a_sprite_bestQuality.ktx",
 				output);
 		}
@@ -184,7 +184,7 @@ namespace BCnEncTests
 
 			TestHelper.ExecuteEncodingTest(image,
 				CompressionFormat.BC1WithAlpha,
-				EncodingQuality.Balanced, 
+				CompressionQuality.Balanced, 
 				"encoding_bc1a_sprite_balanced.ktx",
 				output);
 		}
@@ -196,7 +196,7 @@ namespace BCnEncTests
 
 			TestHelper.ExecuteEncodingTest(image,
 				CompressionFormat.BC1WithAlpha,
-				EncodingQuality.Fast, 
+				CompressionQuality.Fast, 
 				"encoding_bc1a_sprite_fast.ktx",
 				output);
 		}
@@ -221,7 +221,7 @@ namespace BCnEncTests
 
 			TestHelper.ExecuteEncodingTest(image,
 				CompressionFormat.BC2,
-				EncodingQuality.BestQuality, 
+				CompressionQuality.BestQuality, 
 				"encoding_bc2_gradient_bestQuality.ktx",
 				output);
 		}
@@ -233,7 +233,7 @@ namespace BCnEncTests
 
 			TestHelper.ExecuteEncodingTest(image,
 				CompressionFormat.BC2,
-				EncodingQuality.Balanced, 
+				CompressionQuality.Balanced, 
 				"encoding_bc2_gradient_balanced.ktx",
 				output);
 		}
@@ -245,7 +245,7 @@ namespace BCnEncTests
 
 			TestHelper.ExecuteEncodingTest(image,
 				CompressionFormat.BC2,
-				EncodingQuality.Fast, 
+				CompressionQuality.Fast, 
 				"encoding_bc2_gradient_fast.ktx",
 				output);
 		}
@@ -270,7 +270,7 @@ namespace BCnEncTests
 
 			TestHelper.ExecuteEncodingTest(image,
 				CompressionFormat.BC3,
-				EncodingQuality.BestQuality, 
+				CompressionQuality.BestQuality, 
 				"encoding_bc3_gradient_bestQuality.ktx",
 				output);
 		}
@@ -282,7 +282,7 @@ namespace BCnEncTests
 
 			TestHelper.ExecuteEncodingTest(image,
 				CompressionFormat.BC3,
-				EncodingQuality.Balanced, 
+				CompressionQuality.Balanced, 
 				"encoding_bc3_gradient_balanced.ktx",
 				output);
 		}
@@ -294,7 +294,7 @@ namespace BCnEncTests
 
 			TestHelper.ExecuteEncodingTest(image,
 				CompressionFormat.BC3,
-				EncodingQuality.Fast, 
+				CompressionQuality.Fast, 
 				"encoding_bc3_gradient_fast.ktx",
 				output);
 		}
@@ -319,7 +319,7 @@ namespace BCnEncTests
 
 			TestHelper.ExecuteEncodingTest(image,
 				CompressionFormat.BC4,
-				EncodingQuality.BestQuality, 
+				CompressionQuality.BestQuality, 
 				"encoding_bc4_red_bestQuality.ktx",
 				output);
 		}
@@ -331,7 +331,7 @@ namespace BCnEncTests
 
 			TestHelper.ExecuteEncodingTest(image,
 				CompressionFormat.BC4,
-				EncodingQuality.Balanced, 
+				CompressionQuality.Balanced, 
 				"encoding_bc4_red_balanced.ktx",
 				output);
 		}
@@ -343,7 +343,7 @@ namespace BCnEncTests
 
 			TestHelper.ExecuteEncodingTest(image,
 				CompressionFormat.BC4,
-				EncodingQuality.Fast, 
+				CompressionQuality.Fast, 
 				"encoding_bc4_red_fast.ktx",
 				output);
 		}
@@ -368,7 +368,7 @@ namespace BCnEncTests
 
 			TestHelper.ExecuteEncodingTest(image,
 				CompressionFormat.BC5,
-				EncodingQuality.BestQuality, 
+				CompressionQuality.BestQuality, 
 				"encoding_bc5_red_green_bestQuality.ktx",
 				output);
 		}
@@ -380,7 +380,7 @@ namespace BCnEncTests
 
 			TestHelper.ExecuteEncodingTest(image,
 				CompressionFormat.BC5,
-				EncodingQuality.Balanced, 
+				CompressionQuality.Balanced, 
 				"encoding_bc5_red_green_balanced.ktx",
 				output);
 		}
@@ -392,7 +392,7 @@ namespace BCnEncTests
 
 			TestHelper.ExecuteEncodingTest(image,
 				CompressionFormat.BC5,
-				EncodingQuality.Fast, 
+				CompressionQuality.Fast, 
 				"encoding_bc5_red_green_fast.ktx",
 				output);
 		}
@@ -416,7 +416,7 @@ namespace BCnEncTests
 
 			TestHelper.ExecuteEncodingTest(image,
 				CompressionFormat.BC7,
-				EncodingQuality.BestQuality, 
+				CompressionQuality.BestQuality, 
 				"encoding_bc7_rgb_bestQuality.ktx",
 				output);
 		}
@@ -428,7 +428,7 @@ namespace BCnEncTests
 
 			TestHelper.ExecuteEncodingTest(image,
 				CompressionFormat.BC7,
-				EncodingQuality.Balanced, 
+				CompressionQuality.Balanced, 
 				"encoding_bc7_rgb_balanced.ktx",
 				output);
 		}
@@ -440,7 +440,7 @@ namespace BCnEncTests
 
 			TestHelper.ExecuteEncodingTest(image,
 				CompressionFormat.BC7,
-				EncodingQuality.Balanced, 
+				CompressionQuality.Balanced, 
 				"encoding_bc7_lenna_balanced.ktx",
 				output);
 		}
@@ -452,7 +452,7 @@ namespace BCnEncTests
 
 			TestHelper.ExecuteEncodingTest(image,
 				CompressionFormat.BC7,
-				EncodingQuality.Fast, 
+				CompressionQuality.Fast, 
 				"encoding_bc7_rgb_fast.ktx",
 				output);
 		}
@@ -476,7 +476,7 @@ namespace BCnEncTests
 
 			TestHelper.ExecuteEncodingTest(image,
 				CompressionFormat.BC7,
-				EncodingQuality.BestQuality, 
+				CompressionQuality.BestQuality, 
 				"encoding_bc7_rgba_bestQuality.ktx",
 				output);
 		}
@@ -488,7 +488,7 @@ namespace BCnEncTests
 
 			TestHelper.ExecuteEncodingTest(image,
 				CompressionFormat.BC7,
-				EncodingQuality.Balanced, 
+				CompressionQuality.Balanced, 
 				"encoding_bc7_rgba_balanced.ktx",
 				output);
 		}
@@ -500,7 +500,7 @@ namespace BCnEncTests
 
 			TestHelper.ExecuteEncodingTest(image,
 				CompressionFormat.BC7,
-				EncodingQuality.Fast, 
+				CompressionQuality.Fast, 
 				"encoding_bc7_rgba_fast.ktx",
 				output);
 		}
@@ -517,7 +517,7 @@ namespace BCnEncTests
 			string filename = "encoding_bc1_cubemap.ktx";
 
 			BcEncoder encoder = new BcEncoder();
-			encoder.OutputOptions.quality = EncodingQuality.Fast;
+			encoder.OutputOptions.quality = CompressionQuality.Fast;
 			encoder.OutputOptions.generateMipMaps = true;
 			encoder.OutputOptions.format = CompressionFormat.BC1;
 
