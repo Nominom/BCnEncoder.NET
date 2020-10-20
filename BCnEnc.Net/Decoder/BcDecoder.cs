@@ -260,7 +260,9 @@ namespace BCnEncoder.Decoder
 
 				var image = new Image<Rgba32>((int)pixelWidth, (int)pixelHeight);
 				var output = decoder.Decode(data, (int)pixelWidth, (int)pixelHeight);
-				var pixels = image.GetPixelSpan();
+				if (!image.TryGetSinglePixelSpan(out var pixels)) {
+					throw new Exception("Cannot get pixel span.");
+				}
 
 				output.CopyTo(pixels);
 				return image;
@@ -299,7 +301,9 @@ namespace BCnEncoder.Decoder
 
 					var image = new Image<Rgba32>((int)pixelWidth, (int)pixelHeight);
 					var output = decoder.Decode(data, (int)pixelWidth, (int)pixelHeight);
-					var pixels = image.GetPixelSpan();
+					if (!image.TryGetSinglePixelSpan(out var pixels)) {
+						throw new Exception("Cannot get pixel span.");
+					}
 
 					output.CopyTo(pixels);
 					images[mip] = image;
@@ -345,7 +349,9 @@ namespace BCnEncoder.Decoder
 
 				var image = new Image<Rgba32>((int)pixelWidth, (int)pixelHeight);
 				var output = decoder.Decode(data, (int)pixelWidth, (int)pixelHeight);
-				var pixels = image.GetPixelSpan();
+				if (!image.TryGetSinglePixelSpan(out var pixels)) {
+					throw new Exception("Cannot get pixel span.");
+				}
 
 				output.CopyTo(pixels);
 				return image;
@@ -393,7 +399,9 @@ namespace BCnEncoder.Decoder
 
 					var image = new Image<Rgba32>((int) pixelWidth, (int) pixelHeight);
 					var output = decoder.Decode(data, (int) pixelWidth, (int) pixelHeight);
-					var pixels = image.GetPixelSpan();
+					if (!image.TryGetSinglePixelSpan(out var pixels)) {
+						throw new Exception("Cannot get pixel span.");
+					}
 
 					output.CopyTo(pixels);
 					images[mip] = image;
