@@ -70,7 +70,10 @@ namespace BCnEncTests
 			Assert.Equal((uint)image.Width, file.Header.dwWidth);
 			Assert.Equal((uint)image.Height, file.Header.dwHeight);
 
-			Assert.Contains(image.GetPixelSpan().ToArray(), x => x.A == 0);
+			if (!image.TryGetSinglePixelSpan(out var pixels)) {
+				throw new Exception("Cannot get pixel span.");
+			}
+			Assert.Contains(pixels.ToArray(), x => x.A == 0);
 
 			using FileStream outFs = File.OpenWrite($"decoding_test_dds_bc1a.png");
 			image.SaveAsPng(outFs);

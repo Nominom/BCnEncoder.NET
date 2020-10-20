@@ -20,8 +20,13 @@ namespace BCnEncTests
 			var ktx = KtxFile.Load(fs);
 			var decoder = new BcDecoder();
 			using var img = decoder.Decode(ktx);
-			var pixels = original.GetPixelSpan();
-			var pixels2 = img.GetPixelSpan();
+
+			if (!original.TryGetSinglePixelSpan(out var pixels)) {
+				throw new Exception("Cannot get pixel span.");
+			}
+			if (!img.TryGetSinglePixelSpan(out var pixels2)) {
+				throw new Exception("Cannot get pixel span.");
+			}
 
 			return ImageQuality.PeakSignalToNoiseRatio(pixels, pixels2, true);
 		}

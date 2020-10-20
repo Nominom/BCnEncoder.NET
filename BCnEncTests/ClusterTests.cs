@@ -16,7 +16,11 @@ namespace BCnEncTests
 		[Fact]
 		public void Clusterize() {
 			using var testImage = ImageLoader.testBlur1.Clone();
-			var pixels = testImage.GetPixelSpan();
+			
+			if (!testImage.TryGetSinglePixelSpan(out var pixels)) {
+				throw new Exception("Cannot get pixel span.");
+			}
+
 			int numClusters = (testImage.Width / 32) * (testImage.Height / 32);
 			
 			var clusters = LinearClustering.ClusterPixels(pixels, testImage.Width, testImage.Height, numClusters, 10, 10);

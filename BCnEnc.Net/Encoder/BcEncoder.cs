@@ -189,7 +189,10 @@ namespace BCnEncoder.Encoder
 				}
 				else
 				{
-					encoded = uncompressedEncoder.Encode(mipChain[i].GetPixelSpan());
+					if (!mipChain[i].TryGetSinglePixelSpan(out var mipPixels)) {
+						throw new Exception("Cannot get pixel span.");
+					}
+					encoded = uncompressedEncoder.Encode(mipPixels);
 				}
 
 				output.MipMaps.Add(new KtxMipmap((uint)encoded.Length,
@@ -264,7 +267,10 @@ namespace BCnEncoder.Encoder
 				}
 				else
 				{
-					encoded = uncompressedEncoder.Encode(mipChain[mip].GetPixelSpan());
+					if (!mipChain[mip].TryGetSinglePixelSpan(out var mipPixels)) {
+						throw new Exception("Cannot get pixel span.");
+					}
+					encoded = uncompressedEncoder.Encode(mipPixels);
 				}
 
 				if (mip == 0)
@@ -334,7 +340,10 @@ namespace BCnEncoder.Encoder
 				}
 				else
 				{
-					encoded = uncompressedEncoder.Encode(mipChain[i].GetPixelSpan());
+					if (!mipChain[i].TryGetSinglePixelSpan(out var mipPixels)) {
+						throw new Exception("Cannot get pixel span.");
+					}
+					encoded = uncompressedEncoder.Encode(mipPixels);
 				}
 
 				output.Add(encoded);
@@ -400,7 +409,10 @@ namespace BCnEncoder.Encoder
 			}
 			else
 			{
-				encoded = uncompressedEncoder.Encode(mipChain[mipLevel].GetPixelSpan());
+				if (!mipChain[mipLevel].TryGetSinglePixelSpan(out var mipPixels)) {
+					throw new Exception("Cannot get pixel span.");
+				}
+				encoded = uncompressedEncoder.Encode(mipPixels);
 			}
 
 			mipWidth = mipChain[mipLevel].Width;
@@ -506,7 +518,10 @@ namespace BCnEncoder.Encoder
 					}
 					else
 					{
-						encoded = uncompressedEncoder.Encode(mipChain[i].GetPixelSpan());
+						if (!mipChain[i].TryGetSinglePixelSpan(out var mipPixels)) {
+							throw new Exception("Cannot get pixel span.");
+						}
+						encoded = uncompressedEncoder.Encode(mipPixels);
 					}
 
 					if (f == 0)
@@ -603,7 +618,10 @@ namespace BCnEncoder.Encoder
 					}
 					else
 					{
-						encoded = uncompressedEncoder.Encode(mipChain[mip].GetPixelSpan());
+						if (!mipChain[mip].TryGetSinglePixelSpan(out var mipPixels)) {
+							throw new Exception("Cannot get pixel span.");
+						}
+						encoded = uncompressedEncoder.Encode(mipPixels);
 					}
 
 					if (mip == 0)

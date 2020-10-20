@@ -13,7 +13,10 @@ namespace BCnEncoder.Shared
 			blocksWidth = (int)MathF.Ceiling(image.Width / 4.0f);
 			blocksHeight = (int)MathF.Ceiling(image.Height / 4.0f);
 			RawBlock4X4Rgba32[] output = new RawBlock4X4Rgba32[blocksWidth * blocksHeight];
-			Span<Rgba32> pixels = image.GetPixelSpan();
+
+			if (!image.TryGetSinglePixelSpan(out var pixels)) {
+				throw new Exception("Cannot get pixel span.");
+			}
 
 			for (int y = 0; y < image.Height; y++)
 			{
@@ -75,7 +78,10 @@ namespace BCnEncoder.Shared
 		internal static Image<Rgba32> ImageFromRawBlocks(RawBlock4X4Rgba32[,] blocks, int blocksWidth, int blocksHeight, int pixelWidth, int pixelHeight)
 		{
 			Image<Rgba32> output = new Image<Rgba32>(pixelWidth, pixelHeight);
-			Span<Rgba32> pixels = output.GetPixelSpan();
+			
+			if (!output.TryGetSinglePixelSpan(out var pixels)) {
+				throw new Exception("Cannot get pixel span.");
+			}
 
 			for (int y = 0; y < output.Height; y++)
 			{
@@ -102,7 +108,10 @@ namespace BCnEncoder.Shared
 		internal static Image<Rgba32> ImageFromRawBlocks(RawBlock4X4Rgba32[] blocks, int blocksWidth, int blocksHeight, int pixelWidth, int pixelHeight)
 		{
 			Image<Rgba32> output = new Image<Rgba32>(pixelWidth, pixelHeight);
-			Span<Rgba32> pixels = output.GetPixelSpan();
+			
+			if (!output.TryGetSinglePixelSpan(out var pixels)) {
+				throw new Exception("Cannot get pixel span.");
+			}
 
 			for (int y = 0; y < output.Height; y++)
 			{

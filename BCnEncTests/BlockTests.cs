@@ -38,9 +38,11 @@ namespace BCnEncTests
 		{
 			using Image<Rgba32> testImage = new Image<Rgba32>(13, 13);
 
-			var pixels = testImage.GetPixelSpan();
+			if (!testImage.TryGetSinglePixelSpan(out var pixels)) {
+				throw new Exception("Cannot get pixel span.");
+			}
 			for (int i = 0; i < pixels.Length; i++) {
-				pixels[i] = Rgba32.Aquamarine;
+				pixels[i] = new Rgba32(0, 125, 125);
 			}
 
 			var blocks = ImageToBlocks.ImageTo4X4(testImage.Frames[0], out var blocksWidth, out var blocksHeight);
@@ -52,7 +54,7 @@ namespace BCnEncTests
 			for (int x = 0; x < blocksWidth; x++) {
 				for (int y = 0; y < blocksHeight; y++) {
 					foreach (var color in blocks[x + y * blocksWidth].AsSpan) {
-						Assert.Equal(Rgba32.Aquamarine, color);
+						Assert.Equal(new Rgba32(0, 125, 125), color);
 					}
 				}
 			}
@@ -64,7 +66,9 @@ namespace BCnEncTests
 			Random r = new Random(0);
 			using Image<Rgba32> testImage = new Image<Rgba32>(16, 16);
 
-			var pixels = testImage.GetPixelSpan();
+			if (!testImage.TryGetSinglePixelSpan(out var pixels)) {
+				throw new Exception("Cannot get pixel span.");
+			}
 			for (int i = 0; i < pixels.Length; i++) {
 				pixels[i] = new Rgba32(
 					(byte)r.Next(255),
@@ -80,7 +84,10 @@ namespace BCnEncTests
 			Assert.Equal(4, blocksHeight);
 
 			using var output = ImageToBlocks.ImageFromRawBlocks(blocks, blocksWidth, blocksHeight);
-			var pixels2 = output.GetPixelSpan();
+			
+			if (!output.TryGetSinglePixelSpan(out var pixels2)) {
+				throw new Exception("Cannot get pixel span.");
+			}
 
 			Assert.Equal(pixels.Length, pixels2.Length);
 			for (int i = 0; i < pixels.Length; i++) {
