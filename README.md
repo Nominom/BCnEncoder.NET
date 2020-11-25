@@ -65,7 +65,7 @@ image.SaveAsPng(outFs);
 - [x] BC7 / BPTC Encoding
 - [x] DDS file support
 - [x] Implement PCA to remove Accord.Statistics dependency
-- [ ] BC6H HDR encoding
+- [ ] BC6H HDR Encoding
 - [ ] ETC / ETC2 Encoding?
 - [ ] Implement saving and loading basic image formats to remove ImageSharp dependency
 
