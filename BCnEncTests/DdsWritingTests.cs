@@ -10,20 +10,6 @@ namespace BCnEncTests
 {
 	public class DdsWritingTests
 	{
-		[Fact]
-		public void DdsWriteRgba() {
-			var image = ImageLoader.testLenna;
-
-			BcEncoder encoder = new BcEncoder();
-			encoder.OutputOptions.quality = CompressionQuality.Fast;
-			encoder.OutputOptions.generateMipMaps = true;
-			encoder.OutputOptions.format = CompressionFormat.RGBA;
-			encoder.OutputOptions.fileFormat = OutputFileFormat.Dds;
-
-			using FileStream fs = File.OpenWrite("encoding_dds_rgba.dds");
-			encoder.Encode(image, fs);
-			fs.Close();
-		}
 
 		[Fact]
 		public void DdsWriteBc1() {
@@ -31,12 +17,12 @@ namespace BCnEncTests
 
 			BcEncoder encoder = new BcEncoder();
 			encoder.OutputOptions.quality = CompressionQuality.Fast;
-			encoder.OutputOptions.generateMipMaps = true;
 			encoder.OutputOptions.format = CompressionFormat.BC1;
 			encoder.OutputOptions.fileFormat = OutputFileFormat.Dds;
 
 			using FileStream fs = File.OpenWrite("encoding_dds_bc1.dds");
-			encoder.Encode(image, fs);
+			image.TryGetSinglePixelSpan(out var span);
+			encoder.Encode(span.ToBytes(), image.Width, image.Height, fs);
 			fs.Close();
 		}
 
@@ -46,12 +32,12 @@ namespace BCnEncTests
 
 			BcEncoder encoder = new BcEncoder();
 			encoder.OutputOptions.quality = CompressionQuality.Fast;
-			encoder.OutputOptions.generateMipMaps = true;
 			encoder.OutputOptions.format = CompressionFormat.BC2;
 			encoder.OutputOptions.fileFormat = OutputFileFormat.Dds;
 
 			using FileStream fs = File.OpenWrite("encoding_dds_bc2.dds");
-			encoder.Encode(image, fs);
+			image.TryGetSinglePixelSpan(out var span);
+			encoder.Encode(span.ToBytes(), image.Width, image.Height, fs);
 			fs.Close();
 		}
 
@@ -61,12 +47,12 @@ namespace BCnEncTests
 
 			BcEncoder encoder = new BcEncoder();
 			encoder.OutputOptions.quality = CompressionQuality.Fast;
-			encoder.OutputOptions.generateMipMaps = true;
 			encoder.OutputOptions.format = CompressionFormat.BC3;
 			encoder.OutputOptions.fileFormat = OutputFileFormat.Dds;
 
 			using FileStream fs = File.OpenWrite("encoding_dds_bc3.dds");
-			encoder.Encode(image, fs);
+			image.TryGetSinglePixelSpan(out var span);
+			encoder.Encode(span.ToBytes(), image.Width, image.Height, fs);
 			fs.Close();
 		}
 
@@ -76,12 +62,12 @@ namespace BCnEncTests
 
 			BcEncoder encoder = new BcEncoder();
 			encoder.OutputOptions.quality = CompressionQuality.Fast;
-			encoder.OutputOptions.generateMipMaps = true;
 			encoder.OutputOptions.format = CompressionFormat.BC4;
 			encoder.OutputOptions.fileFormat = OutputFileFormat.Dds;
 
 			using FileStream fs = File.OpenWrite("encoding_dds_bc4.dds");
-			encoder.Encode(image, fs);
+			image.TryGetSinglePixelSpan(out var span);
+			encoder.Encode(span.ToBytes(), image.Width, image.Height, fs);
 			fs.Close();
 		}
 
@@ -91,12 +77,12 @@ namespace BCnEncTests
 
 			BcEncoder encoder = new BcEncoder();
 			encoder.OutputOptions.quality = CompressionQuality.Fast;
-			encoder.OutputOptions.generateMipMaps = true;
 			encoder.OutputOptions.format = CompressionFormat.BC5;
 			encoder.OutputOptions.fileFormat = OutputFileFormat.Dds;
 
 			using FileStream fs = File.OpenWrite("encoding_dds_bc5.dds");
-			encoder.Encode(image, fs);
+			image.TryGetSinglePixelSpan(out var span);
+			encoder.Encode(span.ToBytes(), image.Width, image.Height, fs);
 			fs.Close();
 		}
 
@@ -106,27 +92,12 @@ namespace BCnEncTests
 
 			BcEncoder encoder = new BcEncoder();
 			encoder.OutputOptions.quality = CompressionQuality.Fast;
-			encoder.OutputOptions.generateMipMaps = true;
 			encoder.OutputOptions.format = CompressionFormat.BC7;
 			encoder.OutputOptions.fileFormat = OutputFileFormat.Dds;
 
 			using FileStream fs = File.OpenWrite("encoding_dds_bc7.dds");
-			encoder.Encode(image, fs);
-			fs.Close();
-		}
-
-		[Fact]
-		public void DdsWriteCubemap() {
-			var images = ImageLoader.testCubemap;
-
-			BcEncoder encoder = new BcEncoder();
-			encoder.OutputOptions.quality = CompressionQuality.Fast;
-			encoder.OutputOptions.generateMipMaps = true;
-			encoder.OutputOptions.format = CompressionFormat.BC1;
-			encoder.OutputOptions.fileFormat = OutputFileFormat.Dds;
-
-			using FileStream fs = File.OpenWrite("encoding_dds_cubemap_bc1.dds");
-			encoder.EncodeCubeMap(images[0],images[1],images[2],images[3],images[4],images[5], fs);
+			image.TryGetSinglePixelSpan(out var span);
+			encoder.Encode(span.ToBytes(), image.Width, image.Height, fs);
 			fs.Close();
 		}
 	}

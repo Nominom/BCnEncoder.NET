@@ -168,15 +168,15 @@
 			}
 		}
 
-		public static (ulong, ulong) StoreTo128(ulong low, ulong high, int index, int bitCount, ulong value)
+		public static void StoreTo128(ref ulong low, ref ulong high, int index, int bitCount, ulong value)
 		{
 			if (index + bitCount <= 64)
 			{ // Store to low
-				return (Store(low, index, bitCount, value), high);
+				low = Store(low, index, bitCount, value);
 			}
 			else if (index >= 64)
 			{ // Store to high
-				return (low, Store(high, index - 64, bitCount, value));
+				high = Store(high, index - 64, bitCount, value);
 			}
 			else
 			{ //handle boundary case
@@ -188,7 +188,8 @@
 				var l = Store(low, lowIndex, lowBitCount, value);
 				value >>= lowBitCount;
 				var h = Store(high, highIndex, highBitCount, value);
-				return (l, h);
+				low = l;
+				high = h;
 			}
 		}
 	}

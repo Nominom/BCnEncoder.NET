@@ -1,37 +1,31 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.1</TargetFramework>
+    <TargetFrameworks>netstandard1.1;net45</TargetFrameworks>
     
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
+    <DocumentationFile>bin\Debug\netstandard1.1\BCnEncoderNet45.xml</DocumentationFile>
 
     <PackageLicenseExpression>MIT OR Unlicense</PackageLicenseExpression>
     <Copyright />
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-    <Version>1.2.3</Version>
+    <Version>0.0.1</Version>
     <Authors>Nominom</Authors>
     <Company />
-    <Product>BCnEncoder.Net</Product>
-    <Description>BCnEncoder.NET is a library for compressing rgba images to different block-compressed formats. Both ktx and dds output formats are supported. It has no native dependencies and is .NET Standard 2.1 compatible.
-
-Supported formats are:
-    Raw unsigned byte R, RG, RGB and RGBA formats
-    BC1 (S3TC DXT1)
-    BC2 (S3TC DXT3)
-    BC3 (S3TC DXT5)
-    BC4 (RGTC1)
-    BC5 (RGTC2)
-    BC7 (BPTC)</Description>
-    <PackageId>BCnEncoder.Net</PackageId>
+    <Product>BCnEncoder.Net45</Product>
+    <Description>BCnEncoder.NET is a library for compressing rgba images to different block-compressed formats. Both ktx and dds output formats are supported. 
+This version is a .NET Framework 4.5 compatible legacy version. If you're using .NET Core, please use the main package instead.
+</Description>
+    <PackageId>BCnEncoder.Net45</PackageId>
     <RepositoryUrl>https://github.com/Nominom/BCnEncoder.NET</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>BCn BC BC1 BC2 BC3 BC4 BC5 BC7 BPTC RGTC S3TC DXT1 DXT3 DXT5 ktx dds texture compression encoding decoding decompression image gpu</PackageTags>
     <PackageProjectUrl>https://github.com/Nominom/BCnEncoder.NET</PackageProjectUrl>
-    <PackageReleaseNotes>Upgraded ImageSharp dependency from 1.0.0 beta 7 to version 1.0.1</PackageReleaseNotes>
+    <PackageReleaseNotes>Initial .Net Framework 4.5 support version.</PackageReleaseNotes>
+    <AssemblyName>BCnEncoderNet45</AssemblyName>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
@@ -44,8 +38,8 @@ Supported formats are:
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="SixLabors.ImageSharp" Version="1.0.1" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
+    <PackageReference Include="System.Numerics.Vectors" Version="4.5.0" />
   </ItemGroup>
 
 </Project>

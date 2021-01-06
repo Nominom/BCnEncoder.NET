@@ -2,7 +2,6 @@
 using System.Linq;
 using System.Runtime.InteropServices;
 using BCnEncoder.Shared;
-using SixLabors.ImageSharp.PixelFormats;
 
 namespace BCnEncoder.Encoder.Bc7
 {
@@ -13,26 +12,115 @@ namespace BCnEncoder.Encoder.Bc7
 		public int i02, i12, i22, i32;
 		public int i03, i13, i23, i33;
 
-		public Span<int> AsSpan => MemoryMarshal.CreateSpan(ref i00, 16);
+		public int[] AsArray => new int[]
+		{
+			i00, i10, i20, i30,
+			i01, i11, i21, i31,
+			i02, i12, i22, i32,
+			i03, i13, i23, i33
+		};
 
 		public int this[int x, int y]
 		{
-			get => AsSpan[x + y * 4];
-			set => AsSpan[x + y * 4] = value;
+			get
+			{
+				switch (x)
+				{
+					case 0:
+						switch (y)
+						{
+							case 0: return i00;
+							case 1: return i01;
+							case 2: return i02;
+							case 3: return i03;
+						}
+						break;
+					case 1:
+						switch (y)
+						{
+							case 0: return i10;
+							case 1: return i11;
+							case 2: return i12;
+							case 3: return i13;
+						}
+						break;
+					case 2:
+						switch (y)
+						{
+							case 0: return i20;
+							case 1: return i21;
+							case 2: return i22;
+							case 3: return i23;
+						}
+						break;
+					case 3:
+						switch (y)
+						{
+							case 0: return i30;
+							case 1: return i31;
+							case 2: return i32;
+							case 3: return i33;
+						}
+						break;
+				}
+				return default;
+			}
+			set
+			{
+				switch (x)
+				{
+					case 0:
+						switch (y)
+						{
+							case 0: i00 = value; break;
+							case 1: i01 = value; break;
+							case 2: i02 = value; break;
+							case 3: i03 = value; break;
+						}
+						break;
+					case 1:
+						switch (y)
+						{
+							case 0: i10 = value; break;
+							case 1: i11 = value; break;
+							case 2: i12 = value; break;
+							case 3: i13 = value; break;
+						}
+						break;
+					case 2:
+						switch (y)
+						{
+							case 0: i20 = value; break;
+							case 1: i21 = value; break;
+							case 2: i22 = value; break;
+							case 3: i23 = value; break;
+						}
+						break;
+					case 3:
+						switch (y)
+						{
+							case 0: i30 = value; break;
+							case 1: i31 = value; break;
+							case 2: i32 = value; break;
+							case 3: i33 = value; break;
+						}
+						break;
+				}
+			}
 		}
 
 		public int this[int index]
 		{
-			get => AsSpan[index];
-			set => AsSpan[index] = value;
+			get => this[index % 4, (int)Math.Floor(index / 4.0)];
+			set => this[index % 4, (int)Math.Floor(index / 4.0)] = value;
 		}
-
+		
 		public int NumClusters
 		{
 			get
 			{
-				var t = AsSpan;
-				Span<int> clusters = stackalloc int[16];
+				var t = AsArray;
+				int[] clusters = new int[16];
 				int distinct = 0;
 				for (int i = 0; i < 16; i++)
 				{
@@ -64,9 +152,9 @@ namespace BCnEncoder.Encoder.Bc7
 		{
 			var result = new ClusterIndices4X4();
 			numClusters = NumClusters;
-			Span<int> mapKey = stackalloc int[numClusters];
-			var indices = AsSpan;
-			var outIndices = result.AsSpan;
+			int[] mapKey = new int[numClusters];
+			var indices = AsArray;
+			var outIndices = result.AsArray;
 			int next = 0;
 			for (int i = 0; i < 16; i++)
 			{
@@ -97,113 +185,139 @@ namespace BCnEncoder.Encoder.Bc7
 	{
 		private static int[] varPatternRAlpha = new int[] { 1, -1, 1, 0, 0, -1, 0, 0, 0, 0 };
 		private static int[] varPatternRNoAlpha = new int[] { 1, -1, 1, 0, 0, -1, 0, 0 };
-			
+
 		private static int[] varPatternGAlpha = new int[] { 1, -1, 0, 1, 0, 0, -1, 0, 0, 0 };
 		private static int[] varPatternGNoAlpha = new int[] { 1, -1, 0, 1, 0, 0, -1, 0 };
-			
+
 		private static int[] varPatternBAlpha = new int[] { 1, -1, 0, 0, 1, 0, 0, -1, 0, 0 };
 		private static int[] varPatternBNoAlpha = new int[] { 1, -1, 0, 0, 1, 0, 0, -1 };
-			
+
 		private static int[] varPatternAAlpha = new int[] { 0, 0, 0, 0, 0, 0, 0, 0, 1, -1 };
 		private static int[] varPatternANoAlpha = new int[] { 0, 0, 0, 0, 0, 0, 0, 0 };
 
-		public static bool TypeHasPBits(Bc7BlockType type) => type switch
+		public static bool TypeHasPBits(Bc7BlockType type)
 		{
-			Bc7BlockType.Type0 => true,
-			Bc7BlockType.Type1 => true,
-			Bc7BlockType.Type3 => true,
-			Bc7BlockType.Type6 => true,
-			Bc7BlockType.Type7 => true,
-			_ => false
-		};
+			switch (type)
+			{
+				case (Bc7BlockType.Type0): return true;
+				case (Bc7BlockType.Type1): return true;
+				case (Bc7BlockType.Type3): return true;
+				case (Bc7BlockType.Type6): return true;
+				case (Bc7BlockType.Type7): return true;
+				default: return false;
+			}
+		}
 
-		public static bool TypeHasSharedPBits(Bc7BlockType type) => type switch
+		public static bool TypeHasSharedPBits(Bc7BlockType type)
 		{
-			Bc7BlockType.Type1 => true,
-			_ => false
-		};
+			return type == Bc7BlockType.Type1;
+		}
 
 		/// <summary>
 		/// Includes PBit
 		/// </summary>
-		public static int GetColorComponentPrecisionWithPBit(Bc7BlockType type) => type switch
+		public static int GetColorComponentPrecisionWithPBit(Bc7BlockType type)
 		{
-			Bc7BlockType.Type0 => 5,
-			Bc7BlockType.Type1 => 7,
-			Bc7BlockType.Type2 => 5,
-			Bc7BlockType.Type3 => 8,
-			Bc7BlockType.Type4 => 5,
-			Bc7BlockType.Type5 => 7,
-			Bc7BlockType.Type6 => 8,
-			Bc7BlockType.Type7 => 6,
-			_ => 0
-		};
+			switch (type)
+			{
+				case (Bc7BlockType.Type0): return 5;
+				case (Bc7BlockType.Type1): return 7;
+				case (Bc7BlockType.Type2): return 5;
+				case (Bc7BlockType.Type3): return 8;
+				case (Bc7BlockType.Type4): return 5;
+				case (Bc7BlockType.Type5): return 7;
+				case (Bc7BlockType.Type6): return 8;
+				case (Bc7BlockType.Type7): return 6;
+				default: return 0;
+			}
+		}
 
 		/// <summary>
 		/// Includes PBit
 		/// </summary>
-		public static int GetAlphaComponentPrecisionWithPBit(Bc7BlockType type) => type switch
+		public static int GetAlphaComponentPrecisionWithPBit(Bc7BlockType type)
 		{
-
-			Bc7BlockType.Type4 => 6,
-			Bc7BlockType.Type5 => 8,
-			Bc7BlockType.Type6 => 8,
-			Bc7BlockType.Type7 => 6,
-			_ => 0
-		};
+			switch (type)
+			{
+				case
+					Bc7BlockType.Type4:
+					return 6;
+				case
+					Bc7BlockType.Type5:
+					return 8;
+				case
+					Bc7BlockType.Type6:
+					return 8;
+				case
+					Bc7BlockType.Type7:
+					return 6;
+				default: return 0;
+			}
+		}
 
 		/// <summary>
 		/// Does not include pBit
 		/// </summary>
-		public static int GetColorComponentPrecision(Bc7BlockType type) => type switch
+		public static int GetColorComponentPrecision(Bc7BlockType type)
 		{
-			Bc7BlockType.Type0 => 4,
-			Bc7BlockType.Type1 => 6,
-			Bc7BlockType.Type2 => 5,
-			Bc7BlockType.Type3 => 7,
-			Bc7BlockType.Type4 => 5,
-			Bc7BlockType.Type5 => 7,
-			Bc7BlockType.Type6 => 7,
-			Bc7BlockType.Type7 => 5,
-			_ => 0
-		};
+			switch (type)
+			{
+				case Bc7BlockType.Type0: return 4;
+				case Bc7BlockType.Type1: return 6;
+				case Bc7BlockType.Type2: return 5;
+				case Bc7BlockType.Type3: return 7;
+				case Bc7BlockType.Type4: return 5;
+				case Bc7BlockType.Type5: return 7;
+				case Bc7BlockType.Type6: return 7;
+				case Bc7BlockType.Type7: return 5;
+				default: return 0;
+			}
+		}
 
 		/// <summary>
 		/// Does not include pBit
 		/// </summary>
-		public static int GetAlphaComponentPrecision(Bc7BlockType type) => type switch
+		public static int GetAlphaComponentPrecision(Bc7BlockType type)
+		{
+			switch (type)
+			{
+				case Bc7BlockType.Type4: return 6;
+				case Bc7BlockType.Type5: return 8;
+				case Bc7BlockType.Type6: return 7;
+				case Bc7BlockType.Type7: return 5;
+				default: return 0;
+			}
+		}
+
+		public static int GetColorIndexBitCount(Bc7BlockType type, int type4IdxMode = 0)
 		{
 
-			Bc7BlockType.Type4 => 6,
-			Bc7BlockType.Type5 => 8,
-			Bc7BlockType.Type6 => 7,
-			Bc7BlockType.Type7 => 5,
-			_ => 0
-		};
+			switch (type)
+			{
+				case Bc7BlockType.Type0: return 3;
+				case Bc7BlockType.Type1: return 3;
+				case Bc7BlockType.Type2: return 2;
+				case Bc7BlockType.Type3: return 2;
+				case Bc7BlockType.Type4: return type4IdxMode == 0 ? 2 : 3;
+				case Bc7BlockType.Type5: return 2;
+				case Bc7BlockType.Type6: return 4;
+				case Bc7BlockType.Type7: return 2;
+				default: return 0;
+			}
 
-		public static int GetColorIndexBitCount(Bc7BlockType type, int type4IdxMode = 0) => type switch
-		{
-			Bc7BlockType.Type0 => 3,
-			Bc7BlockType.Type1 => 3,
-			Bc7BlockType.Type2 => 2,
-			Bc7BlockType.Type3 => 2,
-			Bc7BlockType.Type4 when type4IdxMode == 0 => 2,
-			Bc7BlockType.Type4 when type4IdxMode == 1 => 3,
-			Bc7BlockType.Type5 => 2,
-			Bc7BlockType.Type6 => 4,
-			Bc7BlockType.Type7 => 2,
-			_ => 0
-		};
+		}
 
-		public static int GetAlphaIndexBitCount(Bc7BlockType type, int type4IdxMode = 0) => type switch
+		public static int GetAlphaIndexBitCount(Bc7BlockType type, int type4IdxMode = 0)
 		{
-			Bc7BlockType.Type4 when type4IdxMode == 0 => 3,
-			Bc7BlockType.Type4 when type4IdxMode == 1 => 2,
-			Bc7BlockType.Type5 => 2,
-			Bc7BlockType.Type6 => 4,
-			Bc7BlockType.Type7 => 2,
-			_ => 0
-		};
+			switch (type)
+			{
+				case Bc7BlockType.Type4: return type4IdxMode == 0 ? 3 : 2;
+				case Bc7BlockType.Type5: return 2;
+				case Bc7BlockType.Type6: return 4;
+				case Bc7BlockType.Type7: return 2;
+				default: return 0;
+			}
+		}
 
 
 		public static void ExpandEndpoints(Bc7BlockType type, ColorRgba32[] endpoints, byte[] pBits)
@@ -302,9 +416,9 @@ namespace BCnEncoder.Encoder.Bc7
 			int CalculatePartitionError(int partitionIndex)
 			{
 				int error = 0;
-				ReadOnlySpan<int> partitionTable = Bc7Block.Subsets2PartitionTable[partitionIndex];
-				Span<int> subset0 = stackalloc int[numDistinctClusters];
-				Span<int> subset1 = stackalloc int[numDistinctClusters];
+				int[] partitionTable = Bc7Block.Subsets2PartitionTable[partitionIndex];
+				int[] subset0 = new int[numDistinctClusters];
+				int[] subset1 = new int[numDistinctClusters];
 				int max0Idx = 0;
 				int max1Idx = 0;
 
@@ -377,13 +491,13 @@ namespace BCnEncoder.Encoder.Bc7
 		{
 			int[] output = Enumerable.Range(0, 64).ToArray();
 
-			
+
 			int CalculatePartitionError(int partitionIndex)
 			{
 				int error = 0;
-				ReadOnlySpan<int> partitionTable = Bc7Block.Subsets2PartitionTable[partitionIndex];
-				Span<int> subset0 = stackalloc int[numDistinctClusters];
-				Span<int> subset1 = stackalloc int[numDistinctClusters];
+				int[] partitionTable = Bc7Block.Subsets2PartitionTable[partitionIndex];
+				int[] subset0 = new int[numDistinctClusters];
+				int[] subset1 = new int[numDistinctClusters];
 				int max0Idx = 0;
 				int max1Idx = 0;
 
@@ -444,11 +558,11 @@ namespace BCnEncoder.Encoder.Bc7
 			int CalculatePartitionError(int partitionIndex)
 			{
 				int error = 0;
-				ReadOnlySpan<int> partitionTable = Bc7Block.Subsets3PartitionTable[partitionIndex];
+				int[] partitionTable = Bc7Block.Subsets3PartitionTable[partitionIndex];
 
-				Span<int> subset0 = stackalloc int[numDistinctClusters];
-				Span<int> subset1 = stackalloc int[numDistinctClusters];
-				Span<int> subset2 = stackalloc int[numDistinctClusters];
+				int[] subset0 = new int[numDistinctClusters];
+				int[] subset1 = new int[numDistinctClusters];
+				int[] subset2 = new int[numDistinctClusters];
 				int max0Idx = 0;
 				int max1Idx = 0;
 				int max2Idx = 0;
@@ -539,11 +653,11 @@ namespace BCnEncoder.Encoder.Bc7
 			int CalculatePartitionError(int partitionIndex)
 			{
 				int error = 0;
-				ReadOnlySpan<int> partitionTable = Bc7Block.Subsets3PartitionTable[partitionIndex];
+				int[] partitionTable = Bc7Block.Subsets3PartitionTable[partitionIndex];
 
-				Span<int> subset0 = stackalloc int[numDistinctClusters];
-				Span<int> subset1 = stackalloc int[numDistinctClusters];
-				Span<int> subset2 = stackalloc int[numDistinctClusters];
+				int[] subset0 = new int[numDistinctClusters];
+				int[] subset1 = new int[numDistinctClusters];
+				int[] subset2 = new int[numDistinctClusters];
 				int max0Idx = 0;
 				int max1Idx = 0;
 				int max2Idx = 0;
@@ -613,19 +727,19 @@ namespace BCnEncoder.Encoder.Bc7
 			out ColorRgba32 ep1)
 		{
 
-			var originalPixels = block.AsSpan;
+			var originalPixels = block.AsArray;
 			PcaVectors.CreateWithAlpha(originalPixels, out var mean, out var pa);
-			PcaVectors.GetExtremePointsWithAlpha(block.AsSpan, mean, pa, out var min, out var max);
+			PcaVectors.GetExtremePointsWithAlpha(block.AsArray, mean, pa, out var min, out var max);
 
 			ep0 = new ColorRgba32((byte)(min.X * 255), (byte)(min.Y * 255), (byte)(min.Z * 255), (byte)(min.W * 255));
 			ep1 = new ColorRgba32((byte)(max.X * 255), (byte)(max.Y * 255), (byte)(max.Z * 255), (byte)(max.W * 255));
 		}
 
 		public static void GetInitialUnscaledEndpointsForSubset(RawBlock4X4Rgba32 block, out ColorRgba32 ep0,
-			out ColorRgba32 ep1, ReadOnlySpan<int> partitionTable, int subsetIndex)
+			out ColorRgba32 ep1, int[] partitionTable, int subsetIndex)
 		{
 
-			var originalPixels = block.AsSpan;
+			var originalPixels = block.AsArray;
 
 			int count = 0;
 			for (int i = 0; i < 16; i++)
@@ -636,7 +750,7 @@ namespace BCnEncoder.Encoder.Bc7
 				}
 			}
 
-			Span<Rgba32> subsetColors = stackalloc Rgba32[count];
+			Rgba32[] subsetColors = new Rgba32[count];
 			int next = 0;
 			for (int i = 0; i < 16; i++)
 			{
@@ -647,7 +761,7 @@ namespace BCnEncoder.Encoder.Bc7
 			}
 
 			PcaVectors.CreateWithAlpha(subsetColors, out var mean, out var pa);
-			PcaVectors.GetExtremePointsWithAlpha(block.AsSpan, mean, pa, out var min, out var max);
+			PcaVectors.GetExtremePointsWithAlpha(block.AsArray, mean, pa, out var min, out var max);
 
 			ep0 = new ColorRgba32((byte)(min.X * 255), (byte)(min.Y * 255), (byte)(min.Z * 255), (byte)(min.W * 255));
 			ep1 = new ColorRgba32((byte)(max.X * 255), (byte)(max.Y * 255), (byte)(max.Z * 255), (byte)(max.W * 255));
@@ -708,16 +822,16 @@ namespace BCnEncoder.Encoder.Bc7
 			byte InterpolateByte(byte e0, byte e1, int index, int indexPrecision)
 			{
 				if (indexPrecision == 0) return e0;
-				ReadOnlySpan<byte> aWeights2 = Bc7Block.colorInterpolationWeights2;
-				ReadOnlySpan<byte> aWeights3 = Bc7Block.colorInterpolationWeights3;
-				ReadOnlySpan<byte> aWeights4 = Bc7Block.colorInterpolationWeights4;
+				byte[] aWeights2 = Bc7Block.colorInterpolationWeights2;
+				byte[] aWeights3 = Bc7Block.colorInterpolationWeights3;
+				byte[] aWeights4 = Bc7Block.colorInterpolationWeights4;
 
-				if(indexPrecision == 2)
-					return (byte) (((64 - aWeights2[index])* (e0) + aWeights2[index]*(e1) + 32) >> 6);
-				else if(indexPrecision == 3)
-					return (byte) (((64 - aWeights3[index])*(e0) + aWeights3[index]*(e1) + 32) >> 6);
+				if (indexPrecision == 2)
+					return (byte)(((64 - aWeights2[index]) * (e0) + aWeights2[index] * (e1) + 32) >> 6);
+				else if (indexPrecision == 3)
+					return (byte)(((64 - aWeights3[index]) * (e0) + aWeights3[index] * (e1) + 32) >> 6);
 				else // indexprecision == 4
-					return (byte) (((64 - aWeights4[index])*(e0) + aWeights4[index]*(e1) + 32) >> 6);
+					return (byte)(((64 - aWeights4[index]) * (e0) + aWeights4[index] * (e1) + 32) >> 6);
 			}
 
 			ColorRgba32 result = new ColorRgba32(
@@ -738,7 +852,7 @@ namespace BCnEncoder.Encoder.Bc7
 			if (endpoint.a > alphaMax) endpoint.a = alphaMax;
 		}
 
-		private static int FindClosestColorIndex(ColorYCbCrAlpha color, ReadOnlySpan<ColorYCbCrAlpha> colors, out float bestError)
+		private static int FindClosestColorIndex(ColorYCbCrAlpha color, ColorYCbCrAlpha[] colors, out float bestError)
 		{
 			bestError = color.CalcDistWeighted(colors[0], 4, 2);
 			int bestIndex = 0;
@@ -754,7 +868,7 @@ namespace BCnEncoder.Encoder.Bc7
 			return bestIndex;
 		}
 
-		private static int FindClosestColorIndex(ColorYCbCr color, ReadOnlySpan<ColorYCbCr> colors, out float bestError)
+		private static int FindClosestColorIndex(ColorYCbCr color, ColorYCbCr[] colors, out float bestError)
 		{
 			bestError = color.CalcDistWeighted(colors[0], 4);
 			int bestIndex = 0;
@@ -774,7 +888,7 @@ namespace BCnEncoder.Encoder.Bc7
 			return bestIndex;
 		}
 
-		private static int FindClosestAlphaIndex(byte alpha, ReadOnlySpan<byte> alphas, out float bestError)
+		private static int FindClosestAlphaIndex(byte alpha, byte[] alphas, out float bestError)
 		{
 			bestError = (alpha - alphas[0]) * (alpha - alphas[0]);
 			int bestIndex = 0;
@@ -797,15 +911,15 @@ namespace BCnEncoder.Encoder.Bc7
 
 
 		private static float TrySubsetEndpoints(Bc7BlockType type, RawBlock4X4Rgba32 raw, ColorRgba32 ep0, ColorRgba32 ep1,
-			ReadOnlySpan<int> partitionTable, int subsetIndex, int type4IdxMode)
+			int[] partitionTable, int subsetIndex, int type4IdxMode)
 		{
 			int colorIndexPrecision = GetColorIndexBitCount(type, type4IdxMode);
 			int alphaIndexPrecision = GetAlphaIndexBitCount(type, type4IdxMode);
 
 			if (type == Bc7BlockType.Type4 || type == Bc7BlockType.Type5)
 			{ //separate indices for color and alpha
-				Span<ColorYCbCr> colors = stackalloc ColorYCbCr[1 << colorIndexPrecision];
-				Span<byte> alphas = stackalloc byte[1 << alphaIndexPrecision];
+				ColorYCbCr[] colors = new ColorYCbCr[1 << colorIndexPrecision];
+				byte[] alphas = new byte[1 << alphaIndexPrecision];
 
 				for (int i = 0; i < colors.Length; i++)
 				{
@@ -819,7 +933,7 @@ namespace BCnEncoder.Encoder.Bc7
 						i, 0, alphaIndexPrecision).a;
 				}
 
-				var pixels = raw.AsSpan;
+				var pixels = raw.AsArray;
 				float error = 0;
 
 				for (int i = 0; i < 16; i++)
@@ -836,14 +950,14 @@ namespace BCnEncoder.Encoder.Bc7
 			}
 			else
 			{
-				Span<ColorYCbCrAlpha> colors = stackalloc ColorYCbCrAlpha[1 << colorIndexPrecision];
+				ColorYCbCrAlpha[] colors = new ColorYCbCrAlpha[1 << colorIndexPrecision];
 				for (int i = 0; i < colors.Length; i++)
 				{
 					colors[i] = new ColorYCbCrAlpha(InterpolateColor(ep0, ep1, i,
 						i, colorIndexPrecision, alphaIndexPrecision));
 				}
 
-				var pixels = raw.AsSpan;
+				var pixels = raw.AsArray;
 				float error = 0;
 				float count = 0;
 
@@ -865,8 +979,8 @@ namespace BCnEncoder.Encoder.Bc7
 
 		}
 
-		public static void FillSubsetIndices(Bc7BlockType type, RawBlock4X4Rgba32 raw, ColorRgba32 ep0, ColorRgba32 ep1, ReadOnlySpan<int> partitionTable, int subsetIndex,
-			Span<byte> indicesToFill)
+		public static void FillSubsetIndices(Bc7BlockType type, RawBlock4X4Rgba32 raw, ColorRgba32 ep0, ColorRgba32 ep1, int[] partitionTable, int subsetIndex,
+			byte[] indicesToFill)
 		{
 			int colorIndexPrecision = GetColorIndexBitCount(type);
 			int alphaIndexPrecision = GetAlphaIndexBitCount(type);
@@ -877,14 +991,14 @@ namespace BCnEncoder.Encoder.Bc7
 			}
 			else
 			{
-				Span<ColorYCbCrAlpha> colors = stackalloc ColorYCbCrAlpha[1 << colorIndexPrecision];
+				ColorYCbCrAlpha[] colors = new ColorYCbCrAlpha[1 << colorIndexPrecision];
 				for (int i = 0; i < colors.Length; i++)
 				{
 					colors[i] = new ColorYCbCrAlpha(InterpolateColor(ep0, ep1, i,
 						i, colorIndexPrecision, alphaIndexPrecision));
 				}
 
-				var pixels = raw.AsSpan;
+				var pixels = raw.AsArray;
 
 				for (int i = 0; i < 16; i++)
 				{
@@ -903,15 +1017,15 @@ namespace BCnEncoder.Encoder.Bc7
 		/// Used for Modes 4 and 5
 		/// </summary>
 		public static void FillAlphaColorIndices(Bc7BlockType type, RawBlock4X4Rgba32 raw, ColorRgba32 ep0, ColorRgba32 ep1,
-			Span<byte> colorIndicesToFill, Span<byte> alphaIndicesToFill, int idxMode = 0)
+			byte[] colorIndicesToFill, byte[] alphaIndicesToFill, int idxMode = 0)
 		{
 			int colorIndexPrecision = GetColorIndexBitCount(type, idxMode);
 			int alphaIndexPrecision = GetAlphaIndexBitCount(type, idxMode);
 
 			if (type == Bc7BlockType.Type4 || type == Bc7BlockType.Type5)
 			{
-				Span<ColorYCbCr> colors = stackalloc ColorYCbCr[1 << colorIndexPrecision];
-				Span<byte> alphas = stackalloc byte[1 << alphaIndexPrecision];
+				ColorYCbCr[] colors = new ColorYCbCr[1 << colorIndexPrecision];
+				byte[] alphas = new byte[1 << alphaIndexPrecision];
 
 				for (int i = 0; i < colors.Length; i++)
 				{
@@ -925,7 +1039,7 @@ namespace BCnEncoder.Encoder.Bc7
 						i, 0, alphaIndexPrecision).a;
 				}
 
-				var pixels = raw.AsSpan;
+				var pixels = raw.AsArray;
 
 				for (int i = 0; i < 16; i++)
 				{
@@ -945,7 +1059,7 @@ namespace BCnEncoder.Encoder.Bc7
 		}
 
 		public static void OptimizeSubsetEndpointsWithPBit(Bc7BlockType type, RawBlock4X4Rgba32 raw, ref ColorRgba32 ep0, ref ColorRgba32 ep1, ref byte pBit0, ref byte pBit1,
-			int variation, ReadOnlySpan<int> partitionTable, int subsetIndex, bool variatePBits, bool variateAlpha, int type4IdxMode = 0)
+			int variation, int[] partitionTable, int subsetIndex, bool variatePBits, bool variateAlpha, int type4IdxMode = 0)
 		{
 
 			byte colorMax = (byte)((1 << GetColorComponentPrecision(type)) - 1);
@@ -956,16 +1070,16 @@ namespace BCnEncoder.Encoder.Bc7
 				ExpandEndpoint(type, ep1, pBit1), partitionTable, subsetIndex, type4IdxMode
 			);
 
-			ReadOnlySpan<int> varPatternR = variateAlpha
+			int[] varPatternR = variateAlpha
 				? varPatternRAlpha
 				: varPatternRNoAlpha;
-			ReadOnlySpan<int> varPatternG = variateAlpha
+			int[] varPatternG = variateAlpha
 				? varPatternGAlpha
 				: varPatternGNoAlpha;
-			ReadOnlySpan<int> varPatternB = variateAlpha
+			int[] varPatternB = variateAlpha
 				? varPatternBAlpha
 				: varPatternBNoAlpha;
-			ReadOnlySpan<int> varPatternA = variateAlpha
+			int[] varPatternA = variateAlpha
 				? varPatternAAlpha
 				: varPatternANoAlpha;
 
@@ -1093,8 +1207,8 @@ namespace BCnEncoder.Encoder.Bc7
 			}
 
 			RawBlock4X4Rgba32 rotated = new RawBlock4X4Rgba32();
-			var pixels = block.AsSpan;
-			var output = rotated.AsSpan;
+			var pixels = block.AsArray;
+			var output = rotated.AsArray;
 			for (int i = 0; i < 16; i++)
 			{
 				var c = pixels[i];

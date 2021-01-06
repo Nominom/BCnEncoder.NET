@@ -1,30 +1,28 @@
 ﻿using System;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Advanced;
-using SixLabors.ImageSharp.PixelFormats;
 
 namespace BCnEncoder.Shared
 {
 	internal static class ImageToBlocks
 	{
 
-		internal static RawBlock4X4Rgba32[] ImageTo4X4(ImageFrame<Rgba32> image, out int blocksWidth, out int blocksHeight)
+		internal static RawBlock4X4Rgba32[] ImageTo4X4(byte[] imageRgba, int imageWidth, int imageHeight, out int blocksWidth, out int blocksHeight)
 		{
-			blocksWidth = (int)MathF.Ceiling(image.Width / 4.0f);
-			blocksHeight = (int)MathF.Ceiling(image.Height / 4.0f);
+			blocksWidth = (int)Math.Ceiling(imageWidth / 4.0f);
+			blocksHeight = (int)Math.Ceiling(imageHeight / 4.0f);
 			RawBlock4X4Rgba32[] output = new RawBlock4X4Rgba32[blocksWidth * blocksHeight];
 
-			if (!image.TryGetSinglePixelSpan(out var pixels)) {
-				throw new Exception("Cannot get pixel span.");
-			}
 
-			for (int y = 0; y < image.Height; y++)
+			for (int y = 0; y < imageHeight; y++)
 			{
-				for (int x = 0; x < image.Width; x++)
+				for (int x = 0; x < imageWidth; x++)
 				{
-					Rgba32 color = pixels[x + y * image.Width];
-					int blockIndexX = (int)MathF.Floor(x / 4.0f);
-					int blockIndexY = (int)MathF.Floor(y / 4.0f);
+					byte r = imageRgba[(x + y * imageWidth) * 4 + 0];
+					byte g = imageRgba[(x + y * imageWidth) * 4 + 1];
+					byte b = imageRgba[(x + y * imageWidth) * 4 + 2];
+					byte a = imageRgba[(x + y * imageWidth) * 4 + 3];
+					Rgba32 color = new Rgba32(r, g, b, a);
+					int blockIndexX = (int)Math.Floor(x / 4.0f);
+					int blockIndexY = (int)Math.Floor(y / 4.0f);
 					int blockInternalIndexX = x % 4;
 					int blockInternalIndexY = y % 4;
 
@@ -33,9 +31,9 @@ namespace BCnEncoder.Shared
 			}
 
 			//Fill in block y with edge color
-			if (image.Height % 4 != 0)
+			if (imageHeight % 4 != 0)
 			{
-				int yPaddingStart = image.Height % 4;
+				int yPaddingStart = imageHeight % 4;
 				for (int i = 0; i < blocksWidth; i++)
 				{
 					var lastBlock = output[i + blocksWidth * (blocksHeight - 1)];
@@ -51,9 +49,9 @@ namespace BCnEncoder.Shared
 			}
 
 			//Fill in block x with edge color
-			if (image.Width % 4 != 0)
+			if (imageWidth % 4 != 0)
 			{
-				int xPaddingStart = image.Width % 4;
+				int xPaddingStart = imageWidth % 4;
 				for (int i = 0; i < blocksHeight; i++)
 				{
 					var lastBlock = output[blocksWidth - 1 + i * blocksWidth];
@@ -71,60 +69,55 @@ namespace BCnEncoder.Shared
 			return output;
 		}
 
-		internal static Image<Rgba32> ImageFromRawBlocks(RawBlock4X4Rgba32[,] blocks, int blocksWidth, int blocksHeight)
+		internal static byte[] ImageFromRawBlocks(RawBlock4X4Rgba32[,] blocks, int blocksWidth, int blocksHeight)
 			=> ImageFromRawBlocks(blocks, blocksWidth, blocksHeight, blocksWidth * 4, blocksHeight * 4);
 
 
-		internal static Image<Rgba32> ImageFromRawBlocks(RawBlock4X4Rgba32[,] blocks, int blocksWidth, int blocksHeight, int pixelWidth, int pixelHeight)
+		internal static byte[] ImageFromRawBlocks(RawBlock4X4Rgba32[,] blocks, int blocksWidth, int blocksHeight, int pixelWidth, int pixelHeight)
 		{
-			Image<Rgba32> output = new Image<Rgba32>(pixelWidth, pixelHeight);
-			
-			if (!output.TryGetSinglePixelSpan(out var pixels)) {
-				throw new Exception("Cannot get pixel span.");
-			}
+			byte[] output = new byte[pixelWidth * pixelHeight * 4];
 
-			for (int y = 0; y < output.Height; y++)
+			for (int y = 0; y < pixelHeight; y++)
 			{
-				for (int x = 0; x < output.Width; x++)
+				for (int x = 0; x < pixelWidth; x++)
 				{
-					int blockIndexX = (int)MathF.Floor(x / 4.0f);
-					int blockIndexY = (int)MathF.Floor(y / 4.0f);
+					int blockIndexX = (int)Math.Floor(x / 4.0f);
+					int blockIndexY = (int)Math.Floor(y / 4.0f);
 					int blockInternalIndexX = x % 4;
 					int blockInternalIndexY = y % 4;
 
-					pixels[x + y * output.Width] =
-						blocks[blockIndexX, blockIndexY]
-							[blockInternalIndexX, blockInternalIndexY];
+					output[(x + y * pixelWidth) * 4 + 0] = blocks[blockIndexX, blockIndexY][blockInternalIndexX, blockInternalIndexY].R;
+					output[(x + y * pixelWidth) * 4 + 1] = blocks[blockIndexX, blockIndexY][blockInternalIndexX, blockInternalIndexY].G;
+					output[(x + y * pixelWidth) * 4 + 2] = blocks[blockIndexX, blockIndexY][blockInternalIndexX, blockInternalIndexY].B;
+					output[(x + y * pixelWidth) * 4 + 3] = blocks[blockIndexX, blockIndexY][blockInternalIndexX, blockInternalIndexY].A;
 				}
 			}
 
 			return output;
 		}
 
-		internal static Image<Rgba32> ImageFromRawBlocks(RawBlock4X4Rgba32[] blocks, int blocksWidth, int blocksHeight)
+		internal static byte[] ImageFromRawBlocks(RawBlock4X4Rgba32[] blocks, int blocksWidth, int blocksHeight)
 			=> ImageFromRawBlocks(blocks, blocksWidth, blocksHeight, blocksWidth * 4, blocksHeight * 4);
 
 
-		internal static Image<Rgba32> ImageFromRawBlocks(RawBlock4X4Rgba32[] blocks, int blocksWidth, int blocksHeight, int pixelWidth, int pixelHeight)
+		internal static byte[] ImageFromRawBlocks(RawBlock4X4Rgba32[] blocks, int blocksWidth, int blocksHeight, int pixelWidth, int pixelHeight)
 		{
-			Image<Rgba32> output = new Image<Rgba32>(pixelWidth, pixelHeight);
-			
-			if (!output.TryGetSinglePixelSpan(out var pixels)) {
-				throw new Exception("Cannot get pixel span.");
-			}
+			byte[] output = new byte[pixelWidth * pixelHeight * 4];
 
-			for (int y = 0; y < output.Height; y++)
+
+			for (int y = 0; y < pixelHeight; y++)
 			{
-				for (int x = 0; x < output.Width; x++)
+				for (int x = 0; x < pixelWidth; x++)
 				{
-					int blockIndexX = (int)MathF.Floor(x / 4.0f);
-					int blockIndexY = (int)MathF.Floor(y / 4.0f);
+					int blockIndexX = (int)Math.Floor(x / 4.0f);
+					int blockIndexY = (int)Math.Floor(y / 4.0f);
 					int blockInternalIndexX = x % 4;
 					int blockInternalIndexY = y % 4;
-
-					pixels[x + y * output.Width] =
-						blocks[blockIndexX + blockIndexY * blocksWidth]
-							[blockInternalIndexX, blockInternalIndexY];
+					
+					output[(x + y * pixelWidth) * 4 + 0] = blocks[blockIndexX + blockIndexY * blocksWidth][blockInternalIndexX, blockInternalIndexY].R;
+					output[(x + y * pixelWidth) * 4 + 1] = blocks[blockIndexX + blockIndexY * blocksWidth][blockInternalIndexX, blockInternalIndexY].G;
+					output[(x + y * pixelWidth) * 4 + 2] = blocks[blockIndexX + blockIndexY * blocksWidth][blockInternalIndexX, blockInternalIndexY].B;
+					output[(x + y * pixelWidth) * 4 + 3] = blocks[blockIndexX + blockIndexY * blocksWidth][blockInternalIndexX, blockInternalIndexY].A;
 				}
 			}
 

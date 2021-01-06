@@ -9,20 +9,42 @@ namespace BCnEncoder.Shared
 	{
 		public static unsafe void WriteStruct<T>(this BinaryWriter bw, T t) where T : unmanaged
 		{
-			int size = Unsafe.SizeOf<T>();
+			int size = sizeof(T);
 			byte* bytes = stackalloc byte[size];
-			Unsafe.Write(bytes, t);
-			Span<byte> bSpan = new Span<byte>(bytes, size);
-			bw.Write(bSpan);
+			((T*) bytes)[0] = t;
+			for (int b = 0; b < size; b++)
+			{
+				bw.Write(bytes[b]);
+			}
 		}
 
 		public static unsafe T ReadStruct<T>(this BinaryReader br) where T : unmanaged
 		{
-			int size = Unsafe.SizeOf<T>();
+			int size = sizeof(T);
 			byte* bytes = stackalloc byte[size];
-			Span<byte> bSpan = new Span<byte>(bytes, size);
-			br.Read(bSpan);
-			return Unsafe.Read<T>(bytes);
+			for (int b = 0; b < size; b++)
+			{
+				bytes[b] = br.ReadByte();
+			}
+			return ((T*)bytes)[0];
+		}
+
+		public static void Read(this BinaryReader br, byte[] data)
+		{
+			for (int b = 0; b < data.Length; b++)
+			{
+				data[b] = br.ReadByte();
+			}
+		}
+
+		public static byte[] Slice(this byte[] bytes, int start, int length)
+		{
+			byte[] output = new byte[length];
+			for (int i = 0; i < length; i++)
+			{
+				output[i] = bytes[i + start];
+			}
+			return output;
 		}
 
 		public static void AddPadding(this BinaryWriter bw, uint padding)

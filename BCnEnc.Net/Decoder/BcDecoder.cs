@@ -2,13 +2,11 @@
 using System.IO;
 using System.Text;
 using BCnEncoder.Shared;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Advanced;
-using SixLabors.ImageSharp.PixelFormats;
 
 namespace BCnEncoder.Decoder
 {
-	public class DecoderInputOptions {
+	public class DecoderInputOptions
+	{
 		/// <summary>
 		/// The DDS file format doesn't seem to have a standard for indicating whether a BC1 texture
 		/// includes 1bit of alpha. This option will assume that all Bc1 textures contain alpha.
@@ -18,12 +16,20 @@ namespace BCnEncoder.Decoder
 		public bool ddsBc1ExpectAlpha = true;
 	}
 
-	public class DecoderOutputOptions {
+	public class DecoderOutputOptions
+	{
 		/// <summary>
 		/// If true, when decoding from a format that only includes a red channel,
 		/// output pixels will have all colors set to the same value (greyscale). Default is true.
 		/// </summary>
 		public bool redAsLuminance = true;
+	}
+
+	public struct DecodedMipMap
+	{
+		public int Width;
+		public int Height;
+		public byte[] data;
 	}
 
 	/// <summary>
@@ -87,6 +93,29 @@ namespace BCnEncoder.Decoder
 			}
 		}
 
+		private IBcBlockDecoder GetDecoder(CompressionFormat format)
+		{
+			switch (format)
+			{
+				case CompressionFormat.BC1:
+					return new Bc1NoAlphaDecoder();
+				case CompressionFormat.BC1WithAlpha:
+					return new Bc1ADecoder();
+				case CompressionFormat.BC2:
+					return new Bc2Decoder();
+				case CompressionFormat.BC3:
+					return new Bc3Decoder();
+				case CompressionFormat.BC4:
+					return new Bc4Decoder(OutputOptions.redAsLuminance);
+				case CompressionFormat.BC5:
+					return new Bc5Decoder();
+				case CompressionFormat.BC7:
+					return new Bc7Decoder();
+				default:
+					return null;
+			}
+		}
+
 		private IBcBlockDecoder GetDecoder(DXGI_FORMAT format, DdsHeader header)
 		{
 			switch (format)
@@ -94,16 +123,19 @@ namespace BCnEncoder.Decoder
 				case DXGI_FORMAT.DXGI_FORMAT_BC1_UNORM:
 				case DXGI_FORMAT.DXGI_FORMAT_BC1_UNORM_SRGB:
 				case DXGI_FORMAT.DXGI_FORMAT_BC1_TYPELESS:
-					if ((header.ddsPixelFormat.dwFlags & PixelFormatFlags.DDPF_ALPHAPIXELS) != 0) {
+					if ((header.ddsPixelFormat.dwFlags & PixelFormatFlags.DDPF_ALPHAPIXELS) != 0)
+					{
 						return new Bc1ADecoder();
 					}
-					else if(InputOptions.ddsBc1ExpectAlpha){
+					else if (InputOptions.ddsBc1ExpectAlpha)
+					{
 						return new Bc1ADecoder();
 					}
-					else {
+					else
+					{
 						return new Bc1NoAlphaDecoder();
 					}
-					
+
 				case DXGI_FORMAT.DXGI_FORMAT_BC2_UNORM:
 				case DXGI_FORMAT.DXGI_FORMAT_BC2_UNORM_SRGB:
 				case DXGI_FORMAT.DXGI_FORMAT_BC2_TYPELESS:
@@ -164,41 +196,37 @@ namespace BCnEncoder.Decoder
 		/// <summary>
 		/// Read a Ktx or a Dds file from a stream and decode it.
 		/// </summary>
-		public Image<Rgba32> Decode(Stream inputStream) {
+		public DecodedMipMap Decode(Stream inputStream)
+		{
 			var position = inputStream.Position;
-			try {
-				if (inputStream is FileStream fs) {
-					var extension = Path.GetExtension(fs.Name).ToLower();
-					if (extension == ".ktx") {
-						KtxFile file = KtxFile.Load(inputStream);
-						return Decode(file);
-					}
-					else if (extension == ".dds") {
-						DdsFile file = DdsFile.Load(inputStream);
-						return Decode(file);
-					}
-				}
+			try
+			{
 
 				bool isDDS = false;
-				using (var br = new BinaryReader(inputStream, Encoding.UTF8, true)) {
+				using (var br = new BinaryReader(inputStream, Encoding.UTF8, true))
+				{
 					var magic = br.ReadUInt32();
-					if (magic == 0x20534444U) {
+					if (magic == 0x20534444U)
+					{
 						isDDS = true;
 					}
 				}
 
 				inputStream.Seek(position, SeekOrigin.Begin);
 
-				if (isDDS) {
+				if (isDDS)
+				{
 					DdsFile dds = DdsFile.Load(inputStream);
 					return Decode(dds);
 				}
-				else {
+				else
+				{
 					KtxFile ktx = KtxFile.Load(inputStream);
 					return Decode(ktx);
 				}
 			}
-			catch (Exception) {
+			catch (Exception)
+			{
 				inputStream.Seek(position, SeekOrigin.Begin);
 				throw;
 			}
@@ -207,41 +235,37 @@ namespace BCnEncoder.Decoder
 		/// <summary>
 		/// Read a Ktx or a Dds file from a stream and decode it.
 		/// </summary>
-		public Image<Rgba32>[] DecodeAllMipMaps(Stream inputStream) {
+		public DecodedMipMap[] DecodeAllMipMaps(Stream inputStream)
+		{
 			var position = inputStream.Position;
-			try {
-				if (inputStream is FileStream fs) {
-					var extension = Path.GetExtension(fs.Name).ToLower();
-					if (extension == ".ktx") {
-						KtxFile file = KtxFile.Load(inputStream);
-						return DecodeAllMipMaps(file);
-					}
-					else if (extension == ".dds") {
-						DdsFile file = DdsFile.Load(inputStream);
-						return DecodeAllMipMaps(file);
-					}
-				}
+			try
+			{
 
 				bool isDDS = false;
-				using (var br = new BinaryReader(inputStream, Encoding.UTF8, true)) {
+				using (var br = new BinaryReader(inputStream, Encoding.UTF8, true))
+				{
 					var magic = br.ReadUInt32();
-					if (magic == 0x20534444U) {
+					if (magic == 0x20534444U)
+					{
 						isDDS = true;
 					}
 				}
 
 				inputStream.Seek(position, SeekOrigin.Begin);
 
-				if (isDDS) {
+				if (isDDS)
+				{
 					DdsFile dds = DdsFile.Load(inputStream);
 					return DecodeAllMipMaps(dds);
 				}
-				else {
+				else
+				{
 					KtxFile ktx = KtxFile.Load(inputStream);
 					return DecodeAllMipMaps(ktx);
 				}
 			}
-			catch (Exception) {
+			catch (Exception)
+			{
 				inputStream.Seek(position, SeekOrigin.Begin);
 				throw;
 			}
@@ -250,24 +274,35 @@ namespace BCnEncoder.Decoder
 		/// <summary>
 		/// Read a KtxFile and decode it.
 		/// </summary>
-		public Image<Rgba32> Decode(KtxFile file)
+		public DecodedMipMap Decode(KtxFile file)
 		{
-			if (IsSupportedRawFormat(file.Header.GlInternalFormat)) {
+			if (IsSupportedRawFormat(file.Header.GlInternalFormat))
+			{
 				var decoder = GetRawDecoder(file.Header.GlInternalFormat);
 				var data = file.MipMaps[0].Faces[0].Data;
 				var pixelWidth = file.MipMaps[0].Width;
 				var pixelHeight = file.MipMaps[0].Height;
 
-				var image = new Image<Rgba32>((int)pixelWidth, (int)pixelHeight);
+				var image = new byte[(int)pixelWidth * (int)pixelHeight * 4];
 				var output = decoder.Decode(data, (int)pixelWidth, (int)pixelHeight);
-				if (!image.TryGetSinglePixelSpan(out var pixels)) {
-					throw new Exception("Cannot get pixel span.");
+
+				for (int i = 0; i < output.Length; i++)
+				{
+					image[i * 4 + 0] = output[i].R;
+					image[i * 4 + 1] = output[i].G;
+					image[i * 4 + 2] = output[i].B;
+					image[i * 4 + 3] = output[i].A;
 				}
 
-				output.CopyTo(pixels);
-				return image;
+				return new DecodedMipMap()
+				{
+					Width = (int)pixelWidth,
+					Height = (int)pixelHeight,
+					data = image
+				};
 			}
-			else {
+			else
+			{
 				var decoder = GetDecoder(file.Header.GlInternalFormat);
 				if (decoder == null)
 				{
@@ -280,57 +315,80 @@ namespace BCnEncoder.Decoder
 
 				var blocks = decoder.Decode(data, (int)pixelWidth, (int)pixelHeight, out var blockWidth, out var blockHeight);
 
-				return ImageToBlocks.ImageFromRawBlocks(blocks, blockWidth, blockHeight, 
-					(int)pixelWidth, (int)pixelHeight);
+				return new DecodedMipMap()
+				{
+					Width = (int)pixelWidth,
+					Height = (int)pixelHeight,
+					data = ImageToBlocks.ImageFromRawBlocks(blocks, blockWidth, blockHeight,
+						(int)pixelWidth, (int)pixelHeight)
+				};
 			}
 		}
 
 		/// <summary>
 		/// Read a KtxFile and decode it.
 		/// </summary>
-		public Image<Rgba32>[] DecodeAllMipMaps(KtxFile file)
+		public DecodedMipMap[] DecodeAllMipMaps(KtxFile file)
 		{
-			if (IsSupportedRawFormat(file.Header.GlInternalFormat)) {
+			if (IsSupportedRawFormat(file.Header.GlInternalFormat))
+			{
 				var decoder = GetRawDecoder(file.Header.GlInternalFormat);
-				var images = new Image<Rgba32>[file.MipMaps.Count];
+				var images = new DecodedMipMap[file.MipMaps.Count];
 
-				for (int mip = 0; mip < file.MipMaps.Count; mip++) {
+				for (int mip = 0; mip < file.MipMaps.Count; mip++)
+				{
 					var data = file.MipMaps[mip].Faces[0].Data;
 					var pixelWidth = file.MipMaps[mip].Width;
 					var pixelHeight = file.MipMaps[mip].Height;
 
-					var image = new Image<Rgba32>((int)pixelWidth, (int)pixelHeight);
+					var image = new byte[(int)pixelWidth * (int)pixelHeight * 4];
 					var output = decoder.Decode(data, (int)pixelWidth, (int)pixelHeight);
-					if (!image.TryGetSinglePixelSpan(out var pixels)) {
-						throw new Exception("Cannot get pixel span.");
-					}
 
-					output.CopyTo(pixels);
-					images[mip] = image;
+					for (int i = 0; i < output.Length; i++)
+					{
+						image[i * 4 + 0] = output[i].R;
+						image[i * 4 + 1] = output[i].G;
+						image[i * 4 + 2] = output[i].B;
+						image[i * 4 + 3] = output[i].A;
+					}
+					
+					images[mip] = new DecodedMipMap()
+					{
+						Width = (int)pixelWidth,
+						Height = (int)pixelHeight,
+						data = image
+					};
 				}
-				
+
 				return images;
 			}
-			else {
+			else
+			{
 				var decoder = GetDecoder(file.Header.GlInternalFormat);
 				if (decoder == null)
 				{
 					throw new NotSupportedException($"This format is not supported: {file.Header.GlInternalFormat}");
 				}
-				var images = new Image<Rgba32>[file.MipMaps.Count];
+				var images = new DecodedMipMap[file.MipMaps.Count];
 
-				for (int mip = 0; mip < file.MipMaps.Count; mip++) {
+				for (int mip = 0; mip < file.MipMaps.Count; mip++)
+				{
 
 					var data = file.MipMaps[mip].Faces[0].Data;
 					var pixelWidth = file.MipMaps[mip].Width;
 					var pixelHeight = file.MipMaps[mip].Height;
 
-					var blocks = decoder.Decode(data, (int) pixelWidth, (int) pixelHeight, out var blockWidth,
+					var blocks = decoder.Decode(data, (int)pixelWidth, (int)pixelHeight, out var blockWidth,
 						out var blockHeight);
 
-					var image = ImageToBlocks.ImageFromRawBlocks(blocks, blockWidth, blockHeight, 
+					var image = ImageToBlocks.ImageFromRawBlocks(blocks, blockWidth, blockHeight,
 						(int)pixelWidth, (int)pixelHeight);
-					images[mip] = image;
+					images[mip] = new DecodedMipMap()
+					{
+						Width = (int)pixelWidth,
+						Height = (int)pixelHeight,
+						data = image
+					};
 				}
 				return images;
 			}
@@ -339,33 +397,46 @@ namespace BCnEncoder.Decoder
 		/// <summary>
 		/// Read a DdsFile and decode it
 		/// </summary>
-		public Image<Rgba32> Decode(DdsFile file)
+		public DecodedMipMap Decode(DdsFile file)
 		{
-			if (IsSupportedRawFormat(file.Header.ddsPixelFormat.DxgiFormat)) {
+			if (IsSupportedRawFormat(file.Header.ddsPixelFormat.DxgiFormat))
+			{
 				var decoder = GetRawDecoder(file.Header.ddsPixelFormat.DxgiFormat);
 				var data = file.Faces[0].MipMaps[0].Data;
 				var pixelWidth = file.Faces[0].Width;
 				var pixelHeight = file.Faces[0].Height;
 
-				var image = new Image<Rgba32>((int)pixelWidth, (int)pixelHeight);
+				var image = new byte[(int)pixelWidth * (int)pixelHeight * 4];
 				var output = decoder.Decode(data, (int)pixelWidth, (int)pixelHeight);
-				if (!image.TryGetSinglePixelSpan(out var pixels)) {
-					throw new Exception("Cannot get pixel span.");
-				}
 
-				output.CopyTo(pixels);
-				return image;
+				for (int i = 0; i < output.Length; i++)
+				{
+					image[i * 4 + 0] = output[i].R;
+					image[i * 4 + 1] = output[i].G;
+					image[i * 4 + 2] = output[i].B;
+					image[i * 4 + 3] = output[i].A;
+				}
+				
+				return new DecodedMipMap()
+				{
+					Width = (int)pixelWidth,
+					Height = (int)pixelHeight,
+					data = image
+				};
 			}
-			else {
+			else
+			{
 				DXGI_FORMAT format = DXGI_FORMAT.DXGI_FORMAT_UNKNOWN;
-				if (file.Header.ddsPixelFormat.IsDxt10Format) {
+				if (file.Header.ddsPixelFormat.IsDxt10Format)
+				{
 					format = file.Dxt10Header.dxgiFormat;
 				}
-				else {
+				else
+				{
 					format = file.Header.ddsPixelFormat.DxgiFormat;
 				}
 				IBcBlockDecoder decoder = GetDecoder(format, file.Header);
-				
+
 				if (decoder == null)
 				{
 					throw new NotSupportedException($"This format is not supported: {format}");
@@ -377,69 +448,112 @@ namespace BCnEncoder.Decoder
 
 				var blocks = decoder.Decode(data, (int)pixelWidth, (int)pixelHeight, out var blockWidth, out var blockHeight);
 
-				return ImageToBlocks.ImageFromRawBlocks(blocks, blockWidth, blockHeight, 
-					(int)pixelWidth, (int)pixelHeight);
+				return new DecodedMipMap()
+				{
+					Width = (int)pixelWidth,
+					Height = (int)pixelHeight,
+					data = ImageToBlocks.ImageFromRawBlocks(blocks, blockWidth, blockHeight,
+						(int)pixelWidth, (int)pixelHeight)
+				};
 			}
 		}
 
 		/// <summary>
 		/// Read a DdsFile and decode it
 		/// </summary>
-		public Image<Rgba32>[] DecodeAllMipMaps(DdsFile file)
+		public DecodedMipMap[] DecodeAllMipMaps(DdsFile file)
 		{
-			if (IsSupportedRawFormat(file.Header.ddsPixelFormat.DxgiFormat)) {
+			if (IsSupportedRawFormat(file.Header.ddsPixelFormat.DxgiFormat))
+			{
 				var decoder = GetRawDecoder(file.Header.ddsPixelFormat.DxgiFormat);
 
-				var images = new Image<Rgba32>[file.Header.dwMipMapCount];
+				var images = new DecodedMipMap[file.Header.dwMipMapCount];
 
-				for (int mip = 0; mip < file.Header.dwMipMapCount; mip++) {
+				for (int mip = 0; mip < file.Header.dwMipMapCount; mip++)
+				{
 					var data = file.Faces[0].MipMaps[mip].Data;
 					var pixelWidth = file.Faces[0].MipMaps[mip].Width;
 					var pixelHeight = file.Faces[0].MipMaps[mip].Height;
 
-					var image = new Image<Rgba32>((int) pixelWidth, (int) pixelHeight);
-					var output = decoder.Decode(data, (int) pixelWidth, (int) pixelHeight);
-					if (!image.TryGetSinglePixelSpan(out var pixels)) {
-						throw new Exception("Cannot get pixel span.");
-					}
+					var image = new byte[(int)pixelWidth * (int)pixelHeight * 4];
+					var output = decoder.Decode(data, (int)pixelWidth, (int)pixelHeight);
 
-					output.CopyTo(pixels);
-					images[mip] = image;
+					for (int i = 0; i < output.Length; i++)
+					{
+						image[i * 4 + 0] = output[i].R;
+						image[i * 4 + 1] = output[i].G;
+						image[i * 4 + 2] = output[i].B;
+						image[i * 4 + 3] = output[i].A;
+					}
+					images[mip] = new DecodedMipMap()
+					{
+						Width = (int)pixelWidth,
+						Height = (int)pixelHeight,
+						data = image
+					};
 				}
 				return images;
 			}
-			else {
+			else
+			{
 				DXGI_FORMAT format = DXGI_FORMAT.DXGI_FORMAT_UNKNOWN;
-				if (file.Header.ddsPixelFormat.IsDxt10Format) {
+				if (file.Header.ddsPixelFormat.IsDxt10Format)
+				{
 					format = file.Dxt10Header.dxgiFormat;
 				}
-				else {
+				else
+				{
 					format = file.Header.ddsPixelFormat.DxgiFormat;
 				}
 				IBcBlockDecoder decoder = GetDecoder(format, file.Header);
-				
+
 				if (decoder == null)
 				{
 					throw new NotSupportedException($"This format is not supported: {format}");
 				}
-				var images = new Image<Rgba32>[file.Header.dwMipMapCount];
+				var images = new DecodedMipMap[file.Header.dwMipMapCount];
 
-				for (int mip = 0; mip < file.Header.dwMipMapCount; mip++) {
+				for (int mip = 0; mip < file.Header.dwMipMapCount; mip++)
+				{
 					var data = file.Faces[0].MipMaps[mip].Data;
 					var pixelWidth = file.Faces[0].MipMaps[mip].Width;
 					var pixelHeight = file.Faces[0].MipMaps[mip].Height;
 
-					var blocks = decoder.Decode(data, (int) pixelWidth, (int) pixelHeight, out var blockWidth,
+					var blocks = decoder.Decode(data, (int)pixelWidth, (int)pixelHeight, out var blockWidth,
 						out var blockHeight);
 
-					var image = ImageToBlocks.ImageFromRawBlocks(blocks, blockWidth, blockHeight, 
+					var image = ImageToBlocks.ImageFromRawBlocks(blocks, blockWidth, blockHeight,
 						(int)pixelWidth, (int)pixelHeight);
 
-					images[mip] = image;
+					images[mip] = new DecodedMipMap()
+					{
+						Width = (int)pixelWidth,
+						Height = (int)pixelHeight,
+						data = image
+					};
 				}
 
 				return images;
 			}
+		}
+
+		/// <summary>
+		/// Read raw block compressed data and decode it to RGBA.
+		/// </summary>
+		public byte[] DecodeRawData(byte[] bcData, int imageWidth, int imageHeight, CompressionFormat format)
+		{
+
+			var decoder = GetDecoder(format);
+			if (decoder == null)
+			{
+				throw new NotSupportedException($"This format is not supported: {format}");
+			}
+
+			var blocks = decoder.Decode(bcData, imageWidth, imageHeight, out var blockWidth, out var blockHeight);
+
+			return ImageToBlocks.ImageFromRawBlocks(blocks, blockWidth, blockHeight,
+				imageWidth, imageHeight);
+
 		}
 	}
 }

@@ -8,6 +8,7 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Advanced;
 using SixLabors.ImageSharp.PixelFormats;
 using Xunit;
+using Rgba32 = SixLabors.ImageSharp.PixelFormats.Rgba32;
 
 namespace BCnEncTests
 {
@@ -23,19 +24,26 @@ namespace BCnEncTests
 
 			int numClusters = (testImage.Width / 32) * (testImage.Height / 32);
 			
-			var clusters = LinearClustering.ClusterPixels(pixels, testImage.Width, testImage.Height, numClusters, 10, 10);
+			var clusters = LinearClustering.ClusterPixels(pixels.ToBcn(), testImage.Width, testImage.Height, numClusters, 10, 10);
 
 			ColorYCbCr[] pixC = new ColorYCbCr[numClusters];
 			int[] counts = new int[numClusters];
 			for (int i = 0; i < pixels.Length; i++) {
-				pixC[clusters[i]] += new ColorYCbCr(pixels[i]);
+				pixC[clusters[i]] += new ColorYCbCr(pixels[i].ToBcn());
 				counts[clusters[i]]++;
 			}
 			for (int i = 0; i < numClusters; i++) {
 				pixC[i] /= counts[i];
 			}
-			for (int i = 0; i < pixels.Length; i++) {
-				pixels[i] = pixC[clusters[i]].ToRgba32();
+			for (int i = 0; i < pixels.Length; i++)
+			{
+				Rgba32 rgba = new Rgba32(
+					pixC[clusters[i]].ToRgba32().R,
+					pixC[clusters[i]].ToRgba32().G,
+					pixC[clusters[i]].ToRgba32().B,
+					pixC[clusters[i]].ToRgba32().A
+				);
+				pixels[i] = rgba;
 			}
 
 			using var fs = File.OpenWrite("test_cluster.png");

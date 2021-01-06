@@ -18,7 +18,7 @@ namespace BCnEncoder.Encoder.Bc7
 			ColorRgba32 scaledEp1 =
 				Bc7EncodingHelpers.ScaleDownEndpoint(ep1, Bc7BlockType.Type6, false, out byte pBit1);
 
-			ReadOnlySpan<int> partitionTable = new int[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+			int[] partitionTable = new int[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 			const int subset = 0;
 
 			//Force 255 alpha if fully opaque

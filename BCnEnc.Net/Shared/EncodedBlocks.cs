@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Runtime.InteropServices;
-using SixLabors.ImageSharp.PixelFormats;
 
 namespace BCnEncoder.Shared
 {
 	[StructLayout(LayoutKind.Sequential)]
-	internal unsafe struct Bc1Block
+	internal struct Bc1Block
 	{
 		public ColorRgb565 color0;
 		public ColorRgb565 color1;
@@ -13,7 +12,7 @@ namespace BCnEncoder.Shared
 
 		public int this[int index]
 		{
-			readonly get => (int)(colorIndices >> (index * 2)) & 0b11;
+			get => (int)(colorIndices >> (index * 2)) & 0b11;
 			set
 			{
 				colorIndices = (uint)(colorIndices & (~(0b11 << (index * 2))));
@@ -22,42 +21,41 @@ namespace BCnEncoder.Shared
 			}
 		}
 
-		public readonly bool HasAlphaOrBlack => color0.data <= color1.data;
+		public bool HasAlphaOrBlack => color0.data <= color1.data;
 
-		public readonly RawBlock4X4Rgba32 Decode(bool useAlpha)
+		public RawBlock4X4Rgba32 Decode(bool useAlpha)
 		{
 			RawBlock4X4Rgba32 output = new RawBlock4X4Rgba32();
-			var pixels = output.AsSpan;
 
 			var color0 = this.color0.ToColorRgb24();
 			var color1 = this.color1.ToColorRgb24();
 
 			useAlpha = useAlpha && HasAlphaOrBlack;
 
-			Span<ColorRgb24> colors = HasAlphaOrBlack ?
-				stackalloc ColorRgb24[] {
+			ColorRgb24[] colors = HasAlphaOrBlack ?
+				new ColorRgb24[] {
 				color0,
 				color1,
 				color0 * (1.0 / 2.0) + color1 * (1.0 / 2.0),
 				new ColorRgb24(0, 0, 0)
-			} : stackalloc ColorRgb24[] {
+			} : new ColorRgb24[] {
 				color0,
 				color1,
 				color0 * (2.0 / 3.0) + color1 * (1.0 / 3.0),
 				color0 * (1.0 / 3.0) + color1 * (2.0 / 3.0)
 			};
 
-			for (int i = 0; i < pixels.Length; i++)
+			for (int i = 0; i < 16; i++)
 			{
 				int colorIndex = (int)((colorIndices >> (i * 2)) & 0b11);
 				var color = colors[colorIndex];
 				if (useAlpha && colorIndex == 3)
 				{
-					pixels[i] = new Rgba32(0, 0, 0, 0);
+					output[i] = new Rgba32(0, 0, 0, 0);
 				}
 				else
 				{
-					pixels[i] = new Rgba32(color.r, color.g, color.b, 255);
+					output[i] = new Rgba32(color.r, color.g, color.b, 255);
 				}
 			}
 			return output;
@@ -75,7 +73,7 @@ namespace BCnEncoder.Shared
 
 		public int this[int index]
 		{
-			readonly get => (int)(colorIndices >> (index * 2)) & 0b11;
+			get => (int)(colorIndices >> (index * 2)) & 0b11;
 			set
 			{
 				colorIndices = (uint)(colorIndices & (~(0b11 << (index * 2))));
@@ -84,7 +82,7 @@ namespace BCnEncoder.Shared
 			}
 		}
 
-		public readonly byte GetAlpha(int index)
+		public byte GetAlpha(int index)
 		{
 			ulong mask = 0xFUL << (index * 4);
 			int shift = (index * 4);
@@ -101,27 +99,26 @@ namespace BCnEncoder.Shared
 			alphaColors |= (ulong)(a & 0xF) << shift;
 		}
 
-		public readonly RawBlock4X4Rgba32 Decode()
+		public RawBlock4X4Rgba32 Decode()
 		{
 			RawBlock4X4Rgba32 output = new RawBlock4X4Rgba32();
-			var pixels = output.AsSpan;
 
 			var color0 = this.color0.ToColorRgb24();
 			var color1 = this.color1.ToColorRgb24();
 
-			Span<ColorRgb24> colors = stackalloc ColorRgb24[] {
+			ColorRgb24[] colors = new ColorRgb24[] {
 				color0,
 				color1,
 				color0 * (2.0 / 3.0) + color1 * (1.0 / 3.0),
 				color0 * (1.0 / 3.0) + color1 * (2.0 / 3.0)
 			};
 
-			for (int i = 0; i < pixels.Length; i++)
+			for (int i = 0; i < 16; i++)
 			{
 				int colorIndex = (int)((colorIndices >> (i * 2)) & 0b11);
 				var color = colors[colorIndex];
 
-				pixels[i] = new Rgba32(color.r, color.g, color.b, GetAlpha(i));
+				output[i] = new Rgba32(color.r, color.g, color.b, GetAlpha(i));
 			}
 			return output;
 		}
@@ -137,7 +134,7 @@ namespace BCnEncoder.Shared
 
 		public int this[int index]
 		{
-			readonly get => (int)(colorIndices >> (index * 2)) & 0b11;
+			get => (int)(colorIndices >> (index * 2)) & 0b11;
 			set
 			{
 				colorIndices = (uint)(colorIndices & (~(0b11 << (index * 2))));
@@ -148,7 +145,7 @@ namespace BCnEncoder.Shared
 
 		public byte Alpha0
 		{
-			readonly get => (byte)(alphaBlock & 0xFFUL);
+			get => (byte)(alphaBlock & 0xFFUL);
 			set
 			{
 				alphaBlock &= ~0xFFUL;
@@ -158,7 +155,7 @@ namespace BCnEncoder.Shared
 
 		public byte Alpha1
 		{
-			readonly get => (byte)((alphaBlock >> 8) & 0xFFUL);
+			get => (byte)((alphaBlock >> 8) & 0xFFUL);
 			set
 			{
 				alphaBlock &= ~0xFF00UL;
@@ -166,7 +163,7 @@ namespace BCnEncoder.Shared
 			}
 		}
 
-		public readonly byte GetAlphaIndex(int pixelIndex)
+		public byte GetAlphaIndex(int pixelIndex)
 		{
 			ulong mask = 0b0111UL << (pixelIndex * 3 + 16);
 			int shift = (pixelIndex * 3 + 16);
@@ -182,24 +179,23 @@ namespace BCnEncoder.Shared
 			alphaBlock |= (ulong)(alphaIndex & 0b111) << shift;
 		}
 
-		public readonly RawBlock4X4Rgba32 Decode()
+		public RawBlock4X4Rgba32 Decode()
 		{
 			RawBlock4X4Rgba32 output = new RawBlock4X4Rgba32();
-			var pixels = output.AsSpan;
 
 			var color0 = this.color0.ToColorRgb24();
 			var color1 = this.color1.ToColorRgb24();
 
 			var a0 = Alpha0;
 			var a1 = Alpha1;
-			Span<ColorRgb24> colors = stackalloc ColorRgb24[] {
+			ColorRgb24[] colors = new ColorRgb24[] {
 				color0,
 				color1,
 				color0 * (2.0 / 3.0) + color1 * (1.0 / 3.0),
 				color0 * (1.0 / 3.0) + color1 * (2.0 / 3.0)
 			};
 
-			Span<byte> alphas = a0 > a1 ? stackalloc byte[] {
+			byte[] alphas = a0 > a1 ? new byte[] {
 				a0,
 				a1,
 				(byte)(6 / 7.0 * a0 + 1 / 7.0 * a1),
@@ -208,7 +204,7 @@ namespace BCnEncoder.Shared
 				(byte)(3 / 7.0 * a0 + 4 / 7.0 * a1),
 				(byte)(2 / 7.0 * a0 + 5 / 7.0 * a1),
 				(byte)(1 / 7.0 * a0 + 6 / 7.0 * a1),
-			} : stackalloc byte[] {
+			} : new byte[] {
 				a0,
 				a1,
 				(byte)(4 / 5.0 * a0 + 1 / 5.0 * a1),
@@ -219,12 +215,12 @@ namespace BCnEncoder.Shared
 				255
 			};
 
-			for (int i = 0; i < pixels.Length; i++)
+			for (int i = 0; i < 16; i++)
 			{
 				int colorIndex = (int)((colorIndices >> (i * 2)) & 0b11);
 				var color = colors[colorIndex];
 
-				pixels[i] = new Rgba32(color.r, color.g, color.b, alphas[GetAlphaIndex(i)]);
+				output[i] = new Rgba32(color.r, color.g, color.b, alphas[GetAlphaIndex(i)]);
 			}
 			return output;
 		}
@@ -237,7 +233,7 @@ namespace BCnEncoder.Shared
 
 		public byte Red0
 		{
-			readonly get => (byte)(redBlock & 0xFFUL);
+			get => (byte)(redBlock & 0xFFUL);
 			set
 			{
 				redBlock &= ~0xFFUL;
@@ -247,7 +243,7 @@ namespace BCnEncoder.Shared
 
 		public byte Red1
 		{
-			readonly get => (byte)((redBlock >> 8) & 0xFFUL);
+			get => (byte)((redBlock >> 8) & 0xFFUL);
 			set
 			{
 				redBlock &= ~0xFF00UL;
@@ -255,7 +251,7 @@ namespace BCnEncoder.Shared
 			}
 		}
 
-		public readonly byte GetRedIndex(int pixelIndex)
+		public byte GetRedIndex(int pixelIndex)
 		{
 			ulong mask = 0b0111UL << (pixelIndex * 3 + 16);
 			int shift = (pixelIndex * 3 + 16);
@@ -271,15 +267,14 @@ namespace BCnEncoder.Shared
 			redBlock |= (ulong)(redIndex & 0b111) << shift;
 		}
 
-		public readonly RawBlock4X4Rgba32 Decode(bool redAsLuminance)
+		public RawBlock4X4Rgba32 Decode(bool redAsLuminance)
 		{
 			RawBlock4X4Rgba32 output = new RawBlock4X4Rgba32();
-			var pixels = output.AsSpan;
 
 			var r0 = Red0;
 			var r1 = Red1;
 
-			Span<byte> reds = r0 > r1 ? stackalloc byte[] {
+			byte[] reds = r0 > r1 ? new byte[] {
 				r0,
 				r1,
 				(byte)(6 / 7.0 * r0 + 1 / 7.0 * r1),
@@ -288,7 +283,7 @@ namespace BCnEncoder.Shared
 				(byte)(3 / 7.0 * r0 + 4 / 7.0 * r1),
 				(byte)(2 / 7.0 * r0 + 5 / 7.0 * r1),
 				(byte)(1 / 7.0 * r0 + 6 / 7.0 * r1),
-			} : stackalloc byte[] {
+			} : new byte[] {
 				r0,
 				r1,
 				(byte)(4 / 5.0 * r0 + 1 / 5.0 * r1),
@@ -301,18 +296,18 @@ namespace BCnEncoder.Shared
 
 			if (redAsLuminance)
 			{
-				for (int i = 0; i < pixels.Length; i++)
+				for (int i = 0; i < 16; i++)
 				{
 					var index = GetRedIndex(i);
-					pixels[i] = new Rgba32(reds[index], reds[index], reds[index], 255);
+					output[i] = new Rgba32(reds[index], reds[index], reds[index], 255);
 				}
 			}
 			else
 			{
-				for (int i = 0; i < pixels.Length; i++)
+				for (int i = 0; i < 16; i++)
 				{
 					var index = GetRedIndex(i);
-					pixels[i] = new Rgba32(reds[index], 0, 0, 255);
+					output[i] = new Rgba32(reds[index], 0, 0, 255);
 				}
 			}
 
@@ -328,7 +323,7 @@ namespace BCnEncoder.Shared
 
 		public byte Red0
 		{
-			readonly get => (byte)(redBlock & 0xFFUL);
+			get => (byte)(redBlock & 0xFFUL);
 			set
 			{
 				redBlock &= ~0xFFUL;
@@ -338,7 +333,7 @@ namespace BCnEncoder.Shared
 
 		public byte Red1
 		{
-			readonly get => (byte)((redBlock >> 8) & 0xFFUL);
+			get => (byte)((redBlock >> 8) & 0xFFUL);
 			set
 			{
 				redBlock &= ~0xFF00UL;
@@ -348,7 +343,7 @@ namespace BCnEncoder.Shared
 
 		public byte Green0
 		{
-			readonly get => (byte)(greenBlock & 0xFFUL);
+			get => (byte)(greenBlock & 0xFFUL);
 			set
 			{
 				greenBlock &= ~0xFFUL;
@@ -358,7 +353,7 @@ namespace BCnEncoder.Shared
 
 		public byte Green1
 		{
-			readonly get => (byte)((greenBlock >> 8) & 0xFFUL);
+			get => (byte)((greenBlock >> 8) & 0xFFUL);
 			set
 			{
 				greenBlock &= ~0xFF00UL;
@@ -366,7 +361,7 @@ namespace BCnEncoder.Shared
 			}
 		}
 
-		public readonly byte GetRedIndex(int pixelIndex)
+		public byte GetRedIndex(int pixelIndex)
 		{
 			ulong mask = 0b0111UL << (pixelIndex * 3 + 16);
 			int shift = (pixelIndex * 3 + 16);
@@ -382,7 +377,7 @@ namespace BCnEncoder.Shared
 			redBlock |= (ulong)(redIndex & 0b111) << shift;
 		}
 
-		public readonly byte GetGreenIndex(int pixelIndex)
+		public byte GetGreenIndex(int pixelIndex)
 		{
 			ulong mask = 0b0111UL << (pixelIndex * 3 + 16);
 			int shift = (pixelIndex * 3 + 16);
@@ -398,15 +393,14 @@ namespace BCnEncoder.Shared
 			greenBlock |= (ulong)(greenIndex & 0b111) << shift;
 		}
 
-		public readonly RawBlock4X4Rgba32 Decode()
+		public RawBlock4X4Rgba32 Decode()
 		{
 			RawBlock4X4Rgba32 output = new RawBlock4X4Rgba32();
-			var pixels = output.AsSpan;
 
 			var r0 = Red0;
 			var r1 = Red1;
 
-			Span<byte> reds = r0 > r1 ? stackalloc byte[] {
+			byte[] reds = r0 > r1 ? new byte[] {
 				r0,
 				r1,
 				(byte)(6 / 7.0 * r0 + 1 / 7.0 * r1),
@@ -415,7 +409,7 @@ namespace BCnEncoder.Shared
 				(byte)(3 / 7.0 * r0 + 4 / 7.0 * r1),
 				(byte)(2 / 7.0 * r0 + 5 / 7.0 * r1),
 				(byte)(1 / 7.0 * r0 + 6 / 7.0 * r1),
-			} : stackalloc byte[] {
+			} : new byte[] {
 				r0,
 				r1,
 				(byte)(4 / 5.0 * r0 + 1 / 5.0 * r1),
@@ -429,7 +423,7 @@ namespace BCnEncoder.Shared
 			var g0 = Green0;
 			var g1 = Green1;
 
-			Span<byte> greens = g0 > g1 ? stackalloc byte[] {
+			byte[] greens = g0 > g1 ? new byte[] {
 				g0,
 				g1,
 				(byte)(6 / 7.0 * g0 + 1 / 7.0 * g1),
@@ -438,7 +432,7 @@ namespace BCnEncoder.Shared
 				(byte)(3 / 7.0 * g0 + 4 / 7.0 * g1),
 				(byte)(2 / 7.0 * g0 + 5 / 7.0 * g1),
 				(byte)(1 / 7.0 * g0 + 6 / 7.0 * g1),
-			} : stackalloc byte[] {
+			} : new byte[] {
 				g0,
 				g1,
 				(byte)(4 / 5.0 * g0 + 1 / 5.0 * g1),
@@ -449,11 +443,11 @@ namespace BCnEncoder.Shared
 				255
 			};
 
-			for (int i = 0; i < pixels.Length; i++)
+			for (int i = 0; i < 16; i++)
 			{
 				var redIndex = GetRedIndex(i);
 				var greenIndex = GetGreenIndex(i);
-				pixels[i] = new Rgba32(reds[redIndex], greens[greenIndex], 0, 255);
+				output[i] = new Rgba32(reds[redIndex], greens[greenIndex], 0, 255);
 			}
 
 			return output;

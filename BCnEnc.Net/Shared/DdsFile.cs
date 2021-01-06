@@ -126,7 +126,10 @@ namespace BCnEncoder.Shared
 							}
 						}
 						byte[] data = new byte[sizeInBytes];
-						br.Read(data);
+						for (int b = 0; b < data.Length; b++)
+						{
+							data[b] = br.ReadByte();
+						}
 						output.Faces[face].MipMaps[mip] = new DdsMipMap(data, mipWidth, mipHeight);
 					}
 				}
@@ -218,7 +221,7 @@ namespace BCnEncoder.Shared
 		public uint dwCaps4;
 		public uint dwReserved2;
 
-		public static (DdsHeader, DdsHeaderDxt10) InitializeCompressed(int width, int height, DXGI_FORMAT format)
+		public static DdsHeader InitializeCompressed(int width, int height, DXGI_FORMAT format, out DdsHeaderDxt10 dxt10)
 		{
 			DdsHeader header = new DdsHeader();
 			DdsHeaderDxt10 dxt10Header = new DdsHeaderDxt10();
@@ -271,7 +274,8 @@ namespace BCnEncoder.Shared
 				dxt10Header.resourceDimension = D3D10_RESOURCE_DIMENSION.D3D10_RESOURCE_DIMENSION_TEXTURE2D;
 			}
 
-			return (header, dxt10Header);
+			dxt10 = dxt10Header;
+			return header;
 		}
 
 		public static DdsHeader InitializeUncompressed(int width, int height, DXGI_FORMAT format)

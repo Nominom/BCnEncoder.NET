@@ -23,9 +23,9 @@ namespace BCnEncoder.Shared
 		public ulong lowBits;
 		public ulong highBits;
 
-		public static ReadOnlySpan<byte> colorInterpolationWeights2 => new byte[] { 0, 21, 43, 64 };
-		public static ReadOnlySpan<byte> colorInterpolationWeights3 => new byte[] { 0, 9, 18, 27, 37, 46, 55, 64 };
-		public static ReadOnlySpan<byte> colorInterpolationWeights4 => new byte[] { 0, 4, 9, 13, 17, 21, 26, 30, 34, 38, 43, 47, 51, 55, 60, 64 };
+		public static byte[] colorInterpolationWeights2 = new byte[] { 0, 21, 43, 64 };
+		public static byte[] colorInterpolationWeights3 = new byte[] { 0, 9, 18, 27, 37, 46, 55, 64 };
+		public static byte[] colorInterpolationWeights4 = new byte[] { 0, 4, 9, 13, 17, 21, 26, 30, 34, 38, 43, 47, 51, 55, 60, 64 };
 
 
 		public static readonly int[][] Subsets2PartitionTable = {
@@ -212,131 +212,203 @@ namespace BCnEncoder.Shared
 			}
 		}
 
-		public int NumSubsets => Type switch
+		public int NumSubsets
 		{
-			Bc7BlockType.Type0 => 3,
-			Bc7BlockType.Type1 => 2,
-			Bc7BlockType.Type2 => 3,
-			Bc7BlockType.Type3 => 2,
-			Bc7BlockType.Type7 => 2,
-			_ => 1
-		};
+			get
+			{
+				switch (Type)
+				{
+					case Bc7BlockType.Type0: return 3;
+					case Bc7BlockType.Type1: return 2;
+					case Bc7BlockType.Type2: return 3;
+					case Bc7BlockType.Type3: return 2;
+					case Bc7BlockType.Type7: return 2;
+					default: return 1;
+				}
+			}
+		}
 
-		public bool HasSubsets => Type switch
+		public bool HasSubsets
 		{
-			Bc7BlockType.Type0 => true,
-			Bc7BlockType.Type1 => true,
-			Bc7BlockType.Type2 => true,
-			Bc7BlockType.Type3 => true,
-			Bc7BlockType.Type7 => true,
-			_ => false
-		};
+			get
+			{
+				switch (Type)
+				{
+					case Bc7BlockType.Type0: return true;
+					case Bc7BlockType.Type1: return true;
+					case Bc7BlockType.Type2: return true;
+					case Bc7BlockType.Type3: return true;
+					case Bc7BlockType.Type7: return true;
+					default: return false;
+				}
+			}
+		}
 
-		public int PartitionSetId => Type switch
+		public int PartitionSetId
 		{
-			Bc7BlockType.Type0 => ByteHelper.Extract4(lowBits, 1),
-			Bc7BlockType.Type1 => ByteHelper.Extract6(lowBits, 2),
-			Bc7BlockType.Type2 => ByteHelper.Extract6(lowBits, 3),
-			Bc7BlockType.Type3 => ByteHelper.Extract6(lowBits, 4),
-			Bc7BlockType.Type7 => ByteHelper.Extract6(lowBits, 8),
-			_ => -1
-		};
+			get
+			{
+				switch (Type)
+				{
+					case Bc7BlockType.Type0: return ByteHelper.Extract4(lowBits, 1);
+					case Bc7BlockType.Type1: return ByteHelper.Extract6(lowBits, 2);
+					case Bc7BlockType.Type2: return ByteHelper.Extract6(lowBits, 3);
+					case Bc7BlockType.Type3: return ByteHelper.Extract6(lowBits, 4);
+					case Bc7BlockType.Type7: return ByteHelper.Extract6(lowBits, 8);
+					default: return -1;
+				}
+			}
+		}
 
-		public byte RotationBits => Type switch
+		public byte RotationBits
 		{
-			Bc7BlockType.Type4 => ByteHelper.Extract2(lowBits, 5),
-			Bc7BlockType.Type5 => ByteHelper.Extract2(lowBits, 6),
-			_ => 0
-		};
+			get
+			{
+				switch (Type)
+				{
+					case Bc7BlockType.Type4: return ByteHelper.Extract2(lowBits, 5);
+					case Bc7BlockType.Type5: return ByteHelper.Extract2(lowBits, 6);
+					default: return 0;
+				}
+			}
+		}
 
 		/// <summary>
 		/// Bitcount of color component including Pbit
 		/// </summary>
-		public int ColorComponentPrecision => Type switch
+		public int ColorComponentPrecision
 		{
-			Bc7BlockType.Type0 => 5,
-			Bc7BlockType.Type1 => 7,
-			Bc7BlockType.Type2 => 5,
-			Bc7BlockType.Type3 => 8,
-			Bc7BlockType.Type4 => 5,
-			Bc7BlockType.Type5 => 7,
-			Bc7BlockType.Type6 => 8,
-			Bc7BlockType.Type7 => 6,
-			_ => 0
-		};
+			get
+			{
+				switch (Type)
+				{
+					case Bc7BlockType.Type0: return 5;
+					case Bc7BlockType.Type1: return 7;
+					case Bc7BlockType.Type2: return 5;
+					case Bc7BlockType.Type3: return 8;
+					case Bc7BlockType.Type4: return 5;
+					case Bc7BlockType.Type5: return 7;
+					case Bc7BlockType.Type6: return 8;
+					case Bc7BlockType.Type7: return 6;
+					default: return 0;
+				}
+			}
+		}
 
 		/// <summary>
 		/// Bitcount of alpha component including Pbit
 		/// </summary>
-		public int AlphaComponentPrecision => Type switch
+		public int AlphaComponentPrecision
 		{
+			get
+			{
+				switch (Type)
+				{
 
-			Bc7BlockType.Type4 => 6,
-			Bc7BlockType.Type5 => 8,
-			Bc7BlockType.Type6 => 8,
-			Bc7BlockType.Type7 => 6,
-			_ => 0
-		};
+					case Bc7BlockType.Type4: return 6;
+					case Bc7BlockType.Type5: return 8;
+					case Bc7BlockType.Type6: return 8;
+					case Bc7BlockType.Type7: return 6;
+					default: return 0;
+				}
+			}
+		}
 
-		public bool HasRotationBits => Type switch
+		public bool HasRotationBits
 		{
-			Bc7BlockType.Type4 => true,
-			Bc7BlockType.Type5 => true,
-			_ => false
-		};
+			get
+			{
+				switch (Type)
+				{
+					case Bc7BlockType.Type4: return true;
+					case Bc7BlockType.Type5: return true;
+					default: return false;
+				}
+			}
+		}
 
-		public bool HasPBits => Type switch
+		public bool HasPBits
 		{
-			Bc7BlockType.Type0 => true,
-			Bc7BlockType.Type1 => true,
-			Bc7BlockType.Type3 => true,
-			Bc7BlockType.Type6 => true,
-			Bc7BlockType.Type7 => true,
-			_ => false
-		};
+			get
+			{
+				switch (Type)
+				{
+					case Bc7BlockType.Type0: return true;
+					case Bc7BlockType.Type1: return true;
+					case Bc7BlockType.Type3: return true;
+					case Bc7BlockType.Type6: return true;
+					case Bc7BlockType.Type7: return true;
+					default: return false;
+				}
+			}
+		}
 
-		public bool HasAlpha => Type switch
+		public bool HasAlpha
 		{
-			Bc7BlockType.Type4 => true,
-			Bc7BlockType.Type5 => true,
-			Bc7BlockType.Type6 => true,
-			Bc7BlockType.Type7 => true,
-			_ => false
-		};
+			get
+			{
+				switch (Type)
+				{
+					case Bc7BlockType.Type4: return true;
+					case Bc7BlockType.Type5: return true;
+					case Bc7BlockType.Type6: return true;
+					case Bc7BlockType.Type7: return true;
+					default: return false;
+				}
+			}
+		}
 
 		/// <summary>
-		/// Type 4 has 2-bit and 3-bit indices. If index mode is 0, color components will use 2-bit indices and alpha will use 3-bit indices.
-		/// In index mode 1, color will use 3-bit indices and alpha will use 2-bit indices.
+		/// Type 4 has 2-bit and 3-bit indices. If index mode is 0; color components will use 2-bit indices and alpha will use 3-bit indices.
+		/// In index mode 1; color will use 3-bit indices and alpha will use 2-bit indices.
 		/// </summary>
-		public int Type4IndexMode => Type switch
+		public int Type4IndexMode
 		{
-			Bc7BlockType.Type4 => ByteHelper.Extract1(lowBits, 7),
-			_ => 0
-		};
+			get
+			{
+				switch (Type)
+				{
+					case Bc7BlockType.Type4: return ByteHelper.Extract1(lowBits, 7);
+					default: return 0;
+				}
+			}
+		}
 
-		public int ColorIndexBitCount => Type switch
+		public int ColorIndexBitCount
 		{
-			Bc7BlockType.Type0 => 3,
-			Bc7BlockType.Type1 => 3,
-			Bc7BlockType.Type2 => 2,
-			Bc7BlockType.Type3 => 2,
-			Bc7BlockType.Type4 when Type4IndexMode == 0 => 2,
-			Bc7BlockType.Type4 when Type4IndexMode == 1 => 3,
-			Bc7BlockType.Type5 => 2,
-			Bc7BlockType.Type6 => 4,
-			Bc7BlockType.Type7 => 2,
-			_ => 0
-		};
+			get
+			{
+				switch (Type)
+				{
+					case Bc7BlockType.Type0: return 3;
+					case Bc7BlockType.Type1: return 3;
+					case Bc7BlockType.Type2: return 2;
+					case Bc7BlockType.Type3: return 2;
+					case Bc7BlockType.Type4 when Type4IndexMode == 0: return 2;
+					case Bc7BlockType.Type4 when Type4IndexMode == 1: return 3;
+					case Bc7BlockType.Type5: return 2;
+					case Bc7BlockType.Type6: return 4;
+					case Bc7BlockType.Type7: return 2;
+					default: return 0;
+				}
+			}
+		}
 
-		public int AlphaIndexBitCount => Type switch
+		public int AlphaIndexBitCount
 		{
-			Bc7BlockType.Type4 when Type4IndexMode == 0 => 3,
-			Bc7BlockType.Type4 when Type4IndexMode == 1 => 2,
-			Bc7BlockType.Type5 => 2,
-			Bc7BlockType.Type6 => 4,
-			Bc7BlockType.Type7 => 2,
-			_ => 0
-		};
+			get
+			{
+				switch (Type)
+				{
+					case Bc7BlockType.Type4 when Type4IndexMode == 0: return 3;
+					case Bc7BlockType.Type4 when Type4IndexMode == 1: return 2;
+					case Bc7BlockType.Type5: return 2;
+					case Bc7BlockType.Type6: return 4;
+					case Bc7BlockType.Type7: return 2;
+					default: return 0;
+				}
+			}
+		}
 
 
 
@@ -523,7 +595,7 @@ namespace BCnEncoder.Shared
 						ByteHelper.Extract1(highBits, 97 - 64)
 					};
 				default:
-					return Array.Empty<byte>();
+					return new byte[0];
 			}
 		}
 
@@ -714,7 +786,8 @@ namespace BCnEncoder.Shared
 			}
 		}
 
-		private int GetAlphaIndex(Bc7BlockType type, int numSubsets, int partitionIndex, int bitCount, int index) {
+		private int GetAlphaIndex(Bc7BlockType type, int numSubsets, int partitionIndex, int bitCount, int index)
+		{
 			if (bitCount == 0) return 0; // No Alpha
 			int indexOffset = GetIndexOffset(type, numSubsets, partitionIndex, bitCount, index);
 			int indexBitCount = GetIndexBitCount(numSubsets, partitionIndex, bitCount, index);
@@ -733,19 +806,20 @@ namespace BCnEncoder.Shared
 		private ColorRgba32 InterpolateColor(ColorRgba32 endPointStart, ColorRgba32 endPointEnd,
 			int colorIndex, int alphaIndex, int colorBitCount, int alphaBitCount)
 		{
-			
-			byte InterpolateByte(byte e0, byte e1, int index, int indexPrecision) {
-				if (indexPrecision == 0) return e0;
-				ReadOnlySpan<byte> aWeights2 = colorInterpolationWeights2;
-				ReadOnlySpan<byte> aWeights3 = colorInterpolationWeights3;
-				ReadOnlySpan<byte> aWeights4 = colorInterpolationWeights4;
 
-				if(indexPrecision == 2)
-					return (byte) (((64 - aWeights2[index])* (e0) + aWeights2[index]*(e1) + 32) >> 6);
-				else if(indexPrecision == 3)
-					return (byte) (((64 - aWeights3[index])*(e0) + aWeights3[index]*(e1) + 32) >> 6);
+			byte InterpolateByte(byte e0, byte e1, int index, int indexPrecision)
+			{
+				if (indexPrecision == 0) return e0;
+				byte[] aWeights2 = colorInterpolationWeights2;
+				byte[] aWeights3 = colorInterpolationWeights3;
+				byte[] aWeights4 = colorInterpolationWeights4;
+
+				if (indexPrecision == 2)
+					return (byte)(((64 - aWeights2[index]) * (e0) + aWeights2[index] * (e1) + 32) >> 6);
+				else if (indexPrecision == 3)
+					return (byte)(((64 - aWeights3[index]) * (e0) + aWeights3[index] * (e1) + 32) >> 6);
 				else // indexprecision == 4
-					return (byte) (((64 - aWeights4[index])*(e0) + aWeights4[index]*(e1) + 32) >> 6);
+					return (byte)(((64 - aWeights4[index]) * (e0) + aWeights4[index] * (e1) + 32) >> 6);
 			}
 
 			ColorRgba32 result = new ColorRgba32(
@@ -763,8 +837,10 @@ namespace BCnEncoder.Shared
 		/// 10 – swap A and G
 		/// 11 - swap A and B
 		/// </summary>
-		private static ColorRgba32 SwapChannels(ColorRgba32 source, int rotation) {
-			switch (rotation) {
+		private static ColorRgba32 SwapChannels(ColorRgba32 source, int rotation)
+		{
+			switch (rotation)
+			{
 				case 0b00:
 					return source;
 				case 0b01:
@@ -796,13 +872,11 @@ namespace BCnEncoder.Shared
 				//subset_index = get_partition_index(num_subsets, partition_set_id, x, y);
 			}
 
-			var pixels = output.AsSpan;
-
 			bool hasRotationBits = HasRotationBits;
 			int rotation = RotationBits;
 
 			ColorRgba32[] endpoints = ExtractEndpoints();
-			for (int i = 0; i < pixels.Length; i++)
+			for (int i = 0; i < 16; i++)
 			{
 				int subsetIndex = GetPartitionIndex(numSubsets, partitionIndex, i);
 
@@ -817,7 +891,8 @@ namespace BCnEncoder.Shared
 				ColorRgba32 outputColor = InterpolateColor(endPointStart, endPointEnd, colorIndex, alphaIndex,
 					colorBitCount, alphaBitCount);
 
-				if (hasRotationBits) {
+				if (hasRotationBits)
+				{
 					//Decode the 2 color rotation bits as follows:
 					// 00 – Block format is Scalar(A) Vector(RGB) - no swapping
 					// 01 – Block format is Scalar(R) Vector(AGB) - swap A and R
@@ -826,115 +901,128 @@ namespace BCnEncoder.Shared
 					outputColor = SwapChannels(outputColor, rotation);
 				}
 
-				pixels[i] = outputColor.ToRgba32();
+				output[i] = outputColor.ToRgba32();
 			}
 
 			return output;
 		}
 
 
-		public void PackType0(int partitionIndex4Bit, byte[][] subsetEndpoints, byte[] pBits, byte[] indices) {
+		public void PackType0(int partitionIndex4Bit, byte[][] subsetEndpoints, byte[] pBits, byte[] indices)
+		{
 			Debug.Assert(partitionIndex4Bit < 16, "Mode 0 should have 4bit partition index");
 			Debug.Assert(subsetEndpoints.Length == 6, "Mode 0 should have 6 endpoints");
-			Debug.Assert(subsetEndpoints.All(x => x.Length == 3) , "Mode 0 should have RGB endpoints");
-			Debug.Assert(subsetEndpoints.All(x => x.All(y => y < (1 << 4))) , "Mode 0 should have 4bit endpoints");
+			Debug.Assert(subsetEndpoints.All(x => x.Length == 3), "Mode 0 should have RGB endpoints");
+			Debug.Assert(subsetEndpoints.All(x => x.All(y => y < (1 << 4))), "Mode 0 should have 4bit endpoints");
 			Debug.Assert(pBits.Length == 6, "Mode 0 should have 6 pBits");
 			Debug.Assert(indices.Length == 16, "Provide 16 indices");
-			Debug.Assert(indices.All(x => x < (1 << 3)) , "Mode 0 should have 3bit indices");
+			Debug.Assert(indices.All(x => x < (1 << 3)), "Mode 0 should have 3bit indices");
 
 			lowBits = 1; // Set Mode 0
 			highBits = 0;
 
-			lowBits = ByteHelper.Store4(lowBits, 1, (byte) partitionIndex4Bit);
+			lowBits = ByteHelper.Store4(lowBits, 1, (byte)partitionIndex4Bit);
 
 			int nextIdx = 5;
 			//Store endpoints
-			for (int i = 0; i < subsetEndpoints[0].Length; i++) {
-				for (int j = 0; j < subsetEndpoints.Length; j++) {
-					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, nextIdx, 4, subsetEndpoints[j][i]);
+			for (int i = 0; i < subsetEndpoints[0].Length; i++)
+			{
+				for (int j = 0; j < subsetEndpoints.Length; j++)
+				{
+					ByteHelper.StoreTo128(ref lowBits, ref highBits, nextIdx, 4, subsetEndpoints[j][i]);
 					nextIdx += 4;
 				}
 			}
 			//Store pBits
-			for (int i = 0; i < pBits.Length; i++) {
-				(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, nextIdx, 1, pBits[i]);
+			for (int i = 0; i < pBits.Length; i++)
+			{
+				ByteHelper.StoreTo128(ref lowBits, ref highBits, nextIdx, 1, pBits[i]);
 				nextIdx++;
 			}
 			Debug.Assert(nextIdx == 83);
 
 			int colorBitCount = ColorIndexBitCount;
 			int indexBegin = GetIndexBegin(Bc7BlockType.Type0, colorBitCount, false);
-			for (int i = 0; i < 16; i++) {
-				int indexOffset = GetIndexOffset(Bc7BlockType.Type0, NumSubsets, 
+			for (int i = 0; i < 16; i++)
+			{
+				int indexOffset = GetIndexOffset(Bc7BlockType.Type0, NumSubsets,
 					partitionIndex4Bit, colorBitCount, i);
-				int indexBitCount = GetIndexBitCount(NumSubsets, 
+				int indexBitCount = GetIndexBitCount(NumSubsets,
 					partitionIndex4Bit, colorBitCount, i);
-				
-				(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 
+
+				ByteHelper.StoreTo128(ref lowBits, ref highBits,
 					indexBegin + indexOffset, indexBitCount, indices[i]);
 			}
 		}
 
-		public void PackType1(int partitionIndex6Bit, byte[][] subsetEndpoints, byte[] pBits, byte[] indices) {
+		public void PackType1(int partitionIndex6Bit, byte[][] subsetEndpoints, byte[] pBits, byte[] indices)
+		{
 			Debug.Assert(partitionIndex6Bit < 64, "Mode 1 should have 6bit partition index");
 			Debug.Assert(subsetEndpoints.Length == 4, "Mode 1 should have 4 endpoints");
-			Debug.Assert(subsetEndpoints.All(x => x.Length == 3) , "Mode 1 should have RGB endpoints");
-			Debug.Assert(subsetEndpoints.All(x => x.All(y => y < (1 << 6))) , "Mode 1 should have 6bit endpoints");
+			Debug.Assert(subsetEndpoints.All(x => x.Length == 3), "Mode 1 should have RGB endpoints");
+			Debug.Assert(subsetEndpoints.All(x => x.All(y => y < (1 << 6))), "Mode 1 should have 6bit endpoints");
 			Debug.Assert(pBits.Length == 2, "Mode 1 should have 2 pBits");
 			Debug.Assert(indices.Length == 16, "Provide 16 indices");
-			Debug.Assert(indices.All(x => x < (1 << 3)) , "Mode 1 should have 3bit indices");
+			Debug.Assert(indices.All(x => x < (1 << 3)), "Mode 1 should have 3bit indices");
 
 			lowBits = 2; // Set Mode 1
 			highBits = 0;
 
-			lowBits = ByteHelper.Store6(lowBits, 2, (byte) partitionIndex6Bit);
+			lowBits = ByteHelper.Store6(lowBits, 2, (byte)partitionIndex6Bit);
 
 			int nextIdx = 8;
 			//Store endpoints
-			for (int i = 0; i < subsetEndpoints[0].Length; i++) {
-				for (int j = 0; j < subsetEndpoints.Length; j++) {
-					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, nextIdx, 6, subsetEndpoints[j][i]);
+			for (int i = 0; i < subsetEndpoints[0].Length; i++)
+			{
+				for (int j = 0; j < subsetEndpoints.Length; j++)
+				{
+					ByteHelper.StoreTo128(ref lowBits, ref highBits, nextIdx, 6, subsetEndpoints[j][i]);
 					nextIdx += 6;
 				}
 			}
 			//Store pBits
-			for (int i = 0; i < pBits.Length; i++) {
-				(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, nextIdx, 1, pBits[i]);
+			for (int i = 0; i < pBits.Length; i++)
+			{
+				ByteHelper.StoreTo128(ref lowBits, ref highBits, nextIdx, 1, pBits[i]);
 				nextIdx++;
 			}
 			Debug.Assert(nextIdx == 82);
 
 			int colorBitCount = ColorIndexBitCount;
 			int indexBegin = GetIndexBegin(Bc7BlockType.Type1, colorBitCount, false);
-			for (int i = 0; i < 16; i++) {
-				int indexOffset = GetIndexOffset(Bc7BlockType.Type1, NumSubsets, 
+			for (int i = 0; i < 16; i++)
+			{
+				int indexOffset = GetIndexOffset(Bc7BlockType.Type1, NumSubsets,
 					partitionIndex6Bit, colorBitCount, i);
-				int indexBitCount = GetIndexBitCount(NumSubsets, 
+				int indexBitCount = GetIndexBitCount(NumSubsets,
 					partitionIndex6Bit, colorBitCount, i);
-				
-				(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 
+
+				ByteHelper.StoreTo128(ref lowBits, ref highBits,
 					indexBegin + indexOffset, indexBitCount, indices[i]);
 			}
 		}
 
-		public void PackType2(int partitionIndex6Bit, byte[][] subsetEndpoints,  byte[] indices) {
+		public void PackType2(int partitionIndex6Bit, byte[][] subsetEndpoints, byte[] indices)
+		{
 			Debug.Assert(partitionIndex6Bit < 64, "Mode 2 should have 6bit partition index");
 			Debug.Assert(subsetEndpoints.Length == 6, "Mode 2 should have 6 endpoints");
-			Debug.Assert(subsetEndpoints.All(x => x.Length == 3) , "Mode 2 should have RGB endpoints");
-			Debug.Assert(subsetEndpoints.All(x => x.All(y => y < (1 << 5))) , "Mode 2 should have 5bit endpoints");
+			Debug.Assert(subsetEndpoints.All(x => x.Length == 3), "Mode 2 should have RGB endpoints");
+			Debug.Assert(subsetEndpoints.All(x => x.All(y => y < (1 << 5))), "Mode 2 should have 5bit endpoints");
 			Debug.Assert(indices.Length == 16, "Provide 16 indices");
-			Debug.Assert(indices.All(x => x < (1 << 2)) , "Mode 2 should have 2bit indices");
+			Debug.Assert(indices.All(x => x < (1 << 2)), "Mode 2 should have 2bit indices");
 
 			lowBits = 0b100; // Set Mode 2
 			highBits = 0;
 
-			lowBits = ByteHelper.Store6(lowBits, 3, (byte) partitionIndex6Bit);
+			lowBits = ByteHelper.Store6(lowBits, 3, (byte)partitionIndex6Bit);
 
 			int nextIdx = 9;
 			//Store endpoints
-			for (int i = 0; i < subsetEndpoints[0].Length; i++) {
-				for (int j = 0; j < subsetEndpoints.Length; j++) {
-					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 
+			for (int i = 0; i < subsetEndpoints[0].Length; i++)
+			{
+				for (int j = 0; j < subsetEndpoints.Length; j++)
+				{
+					ByteHelper.StoreTo128(ref lowBits, ref highBits,
 						nextIdx, 5, subsetEndpoints[j][i]);
 					nextIdx += 5;
 				}
@@ -943,43 +1031,48 @@ namespace BCnEncoder.Shared
 
 			int colorBitCount = ColorIndexBitCount;
 			int indexBegin = GetIndexBegin(Bc7BlockType.Type2, colorBitCount, false);
-			for (int i = 0; i < 16; i++) {
-				int indexOffset = GetIndexOffset(Bc7BlockType.Type2, NumSubsets, 
+			for (int i = 0; i < 16; i++)
+			{
+				int indexOffset = GetIndexOffset(Bc7BlockType.Type2, NumSubsets,
 					partitionIndex6Bit, colorBitCount, i);
-				int indexBitCount = GetIndexBitCount(NumSubsets, 
+				int indexBitCount = GetIndexBitCount(NumSubsets,
 					partitionIndex6Bit, colorBitCount, i);
-				
-				(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 
+
+				ByteHelper.StoreTo128(ref lowBits, ref highBits,
 					indexBegin + indexOffset, indexBitCount, indices[i]);
 			}
 		}
 
-		public void PackType3(int partitionIndex6Bit, byte[][] subsetEndpoints, byte[] pBits, byte[] indices) {
+		public void PackType3(int partitionIndex6Bit, byte[][] subsetEndpoints, byte[] pBits, byte[] indices)
+		{
 			Debug.Assert(partitionIndex6Bit < 64, "Mode 3 should have 6bit partition index");
 			Debug.Assert(subsetEndpoints.Length == 4, "Mode 3 should have 4 endpoints");
-			Debug.Assert(subsetEndpoints.All(x => x.Length == 3) , "Mode 3 should have RGB endpoints");
-			Debug.Assert(subsetEndpoints.All(x => x.All(y => y < (1 << 7))) , "Mode 3 should have 7bit endpoints");
+			Debug.Assert(subsetEndpoints.All(x => x.Length == 3), "Mode 3 should have RGB endpoints");
+			Debug.Assert(subsetEndpoints.All(x => x.All(y => y < (1 << 7))), "Mode 3 should have 7bit endpoints");
 			Debug.Assert(pBits.Length == 4, "Mode 3 should have 4 pBits");
 			Debug.Assert(indices.Length == 16, "Provide 16 indices");
-			Debug.Assert(indices.All(x => x < (1 << 2)) , "Mode 3 should have 2bit indices");
+			Debug.Assert(indices.All(x => x < (1 << 2)), "Mode 3 should have 2bit indices");
 
 			lowBits = 0b1000; // Set Mode 3
 			highBits = 0;
 
-			lowBits = ByteHelper.Store6(lowBits, 4, (byte) partitionIndex6Bit);
+			lowBits = ByteHelper.Store6(lowBits, 4, (byte)partitionIndex6Bit);
 
 			int nextIdx = 10;
 			//Store endpoints
-			for (int i = 0; i < subsetEndpoints[0].Length; i++) {
-				for (int j = 0; j < subsetEndpoints.Length; j++) {
-					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 
+			for (int i = 0; i < subsetEndpoints[0].Length; i++)
+			{
+				for (int j = 0; j < subsetEndpoints.Length; j++)
+				{
+					ByteHelper.StoreTo128(ref lowBits, ref highBits,
 						nextIdx, 7, subsetEndpoints[j][i]);
 					nextIdx += 7;
 				}
 			}
 			//Store pBits
-			for (int i = 0; i < pBits.Length; i++) {
-				(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, nextIdx, 
+			for (int i = 0; i < pBits.Length; i++)
+			{
+				ByteHelper.StoreTo128(ref lowBits, ref highBits, nextIdx,
 					1, pBits[i]);
 				nextIdx++;
 			}
@@ -987,179 +1080,200 @@ namespace BCnEncoder.Shared
 
 			int colorBitCount = ColorIndexBitCount;
 			int indexBegin = GetIndexBegin(Bc7BlockType.Type3, colorBitCount, false);
-			for (int i = 0; i < 16; i++) {
-				int indexOffset = GetIndexOffset(Bc7BlockType.Type3, NumSubsets, 
+			for (int i = 0; i < 16; i++)
+			{
+				int indexOffset = GetIndexOffset(Bc7BlockType.Type3, NumSubsets,
 					partitionIndex6Bit, colorBitCount, i);
-				int indexBitCount = GetIndexBitCount(NumSubsets, 
+				int indexBitCount = GetIndexBitCount(NumSubsets,
 					partitionIndex6Bit, colorBitCount, i);
-				
-				(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 
+
+				ByteHelper.StoreTo128(ref lowBits, ref highBits,
 					indexBegin + indexOffset, indexBitCount, indices[i]);
 			}
 		}
 
-		public void PackType4(int rotation, byte idxMode, byte[][] colorEndPoints, byte[] alphaEndPoints, byte[] indices2Bit, byte[] indices3Bit) {
+		public void PackType4(int rotation, byte idxMode, byte[][] colorEndPoints, byte[] alphaEndPoints, byte[] indices2Bit, byte[] indices3Bit)
+		{
 			Debug.Assert(rotation < 4, "Rotation can only be 0-3");
 			Debug.Assert(idxMode < 2, "IndexMode can only be 0 or 1");
 			Debug.Assert(colorEndPoints.Length == 2, "Mode 4 should have 2 endpoints");
-			Debug.Assert(colorEndPoints.All(x => x.Length == 3) , "Mode 4 should have RGB color endpoints");
-			Debug.Assert(colorEndPoints.All(x => x.All(y => y < (1 << 5))) , "Mode 4 should have 5bit color endpoints");
+			Debug.Assert(colorEndPoints.All(x => x.Length == 3), "Mode 4 should have RGB color endpoints");
+			Debug.Assert(colorEndPoints.All(x => x.All(y => y < (1 << 5))), "Mode 4 should have 5bit color endpoints");
 			Debug.Assert(alphaEndPoints.Length == 2, "Mode 4 should have 2 endpoints");
-			Debug.Assert(alphaEndPoints.All(x => x < (1 << 6)) , "Mode 4 should have 6bit alpha endpoints");
+			Debug.Assert(alphaEndPoints.All(x => x < (1 << 6)), "Mode 4 should have 6bit alpha endpoints");
 
 			Debug.Assert(indices2Bit.Length == 16, "Provide 16 indices");
-			Debug.Assert(indices2Bit.All(x => x < (1 << 2)) , "Mode 4 should have 2bit indices");
+			Debug.Assert(indices2Bit.All(x => x < (1 << 2)), "Mode 4 should have 2bit indices");
 			Debug.Assert(indices3Bit.Length == 16, "Provide 16 indices");
-			Debug.Assert(indices3Bit.All(x => x < (1 << 3)) , "Mode 4 should have 3bit indices");
+			Debug.Assert(indices3Bit.All(x => x < (1 << 3)), "Mode 4 should have 3bit indices");
 
 			lowBits = 0b10000; // Set Mode 4
 			highBits = 0;
 
-			lowBits = ByteHelper.Store2(lowBits, 5, (byte) rotation);
-			lowBits = ByteHelper.Store1(lowBits, 7, (byte) idxMode);
+			lowBits = ByteHelper.Store2(lowBits, 5, (byte)rotation);
+			lowBits = ByteHelper.Store1(lowBits, 7, (byte)idxMode);
 
 			int nextIdx = 8;
 			//Store color endpoints
-			for (int i = 0; i < colorEndPoints[0].Length; i++) {
-				for (int j = 0; j < colorEndPoints.Length; j++) {
-					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 
+			for (int i = 0; i < colorEndPoints[0].Length; i++)
+			{
+				for (int j = 0; j < colorEndPoints.Length; j++)
+				{
+					ByteHelper.StoreTo128(ref lowBits, ref highBits,
 						nextIdx, 5, colorEndPoints[j][i]);
 					nextIdx += 5;
 				}
 			}
 			//Store alpha endpoints
-			for (int i = 0; i < alphaEndPoints.Length; i++) {
-				(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, nextIdx, 
+			for (int i = 0; i < alphaEndPoints.Length; i++)
+			{
+				ByteHelper.StoreTo128(ref lowBits, ref highBits, nextIdx,
 					6, alphaEndPoints[i]);
-				nextIdx+=6;
+				nextIdx += 6;
 			}
 			Debug.Assert(nextIdx == 50);
 
 			int colorBitCount = ColorIndexBitCount;
 			int colorIndexBegin = GetIndexBegin(Bc7BlockType.Type4, colorBitCount, false);
-			for (int i = 0; i < 16; i++) {
-				int indexOffset = GetIndexOffset(Bc7BlockType.Type4, NumSubsets, 
+			for (int i = 0; i < 16; i++)
+			{
+				int indexOffset = GetIndexOffset(Bc7BlockType.Type4, NumSubsets,
 					0, colorBitCount, i);
-				int indexBitCount = GetIndexBitCount(NumSubsets, 
+				int indexBitCount = GetIndexBitCount(NumSubsets,
 					0, colorBitCount, i);
 
-				if (idxMode == 0) {
-					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 
+				if (idxMode == 0)
+				{
+					ByteHelper.StoreTo128(ref lowBits, ref highBits,
 						colorIndexBegin + indexOffset, indexBitCount, indices2Bit[i]);
 				}
-				else {
-					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 
+				else
+				{
+					ByteHelper.StoreTo128(ref lowBits, ref highBits,
 						colorIndexBegin + indexOffset, indexBitCount, indices3Bit[i]);
 				}
 			}
 
 			int alphaBitCount = AlphaIndexBitCount;
 			int alphaIndexBegin = GetIndexBegin(Bc7BlockType.Type4, alphaBitCount, true);
-			for (int i = 0; i < 16; i++) {
-				int indexOffset = GetIndexOffset(Bc7BlockType.Type4, NumSubsets, 
+			for (int i = 0; i < 16; i++)
+			{
+				int indexOffset = GetIndexOffset(Bc7BlockType.Type4, NumSubsets,
 					0, alphaBitCount, i);
-				int indexBitCount = GetIndexBitCount(NumSubsets, 
+				int indexBitCount = GetIndexBitCount(NumSubsets,
 					0, alphaBitCount, i);
 
-				if (idxMode == 0) {
-					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 
+				if (idxMode == 0)
+				{
+					ByteHelper.StoreTo128(ref lowBits, ref highBits,
 						alphaIndexBegin + indexOffset, indexBitCount, indices3Bit[i]);
 				}
-				else {
-					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 
+				else
+				{
+					ByteHelper.StoreTo128(ref lowBits, ref highBits,
 						alphaIndexBegin + indexOffset, indexBitCount, indices2Bit[i]);
 				}
 			}
 		}
 
-		public void PackType5(int rotation, byte[][] colorEndPoints, byte[] alphaEndPoints, byte[] colorIndices, byte[] alphaIndices) {
+		public void PackType5(int rotation, byte[][] colorEndPoints, byte[] alphaEndPoints, byte[] colorIndices, byte[] alphaIndices)
+		{
 			Debug.Assert(rotation < 4, "Rotation can only be 0-3");
 			Debug.Assert(colorEndPoints.Length == 2, "Mode 5 should have 2 endpoints");
-			Debug.Assert(colorEndPoints.All(x => x.Length == 3) , "Mode 5 should have RGB color endpoints");
-			Debug.Assert(colorEndPoints.All(x => x.All(y => y < (1 << 7))) , "Mode 5 should have 7bit color endpoints");
+			Debug.Assert(colorEndPoints.All(x => x.Length == 3), "Mode 5 should have RGB color endpoints");
+			Debug.Assert(colorEndPoints.All(x => x.All(y => y < (1 << 7))), "Mode 5 should have 7bit color endpoints");
 			Debug.Assert(alphaEndPoints.Length == 2, "Mode 5 should have 2 endpoints");
 
 			Debug.Assert(colorIndices.Length == 16, "Provide 16 indices");
-			Debug.Assert(colorIndices.All(x => x < (1 << 2)) , "Mode 5 should have 2bit color indices");
+			Debug.Assert(colorIndices.All(x => x < (1 << 2)), "Mode 5 should have 2bit color indices");
 			Debug.Assert(alphaIndices.Length == 16, "Provide 16 indices");
-			Debug.Assert(alphaIndices.All(x => x < (1 << 2)) , "Mode 5 should have 2bit alpha indices");
+			Debug.Assert(alphaIndices.All(x => x < (1 << 2)), "Mode 5 should have 2bit alpha indices");
 
 			lowBits = 0b100000; // Set Mode 5
 			highBits = 0;
 
-			lowBits = ByteHelper.Store2(lowBits, 6, (byte) rotation);
+			lowBits = ByteHelper.Store2(lowBits, 6, (byte)rotation);
 
 			int nextIdx = 8;
 			//Store color endpoints
-			for (int i = 0; i < colorEndPoints[0].Length; i++) {
-				for (int j = 0; j < colorEndPoints.Length; j++) {
-					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 
+			for (int i = 0; i < colorEndPoints[0].Length; i++)
+			{
+				for (int j = 0; j < colorEndPoints.Length; j++)
+				{
+					ByteHelper.StoreTo128(ref lowBits, ref highBits,
 						nextIdx, 7, colorEndPoints[j][i]);
 					nextIdx += 7;
 				}
 			}
 			//Store alpha endpoints
-			for (int i = 0; i < alphaEndPoints.Length; i++) {
-				(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, nextIdx, 
+			for (int i = 0; i < alphaEndPoints.Length; i++)
+			{
+				ByteHelper.StoreTo128(ref lowBits, ref highBits, nextIdx,
 					8, alphaEndPoints[i]);
-				nextIdx+=8;
+				nextIdx += 8;
 			}
 			Debug.Assert(nextIdx == 66);
 
 			int colorBitCount = ColorIndexBitCount;
 			int colorIndexBegin = GetIndexBegin(Bc7BlockType.Type5, colorBitCount, false);
-			for (int i = 0; i < 16; i++) {
-				int indexOffset = GetIndexOffset(Bc7BlockType.Type5, NumSubsets, 
+			for (int i = 0; i < 16; i++)
+			{
+				int indexOffset = GetIndexOffset(Bc7BlockType.Type5, NumSubsets,
 					0, colorBitCount, i);
-				int indexBitCount = GetIndexBitCount(NumSubsets, 
+				int indexBitCount = GetIndexBitCount(NumSubsets,
 					0, colorBitCount, i);
 
-					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 
-						colorIndexBegin + indexOffset, indexBitCount, colorIndices[i]);
-				
+				ByteHelper.StoreTo128(ref lowBits, ref highBits,
+					colorIndexBegin + indexOffset, indexBitCount, colorIndices[i]);
+
 			}
 
 			int alphaBitCount = AlphaIndexBitCount;
 			int alphaIndexBegin = GetIndexBegin(Bc7BlockType.Type5, alphaBitCount, true);
-			for (int i = 0; i < 16; i++) {
-				int indexOffset = GetIndexOffset(Bc7BlockType.Type5, NumSubsets, 
+			for (int i = 0; i < 16; i++)
+			{
+				int indexOffset = GetIndexOffset(Bc7BlockType.Type5, NumSubsets,
 					0, alphaBitCount, i);
-				int indexBitCount = GetIndexBitCount(NumSubsets, 
+				int indexBitCount = GetIndexBitCount(NumSubsets,
 					0, alphaBitCount, i);
 
-				
-				(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 
+
+				ByteHelper.StoreTo128(ref lowBits, ref highBits,
 					alphaIndexBegin + indexOffset, indexBitCount, alphaIndices[i]);
 
 			}
 		}
 
-		public void PackType6(byte[][] colorAlphaEndPoints, byte[] pBits, byte[] indices) {
-			Debug.Assert(colorAlphaEndPoints.Length == 2, 
+		public void PackType6(byte[][] colorAlphaEndPoints, byte[] pBits, byte[] indices)
+		{
+			Debug.Assert(colorAlphaEndPoints.Length == 2,
 				"Mode 6 should have 2 endpoints");
-			Debug.Assert(colorAlphaEndPoints.All(x => x.Length == 4) , 
+			Debug.Assert(colorAlphaEndPoints.All(x => x.Length == 4),
 				"Mode 6 should have RGBA color endpoints");
-			Debug.Assert(colorAlphaEndPoints.All(x => x.All(y => y < (1 << 7))) , 
+			Debug.Assert(colorAlphaEndPoints.All(x => x.All(y => y < (1 << 7))),
 				"Mode 6 should have 7bit color and alpha endpoints");
 			Debug.Assert(pBits.Length == 2, "Mode 6 should have 2 pBits");
 			Debug.Assert(indices.Length == 16, "Provide 16 indices");
-			Debug.Assert(indices.All(x => x < (1 << 4)) , "Mode 6 should have 4bit color indices");
-			
+			Debug.Assert(indices.All(x => x < (1 << 4)), "Mode 6 should have 4bit color indices");
+
 			lowBits = 0b1000000; // Set Mode 6
 			highBits = 0;
 
 			int nextIdx = 7;
 			//Store color and alpha endpoints
-			for (int i = 0; i < colorAlphaEndPoints[0].Length; i++) {
-				for (int j = 0; j < colorAlphaEndPoints.Length; j++) {
-					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 
+			for (int i = 0; i < colorAlphaEndPoints[0].Length; i++)
+			{
+				for (int j = 0; j < colorAlphaEndPoints.Length; j++)
+				{
+					ByteHelper.StoreTo128(ref lowBits, ref highBits,
 						nextIdx, 7, colorAlphaEndPoints[j][i]);
 					nextIdx += 7;
 				}
 			}
 			//Store pBits
-			for (int i = 0; i < pBits.Length; i++) {
-				(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, nextIdx, 
+			for (int i = 0; i < pBits.Length; i++)
+			{
+				ByteHelper.StoreTo128(ref lowBits, ref highBits, nextIdx,
 					1, pBits[i]);
 				nextIdx++;
 			}
@@ -1167,44 +1281,49 @@ namespace BCnEncoder.Shared
 
 			int colorBitCount = ColorIndexBitCount;
 			int colorIndexBegin = GetIndexBegin(Bc7BlockType.Type6, colorBitCount, false);
-			for (int i = 0; i < 16; i++) {
-				int indexOffset = GetIndexOffset(Bc7BlockType.Type6, NumSubsets, 
+			for (int i = 0; i < 16; i++)
+			{
+				int indexOffset = GetIndexOffset(Bc7BlockType.Type6, NumSubsets,
 					0, colorBitCount, i);
-				int indexBitCount = GetIndexBitCount(NumSubsets, 
+				int indexBitCount = GetIndexBitCount(NumSubsets,
 					0, colorBitCount, i);
 
-					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 
-						colorIndexBegin + indexOffset, indexBitCount, indices[i]);
-				
+				ByteHelper.StoreTo128(ref lowBits, ref highBits,
+					colorIndexBegin + indexOffset, indexBitCount, indices[i]);
+
 			}
 		}
 
-		public void PackType7(int partitionIndex6Bit, byte[][] subsetEndpoints, byte[] pBits, byte[] indices) {
+		public void PackType7(int partitionIndex6Bit, byte[][] subsetEndpoints, byte[] pBits, byte[] indices)
+		{
 			Debug.Assert(partitionIndex6Bit < 64, "Mode 7 should have 6bit partition index");
 			Debug.Assert(subsetEndpoints.Length == 4, "Mode 7 should have 4 endpoints");
-			Debug.Assert(subsetEndpoints.All(x => x.Length == 4) , "Mode 7 should have RGBA endpoints");
-			Debug.Assert(subsetEndpoints.All(x => x.All(y => y < (1 << 5))) , "Mode 7 should have 5bit endpoints");
+			Debug.Assert(subsetEndpoints.All(x => x.Length == 4), "Mode 7 should have RGBA endpoints");
+			Debug.Assert(subsetEndpoints.All(x => x.All(y => y < (1 << 5))), "Mode 7 should have 5bit endpoints");
 			Debug.Assert(pBits.Length == 4, "Mode 7 should have 4 pBits");
 			Debug.Assert(indices.Length == 16, "Provide 16 indices");
-			Debug.Assert(indices.All(x => x < (1 << 2)) , "Mode 3 should have 2bit indices");
+			Debug.Assert(indices.All(x => x < (1 << 2)), "Mode 3 should have 2bit indices");
 
 			lowBits = 0b10000000; // Set Mode 7
 			highBits = 0;
 
-			lowBits = ByteHelper.Store6(lowBits, 8, (byte) partitionIndex6Bit);
+			lowBits = ByteHelper.Store6(lowBits, 8, (byte)partitionIndex6Bit);
 
 			int nextIdx = 14;
 			//Store endpoints
-			for (int i = 0; i < subsetEndpoints[0].Length; i++) {
-				for (int j = 0; j < subsetEndpoints.Length; j++) {
-					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 
+			for (int i = 0; i < subsetEndpoints[0].Length; i++)
+			{
+				for (int j = 0; j < subsetEndpoints.Length; j++)
+				{
+					ByteHelper.StoreTo128(ref lowBits, ref highBits,
 						nextIdx, 5, subsetEndpoints[j][i]);
 					nextIdx += 5;
 				}
 			}
 			//Store pBits
-			for (int i = 0; i < pBits.Length; i++) {
-				(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, nextIdx, 
+			for (int i = 0; i < pBits.Length; i++)
+			{
+				ByteHelper.StoreTo128(ref lowBits, ref highBits, nextIdx,
 					1, pBits[i]);
 				nextIdx++;
 			}
@@ -1212,13 +1331,14 @@ namespace BCnEncoder.Shared
 
 			int colorBitCount = ColorIndexBitCount;
 			int indexBegin = GetIndexBegin(Bc7BlockType.Type7, colorBitCount, false);
-			for (int i = 0; i < 16; i++) {
-				int indexOffset = GetIndexOffset(Bc7BlockType.Type7, NumSubsets, 
+			for (int i = 0; i < 16; i++)
+			{
+				int indexOffset = GetIndexOffset(Bc7BlockType.Type7, NumSubsets,
 					partitionIndex6Bit, colorBitCount, i);
-				int indexBitCount = GetIndexBitCount(NumSubsets, 
+				int indexBitCount = GetIndexBitCount(NumSubsets,
 					partitionIndex6Bit, colorBitCount, i);
-				
-				(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 
+
+				ByteHelper.StoreTo128(ref lowBits, ref highBits,
 					indexBegin + indexOffset, indexBitCount, indices[i]);
 			}
 		}

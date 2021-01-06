@@ -13,20 +13,17 @@ namespace BCnEncoder.Encoder
 			this.luminanceAsRed = luminanceAsRed;
 		}
 
-		public byte[] Encode(RawBlock4X4Rgba32[] blocks, int blockWidth, int blockHeight, CompressionQuality quality,
+		public unsafe byte[] Encode(RawBlock4X4Rgba32[] blocks, int blockWidth, int blockHeight, CompressionQuality quality,
 			bool parallel) {
-			byte[] outputData = new byte[blockWidth * blockHeight * Marshal.SizeOf<Bc4Block>()];
-			Span<Bc4Block> outputBlocks = MemoryMarshal.Cast<byte, Bc4Block>(outputData);
+			byte[] outputData = new byte[blockWidth * blockHeight * sizeof(Bc4Block)];
+			fixed (byte* oDataBytes = outputData)
+			{
+				Bc4Block* oDataBlocks = (Bc4Block*)oDataBytes;
+				int oDataBlocksLength = outputData.Length / sizeof(Bc4Block);
 
-			if (parallel) {
-				Parallel.For(0, blocks.Length, i => {
-					Span<Bc4Block> outputBlocks = MemoryMarshal.Cast<byte, Bc4Block>(outputData);
-					outputBlocks[i] = EncodeBlock(blocks[i], quality);
-				});
-			}
-			else {
-				for (int i = 0; i < blocks.Length; i++) {
-					outputBlocks[i] = EncodeBlock(blocks[i], quality);
+				for (int i = 0; i < oDataBlocksLength; i++)
+				{
+					oDataBlocks[i] = EncodeBlock(blocks[i], quality);
 				}
 			}
 
@@ -36,7 +33,7 @@ namespace BCnEncoder.Encoder
 		private Bc4Block EncodeBlock(RawBlock4X4Rgba32 block, CompressionQuality quality) {
 			Bc4Block output = new Bc4Block();
 			byte[] colors = new byte[16];
-			var pixels = block.AsSpan;
+			var pixels = block.AsArray;
 			for (int i = 0; i < 16; i++) {
 				if (luminanceAsRed) {
 					colors[i] = (byte)(new ColorYCbCr(pixels[i]).y * 255);
@@ -71,6 +68,55 @@ namespace BCnEncoder.Encoder
 		}
 
 		#region Encoding private stuff
+		
+		private static int SelectIndices(ref Bc4Block block, byte[] pixels)
+		{
+			int cumulativeError = 0;
+			var c0 = block.Red0;
+			var c1 = block.Red1;
+			byte[] colors = c0 > c1
+				? new byte[] {
+					c0,
+					c1,
+					(byte) (6 / 7.0 * c0 + 1 / 7.0 * c1),
+					(byte) (5 / 7.0 * c0 + 2 / 7.0 * c1),
+					(byte) (4 / 7.0 * c0 + 3 / 7.0 * c1),
+					(byte) (3 / 7.0 * c0 + 4 / 7.0 * c1),
+					(byte) (2 / 7.0 * c0 + 5 / 7.0 * c1),
+					(byte) (1 / 7.0 * c0 + 6 / 7.0 * c1),
+				}
+				: new byte[] {
+					c0,
+					c1,
+					(byte) (4 / 5.0 * c0 + 1 / 5.0 * c1),
+					(byte) (3 / 5.0 * c0 + 2 / 5.0 * c1),
+					(byte) (2 / 5.0 * c0 + 3 / 5.0 * c1),
+					(byte) (1 / 5.0 * c0 + 4 / 5.0 * c1),
+					0,
+					255
+				};
+			for (int i = 0; i < pixels.Length; i++)
+			{
+				byte bestIndex = 0;
+				int bestError = Math.Abs(pixels[i] - colors[0]);
+				for (byte j = 1; j < colors.Length; j++)
+				{
+					int error = Math.Abs(pixels[i] - colors[j]);
+					if (error < bestError)
+					{
+						bestIndex = j;
+						bestError = error;
+					}
+
+					if (bestError == 0) break;
+				}
+
+				block.SetRedIndex(i, bestIndex);
+				cumulativeError += bestError * bestError;
+			}
+
+			return cumulativeError;
+		}
 
 		private static Bc4Block FindRedValues(Bc4Block colorBlock, byte[] pixels, int variations) {
 
@@ -88,57 +134,11 @@ namespace BCnEncoder.Encoder
 				}
 			}
 
-
-			int SelectIndices(ref Bc4Block block) {
-				int cumulativeError = 0;
-				var c0 = block.Red0;
-				var c1 = block.Red1;
-				Span<byte> colors = c0 > c1
-					? stackalloc byte[] {
-						c0,
-						c1,
-						(byte) (6 / 7.0 * c0 + 1 / 7.0 * c1),
-						(byte) (5 / 7.0 * c0 + 2 / 7.0 * c1),
-						(byte) (4 / 7.0 * c0 + 3 / 7.0 * c1),
-						(byte) (3 / 7.0 * c0 + 4 / 7.0 * c1),
-						(byte) (2 / 7.0 * c0 + 5 / 7.0 * c1),
-						(byte) (1 / 7.0 * c0 + 6 / 7.0 * c1),
-					}
-					: stackalloc byte[] {
-						c0,
-						c1,
-						(byte) (4 / 5.0 * c0 + 1 / 5.0 * c1),
-						(byte) (3 / 5.0 * c0 + 2 / 5.0 * c1),
-						(byte) (2 / 5.0 * c0 + 3 / 5.0 * c1),
-						(byte) (1 / 5.0 * c0 + 4 / 5.0 * c1),
-						0,
-						255
-					};
-				for (int i = 0; i < pixels.Length; i++) {
-					byte bestIndex = 0;
-					int bestError = Math.Abs(pixels[i] - colors[0]);
-					for (byte j = 1; j < colors.Length; j++) {
-						int error = Math.Abs(pixels[i] - colors[j]);
-						if (error < bestError) {
-							bestIndex = j;
-							bestError = error;
-						}
-
-						if (bestError == 0) break;
-					}
-
-					block.SetRedIndex(i, bestIndex);
-					cumulativeError += bestError * bestError;
-				}
-
-				return cumulativeError;
-			}
-
 			//everything is either fully black or fully red
 			if (hasExtremeValues && min == 255 && max == 0) {
 				colorBlock.Red0 = 0;
 				colorBlock.Red1 = 255;
-				var error = SelectIndices(ref colorBlock);
+				var error = SelectIndices(ref colorBlock, pixels);
 				Debug.Assert(0 == error);
 				return colorBlock;
 			}
@@ -146,7 +146,7 @@ namespace BCnEncoder.Encoder
 			var best = colorBlock;
 			best.Red0 = max;
 			best.Red1 = min;
-			int bestError = SelectIndices(ref best);
+			int bestError = SelectIndices(ref best, pixels);
 			if (bestError == 0) {
 				return best;
 			}
@@ -158,7 +158,7 @@ namespace BCnEncoder.Encoder
 					var block = colorBlock;
 					block.Red0 = hasExtremeValues ? c1 : c0;
 					block.Red1 = hasExtremeValues ? c0 : c1;
-					int error = SelectIndices(ref block);
+					int error = SelectIndices(ref block, pixels);
 					if (error < bestError) {
 						best = block;
 						bestError = error;
@@ -172,7 +172,7 @@ namespace BCnEncoder.Encoder
 					var block = colorBlock;
 					block.Red0 = hasExtremeValues ? c1 : c0;
 					block.Red1 = hasExtremeValues ? c0 : c1;
-					int error = SelectIndices(ref block);
+					int error = SelectIndices(ref block, pixels);
 					if (error < bestError) {
 						best = block;
 						bestError = error;
@@ -186,7 +186,7 @@ namespace BCnEncoder.Encoder
 					var block = colorBlock;
 					block.Red0 = hasExtremeValues ? c1 : c0;
 					block.Red1 = hasExtremeValues ? c0 : c1;
-					int error = SelectIndices(ref block);
+					int error = SelectIndices(ref block, pixels);
 					if (error < bestError) {
 						best = block;
 						bestError = error;
@@ -200,7 +200,7 @@ namespace BCnEncoder.Encoder
 					var block = colorBlock;
 					block.Red0 = hasExtremeValues ? c1 : c0;
 					block.Red1 = hasExtremeValues ? c0 : c1;
-					int error = SelectIndices(ref block);
+					int error = SelectIndices(ref block, pixels);
 					if (error < bestError) {
 						best = block;
 						bestError = error;
@@ -214,7 +214,7 @@ namespace BCnEncoder.Encoder
 					var block = colorBlock;
 					block.Red0 = hasExtremeValues ? c1 : c0;
 					block.Red1 = hasExtremeValues ? c0 : c1;
-					int error = SelectIndices(ref block);
+					int error = SelectIndices(ref block, pixels);
 					if (error < bestError) {
 						best = block;
 						bestError = error;
@@ -228,7 +228,7 @@ namespace BCnEncoder.Encoder
 					var block = colorBlock;
 					block.Red0 = hasExtremeValues ? c1 : c0;
 					block.Red1 = hasExtremeValues ? c0 : c1;
-					int error = SelectIndices(ref block);
+					int error = SelectIndices(ref block, pixels);
 					if (error < bestError) {
 						best = block;
 						bestError = error;

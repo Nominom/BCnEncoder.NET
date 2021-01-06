@@ -217,7 +217,7 @@ namespace BCnEncoder.Shared
 		public static KtxKeyValuePair ReadKeyValuePair(BinaryReader br, out int bytesRead)
 		{
 			uint totalSize = br.ReadUInt32();
-			Span<byte> keyValueBytes = stackalloc byte[(int)totalSize];
+			byte[] keyValueBytes = new byte[(int)totalSize];
 			br.Read(keyValueBytes);
 
 			// Find the key's null terminator
@@ -237,12 +237,12 @@ namespace BCnEncoder.Shared
 
 
 			int keySize = i;
-			string key = UTF8.GetString(keyValueBytes.Slice(0, keySize));
+			string key = UTF8.GetString(keyValueBytes, 0, keySize);
 
 			int valueSize = (int)(totalSize - keySize - 1);
-			Span<byte> valueBytes = keyValueBytes.Slice(i + 1, valueSize);
+			byte[] valueBytes = keyValueBytes.Slice(i + 1, valueSize);
 			byte[] value = new byte[valueSize];
-			valueBytes.CopyTo(value);
+			valueBytes.CopyTo(value, 0);
 
 			int paddingBytes = (int)(3 - ((totalSize + 3) % 4));
 			br.SkipPadding(paddingBytes);
@@ -254,8 +254,8 @@ namespace BCnEncoder.Shared
 		public static uint WriteKeyValuePair(BinaryWriter bw, KtxKeyValuePair pair)
 		{
 			int keySpanLength = UTF8.GetByteCount(pair.Key);
-			Span<byte> keySpan = stackalloc byte[keySpanLength];
-			Span<byte> valueSpan = pair.Value;
+			byte[] keySpan = new byte[keySpanLength];
+			byte[] valueSpan = pair.Value;
 
 			uint totalSize = (uint)(keySpan.Length + 1 + valueSpan.Length);
 			int paddingBytes = (int)(3 - ((totalSize + 3) % 4));
@@ -290,7 +290,7 @@ namespace BCnEncoder.Shared
 
 		public bool VerifyHeader()
 		{
-			Span<byte> id = stackalloc byte[] { 0xAB, 0x4B, 0x54, 0x58, 0x20, 0x31, 0x31, 0xBB, 0x0D, 0x0A, 0x1A, 0x0A };
+			byte[] id = new byte[] { 0xAB, 0x4B, 0x54, 0x58, 0x20, 0x31, 0x31, 0xBB, 0x0D, 0x0A, 0x1A, 0x0A };
 			for (int i = 0; i < id.Length; i++)
 			{
 				if (Identifier[i] != id[i]) return false;
@@ -301,7 +301,7 @@ namespace BCnEncoder.Shared
 		public static KtxHeader InitializeCompressed(int width, int height, GlInternalFormat internalFormat, GLFormat baseInternalFormat)
 		{
 			KtxHeader header = new KtxHeader();
-			Span<byte> id = stackalloc byte[] { 0xAB, 0x4B, 0x54, 0x58, 0x20, 0x31, 0x31, 0xBB, 0x0D, 0x0A, 0x1A, 0x0A };
+			byte[] id = new byte[] { 0xAB, 0x4B, 0x54, 0x58, 0x20, 0x31, 0x31, 0xBB, 0x0D, 0x0A, 0x1A, 0x0A };
 			for (int i = 0; i < id.Length; i++)
 			{
 				header.Identifier[i] = id[i];
@@ -321,7 +321,7 @@ namespace BCnEncoder.Shared
 		public static KtxHeader InitializeUncompressed(int width, int height, GLType type, GLFormat format, uint glTypeSize, GlInternalFormat internalFormat, GLFormat baseInternalFormat)
 		{
 			KtxHeader header = new KtxHeader();
-			Span<byte> id = stackalloc byte[] { 0xAB, 0x4B, 0x54, 0x58, 0x20, 0x31, 0x31, 0xBB, 0x0D, 0x0A, 0x1A, 0x0A };
+			byte[] id = new byte[] { 0xAB, 0x4B, 0x54, 0x58, 0x20, 0x31, 0x31, 0xBB, 0x0D, 0x0A, 0x1A, 0x0A };
 			for (int i = 0; i < id.Length; i++)
 			{
 				header.Identifier[i] = id[i];

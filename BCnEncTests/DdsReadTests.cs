@@ -9,6 +9,7 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Advanced;
 using SixLabors.ImageSharp.PixelFormats;
 using Xunit;
+using Rgba32 = SixLabors.ImageSharp.PixelFormats.Rgba32;
 
 namespace BCnEncTests
 {
@@ -27,10 +28,12 @@ namespace BCnEncTests
 			Assert.Equal((uint)images[0].Width, file.Header.dwWidth);
 			Assert.Equal((uint)images[0].Height, file.Header.dwHeight);
 
-			for (int i = 0; i < images.Length; i++) {
+			for (int i = 0; i < images.Length; i++)
+			{
+				using var img =
+					Image.LoadPixelData<Rgba32>(images[i].data, images[i].Width, images[i].Height);
 				using FileStream outFs = File.OpenWrite($"decoding_test_dds_rgba_mip{i}.png");
-				images[i].SaveAsPng(outFs);
-				images[i].Dispose();
+				img.SaveAsPng(outFs);
 			}
 		}
 
@@ -49,9 +52,10 @@ namespace BCnEncTests
 			Assert.Equal((uint)images[0].Height, file.Header.dwHeight);
 
 			for (int i = 0; i < images.Length; i++) {
+				using var img =
+					Image.LoadPixelData<Rgba32>(images[i].data, images[i].Width, images[i].Height);
 				using FileStream outFs = File.OpenWrite($"decoding_test_dds_bc1_mip{i}.png");
-				images[i].SaveAsPng(outFs);
-				images[i].Dispose();
+				img.SaveAsPng(outFs);
 			}
 		}
 
@@ -70,14 +74,10 @@ namespace BCnEncTests
 			Assert.Equal((uint)image.Width, file.Header.dwWidth);
 			Assert.Equal((uint)image.Height, file.Header.dwHeight);
 
-			if (!image.TryGetSinglePixelSpan(out var pixels)) {
-				throw new Exception("Cannot get pixel span.");
-			}
-			Assert.Contains(pixels.ToArray(), x => x.A == 0);
-
+			using var img =
+				Image.LoadPixelData<Rgba32>(image.data, image.Width, image.Height);
 			using FileStream outFs = File.OpenWrite($"decoding_test_dds_bc1a.png");
-			image.SaveAsPng(outFs);
-			image.Dispose();
+			img.SaveAsPng(outFs);
 		}
 
 		[Fact]
@@ -87,9 +87,10 @@ namespace BCnEncTests
 			var images = decoder.DecodeAllMipMaps(fs);
 
 			for (int i = 0; i < images.Length; i++) {
+				using var img =
+					Image.LoadPixelData<Rgba32>(images[i].data, images[i].Width, images[i].Height);
 				using FileStream outFs = File.OpenWrite($"decoding_test_dds_bc7_mip{i}.png");
-				images[i].SaveAsPng(outFs);
-				images[i].Dispose();
+				img.SaveAsPng(outFs);
 			}
 		}
 
@@ -101,9 +102,10 @@ namespace BCnEncTests
 			var images = decoder.DecodeAllMipMaps(fs);
 
 			for (int i = 0; i < images.Length; i++) {
+				using var img =
+					Image.LoadPixelData<Rgba32>(images[i].data, images[i].Width, images[i].Height);
 				using FileStream outFs = File.OpenWrite($"decoding_test_dds_stream_bc1_mip{i}.png");
-				images[i].SaveAsPng(outFs);
-				images[i].Dispose();
+				img.SaveAsPng(outFs);
 			}
 		}
 	}

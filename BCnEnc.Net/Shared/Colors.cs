@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Numerics;
-using SixLabors.ImageSharp.PixelFormats;
 
 namespace BCnEncoder.Shared
 {
@@ -40,7 +39,7 @@ namespace BCnEncoder.Shared
 		public ushort data;
 
 		public byte R {
-			readonly get {
+			get {
 				int r5 = ((data & RedMask) >> RedShift);
 				return (byte)((r5 << 3) | (r5 >> 2));
 			}
@@ -52,7 +51,7 @@ namespace BCnEncoder.Shared
 		}
 
 		public byte G {
-			readonly get {
+			get {
 				int g6 = ((data & GreenMask) >> GreenShift);
 				return (byte)((g6 << 2) | (g6 >> 4));
 			}
@@ -64,7 +63,7 @@ namespace BCnEncoder.Shared
 		}
 
 		public byte B {
-			readonly get {
+			 get {
 				int b5 = (data & BlueMask);
 				return (byte)((b5 << 3) | (b5 >> 2));
 			}
@@ -76,7 +75,7 @@ namespace BCnEncoder.Shared
 		}
 
 		public int RawR {
-			readonly get { return ((data & RedMask) >> RedShift); }
+			 get { return ((data & RedMask) >> RedShift); }
 			set {
 				if (value > 31) value = 31;
 				if (value < 0) value = 0;
@@ -86,7 +85,7 @@ namespace BCnEncoder.Shared
 		}
 
 		public int RawG {
-			readonly get { return ((data & GreenMask) >> GreenShift); }
+			get { return ((data & GreenMask) >> GreenShift); }
 			set {
 				if (value > 63) value = 63;
 				if (value < 0) value = 0;
@@ -96,7 +95,7 @@ namespace BCnEncoder.Shared
 		}
 
 		public int RawB {
-			readonly get { return (data & BlueMask); }
+			get { return (data & BlueMask); }
 			set {
 				if (value > 31) value = 31;
 				if (value < 0) value = 0;
@@ -127,7 +126,7 @@ namespace BCnEncoder.Shared
 			B = color.b;
 		}
 
-		public readonly ColorRgb24 ToColorRgb24()
+		public ColorRgb24 ToColorRgb24()
 		{
 			return new ColorRgb24(R, G, B);
 		}
@@ -503,7 +502,7 @@ namespace BCnEncoder.Shared
 			float dcb = (cb - other.cb) * (cb - other.cb);
 			float dcr = (cr - other.cr) * (cr - other.cr);
 
-			return MathF.Sqrt(dy + dcb + dcr);
+			return (float)Math.Sqrt(dy + dcb + dcr);
 		}
 
 		public static ColorYCbCr operator+(ColorYCbCr left, ColorYCbCr right)
@@ -617,7 +616,7 @@ namespace BCnEncoder.Shared
 			float dcr = (cr - other.cr) * (cr - other.cr);
 			float da = (alpha - other.alpha) * (alpha - other.alpha) * aWeight;
 
-			return MathF.Sqrt(dy + dcb + dcr + da);
+			return (float)Math.Sqrt(dy + dcb + dcr + da);
 		}
 
 		public static ColorYCbCrAlpha operator+(ColorYCbCrAlpha left, ColorYCbCrAlpha right)
@@ -672,7 +671,7 @@ namespace BCnEncoder.Shared
 		}
 
 		private static float PivotRgb(float n) {
-			return (n > 0.04045f ? MathF.Pow((n + 0.055f) / 1.055f, 2.4f) : n / 12.92f) * 100;
+			return (n > 0.04045f ? (float)Math.Pow((n + 0.055f) / 1.055f, 2.4f) : n / 12.92f) * 100;
 		}
 	}
 
@@ -719,7 +718,7 @@ namespace BCnEncoder.Shared
 		}
 
 		private static float PivotXyz(float n) {
-			float i = MathF.Cbrt(n);
+			float i = (float)Math.Pow(n, (1.0 / 3.0));
 			return n > 0.008856f ? i : 7.787f * n + 16 / 116f;
 		}
 	}

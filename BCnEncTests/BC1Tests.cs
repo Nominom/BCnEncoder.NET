@@ -1,6 +1,7 @@
 ﻿using BCnEncoder.Shared;
 using SixLabors.ImageSharp.PixelFormats;
 using Xunit;
+using Rgba32 = BCnEncoder.Shared.Rgba32;
 
 namespace BCnEncTests
 {

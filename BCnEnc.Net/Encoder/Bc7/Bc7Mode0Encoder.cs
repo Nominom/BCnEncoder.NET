@@ -18,7 +18,7 @@ namespace BCnEncoder.Encoder.Bc7
 
 			ColorRgba32[] endpoints = new ColorRgba32[6];
 			byte[] pBits = new byte[6];
-			ReadOnlySpan<int> partitionTable = Bc7Block.Subsets3PartitionTable[bestPartition];
+			int[] partitionTable = Bc7Block.Subsets3PartitionTable[bestPartition];
 
 			byte[] indices = new byte[16];
 

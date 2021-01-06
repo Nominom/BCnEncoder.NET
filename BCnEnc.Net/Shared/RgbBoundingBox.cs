@@ -1,5 +1,4 @@
 ﻿using System;
-using SixLabors.ImageSharp.PixelFormats;
 
 namespace BCnEncoder.Shared
 {
@@ -11,7 +10,7 @@ namespace BCnEncoder.Shared
 	internal static class RgbBoundingBox
 	{
 
-		public static void Create565(ReadOnlySpan<Rgba32> colors, out ColorRgb565 min, out ColorRgb565 max)
+		public static void Create565(Rgba32[] colors, out ColorRgb565 min, out ColorRgb565 max)
 		{
 			const int colorInsetShift = 4;
 			const int c565_5_mask = 0xF8;
@@ -71,7 +70,7 @@ namespace BCnEncoder.Shared
 			max = new ColorRgb565((byte)maxR, (byte)maxG, (byte)maxB);
 		}
 
-		public static void Create565AlphaCutoff(ReadOnlySpan<Rgba32> colors, out ColorRgb565 min, out ColorRgb565 max, int alphaCutoff = 128)
+		public static void Create565AlphaCutoff(Rgba32[] colors, out ColorRgb565 min, out ColorRgb565 max, int alphaCutoff = 128)
 		{
 			const int colorInsetShift = 4;
 			const int c565_5_mask = 0xF8;
@@ -129,7 +128,7 @@ namespace BCnEncoder.Shared
 			max = new ColorRgb565((byte)maxR, (byte)maxG, (byte)maxB);
 		}
 
-		public static void Create565a(ReadOnlySpan<Rgba32> colors, out ColorRgb565 min, out ColorRgb565 max, out byte minAlpha, out byte maxAlpha)
+		public static void Create565a(Rgba32[] colors, out ColorRgb565 min, out ColorRgb565 max, out byte minAlpha, out byte maxAlpha)
 		{
 			const int colorInsetShift = 4;
 			const int alphaInsetShift = 5;

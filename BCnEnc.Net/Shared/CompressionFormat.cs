@@ -3,22 +3,6 @@
 	public enum CompressionFormat
 	{
 		/// <summary>
-		/// Raw unsigned byte 8-bit Luminance data
-		/// </summary>
-		R,
-		/// <summary>
-		/// Raw unsigned byte 16-bit RG data
-		/// </summary>
-		RG,
-		/// <summary>
-		/// Raw unsigned byte 24-bit RGB data
-		/// </summary>
-		RGB,
-		/// <summary>
-		/// Raw unsigned byte 32-bit RGBA data
-		/// </summary>
-		RGBA,
-		/// <summary>
 		/// BC1 / DXT1 with no alpha. Very widely supported and good compression ratio.
 		/// </summary>
 		BC1,
@@ -55,16 +39,7 @@
 	public static class CompressionFormatExtensions {
 		public static bool IsCompressedFormat(this CompressionFormat format)
 		{
-			switch (format) {
-				case CompressionFormat.R:
-				case CompressionFormat.RG:
-				case CompressionFormat.RGB:
-				case CompressionFormat.RGBA:
-					return false;
-				
-				default:
-					return true;
-			}
+			return true;
 		}
 	}
 }

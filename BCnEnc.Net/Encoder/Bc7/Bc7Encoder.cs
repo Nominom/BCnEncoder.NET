@@ -9,28 +9,19 @@ namespace BCnEncoder.Encoder.Bc7
 	internal class Bc7Encoder : IBcBlockEncoder
 	{
 
-		public byte[] Encode(RawBlock4X4Rgba32[] blocks, int blockWidth, int blockHeight, CompressionQuality quality, bool parallel)
+		public unsafe byte[] Encode(RawBlock4X4Rgba32[] blocks, int blockWidth, int blockHeight, CompressionQuality quality, bool parallel)
 		{
-			byte[] outputData = new byte[blockWidth * blockHeight * Marshal.SizeOf<Bc7Block>()];
-			Span<Bc7Block> outputBlocks = MemoryMarshal.Cast<byte, Bc7Block>(outputData);
-
-
-			if (parallel)
+			byte[] outputData = new byte[blockWidth * blockHeight * sizeof(Bc7Block)];
+			fixed (byte* oDataBytes = outputData)
 			{
-				Parallel.For(0, blocks.Length, i =>
+				Bc7Block* oDataBlocks = (Bc7Block*)oDataBytes;
+				int oDataBlocksLength = outputData.Length / sizeof(Bc7Block);
+
+				for (int i = 0; i < oDataBlocksLength; i++)
 				{
-					Span<Bc7Block> outputBlocks = MemoryMarshal.Cast<byte, Bc7Block>(outputData);
-					outputBlocks[i] = EncodeBlock(blocks[i], quality);
-				});
-			}
-			else
-			{
-				for (int i = 0; i < blocks.Length; i++)
-				{
-					outputBlocks[i] = EncodeBlock(blocks[i], quality);
+					oDataBlocks[i] = EncodeBlock(blocks[i], quality);
 				}
 			}
-
 
 			return outputData;
 		}
@@ -55,10 +46,10 @@ namespace BCnEncoder.Encoder.Bc7
 
 			ClusterIndices4X4 indexBlock = new ClusterIndices4X4();
 
-			var indices = LinearClustering.ClusterPixels(raw.AsSpan, 4, 4,
+			var indices = LinearClustering.ClusterPixels(raw.AsArray, 4, 4,
 				numClusters, 1, 10, false);
 
-			var output = indexBlock.AsSpan;
+			var output = indexBlock.AsArray;
 			for (int i = 0; i < output.Length; i++)
 			{
 				output[i] = indices[i];

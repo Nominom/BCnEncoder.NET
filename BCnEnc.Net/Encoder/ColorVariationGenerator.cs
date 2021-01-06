@@ -14,7 +14,7 @@ namespace BCnEncoder.Encoder
 		private static int[] varPatternEp1B = new int[] { -1, 0, 0, -1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, -1, 0, 0, 1, 0, 0, -1 };
 		public static int VarPatternCount => varPatternEp0R.Length;
 
-		public static (ColorRgb565, ColorRgb565) Variate565(ColorRgb565 c0, ColorRgb565 c1, int i) {
+		public static void Variate565(ColorRgb565 c0, ColorRgb565 c1, int i, out ColorRgb565 outC0, out ColorRgb565 outC1) {
 			int idx = i % varPatternEp0R.Length;
 			var newEp0 = new ColorRgb565();
 			var newEp1 = new ColorRgb565();
@@ -27,7 +27,8 @@ namespace BCnEncoder.Encoder
 			newEp1.RawG = ByteHelper.ClampToByte(c1.RawG + varPatternEp1G[idx]);
 			newEp1.RawB = ByteHelper.ClampToByte(c1.RawB + varPatternEp1B[idx]);
 
-			return (newEp0, newEp1);
+			outC0 = newEp0;
+			outC1 = newEp1;
 		}
 
 

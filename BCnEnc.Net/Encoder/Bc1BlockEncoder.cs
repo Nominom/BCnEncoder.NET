@@ -8,24 +8,17 @@ namespace BCnEncoder.Encoder
 	internal class Bc1BlockEncoder : IBcBlockEncoder
 	{
 
-		public byte[] Encode(RawBlock4X4Rgba32[] blocks, int blockWidth, int blockHeight, CompressionQuality quality, bool parallel)
+		public unsafe byte[] Encode(RawBlock4X4Rgba32[] blocks, int blockWidth, int blockHeight, CompressionQuality quality, bool parallel)
 		{
-			byte[] outputData = new byte[blockWidth * blockHeight * Marshal.SizeOf<Bc1Block>()];
-			Span<Bc1Block> outputBlocks = MemoryMarshal.Cast<byte, Bc1Block>(outputData);
+			byte[] outputData = new byte[blockWidth * blockHeight * sizeof(Bc1Block)];
+			fixed (byte* oDataBytes = outputData)
+			{
+				Bc1Block* oDataBlocks = (Bc1Block*)oDataBytes;
+				int oDataBlocksLength = outputData.Length / sizeof(Bc1Block);
 
-			if (parallel)
-			{
-				Parallel.For(0, blocks.Length, i =>
+				for (int i = 0; i < oDataBlocksLength; i++)
 				{
-					Span<Bc1Block> outputBlocks = MemoryMarshal.Cast<byte, Bc1Block>(outputData);
-					outputBlocks[i] = EncodeBlock(blocks[i], quality);
-				});
-			}
-			else
-			{
-				for (int i = 0; i < blocks.Length; i++)
-				{
-					outputBlocks[i] = EncodeBlock(blocks[i], quality);
+					oDataBlocks[i] = EncodeBlock(blocks[i], quality);
 				}
 			}
 
@@ -69,7 +62,7 @@ namespace BCnEncoder.Encoder
 		{
 			Bc1Block output = new Bc1Block();
 
-			var pixels = rawBlock.AsSpan;
+			var pixels = rawBlock.AsArray;
 
 			output.color0 = color0;
 			output.color1 = color1;
@@ -77,13 +70,13 @@ namespace BCnEncoder.Encoder
 			var c0 = color0.ToColorRgb24();
 			var c1 = color1.ToColorRgb24();
 
-			ReadOnlySpan<ColorRgb24> colors = output.HasAlphaOrBlack ?
-				stackalloc ColorRgb24[] {
+			ColorRgb24[] colors = output.HasAlphaOrBlack ?
+				new ColorRgb24[] {
 				c0,
 				c1,
 				c0 * (1.0 / 2.0) + c1 * (1.0 / 2.0),
 				new ColorRgb24(0, 0, 0)
-			} : stackalloc ColorRgb24[] {
+			} : new ColorRgb24[] {
 				c0,
 				c1,
 				c0 * (2.0 / 3.0) + c1 * (1.0 / 3.0),
@@ -113,7 +106,7 @@ namespace BCnEncoder.Encoder
 			{
 				Bc1Block output = new Bc1Block();
 
-				var pixels = rawBlock.AsSpan;
+				var pixels = rawBlock.AsArray;
 
 				RgbBoundingBox.Create565(pixels, out var min, out var max);
 
@@ -132,7 +125,7 @@ namespace BCnEncoder.Encoder
 
 			internal static Bc1Block EncodeBlock(RawBlock4X4Rgba32 rawBlock)
 			{
-				var pixels = rawBlock.AsSpan;
+				var pixels = rawBlock.AsArray;
 
 				PcaVectors.Create(pixels, out System.Numerics.Vector3 mean, out System.Numerics.Vector3 pa);
 				PcaVectors.GetMinMaxColor565(pixels, mean, pa, out var min, out var max);
@@ -150,7 +143,7 @@ namespace BCnEncoder.Encoder
 				Bc1Block best = TryColors(rawBlock, c0, c1, out float bestError);
 				
 				for (int i = 0; i < maxTries; i++) {
-					var (newC0, newC1) = ColorVariationGenerator.Variate565(c0, c1, i);
+					ColorVariationGenerator.Variate565(c0, c1, i, out var newC0, out var newC1);
 					
 					if (newC0.data < newC1.data)
 					{
@@ -185,7 +178,7 @@ namespace BCnEncoder.Encoder
 
 			internal static Bc1Block EncodeBlock(RawBlock4X4Rgba32 rawBlock)
 			{
-				var pixels = rawBlock.AsSpan;
+				var pixels = rawBlock.AsArray;
 
 				PcaVectors.Create(pixels, out System.Numerics.Vector3 mean, out System.Numerics.Vector3 pa);
 				PcaVectors.GetMinMaxColor565(pixels, mean, pa, out var min, out var max);
@@ -205,8 +198,8 @@ namespace BCnEncoder.Encoder
 				int lastChanged = 0;
 
 				for (int i = 0; i < maxTries; i++) {
-					var (newC0, newC1) = ColorVariationGenerator.Variate565(c0, c1, i);
-					
+					ColorVariationGenerator.Variate565(c0, c1, i, out var newC0, out var newC1);
+
 					if (newC0.data < newC1.data)
 					{
 						var c = newC0;
@@ -242,24 +235,17 @@ namespace BCnEncoder.Encoder
 	internal class Bc1AlphaBlockEncoder : IBcBlockEncoder
 	{
 
-		public byte[] Encode(RawBlock4X4Rgba32[] blocks, int blockWidth, int blockHeight, CompressionQuality quality, bool parallel)
+		public unsafe byte[] Encode(RawBlock4X4Rgba32[] blocks, int blockWidth, int blockHeight, CompressionQuality quality, bool parallel)
 		{
-			byte[] outputData = new byte[blockWidth * blockHeight * Marshal.SizeOf<Bc1Block>()];
-			Span<Bc1Block> outputBlocks = MemoryMarshal.Cast<byte, Bc1Block>(outputData);
+			byte[] outputData = new byte[blockWidth * blockHeight * sizeof(Bc1Block)];
+			fixed (byte* oDataBytes = outputData)
+			{
+				Bc1Block* oDataBlocks = (Bc1Block*) oDataBytes;
+				int oDataBlocksLength = outputData.Length / sizeof(Bc1Block);
 
-			if (parallel)
-			{
-				Parallel.For(0, blocks.Length, i =>
+				for (int i = 0; i < oDataBlocksLength; i++)
 				{
-					Span<Bc1Block> outputBlocks = MemoryMarshal.Cast<byte, Bc1Block>(outputData);
-					outputBlocks[i] = EncodeBlock(blocks[i], quality);
-				});
-			}
-			else
-			{
-				for (int i = 0; i < blocks.Length; i++)
-				{
-					outputBlocks[i] = EncodeBlock(blocks[i], quality);
+					oDataBlocks[i] = EncodeBlock(blocks[i], quality);
 				}
 			}
 
@@ -301,7 +287,7 @@ namespace BCnEncoder.Encoder
 		{
 			Bc1Block output = new Bc1Block();
 
-			var pixels = rawBlock.AsSpan;
+			var pixels = rawBlock.AsArray;
 
 			output.color0 = color0;
 			output.color1 = color1;
@@ -311,13 +297,13 @@ namespace BCnEncoder.Encoder
 
 			bool hasAlpha = output.HasAlphaOrBlack;
 
-			ReadOnlySpan<ColorRgb24> colors = hasAlpha ?
-				stackalloc ColorRgb24[] {
+			ColorRgb24[] colors = hasAlpha ?
+				new ColorRgb24[] {
 				c0,
 				c1,
 				c0 * (1.0 / 2.0) + c1 * (1.0 / 2.0),
 				new ColorRgb24(0, 0, 0)
-			} : stackalloc ColorRgb24[] {
+			} : new ColorRgb24[] {
 				c0,
 				c1,
 				c0 * (2.0 / 3.0) + c1 * (1.0 / 3.0),
@@ -346,7 +332,7 @@ namespace BCnEncoder.Encoder
 			{
 				Bc1Block output = new Bc1Block();
 
-				var pixels = rawBlock.AsSpan;
+				var pixels = rawBlock.AsArray;
 
 				bool hasAlpha = rawBlock.HasTransparentPixels();
 
@@ -376,7 +362,7 @@ namespace BCnEncoder.Encoder
 
 			internal static Bc1Block EncodeBlock(RawBlock4X4Rgba32 rawBlock)
 			{
-				var pixels = rawBlock.AsSpan;
+				var pixels = rawBlock.AsArray;
 
 				bool hasAlpha = rawBlock.HasTransparentPixels();
 
@@ -400,8 +386,8 @@ namespace BCnEncoder.Encoder
 				Bc1Block best = TryColors(rawBlock, c0, c1, out float bestError);
 				
 				for (int i = 0; i < maxTries; i++) {
-					var (newC0, newC1) = ColorVariationGenerator.Variate565(c0, c1, i);
-					
+					ColorVariationGenerator.Variate565(c0, c1, i, out var newC0, out var newC1);
+
 					if (!hasAlpha && newC0.data < newC1.data)
 					{
 						var c = newC0;
@@ -439,7 +425,7 @@ namespace BCnEncoder.Encoder
 
 			internal static Bc1Block EncodeBlock(RawBlock4X4Rgba32 rawBlock)
 			{
-				var pixels = rawBlock.AsSpan;
+				var pixels = rawBlock.AsArray;
 
 				bool hasAlpha = rawBlock.HasTransparentPixels();
 
@@ -464,8 +450,8 @@ namespace BCnEncoder.Encoder
 
 				int lastChanged = 0;
 				for (int i = 0; i < maxTries; i++) {
-					var (newC0, newC1) = ColorVariationGenerator.Variate565(c0, c1, i);
-					
+					ColorVariationGenerator.Variate565(c0, c1, i, out var newC0, out var newC1);
+
 					if (!hasAlpha && newC0.data < newC1.data)
 					{
 						var c = newC0;

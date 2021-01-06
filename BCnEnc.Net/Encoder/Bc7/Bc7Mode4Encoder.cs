@@ -6,14 +6,14 @@ namespace BCnEncoder.Encoder.Bc7
 	internal static class Bc7Mode4Encoder
 	{
 
-		private static ReadOnlySpan<int> partitionTable => new int[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+		private static int[] partitionTable = new int[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 		const int subset = 0;
 
 		public static Bc7Block EncodeBlock(RawBlock4X4Rgba32 block, int startingVariation)
 		{
 			var type = Bc7BlockType.Type4;
 
-			Span<Bc7Block> outputs = stackalloc Bc7Block[8];
+			Bc7Block[] outputs = new Bc7Block[8];
 
 			for (int idxMode = 0; idxMode < 2; idxMode++)
 			{

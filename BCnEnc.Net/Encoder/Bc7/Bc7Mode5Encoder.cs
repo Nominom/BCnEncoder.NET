@@ -5,14 +5,14 @@ namespace BCnEncoder.Encoder.Bc7
 {
 	internal static class Bc7Mode5Encoder {
 
-		private static ReadOnlySpan<int> partitionTable => new int[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+		private static int[] partitionTable = new int[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 		const int subset = 0;
 		
 		public static Bc7Block EncodeBlock(RawBlock4X4Rgba32 block, int startingVariation)
 		{
 			var type = Bc7BlockType.Type5;
 
-			Span<Bc7Block> outputs = stackalloc Bc7Block[4];
+			Bc7Block[] outputs = new Bc7Block[4];
 
 			for (int rotation = 0; rotation < 4; rotation++) {
 				var rotatedBlock = Bc7EncodingHelpers.RotateBlockColors(block, rotation);

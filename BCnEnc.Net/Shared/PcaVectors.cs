@@ -1,5 +1,4 @@
 ﻿using System;
-using SixLabors.ImageSharp.PixelFormats;
 using Vector3 = System.Numerics.Vector3;
 using Vector4 = System.Numerics.Vector4;
 using Matrix4x4 = System.Numerics.Matrix4x4;
@@ -11,7 +10,7 @@ namespace BCnEncoder.Shared
 		private const int c565_5_mask = 0xF8;
 		private const int c565_6_mask = 0xFC;
 
-		private static void ConvertToVector4(ReadOnlySpan<Rgba32> colors, Span<Vector4> vectors)
+		private static void ConvertToVector4(Rgba32[] colors, Vector4[] vectors)
 		{
 			for (int i = 0; i < colors.Length; i++)
 			{
@@ -22,7 +21,7 @@ namespace BCnEncoder.Shared
 			}
 		}
 
-		private static Vector4 CalculateMean(Span<Vector4> colors)
+		private static Vector4 CalculateMean(Vector4[] colors)
 		{
 
 			float r = 0;
@@ -46,7 +45,7 @@ namespace BCnEncoder.Shared
 				);
 		}
 
-		internal static Matrix4x4 CalculateCovariance(Span<Vector4> values, out Vector4 mean) {
+		internal static Matrix4x4 CalculateCovariance(Vector4[] values, out Vector4 mean) {
 			mean = CalculateMean(values);
 			for (int i = 0; i < values.Length; i++)
 			{
@@ -112,9 +111,9 @@ namespace BCnEncoder.Shared
 			return lastDa;
 		}
 
-		public static void Create(Span<Rgba32> colors, out Vector3 mean, out Vector3 principalAxis)
+		public static void Create(Rgba32[] colors, out Vector3 mean, out Vector3 principalAxis)
 		{
-			Span<Vector4> vectors = stackalloc Vector4[colors.Length];
+			Vector4[] vectors = new Vector4[colors.Length];
 			ConvertToVector4(colors, vectors);
 			
 
@@ -132,9 +131,9 @@ namespace BCnEncoder.Shared
 
 		}
 
-		public static void CreateWithAlpha(Span<Rgba32> colors, out Vector4 mean, out Vector4 principalAxis)
+		public static void CreateWithAlpha(Rgba32[] colors, out Vector4 mean, out Vector4 principalAxis)
 		{
-			Span<Vector4> vectors = stackalloc Vector4[colors.Length];
+			Vector4[] vectors = new Vector4[colors.Length];
 			ConvertToVector4(colors, vectors);
 			
 			var cov = CalculateCovariance(vectors, out mean);
@@ -142,7 +141,7 @@ namespace BCnEncoder.Shared
 		}
 
 
-		public static void GetExtremePoints(Span<Rgba32> colors, Vector3 mean, Vector3 principalAxis, out ColorRgb24 min,
+		public static void GetExtremePoints(Rgba32[] colors, Vector3 mean, Vector3 principalAxis, out ColorRgb24 min,
 			out ColorRgb24 max)
 		{
 
@@ -182,7 +181,7 @@ namespace BCnEncoder.Shared
 			max = new ColorRgb24((byte)maxR, (byte)maxG, (byte)maxB);
 		}
 
-		public static void GetMinMaxColor565(Span<Rgba32> colors, Vector3 mean, Vector3 principalAxis, 
+		public static void GetMinMaxColor565(Rgba32[] colors, Vector3 mean, Vector3 principalAxis, 
 			out ColorRgb565 min, out ColorRgb565 max)
 		{
 
@@ -236,7 +235,7 @@ namespace BCnEncoder.Shared
 
 		}
 
-		public static void GetExtremePointsWithAlpha(Span<Rgba32> colors, Vector4 mean, Vector4 principalAxis, out Vector4 min,
+		public static void GetExtremePointsWithAlpha(Rgba32[] colors, Vector4 mean, Vector4 principalAxis, out Vector4 min,
 			out Vector4 max)
 		{
 
@@ -257,7 +256,7 @@ namespace BCnEncoder.Shared
 			max = mean + (principalAxis * maxD);
 		}
 
-		public static void GetOptimizedEndpoints565(Span<Rgba32> colors, Vector3 mean, Vector3 principalAxis, out ColorRgb565 min, out ColorRgb565 max,
+		public static void GetOptimizedEndpoints565(Rgba32[] colors, Vector3 mean, Vector3 principalAxis, out ColorRgb565 min, out ColorRgb565 max,
 			float rWeight = 0.3f, float gWeight = 0.6f, float bWeight = 0.1f)
 		{
 			int length = colors.Length;
@@ -278,7 +277,7 @@ namespace BCnEncoder.Shared
 				if (vec.Y > 63) vec.Y = 63;
 				if (vec.Z < 0) vec.Z = 0;
 				if (vec.Z > 31) vec.Z = 31;
-				return new Vector3(MathF.Round(vec.X), MathF.Round(vec.Y), MathF.Round(vec.Z));
+				return new Vector3((float)Math.Round(vec.X), (float)Math.Round(vec.Y), (float)Math.Round(vec.Z));
 			}
 
 			float Distance(Vector3 v, Vector3 p)
@@ -332,8 +331,8 @@ namespace BCnEncoder.Shared
 			endPoint0 = mean + (principalAxis * minD);
 			endPoint1 = mean + (principalAxis * maxD);
 
-			endPoint0 = new Vector3(MathF.Round(endPoint0.X * 31), MathF.Round(endPoint0.Y * 63), MathF.Round(endPoint0.Z * 31));
-			endPoint1 = new Vector3(MathF.Round(endPoint1.X * 31), MathF.Round(endPoint1.Y * 63), MathF.Round(endPoint1.Z * 31));
+			endPoint0 = new Vector3((float)Math.Round(endPoint0.X * 31), (float)Math.Round(endPoint0.Y * 63), (float)Math.Round(endPoint0.Z * 31));
+			endPoint1 = new Vector3((float)Math.Round(endPoint1.X * 31), (float)Math.Round(endPoint1.Y * 63), (float)Math.Round(endPoint1.Z * 31));
 			endPoint0 = Clamp565(endPoint0);
 			endPoint1 = Clamp565(endPoint1);
 

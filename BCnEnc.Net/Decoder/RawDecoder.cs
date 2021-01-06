@@ -1,10 +1,10 @@
 ﻿using System;
-using SixLabors.ImageSharp.PixelFormats;
+using BCnEncoder.Shared;
 
 namespace BCnEncoder.Decoder
 {
 	internal interface IRawDecoder {
-		Rgba32[] Decode(ReadOnlySpan<byte> data, int pixelWidth, int pixelHeight);
+		Rgba32[] Decode(byte[] data, int pixelWidth, int pixelHeight);
 	}
 
 	public class RawRDecoder : IRawDecoder {
@@ -13,7 +13,7 @@ namespace BCnEncoder.Decoder
 			this.redAsLuminance = redAsLuminance;
 		}
 
-		public Rgba32[] Decode(ReadOnlySpan<byte> data, int pixelWidth, int pixelHeight) {
+		public Rgba32[] Decode(byte[] data, int pixelWidth, int pixelHeight) {
 			Rgba32[] output = new Rgba32[pixelWidth * pixelHeight];
 			for (int i = 0; i < output.Length; i++) {
 				if (redAsLuminance) {
@@ -34,7 +34,7 @@ namespace BCnEncoder.Decoder
 
 	public class RawRGDecoder : IRawDecoder
 	{
-		public Rgba32[] Decode(ReadOnlySpan<byte> data, int pixelWidth, int pixelHeight) {
+		public Rgba32[] Decode(byte[] data, int pixelWidth, int pixelHeight) {
 			Rgba32[] output = new Rgba32[pixelWidth * pixelHeight];
 			for (int i = 0; i < output.Length; i++) {
 				output[i].R = data[i * 2];
@@ -48,7 +48,7 @@ namespace BCnEncoder.Decoder
 
 	public class RawRGBDecoder : IRawDecoder
 	{
-		public Rgba32[] Decode(ReadOnlySpan<byte> data, int pixelWidth, int pixelHeight) {
+		public Rgba32[] Decode(byte[] data, int pixelWidth, int pixelHeight) {
 			Rgba32[] output = new Rgba32[pixelWidth * pixelHeight];
 			for (int i = 0; i < output.Length; i++) {
 				output[i].R = data[i * 3];
@@ -62,7 +62,7 @@ namespace BCnEncoder.Decoder
 
 	public class RawRGBADecoder : IRawDecoder
 	{
-		public Rgba32[] Decode(ReadOnlySpan<byte> data, int pixelWidth, int pixelHeight) {
+		public Rgba32[] Decode(byte[] data, int pixelWidth, int pixelHeight) {
 			Rgba32[] output = new Rgba32[pixelWidth * pixelHeight];
 			for (int i = 0; i < output.Length; i++) {
 				output[i].R = data[i * 4];

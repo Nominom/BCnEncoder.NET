@@ -1,27 +1,26 @@
 ﻿using System;
 using BCnEncoder.Shared;
-using SixLabors.ImageSharp.PixelFormats;
 
 namespace BCnEncoder.Encoder
 {
 	internal static class ColorChooser
 	{
 
-		public static int ChooseClosestColor4(ReadOnlySpan<ColorRgb24> colors, Rgba32 color, float rWeight, float gWeight, float bWeight, out float error)
+		public static int ChooseClosestColor4(ColorRgb24[] colors, Rgba32 color, float rWeight, float gWeight, float bWeight, out float error)
 		{
-			ReadOnlySpan<float> d = stackalloc float[4] {
-				MathF.Abs(colors[0].r - color.R) * rWeight
-				+ MathF.Abs(colors[0].g - color.G) * gWeight
-				+ MathF.Abs(colors[0].b - color.B) * bWeight,
-				MathF.Abs(colors[1].r - color.R) * rWeight
-				+ MathF.Abs(colors[1].g - color.G) * gWeight
-				+ MathF.Abs(colors[1].b - color.B) * bWeight,
-				MathF.Abs(colors[2].r - color.R) * rWeight
-				+ MathF.Abs(colors[2].g - color.G) * gWeight
-				+ MathF.Abs(colors[2].b - color.B) * bWeight,
-				MathF.Abs(colors[3].r - color.R) * rWeight
-				+ MathF.Abs(colors[3].g - color.G) * gWeight
-				+ MathF.Abs(colors[3].b - color.B) * bWeight,
+			float[] d = new float[4] {
+				Math.Abs(colors[0].r - color.R) * rWeight
+				+ Math.Abs(colors[0].g - color.G) * gWeight
+				+ Math.Abs(colors[0].b - color.B) * bWeight,
+				Math.Abs(colors[1].r - color.R) * rWeight
+				+ Math.Abs(colors[1].g - color.G) * gWeight
+				+ Math.Abs(colors[1].b - color.B) * bWeight,
+				Math.Abs(colors[2].r - color.R) * rWeight
+				+ Math.Abs(colors[2].g - color.G) * gWeight
+				+ Math.Abs(colors[2].b - color.B) * bWeight,
+				Math.Abs(colors[3].r - color.R) * rWeight
+				+ Math.Abs(colors[3].g - color.G) * gWeight
+				+ Math.Abs(colors[3].b - color.B) * bWeight,
 			};
 
 			int b0 = d[0] > d[3] ? 1 : 0;
@@ -40,7 +39,7 @@ namespace BCnEncoder.Encoder
 		}
 
 
-		public static int ChooseClosestColor4AlphaCutoff(ReadOnlySpan<ColorRgb24> colors, Rgba32 color, float rWeight, float gWeight, float bWeight, int alphaCutoff, bool hasAlpha, out float error)
+		public static int ChooseClosestColor4AlphaCutoff(ColorRgb24[] colors, Rgba32 color, float rWeight, float gWeight, float bWeight, int alphaCutoff, bool hasAlpha, out float error)
 		{
 
 			if (hasAlpha && color.A < alphaCutoff)
@@ -49,21 +48,21 @@ namespace BCnEncoder.Encoder
 				return 3;
 			}
 
-			ReadOnlySpan<float> d = stackalloc float[4] {
-				MathF.Abs(colors[0].r - color.R) * rWeight
-				+ MathF.Abs(colors[0].g - color.G) * gWeight
-				+ MathF.Abs(colors[0].b - color.B) * bWeight,
-				MathF.Abs(colors[1].r - color.R) * rWeight
-				+ MathF.Abs(colors[1].g - color.G) * gWeight
-				+ MathF.Abs(colors[1].b - color.B) * bWeight,
-				MathF.Abs(colors[2].r - color.R) * rWeight
-				+ MathF.Abs(colors[2].g - color.G) * gWeight
-				+ MathF.Abs(colors[2].b - color.B) * bWeight,
+			float[] d = new float[4] {
+				Math.Abs(colors[0].r - color.R) * rWeight
+				+ Math.Abs(colors[0].g - color.G) * gWeight
+				+ Math.Abs(colors[0].b - color.B) * bWeight,
+				Math.Abs(colors[1].r - color.R) * rWeight
+				+ Math.Abs(colors[1].g - color.G) * gWeight
+				+ Math.Abs(colors[1].b - color.B) * bWeight,
+				Math.Abs(colors[2].r - color.R) * rWeight
+				+ Math.Abs(colors[2].g - color.G) * gWeight
+				+ Math.Abs(colors[2].b - color.B) * bWeight,
 
 				hasAlpha ? 999 :
-				MathF.Abs(colors[3].r - color.R) * rWeight
-				+ MathF.Abs(colors[3].g - color.G) * gWeight
-				+ MathF.Abs(colors[3].b - color.B) * bWeight,
+				Math.Abs(colors[3].r - color.R) * rWeight
+				+ Math.Abs(colors[3].g - color.G) * gWeight
+				+ Math.Abs(colors[3].b - color.B) * bWeight,
 			};
 
 			int b0 = d[0] > d[2] ? 1 : 0;
@@ -80,7 +79,7 @@ namespace BCnEncoder.Encoder
 			return idx;
 		}
 
-		public static int ChooseClosestColor(Span<ColorRgb24> colors, Rgba32 color)
+		public static int ChooseClosestColor(ColorRgb24[] colors, Rgba32 color)
 		{
 			int closest = 0;
 			int closestError =
@@ -103,7 +102,7 @@ namespace BCnEncoder.Encoder
 			return closest;
 		}
 
-		public static int ChooseClosestColor(Span<ColorRgba32> colors, Rgba32 color)
+		public static int ChooseClosestColor(ColorRgba32[] colors, Rgba32 color)
 		{
 			int closest = 0;
 			int closestError =
@@ -128,7 +127,7 @@ namespace BCnEncoder.Encoder
 			return closest;
 		}
 
-		public static int ChooseClosestColorAlphaCutOff(Span<ColorRgba32> colors, Rgba32 color, byte alphaCutOff = 255 / 2)
+		public static int ChooseClosestColorAlphaCutOff(ColorRgba32[] colors, Rgba32 color, byte alphaCutOff = 255 / 2)
 		{
 			if (color.A <= alphaCutOff)
 			{
@@ -157,7 +156,7 @@ namespace BCnEncoder.Encoder
 			return closest;
 		}
 
-		public static int ChooseClosestColor(Span<ColorYCbCr> colors, ColorYCbCr color, float luminanceMultiplier = 4)
+		public static int ChooseClosestColor(ColorYCbCr[] colors, ColorYCbCr color, float luminanceMultiplier = 4)
 		{
 			int closest = 0;
 			float closestError = 0;
@@ -165,9 +164,9 @@ namespace BCnEncoder.Encoder
 
 			for (int i = 0; i < colors.Length; i++)
 			{
-				float error = MathF.Abs(colors[i].y - color.y) * luminanceMultiplier
-							  + MathF.Abs(colors[i].cb - color.cb)
-							  + MathF.Abs(colors[i].cr - color.cr);
+				float error = Math.Abs(colors[i].y - color.y) * luminanceMultiplier
+							  + Math.Abs(colors[i].cb - color.cb)
+							  + Math.Abs(colors[i].cr - color.cr);
 				if (first)
 				{
 					closestError = error;
@@ -182,7 +181,7 @@ namespace BCnEncoder.Encoder
 			return closest;
 		}
 
-		public static int ChooseClosestColor(Span<ColorYCbCr> colors, Rgba32 color, float luminanceMultiplier = 4)
+		public static int ChooseClosestColor(ColorYCbCr[] colors, Rgba32 color, float luminanceMultiplier = 4)
 			=> ChooseClosestColor(colors, new ColorYCbCr(color), luminanceMultiplier);
 	}
 }

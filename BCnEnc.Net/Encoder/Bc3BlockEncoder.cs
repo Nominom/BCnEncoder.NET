@@ -9,24 +9,17 @@ namespace BCnEncoder.Encoder
 	internal class Bc3BlockEncoder : IBcBlockEncoder
 	{
 
-		public byte[] Encode(RawBlock4X4Rgba32[] blocks, int blockWidth, int blockHeight, CompressionQuality quality, bool parallel)
+		public unsafe byte[] Encode(RawBlock4X4Rgba32[] blocks, int blockWidth, int blockHeight, CompressionQuality quality, bool parallel)
 		{
-			byte[] outputData = new byte[blockWidth * blockHeight * Marshal.SizeOf<Bc3Block>()];
-			Span<Bc3Block> outputBlocks = MemoryMarshal.Cast<byte, Bc3Block>(outputData);
+			byte[] outputData = new byte[blockWidth * blockHeight * sizeof(Bc3Block)];
+			fixed (byte* oDataBytes = outputData)
+			{
+				Bc3Block* oDataBlocks = (Bc3Block*)oDataBytes;
+				int oDataBlocksLength = outputData.Length / sizeof(Bc3Block);
 
-			if (parallel)
-			{
-				Parallel.For(0, blocks.Length, i =>
+				for (int i = 0; i < oDataBlocksLength; i++)
 				{
-					Span<Bc3Block> outputBlocks = MemoryMarshal.Cast<byte, Bc3Block>(outputData);
-					outputBlocks[i] = EncodeBlock(blocks[i], quality);
-				});
-			}
-			else
-			{
-				for (int i = 0; i < blocks.Length; i++)
-				{
-					outputBlocks[i] = EncodeBlock(blocks[i], quality);
+					oDataBlocks[i] = EncodeBlock(blocks[i], quality);
 				}
 			}
 
@@ -69,7 +62,7 @@ namespace BCnEncoder.Encoder
 		{
 			Bc3Block output = new Bc3Block();
 
-			var pixels = rawBlock.AsSpan;
+			var pixels = rawBlock.AsArray;
 
 			output.color0 = color0;
 			output.color1 = color1;
@@ -77,7 +70,7 @@ namespace BCnEncoder.Encoder
 			var c0 = color0.ToColorRgb24();
 			var c1 = color1.ToColorRgb24();
 
-			ReadOnlySpan<ColorRgb24> colors = stackalloc ColorRgb24[] {
+			ColorRgb24[] colors = new ColorRgb24[] {
 				c0,
 				c1,
 				c0 * (2.0 / 3.0) + c1 * (1.0 / 3.0),
@@ -95,8 +88,54 @@ namespace BCnEncoder.Encoder
 			return output;
 		}
 
+		private static int SelectAlphaIndices(RawBlock4X4Rgba32 rawBlock, ref Bc3Block block)
+		{
+			int cumulativeError = 0;
+			var a0 = block.Alpha0;
+			var a1 = block.Alpha1;
+			byte[] alphas = a0 > a1 ? new byte[] {
+				a0,
+				a1,
+				(byte)(6 / 7.0 * a0 + 1 / 7.0 * a1),
+				(byte)(5 / 7.0 * a0 + 2 / 7.0 * a1),
+				(byte)(4 / 7.0 * a0 + 3 / 7.0 * a1),
+				(byte)(3 / 7.0 * a0 + 4 / 7.0 * a1),
+				(byte)(2 / 7.0 * a0 + 5 / 7.0 * a1),
+				(byte)(1 / 7.0 * a0 + 6 / 7.0 * a1),
+			} : new byte[] {
+				a0,
+				a1,
+				(byte)(4 / 5.0 * a0 + 1 / 5.0 * a1),
+				(byte)(3 / 5.0 * a0 + 2 / 5.0 * a1),
+				(byte)(2 / 5.0 * a0 + 3 / 5.0 * a1),
+				(byte)(1 / 5.0 * a0 + 4 / 5.0 * a1),
+				0,
+				255
+			};
+			var pixels = rawBlock.AsArray;
+			for (int i = 0; i < pixels.Length; i++)
+			{
+				byte bestIndex = 0;
+				int bestError = Math.Abs(pixels[i].A - alphas[0]);
+				for (byte j = 1; j < alphas.Length; j++)
+				{
+					int error = Math.Abs(pixels[i].A - alphas[j]);
+					if (error < bestError)
+					{
+						bestIndex = j;
+						bestError = error;
+					}
+					if (bestError == 0) break;
+				}
+				block.SetAlphaIndex(i, bestIndex);
+				cumulativeError += bestError * bestError;
+			}
+
+			return cumulativeError;
+		}
+
 		private static Bc3Block FindAlphaValues(Bc3Block colorBlock, RawBlock4X4Rgba32 rawBlock, int variations) {
-			var pixels = rawBlock.AsSpan;
+			var pixels = rawBlock.AsArray;
 
 			//Find min and max alpha
 			byte minAlpha = 255;
@@ -113,53 +152,11 @@ namespace BCnEncoder.Encoder
 			}
 
 
-			int SelectAlphaIndices(ref Bc3Block block) {
-				int cumulativeError = 0;
-				var a0 = block.Alpha0;
-				var a1 = block.Alpha1;
-				Span<byte> alphas = a0 > a1 ? stackalloc byte[] {
-					a0,
-					a1,
-					(byte) (6/7.0 * a0 + 1/7.0 * a1),
-					(byte) (5/7.0 * a0 + 2/7.0 * a1),
-					(byte) (4/7.0 * a0 + 3/7.0 * a1),
-					(byte) (3/7.0 * a0 + 4/7.0 * a1),
-					(byte) (2/7.0 * a0 + 5/7.0 * a1),
-					(byte) (1/7.0 * a0 + 6/7.0 * a1),
-				} : stackalloc byte[] {
-					a0,
-					a1,
-					(byte) (4/5.0 * a0 + 1/5.0 * a1),
-					(byte) (3/5.0 * a0 + 2/5.0 * a1),
-					(byte) (2/5.0 * a0 + 3/5.0 * a1),
-					(byte) (1/5.0 * a0 + 4/5.0 * a1),
-					0,
-					255
-				};
-				var pixels = rawBlock.AsSpan;
-				for (int i = 0; i < pixels.Length; i++) {
-					byte bestIndex = 0;
-					int bestError = Math.Abs(pixels[i].A - alphas[0]);
-					for (byte j = 1; j < alphas.Length; j++) {
-						int error = Math.Abs(pixels[i].A - alphas[j]);
-						if (error < bestError) {
-							bestIndex = j;
-							bestError = error;
-						}
-						if (bestError == 0) break;
-					}
-					block.SetAlphaIndex(i, bestIndex);
-					cumulativeError += bestError * bestError;
-				}
-
-				return cumulativeError;
-			}
-
 			//everything is either fully opaque or fully transparent
 			if (hasExtremeValues && minAlpha == 255 && maxAlpha == 0) {
 				colorBlock.Alpha0 = 0;
 				colorBlock.Alpha1 = 255;
-				var error = SelectAlphaIndices(ref colorBlock);
+				var error = SelectAlphaIndices(rawBlock, ref colorBlock);
 				Debug.Assert(0 == error);
 				return colorBlock;
 			}
@@ -167,7 +164,7 @@ namespace BCnEncoder.Encoder
 			var best = colorBlock;
 			best.Alpha0 = maxAlpha;
 			best.Alpha1 = minAlpha;
-			int bestError = SelectAlphaIndices(ref best);
+			int bestError = SelectAlphaIndices(rawBlock, ref best);
 			if (bestError == 0) {
 				return best;
 			}
@@ -178,7 +175,7 @@ namespace BCnEncoder.Encoder
 					var block = colorBlock;
 					block.Alpha0 = hasExtremeValues ? a1 : a0;
 					block.Alpha1 = hasExtremeValues ? a0 : a1;
-					int error = SelectAlphaIndices(ref block);
+					int error = SelectAlphaIndices(rawBlock, ref block);
 					if (error < bestError) {
 						best = block;
 						bestError = error;
@@ -190,7 +187,7 @@ namespace BCnEncoder.Encoder
 					var block = colorBlock;
 					block.Alpha0 = hasExtremeValues ? a1 : a0;
 					block.Alpha1 = hasExtremeValues ? a0 : a1;
-					int error = SelectAlphaIndices(ref block);
+					int error = SelectAlphaIndices(rawBlock, ref block);
 					if (error < bestError) {
 						best = block;
 						bestError = error;
@@ -202,7 +199,7 @@ namespace BCnEncoder.Encoder
 					var block = colorBlock;
 					block.Alpha0 = hasExtremeValues ? a1 : a0;
 					block.Alpha1 = hasExtremeValues ? a0 : a1;
-					int error = SelectAlphaIndices(ref block);
+					int error = SelectAlphaIndices(rawBlock, ref block);
 					if (error < bestError) {
 						best = block;
 						bestError = error;
@@ -214,7 +211,7 @@ namespace BCnEncoder.Encoder
 					var block = colorBlock;
 					block.Alpha0 = hasExtremeValues ? a1 : a0;
 					block.Alpha1 = hasExtremeValues ? a0 : a1;
-					int error = SelectAlphaIndices(ref block);
+					int error = SelectAlphaIndices(rawBlock, ref block);
 					if (error < bestError) {
 						best = block;
 						bestError = error;
@@ -226,7 +223,7 @@ namespace BCnEncoder.Encoder
 					var block = colorBlock;
 					block.Alpha0 = hasExtremeValues ? a1 : a0;
 					block.Alpha1 = hasExtremeValues ? a0 : a1;
-					int error = SelectAlphaIndices(ref block);
+					int error = SelectAlphaIndices(rawBlock, ref block);
 					if (error < bestError) {
 						best = block;
 						bestError = error;
@@ -238,7 +235,7 @@ namespace BCnEncoder.Encoder
 					var block = colorBlock;
 					block.Alpha0 = hasExtremeValues ? a1 : a0;
 					block.Alpha1 = hasExtremeValues ? a0 : a1;
-					int error = SelectAlphaIndices(ref block);
+					int error = SelectAlphaIndices(rawBlock, ref block);
 					if (error < bestError) {
 						best = block;
 						bestError = error;
@@ -263,7 +260,7 @@ namespace BCnEncoder.Encoder
 
 			internal static Bc3Block EncodeBlock(RawBlock4X4Rgba32 rawBlock)
 			{
-				var pixels = rawBlock.AsSpan;
+				var pixels = rawBlock.AsArray;
 
 				PcaVectors.Create(pixels, out var mean, out var principalAxis);
 				PcaVectors.GetMinMaxColor565(pixels, mean, principalAxis, out var min, out var max);
@@ -291,7 +288,7 @@ namespace BCnEncoder.Encoder
 
 			internal static Bc3Block EncodeBlock(RawBlock4X4Rgba32 rawBlock)
 			{
-				var pixels = rawBlock.AsSpan;
+				var pixels = rawBlock.AsArray;
 
 				PcaVectors.Create(pixels, out System.Numerics.Vector3 mean, out System.Numerics.Vector3 pa);
 				PcaVectors.GetMinMaxColor565(pixels, mean, pa, out var min, out var max);
@@ -302,8 +299,8 @@ namespace BCnEncoder.Encoder
 				Bc3Block best = TryColors(rawBlock, c0, c1, out float bestError);
 				
 				for (int i = 0; i < maxTries; i++) {
-					var (newC0, newC1) = ColorVariationGenerator.Variate565(c0, c1, i);
-					
+					ColorVariationGenerator.Variate565(c0, c1, i, out var newC0, out var newC1);
+
 					var block = TryColors(rawBlock, newC0, newC1, out var error);
 					
 					if (error < bestError)
@@ -331,7 +328,7 @@ namespace BCnEncoder.Encoder
 
 			internal static Bc3Block EncodeBlock(RawBlock4X4Rgba32 rawBlock)
 			{
-				var pixels = rawBlock.AsSpan;
+				var pixels = rawBlock.AsArray;
 
 				PcaVectors.Create(pixels, out System.Numerics.Vector3 mean, out System.Numerics.Vector3 pa);
 				PcaVectors.GetMinMaxColor565(pixels, mean, pa, out var min, out var max);
@@ -351,8 +348,8 @@ namespace BCnEncoder.Encoder
 				int lastChanged = 0;
 
 				for (int i = 0; i < maxTries; i++) {
-					var (newC0, newC1) = ColorVariationGenerator.Variate565(c0, c1, i);
-					
+					ColorVariationGenerator.Variate565(c0, c1, i, out var newC0, out var newC1);
+
 					if (newC0.data < newC1.data)
 					{
 						var c = newC0;
