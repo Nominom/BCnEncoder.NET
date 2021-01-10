@@ -459,7 +459,7 @@ namespace BCnEncoder.Decoder
                     return new Bc3Decoder();
 
                 case CompressionFormat.BC4:
-                    return new Bc4Decoder(InputOptions.luminanceAsRed);
+                    return new Bc4Decoder(OutputOptions.redAsLuminance);
 
                 case CompressionFormat.BC5:
                     return new Bc5Decoder();
@@ -477,7 +477,7 @@ namespace BCnEncoder.Decoder
             switch (format)
             {
                 case CompressionFormat.R:
-                    return new RawRDecoder(InputOptions.luminanceAsRed);
+                    return new RawRDecoder(OutputOptions.redAsLuminance);
 
                 case CompressionFormat.RG:
                     return new RawRGDecoder();

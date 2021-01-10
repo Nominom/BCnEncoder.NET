@@ -9,11 +9,5 @@
         /// Default is true.
         /// </summary>
         public bool ddsBc1ExpectAlpha = true;
-
-        /// <summary>
-        /// If true, when encoding to a format that only includes a red channel,
-        /// use the pixel luminance instead of just the red channel. Default is false.
-        /// </summary>
-        public bool luminanceAsRed = false;
     }
 }
