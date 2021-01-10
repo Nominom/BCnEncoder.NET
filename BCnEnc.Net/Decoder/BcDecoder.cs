@@ -24,6 +24,54 @@ namespace BCnEncoder.Decoder
         public DecoderOutputOptions OutputOptions { get; } = new DecoderOutputOptions();
 
         /// <summary>
+        /// Decode raw encoded image data.
+        /// </summary>
+        /// <param name="inputStream">The stream containing the encoded data.</param>
+        /// <param name="format">The format the encoded data is in.</param>
+        /// <param name="pixelWidth">The pixelWidth of the image.</param>
+        /// <param name="pixelHeight">The pixelHeight of the image.</param>
+        /// <returns>The decoded Rgba32 image.</returns>
+        public Image<Rgba32> DecodeRaw(Stream inputStream, CompressionFormat format, int pixelWidth, int pixelHeight)
+        {
+            var dataArray = new byte[inputStream.Position];
+            inputStream.Read(dataArray, 0, dataArray.Length);
+
+            return DecodeRaw(dataArray, format, pixelWidth, pixelHeight);
+        }
+
+        /// <summary>
+        /// Decode raw encoded image data.
+        /// </summary>
+        /// <param name="input">The array containing the encoded data.</param>
+        /// <param name="format">The format the encoded data is in.</param>
+        /// <param name="pixelWidth">The pixelWidth of the image.</param>
+        /// <param name="pixelHeight">The pixelHeight of the image.</param>
+        /// <returns>The decoded Rgba32 image.</returns>
+        public Image<Rgba32> DecodeRaw(byte[] input, CompressionFormat format, int pixelWidth, int pixelHeight)
+        {
+            var isCompressedFormat = format.IsCompressedFormat();
+            if (isCompressedFormat)
+            {
+                // Decode as compressed data
+                var decoder = GetDecoder(format);
+                var blocks = decoder.Decode(input, pixelWidth, pixelHeight, out var blockWidth, out var blockHeight);
+
+                return ImageToBlocks.ImageFromRawBlocks(blocks, blockWidth, blockHeight, pixelWidth, pixelHeight);
+            }
+
+            // Decode as raw data
+            var rawDecoder = GetRawDecoder(format);
+
+            var image = new Image<Rgba32>(pixelWidth, pixelHeight);
+            var output = rawDecoder.Decode(input, pixelWidth, pixelHeight);
+            if (!image.TryGetSinglePixelSpan(out var pixels))
+                throw new Exception("Cannot get pixel span.");
+
+            output.CopyTo(pixels);
+            return image;
+        }
+
+        /// <summary>
         /// Read a Ktx or a Dds file from a stream and decode it.
         /// </summary>
         /// <param name="inputStream">The stream containing a Ktx or Dds file.</param>
@@ -391,6 +439,57 @@ namespace BCnEncoder.Decoder
 
                 default:
                     return null;
+            }
+        }
+
+        private IBcBlockDecoder GetDecoder(CompressionFormat format)
+        {
+            switch (format)
+            {
+                case CompressionFormat.BC1:
+                    return new Bc1NoAlphaDecoder();
+
+                case CompressionFormat.BC1WithAlpha:
+                    return new Bc1ADecoder();
+
+                case CompressionFormat.BC2:
+                    return new Bc2Decoder();
+
+                case CompressionFormat.BC3:
+                    return new Bc3Decoder();
+
+                case CompressionFormat.BC4:
+                    return new Bc4Decoder(InputOptions.luminanceAsRed);
+
+                case CompressionFormat.BC5:
+                    return new Bc5Decoder();
+
+                case CompressionFormat.BC7:
+                    return new Bc7Decoder();
+
+                default:
+                    return null;
+            }
+        }
+
+        private IRawDecoder GetRawDecoder(CompressionFormat format)
+        {
+            switch (format)
+            {
+                case CompressionFormat.R:
+                    return new RawRDecoder(InputOptions.luminanceAsRed);
+
+                case CompressionFormat.RG:
+                    return new RawRGDecoder();
+
+                case CompressionFormat.RGB:
+                    return new RawRGBDecoder();
+
+                case CompressionFormat.RGBA:
+                    return new RawRGBADecoder();
+
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(format), format, null);
             }
         }
     }

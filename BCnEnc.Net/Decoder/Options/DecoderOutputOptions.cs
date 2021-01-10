@@ -1,4 +1,6 @@
-﻿namespace BCnEncoder.Decoder.Options
+﻿using BCnEncoder.Shared;
+
+namespace BCnEncoder.Decoder.Options
 {
 	public class DecoderOutputOptions
     {
