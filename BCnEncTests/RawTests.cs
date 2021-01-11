@@ -24,9 +24,15 @@ namespace BCnEncTests
             originalImage.TryGetSinglePixelSpan(out var originalPixels);
             recodedImage.TryGetSinglePixelSpan(out var recodedPixels);
 
-            // I don't know if this is the best possibility to compare the images
-            for (var i = 0; i < ktx.Header.PixelWidth * ktx.Header.PixelHeight; i++)
-                Assert.Equal(originalPixels[i], recodedPixels[i]);
+            var psnr=ImageQuality.PeakSignalToNoiseRatio(originalPixels, recodedPixels);
+            if (encoder.OutputOptions.quality == CompressionQuality.Fast)
+            {
+                Assert.True(psnr > 25);
+            }
+            else
+            {
+                Assert.True(psnr > 30);
+            }
         }
     }
 }
