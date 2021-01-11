@@ -38,13 +38,13 @@ namespace BCnEncoder.Shared
                 stackalloc ColorRgb24[] {
                 color0,
                 color1,
-                color0.Half(color1),
+                color0.InterpolateHalf(color1),
                 new ColorRgb24(0, 0, 0)
             } : stackalloc ColorRgb24[] {
                 color0,
                 color1,
-                color0.Third(color1, 1),
-                color0.Third(color1, 2)
+                color0.InterpolateThird(color1, 1),
+                color0.InterpolateThird(color1, 2)
             };
 
             for (int i = 0; i < pixels.Length; i++)
@@ -112,8 +112,8 @@ namespace BCnEncoder.Shared
             Span<ColorRgb24> colors = stackalloc ColorRgb24[] {
                 color0,
                 color1,
-                color0.Third(color1, 1),
-                color0.Third(color1, 2)
+                color0.InterpolateThird(color1, 1),
+                color0.InterpolateThird(color1, 2)
             };
 
             for (int i = 0; i < pixels.Length; i++)
@@ -195,8 +195,8 @@ namespace BCnEncoder.Shared
             Span<ColorRgb24> colors = stackalloc ColorRgb24[] {
                 color0,
                 color1,
-                color0.Third(color1, 1),
-                color0.Third(color1, 2)
+                color0.InterpolateThird(color1, 1),
+                color0.InterpolateThird(color1, 2)
             };
 
             Span<byte> alphas = a0 > a1 ? stackalloc byte[] {

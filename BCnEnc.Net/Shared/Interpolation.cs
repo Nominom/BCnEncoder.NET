@@ -8,7 +8,7 @@
         /// <param name="c0">The first color endpoint.</param>
         /// <param name="c1">The second color endpoint.</param>
         /// <returns>The interpolated color.</returns>
-        public static ColorRgb24 Half(this ColorRgb24 c0, ColorRgb24 c1) =>
+        public static ColorRgb24 InterpolateHalf(this ColorRgb24 c0, ColorRgb24 c1) =>
             InterpolateColor(c0, c1, 1, 2);
 
         /// <summary>
@@ -18,7 +18,7 @@
         /// <param name="c1">The second color endpoint.</param>
         /// <param name="num">The dividend in the third.</param>
         /// <returns>The interpolated color.</returns>
-        public static ColorRgb24 Third(this ColorRgb24 c0, ColorRgb24 c1, int num) =>
+        public static ColorRgb24 InterpolateThird(this ColorRgb24 c0, ColorRgb24 c1, int num) =>
             InterpolateColor(c0, c1, num, 3);
 
         /// <summary>
