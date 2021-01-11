@@ -9,7 +9,7 @@ using SixLabors.ImageSharp.PixelFormats;
 namespace BCnEncoder.Decoder
 {
     /// <summary>
-	/// Decodes compressed files into Rgba format.
+	/// Decodes compressed files into Rgba Format.
 	/// </summary>
 	public class BcDecoder
     {
@@ -27,7 +27,7 @@ namespace BCnEncoder.Decoder
         /// Decode raw encoded image data.
         /// </summary>
         /// <param name="inputStream">The stream containing the encoded data.</param>
-        /// <param name="format">The format the encoded data is in.</param>
+        /// <param name="format">The Format the encoded data is in.</param>
         /// <param name="pixelWidth">The pixelWidth of the image.</param>
         /// <param name="pixelHeight">The pixelHeight of the image.</param>
         /// <returns>The decoded Rgba32 image.</returns>
@@ -43,7 +43,7 @@ namespace BCnEncoder.Decoder
         /// Decode raw encoded image data.
         /// </summary>
         /// <param name="input">The array containing the encoded data.</param>
-        /// <param name="format">The format the encoded data is in.</param>
+        /// <param name="format">The Format the encoded data is in.</param>
         /// <param name="pixelWidth">The pixelWidth of the image.</param>
         /// <param name="pixelHeight">The pixelHeight of the image.</param>
         /// <returns>The decoded Rgba32 image.</returns>
@@ -65,7 +65,9 @@ namespace BCnEncoder.Decoder
             var image = new Image<Rgba32>(pixelWidth, pixelHeight);
             var output = rawDecoder.Decode(input, pixelWidth, pixelHeight);
             if (!image.TryGetSinglePixelSpan(out var pixels))
+            {
                 throw new Exception("Cannot get pixel span.");
+            }
 
             output.CopyTo(pixels);
             return image;
@@ -194,9 +196,9 @@ namespace BCnEncoder.Decoder
         {
             var images = new Image<Rgba32>[file.MipMaps.Count];
 
-            if (IsSupportedRawFormat(file.Header.GlInternalFormat))
+            if (IsSupportedRawFormat(file.header.GlInternalFormat))
             {
-                var decoder = GetRawDecoder(file.Header.GlInternalFormat);
+                var decoder = GetRawDecoder(file.header.GlInternalFormat);
 
                 var mipMaps = allMipMaps ? file.MipMaps.Count : 1;
                 for (var mip = 0; mip < mipMaps; mip++)
@@ -208,7 +210,9 @@ namespace BCnEncoder.Decoder
                     var image = new Image<Rgba32>((int)pixelWidth, (int)pixelHeight);
                     var output = decoder.Decode(data, (int)pixelWidth, (int)pixelHeight);
                     if (!image.TryGetSinglePixelSpan(out var pixels))
+                    {
                         throw new Exception("Cannot get pixel span.");
+                    }
 
                     output.CopyTo(pixels);
                     images[mip] = image;
@@ -216,9 +220,11 @@ namespace BCnEncoder.Decoder
             }
             else
             {
-                var decoder = GetDecoder(file.Header.GlInternalFormat);
+                var decoder = GetDecoder(file.header.GlInternalFormat);
                 if (decoder == null)
-                    throw new NotSupportedException($"This format is not supported: {file.Header.GlInternalFormat}");
+                {
+                    throw new NotSupportedException($"This Format is not supported: {file.header.GlInternalFormat}");
+                }
 
                 var mipMaps = allMipMaps ? file.MipMaps.Count : 1;
                 for (var mip = 0; mip < mipMaps; mip++)
@@ -244,13 +250,13 @@ namespace BCnEncoder.Decoder
         /// <returns>An array of decoded Rgba32 images.</returns>
         private Image<Rgba32>[] Decode(DdsFile file, bool allMipMaps)
         {
-            var images = new Image<Rgba32>[file.Header.dwMipMapCount];
+            var images = new Image<Rgba32>[file.header.dwMipMapCount];
 
-            if (IsSupportedRawFormat(file.Header.ddsPixelFormat.DxgiFormat))
+            if (IsSupportedRawFormat(file.header.ddsPixelFormat.DxgiFormat))
             {
-                var decoder = GetRawDecoder(file.Header.ddsPixelFormat.DxgiFormat);
+                var decoder = GetRawDecoder(file.header.ddsPixelFormat.DxgiFormat);
 
-                var mipMaps = allMipMaps ? file.Header.dwMipMapCount : 1;
+                var mipMaps = allMipMaps ? file.header.dwMipMapCount : 1;
                 for (var mip = 0; mip < mipMaps; mip++)
                 {
                     var data = file.Faces[0].MipMaps[mip].Data;
@@ -260,7 +266,9 @@ namespace BCnEncoder.Decoder
                     var image = new Image<Rgba32>((int)pixelWidth, (int)pixelHeight);
                     var output = decoder.Decode(data, (int)pixelWidth, (int)pixelHeight);
                     if (!image.TryGetSinglePixelSpan(out var pixels))
+                    {
                         throw new Exception("Cannot get pixel span.");
+                    }
 
                     output.CopyTo(pixels);
                     images[mip] = image;
@@ -268,15 +276,17 @@ namespace BCnEncoder.Decoder
             }
             else
             {
-                var format = file.Header.ddsPixelFormat.IsDxt10Format ?
-                    file.Dxt10Header.dxgiFormat :
-                    file.Header.ddsPixelFormat.DxgiFormat;
-                var decoder = GetDecoder(format, file.Header);
+                var format = file.header.ddsPixelFormat.IsDxt10Format ?
+                    file.dxt10Header.dxgiFormat :
+                    file.header.ddsPixelFormat.DxgiFormat;
+                var decoder = GetDecoder(format, file.header);
 
                 if (decoder == null)
-                    throw new NotSupportedException($"This format is not supported: {format}");
+                {
+                    throw new NotSupportedException($"This Format is not supported: {format}");
+                }
 
-                for (var mip = 0; mip < file.Header.dwMipMapCount; mip++)
+                for (var mip = 0; mip < file.header.dwMipMapCount; mip++)
                 {
                     var data = file.Faces[0].MipMaps[mip].Data;
                     var pixelWidth = file.Faces[0].MipMaps[mip].Width;
@@ -299,10 +309,10 @@ namespace BCnEncoder.Decoder
         {
             switch (format)
             {
-                case GlInternalFormat.GL_R8:
-                case GlInternalFormat.GL_RG8:
-                case GlInternalFormat.GL_RGB8:
-                case GlInternalFormat.GL_RGBA8:
+                case GlInternalFormat.GlR8:
+                case GlInternalFormat.GlRg8:
+                case GlInternalFormat.GlRgb8:
+                case GlInternalFormat.GlRgba8:
                     return true;
 
                 default:
@@ -310,13 +320,13 @@ namespace BCnEncoder.Decoder
             }
         }
 
-        private bool IsSupportedRawFormat(DXGI_FORMAT format)
+        private bool IsSupportedRawFormat(DxgiFormat format)
         {
             switch (format)
             {
-                case DXGI_FORMAT.DXGI_FORMAT_R8_UNORM:
-                case DXGI_FORMAT.DXGI_FORMAT_R8G8_UNORM:
-                case DXGI_FORMAT.DXGI_FORMAT_R8G8B8A8_UNORM:
+                case DxgiFormat.DxgiFormatR8Unorm:
+                case DxgiFormat.DxgiFormatR8G8Unorm:
+                case DxgiFormat.DxgiFormatR8G8B8A8Unorm:
                     return true;
 
                 default:
@@ -328,29 +338,29 @@ namespace BCnEncoder.Decoder
         {
             switch (format)
             {
-                case GlInternalFormat.GL_COMPRESSED_RGB_S3TC_DXT1_EXT:
+                case GlInternalFormat.GlCompressedRgbS3TcDxt1Ext:
                     return new Bc1NoAlphaDecoder();
 
-                case GlInternalFormat.GL_COMPRESSED_RGBA_S3TC_DXT1_EXT:
+                case GlInternalFormat.GlCompressedRgbaS3TcDxt1Ext:
                     return new Bc1ADecoder();
 
-                case GlInternalFormat.GL_COMPRESSED_RGBA_S3TC_DXT3_EXT:
+                case GlInternalFormat.GlCompressedRgbaS3TcDxt3Ext:
                     return new Bc2Decoder();
 
-                case GlInternalFormat.GL_COMPRESSED_RGBA_S3TC_DXT5_EXT:
+                case GlInternalFormat.GlCompressedRgbaS3TcDxt5Ext:
                     return new Bc3Decoder();
 
-                case GlInternalFormat.GL_COMPRESSED_RED_RGTC1_EXT:
-                    return new Bc4Decoder(OutputOptions.redAsLuminance);
+                case GlInternalFormat.GlCompressedRedRgtc1Ext:
+                    return new Bc4Decoder(OutputOptions.RedAsLuminance);
 
-                case GlInternalFormat.GL_COMPRESSED_RED_GREEN_RGTC2_EXT:
+                case GlInternalFormat.GlCompressedRedGreenRgtc2Ext:
                     return new Bc5Decoder();
 
-                case GlInternalFormat.GL_COMPRESSED_RGBA_BPTC_UNORM_ARB:
+                case GlInternalFormat.GlCompressedRgbaBptcUnormArb:
                     return new Bc7Decoder();
 
                 // TODO: Not sure what to do with SRGB input.
-                case GlInternalFormat.GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM_ARB:
+                case GlInternalFormat.GlCompressedSrgbAlphaBptcUnormArb:
                     return new Bc7Decoder();
 
                 default:
@@ -358,44 +368,44 @@ namespace BCnEncoder.Decoder
             }
         }
 
-        private IBcBlockDecoder GetDecoder(DXGI_FORMAT format, DdsHeader header)
+        private IBcBlockDecoder GetDecoder(DxgiFormat format, DdsHeader header)
         {
             switch (format)
             {
-                case DXGI_FORMAT.DXGI_FORMAT_BC1_UNORM:
-                case DXGI_FORMAT.DXGI_FORMAT_BC1_UNORM_SRGB:
-                case DXGI_FORMAT.DXGI_FORMAT_BC1_TYPELESS:
-                    if ((header.ddsPixelFormat.dwFlags & PixelFormatFlags.DDPF_ALPHAPIXELS) != 0)
+                case DxgiFormat.DxgiFormatBc1Unorm:
+                case DxgiFormat.DxgiFormatBc1UnormSrgb:
+                case DxgiFormat.DxgiFormatBc1Typeless:
+                    if ((header.ddsPixelFormat.dwFlags & PixelFormatFlags.DdpfAlphapixels) != 0)
                         return new Bc1ADecoder();
 
-                    if (InputOptions.ddsBc1ExpectAlpha)
+                    if (InputOptions.DdsBc1ExpectAlpha)
                         return new Bc1ADecoder();
 
                     return new Bc1NoAlphaDecoder();
 
-                case DXGI_FORMAT.DXGI_FORMAT_BC2_UNORM:
-                case DXGI_FORMAT.DXGI_FORMAT_BC2_UNORM_SRGB:
-                case DXGI_FORMAT.DXGI_FORMAT_BC2_TYPELESS:
+                case DxgiFormat.DxgiFormatBc2Unorm:
+                case DxgiFormat.DxgiFormatBc2UnormSrgb:
+                case DxgiFormat.DxgiFormatBc2Typeless:
                     return new Bc2Decoder();
 
-                case DXGI_FORMAT.DXGI_FORMAT_BC3_UNORM:
-                case DXGI_FORMAT.DXGI_FORMAT_BC3_UNORM_SRGB:
-                case DXGI_FORMAT.DXGI_FORMAT_BC3_TYPELESS:
+                case DxgiFormat.DxgiFormatBc3Unorm:
+                case DxgiFormat.DxgiFormatBc3UnormSrgb:
+                case DxgiFormat.DxgiFormatBc3Typeless:
                     return new Bc3Decoder();
 
-                case DXGI_FORMAT.DXGI_FORMAT_BC4_UNORM:
-                case DXGI_FORMAT.DXGI_FORMAT_BC4_SNORM:
-                case DXGI_FORMAT.DXGI_FORMAT_BC4_TYPELESS:
-                    return new Bc4Decoder(OutputOptions.redAsLuminance);
+                case DxgiFormat.DxgiFormatBc4Unorm:
+                case DxgiFormat.DxgiFormatBc4Snorm:
+                case DxgiFormat.DxgiFormatBc4Typeless:
+                    return new Bc4Decoder(OutputOptions.RedAsLuminance);
 
-                case DXGI_FORMAT.DXGI_FORMAT_BC5_UNORM:
-                case DXGI_FORMAT.DXGI_FORMAT_BC5_SNORM:
-                case DXGI_FORMAT.DXGI_FORMAT_BC5_TYPELESS:
+                case DxgiFormat.DxgiFormatBc5Unorm:
+                case DxgiFormat.DxgiFormatBc5Snorm:
+                case DxgiFormat.DxgiFormatBc5Typeless:
                     return new Bc5Decoder();
 
-                case DXGI_FORMAT.DXGI_FORMAT_BC7_UNORM:
-                case DXGI_FORMAT.DXGI_FORMAT_BC7_UNORM_SRGB:
-                case DXGI_FORMAT.DXGI_FORMAT_BC7_TYPELESS:
+                case DxgiFormat.DxgiFormatBc7Unorm:
+                case DxgiFormat.DxgiFormatBc7UnormSrgb:
+                case DxgiFormat.DxgiFormatBc7Typeless:
                     return new Bc7Decoder();
 
                 default:
@@ -407,35 +417,35 @@ namespace BCnEncoder.Decoder
         {
             switch (format)
             {
-                case GlInternalFormat.GL_R8:
-                    return new RawRDecoder(OutputOptions.redAsLuminance);
+                case GlInternalFormat.GlR8:
+                    return new RawRDecoder(OutputOptions.RedAsLuminance);
 
-                case GlInternalFormat.GL_RG8:
-                    return new RawRGDecoder();
+                case GlInternalFormat.GlRg8:
+                    return new RawRgDecoder();
 
-                case GlInternalFormat.GL_RGB8:
-                    return new RawRGBDecoder();
+                case GlInternalFormat.GlRgb8:
+                    return new RawRgbDecoder();
 
-                case GlInternalFormat.GL_RGBA8:
-                    return new RawRGBADecoder();
+                case GlInternalFormat.GlRgba8:
+                    return new RawRgbaDecoder();
 
                 default:
                     return null;
             }
         }
 
-        private IRawDecoder GetRawDecoder(DXGI_FORMAT format)
+        private IRawDecoder GetRawDecoder(DxgiFormat format)
         {
             switch (format)
             {
-                case DXGI_FORMAT.DXGI_FORMAT_R8_UNORM:
-                    return new RawRDecoder(OutputOptions.redAsLuminance);
+                case DxgiFormat.DxgiFormatR8Unorm:
+                    return new RawRDecoder(OutputOptions.RedAsLuminance);
 
-                case DXGI_FORMAT.DXGI_FORMAT_R8G8_UNORM:
-                    return new RawRGDecoder();
+                case DxgiFormat.DxgiFormatR8G8Unorm:
+                    return new RawRgDecoder();
 
-                case DXGI_FORMAT.DXGI_FORMAT_R8G8B8A8_UNORM:
-                    return new RawRGBADecoder();
+                case DxgiFormat.DxgiFormatR8G8B8A8Unorm:
+                    return new RawRgbaDecoder();
 
                 default:
                     return null;
@@ -446,25 +456,25 @@ namespace BCnEncoder.Decoder
         {
             switch (format)
             {
-                case CompressionFormat.BC1:
+                case CompressionFormat.Bc1:
                     return new Bc1NoAlphaDecoder();
 
-                case CompressionFormat.BC1WithAlpha:
+                case CompressionFormat.Bc1WithAlpha:
                     return new Bc1ADecoder();
 
-                case CompressionFormat.BC2:
+                case CompressionFormat.Bc2:
                     return new Bc2Decoder();
 
-                case CompressionFormat.BC3:
+                case CompressionFormat.Bc3:
                     return new Bc3Decoder();
 
-                case CompressionFormat.BC4:
-                    return new Bc4Decoder(OutputOptions.redAsLuminance);
+                case CompressionFormat.Bc4:
+                    return new Bc4Decoder(OutputOptions.RedAsLuminance);
 
-                case CompressionFormat.BC5:
+                case CompressionFormat.Bc5:
                     return new Bc5Decoder();
 
-                case CompressionFormat.BC7:
+                case CompressionFormat.Bc7:
                     return new Bc7Decoder();
 
                 default:
@@ -477,16 +487,16 @@ namespace BCnEncoder.Decoder
             switch (format)
             {
                 case CompressionFormat.R:
-                    return new RawRDecoder(OutputOptions.redAsLuminance);
+                    return new RawRDecoder(OutputOptions.RedAsLuminance);
 
-                case CompressionFormat.RG:
-                    return new RawRGDecoder();
+                case CompressionFormat.Rg:
+                    return new RawRgDecoder();
 
-                case CompressionFormat.RGB:
-                    return new RawRGBDecoder();
+                case CompressionFormat.Rgb:
+                    return new RawRgbDecoder();
 
-                case CompressionFormat.RGBA:
-                    return new RawRGBADecoder();
+                case CompressionFormat.Rgba:
+                    return new RawRgbaDecoder();
 
                 default:
                     throw new ArgumentOutOfRangeException(nameof(format), format, null);

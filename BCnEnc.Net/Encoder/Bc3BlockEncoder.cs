@@ -11,20 +11,20 @@ namespace BCnEncoder.Encoder
 
 		public byte[] Encode(RawBlock4X4Rgba32[] blocks, int blockWidth, int blockHeight, CompressionQuality quality, bool parallel)
 		{
-			byte[] outputData = new byte[blockWidth * blockHeight * Marshal.SizeOf<Bc3Block>()];
-			Span<Bc3Block> outputBlocks = MemoryMarshal.Cast<byte, Bc3Block>(outputData);
+			var outputData = new byte[blockWidth * blockHeight * Marshal.SizeOf<Bc3Block>()];
+			var outputBlocks = MemoryMarshal.Cast<byte, Bc3Block>(outputData);
 
 			if (parallel)
 			{
 				Parallel.For(0, blocks.Length, i =>
 				{
-					Span<Bc3Block> outputBlocks = MemoryMarshal.Cast<byte, Bc3Block>(outputData);
+					var outputBlocks = MemoryMarshal.Cast<byte, Bc3Block>(outputData);
 					outputBlocks[i] = EncodeBlock(blocks[i], quality);
 				});
 			}
 			else
 			{
-				for (int i = 0; i < blocks.Length; i++)
+				for (var i = 0; i < blocks.Length; i++)
 				{
 					outputBlocks[i] = EncodeBlock(blocks[i], quality);
 				}
@@ -51,23 +51,23 @@ namespace BCnEncoder.Encoder
 
 		public GlInternalFormat GetInternalFormat()
 		{
-			return GlInternalFormat.GL_COMPRESSED_RGBA_S3TC_DXT5_EXT;
+			return GlInternalFormat.GlCompressedRgbaS3TcDxt5Ext;
 		}
 
-		public GLFormat GetBaseInternalFormat()
+		public GlFormat GetBaseInternalFormat()
 		{
-			return GLFormat.GL_RGBA;
+			return GlFormat.GlRgba;
 		}
 
-		public DXGI_FORMAT GetDxgiFormat() {
-			return DXGI_FORMAT.DXGI_FORMAT_BC3_UNORM;
+		public DxgiFormat GetDxgiFormat() {
+			return DxgiFormat.DxgiFormatBc3Unorm;
 		}
 
 		#region Encoding private stuff
 
 		private static Bc3Block TryColors(RawBlock4X4Rgba32 rawBlock, ColorRgb565 color0, ColorRgb565 color1, out float error, float rWeight = 0.3f, float gWeight = 0.6f, float bWeight = 0.1f)
 		{
-			Bc3Block output = new Bc3Block();
+			var output = new Bc3Block();
 
 			var pixels = rawBlock.AsSpan;
 
@@ -85,7 +85,7 @@ namespace BCnEncoder.Encoder
 			};
 
 			error = 0;
-			for (int i = 0; i < 16; i++)
+			for (var i = 0; i < 16; i++)
 			{
 				var color = pixels[i];
 				output[i] = ColorChooser.ChooseClosestColor4(colors, color, rWeight, gWeight, bWeight, out var e);
@@ -101,8 +101,8 @@ namespace BCnEncoder.Encoder
 			//Find min and max alpha
 			byte minAlpha = 255;
 			byte maxAlpha = 0;
-			bool hasExtremeValues = false;
-			for (int i = 0; i < pixels.Length; i++) {
+			var hasExtremeValues = false;
+			for (var i = 0; i < pixels.Length; i++) {
 				if (pixels[i].A < 255 && pixels[i].A > 0) {
 					if (pixels[i].A < minAlpha) minAlpha = pixels[i].A;
 					if (pixels[i].A > maxAlpha) maxAlpha = pixels[i].A;
@@ -114,10 +114,10 @@ namespace BCnEncoder.Encoder
 
 
 			int SelectAlphaIndices(ref Bc3Block block) {
-				int cumulativeError = 0;
+				var cumulativeError = 0;
 				var a0 = block.Alpha0;
 				var a1 = block.Alpha1;
-				Span<byte> alphas = a0 > a1 ? stackalloc byte[] {
+				var alphas = a0 > a1 ? stackalloc byte[] {
 					a0,
 					a1,
 					(byte) (6/7.0 * a0 + 1/7.0 * a1),
@@ -137,11 +137,11 @@ namespace BCnEncoder.Encoder
 					255
 				};
 				var pixels = rawBlock.AsSpan;
-				for (int i = 0; i < pixels.Length; i++) {
+				for (var i = 0; i < pixels.Length; i++) {
 					byte bestIndex = 0;
-					int bestError = Math.Abs(pixels[i].A - alphas[0]);
+					var bestError = Math.Abs(pixels[i].A - alphas[0]);
 					for (byte j = 1; j < alphas.Length; j++) {
-						int error = Math.Abs(pixels[i].A - alphas[j]);
+						var error = Math.Abs(pixels[i].A - alphas[j]);
 						if (error < bestError) {
 							bestIndex = j;
 							bestError = error;
@@ -167,78 +167,78 @@ namespace BCnEncoder.Encoder
 			var best = colorBlock;
 			best.Alpha0 = maxAlpha;
 			best.Alpha1 = minAlpha;
-			int bestError = SelectAlphaIndices(ref best);
+			var bestError = SelectAlphaIndices(ref best);
 			if (bestError == 0) {
 				return best;
 			}
 			for (byte i = 1; i < variations; i++) {
 				{
-					byte a0 = ByteHelper.ClampToByte(maxAlpha - i * 2);
-					byte a1 = ByteHelper.ClampToByte(minAlpha + i * 2);
+					var a0 = ByteHelper.ClampToByte(maxAlpha - i * 2);
+					var a1 = ByteHelper.ClampToByte(minAlpha + i * 2);
 					var block = colorBlock;
 					block.Alpha0 = hasExtremeValues ? a1 : a0;
 					block.Alpha1 = hasExtremeValues ? a0 : a1;
-					int error = SelectAlphaIndices(ref block);
+					var error = SelectAlphaIndices(ref block);
 					if (error < bestError) {
 						best = block;
 						bestError = error;
 					}
 				}
 				{
-					byte a0 = ByteHelper.ClampToByte(maxAlpha + i * 2);
-					byte a1 = ByteHelper.ClampToByte(minAlpha - i * 2);
+					var a0 = ByteHelper.ClampToByte(maxAlpha + i * 2);
+					var a1 = ByteHelper.ClampToByte(minAlpha - i * 2);
 					var block = colorBlock;
 					block.Alpha0 = hasExtremeValues ? a1 : a0;
 					block.Alpha1 = hasExtremeValues ? a0 : a1;
-					int error = SelectAlphaIndices(ref block);
+					var error = SelectAlphaIndices(ref block);
 					if (error < bestError) {
 						best = block;
 						bestError = error;
 					}
 				}
 				{
-					byte a0 = ByteHelper.ClampToByte(maxAlpha);
-					byte a1 = ByteHelper.ClampToByte(minAlpha - i * 2);
+					var a0 = ByteHelper.ClampToByte(maxAlpha);
+					var a1 = ByteHelper.ClampToByte(minAlpha - i * 2);
 					var block = colorBlock;
 					block.Alpha0 = hasExtremeValues ? a1 : a0;
 					block.Alpha1 = hasExtremeValues ? a0 : a1;
-					int error = SelectAlphaIndices(ref block);
+					var error = SelectAlphaIndices(ref block);
 					if (error < bestError) {
 						best = block;
 						bestError = error;
 					}
 				}
 				{
-					byte a0 = ByteHelper.ClampToByte(maxAlpha + i * 2);
-					byte a1 = ByteHelper.ClampToByte(minAlpha);
+					var a0 = ByteHelper.ClampToByte(maxAlpha + i * 2);
+					var a1 = ByteHelper.ClampToByte(minAlpha);
 					var block = colorBlock;
 					block.Alpha0 = hasExtremeValues ? a1 : a0;
 					block.Alpha1 = hasExtremeValues ? a0 : a1;
-					int error = SelectAlphaIndices(ref block);
+					var error = SelectAlphaIndices(ref block);
 					if (error < bestError) {
 						best = block;
 						bestError = error;
 					}
 				}
 				{
-					byte a0 = ByteHelper.ClampToByte(maxAlpha);
-					byte a1 = ByteHelper.ClampToByte(minAlpha + i * 2);
+					var a0 = ByteHelper.ClampToByte(maxAlpha);
+					var a1 = ByteHelper.ClampToByte(minAlpha + i * 2);
 					var block = colorBlock;
 					block.Alpha0 = hasExtremeValues ? a1 : a0;
 					block.Alpha1 = hasExtremeValues ? a0 : a1;
-					int error = SelectAlphaIndices(ref block);
+					var error = SelectAlphaIndices(ref block);
 					if (error < bestError) {
 						best = block;
 						bestError = error;
 					}
 				}
 				{
-					byte a0 = ByteHelper.ClampToByte(maxAlpha - i * 2);
-					byte a1 = ByteHelper.ClampToByte(minAlpha);
+					var a0 = ByteHelper.ClampToByte(maxAlpha - i * 2);
+					var a1 = ByteHelper.ClampToByte(minAlpha);
 					var block = colorBlock;
 					block.Alpha0 = hasExtremeValues ? a1 : a0;
 					block.Alpha1 = hasExtremeValues ? a0 : a1;
-					int error = SelectAlphaIndices(ref block);
+					var error = SelectAlphaIndices(ref block);
 					if (error < bestError) {
 						best = block;
 						bestError = error;
@@ -268,8 +268,8 @@ namespace BCnEncoder.Encoder
 				PcaVectors.Create(pixels, out var mean, out var principalAxis);
 				PcaVectors.GetMinMaxColor565(pixels, mean, principalAxis, out var min, out var max);
 
-				ColorRgb565 c0 = max;
-				ColorRgb565 c1 = min;
+				var c0 = max;
+				var c1 = min;
 
 				if (c0.data <= c1.data)
 				{
@@ -278,7 +278,7 @@ namespace BCnEncoder.Encoder
 					c1 = c;
 				}
 
-				var output = TryColors(rawBlock, c0, c1, out float _);
+				var output = TryColors(rawBlock, c0, c1, out var _);
 				output = FindAlphaValues(output, rawBlock, 3);
 
 				return output;
@@ -286,22 +286,22 @@ namespace BCnEncoder.Encoder
 		}
 
 		private static class Bc3BlockEncoderBalanced {
-			private const int maxTries = 24 * 2;
-			private const float errorThreshold = 0.05f;
+			private const int MaxTries_ = 24 * 2;
+			private const float ErrorThreshold_ = 0.05f;
 
 			internal static Bc3Block EncodeBlock(RawBlock4X4Rgba32 rawBlock)
 			{
 				var pixels = rawBlock.AsSpan;
 
-				PcaVectors.Create(pixels, out System.Numerics.Vector3 mean, out System.Numerics.Vector3 pa);
+				PcaVectors.Create(pixels, out var mean, out var pa);
 				PcaVectors.GetMinMaxColor565(pixels, mean, pa, out var min, out var max);
 
 				var c0 = max;
 				var c1 = min;
 
-				Bc3Block best = TryColors(rawBlock, c0, c1, out float bestError);
+				var best = TryColors(rawBlock, c0, c1, out var bestError);
 				
-				for (int i = 0; i < maxTries; i++) {
+				for (var i = 0; i < MaxTries_; i++) {
 					var (newC0, newC1) = ColorVariationGenerator.Variate565(c0, c1, i);
 					
 					var block = TryColors(rawBlock, newC0, newC1, out var error);
@@ -314,7 +314,7 @@ namespace BCnEncoder.Encoder
 						c1 = newC1;
 					}
 
-					if (bestError < errorThreshold) {
+					if (bestError < ErrorThreshold_) {
 						break;
 					}
 				}
@@ -325,15 +325,15 @@ namespace BCnEncoder.Encoder
 
 		private static class Bc3BlockEncoderSlow
 		{
-			private const int maxTries = 9999;
-			private const float errorThreshold = 0.01f;
+			private const int MaxTries_ = 9999;
+			private const float ErrorThreshold_ = 0.01f;
 
 
 			internal static Bc3Block EncodeBlock(RawBlock4X4Rgba32 rawBlock)
 			{
 				var pixels = rawBlock.AsSpan;
 
-				PcaVectors.Create(pixels, out System.Numerics.Vector3 mean, out System.Numerics.Vector3 pa);
+				PcaVectors.Create(pixels, out var mean, out var pa);
 				PcaVectors.GetMinMaxColor565(pixels, mean, pa, out var min, out var max);
 
 				var c0 = max;
@@ -346,11 +346,11 @@ namespace BCnEncoder.Encoder
 					c1 = c;
 				}
 
-				Bc3Block best = TryColors(rawBlock, c0, c1, out float bestError);
+				var best = TryColors(rawBlock, c0, c1, out var bestError);
 
-				int lastChanged = 0;
+				var lastChanged = 0;
 
-				for (int i = 0; i < maxTries; i++) {
+				for (var i = 0; i < MaxTries_; i++) {
 					var (newC0, newC1) = ColorVariationGenerator.Variate565(c0, c1, i);
 					
 					if (newC0.data < newC1.data)
@@ -373,7 +373,7 @@ namespace BCnEncoder.Encoder
 						lastChanged = 0;
 					}
 
-					if (bestError < errorThreshold || lastChanged > ColorVariationGenerator.VarPatternCount) {
+					if (bestError < ErrorThreshold_ || lastChanged > ColorVariationGenerator.VarPatternCount) {
 						break;
 					}
 				}

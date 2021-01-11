@@ -31,76 +31,76 @@ namespace BCnEncoder.Shared
 			return !left.Equals(right);
 		}
 
-		private const ushort RedMask = 0b11111_000000_00000;
-		private const int RedShift = 11;
-		private const ushort GreenMask = 0b00000_111111_00000;
-		private const int GreenShift = 5;
-		private const ushort BlueMask = 0b00000_000000_11111;
+		private const ushort RedMask_ = 0b11111_000000_00000;
+		private const int RedShift_ = 11;
+		private const ushort GreenMask_ = 0b00000_111111_00000;
+		private const int GreenShift_ = 5;
+		private const ushort BlueMask_ = 0b00000_000000_11111;
 
 		public ushort data;
 
 		public byte R {
 			readonly get {
-				int r5 = ((data & RedMask) >> RedShift);
+				var r5 = (data & RedMask_) >> RedShift_;
 				return (byte)((r5 << 3) | (r5 >> 2));
 			}
 			set {
-				int r5 = value >> 3;
-				data = (ushort)(data & ~RedMask);
-				data = (ushort)(data | (r5 << RedShift));
+				var r5 = value >> 3;
+				data = (ushort)(data & ~RedMask_);
+				data = (ushort)(data | (r5 << RedShift_));
 			}
 		}
 
 		public byte G {
 			readonly get {
-				int g6 = ((data & GreenMask) >> GreenShift);
+				var g6 = (data & GreenMask_) >> GreenShift_;
 				return (byte)((g6 << 2) | (g6 >> 4));
 			}
 			set {
-				int g6 = value >> 2;
-				data = (ushort)(data & ~GreenMask);
-				data = (ushort)(data | (g6 << GreenShift));
+				var g6 = value >> 2;
+				data = (ushort)(data & ~GreenMask_);
+				data = (ushort)(data | (g6 << GreenShift_));
 			}
 		}
 
 		public byte B {
 			readonly get {
-				int b5 = (data & BlueMask);
+				var b5 = data & BlueMask_;
 				return (byte)((b5 << 3) | (b5 >> 2));
 			}
 			set {
-				int b5 = value >> 3;
-				data = (ushort)(data & ~BlueMask);
+				var b5 = value >> 3;
+				data = (ushort)(data & ~BlueMask_);
 				data = (ushort)(data | b5);
 			}
 		}
 
 		public int RawR {
-			readonly get { return ((data & RedMask) >> RedShift); }
+			readonly get { return (data & RedMask_) >> RedShift_; }
 			set {
 				if (value > 31) value = 31;
 				if (value < 0) value = 0;
-				data = (ushort)(data & ~RedMask);
-				data = (ushort)(data | ((value) << RedShift));
+				data = (ushort)(data & ~RedMask_);
+				data = (ushort)(data | (value << RedShift_));
 			}
 		}
 
 		public int RawG {
-			readonly get { return ((data & GreenMask) >> GreenShift); }
+			readonly get { return (data & GreenMask_) >> GreenShift_; }
 			set {
 				if (value > 63) value = 63;
 				if (value < 0) value = 0;
-				data = (ushort)(data & ~GreenMask);
-				data = (ushort)(data | ((value) << GreenShift));
+				data = (ushort)(data & ~GreenMask_);
+				data = (ushort)(data | (value << GreenShift_));
 			}
 		}
 
 		public int RawB {
-			readonly get { return (data & BlueMask); }
+			readonly get { return data & BlueMask_; }
 			set {
 				if (value > 31) value = 31;
 				if (value < 0) value = 0;
-				data = (ushort)(data & ~BlueMask);
+				data = (ushort)(data & ~BlueMask_);
 				data = (ushort)(data | value);
 			}
 		}
@@ -174,7 +174,7 @@ namespace BCnEncoder.Shared
 		{
 			unchecked
 			{
-				int hashCode = r.GetHashCode();
+				var hashCode = r.GetHashCode();
 				hashCode = (hashCode * 397) ^ g.GetHashCode();
 				hashCode = (hashCode * 397) ^ b.GetHashCode();
 				hashCode = (hashCode * 397) ^ a.GetHashCode();
@@ -236,10 +236,10 @@ namespace BCnEncoder.Shared
 		public static ColorRgba32 operator <<(ColorRgba32 left, int right)
 		{
 			return new ColorRgba32(
-				ByteHelper.ClampToByte((left.r << right)),
-				ByteHelper.ClampToByte((left.g << right)),
-				ByteHelper.ClampToByte((left.b << right)),
-				ByteHelper.ClampToByte((left.a << right))
+				ByteHelper.ClampToByte(left.r << right),
+				ByteHelper.ClampToByte(left.g << right),
+				ByteHelper.ClampToByte(left.b << right),
+				ByteHelper.ClampToByte(left.a << right)
 			);
 		}
 
@@ -249,10 +249,10 @@ namespace BCnEncoder.Shared
 		public static ColorRgba32 operator >>(ColorRgba32 left, int right)
 		{
 			return new ColorRgba32(
-				ByteHelper.ClampToByte((left.r >> right)),
-				ByteHelper.ClampToByte((left.g >> right)),
-				ByteHelper.ClampToByte((left.b >> right)),
-				ByteHelper.ClampToByte((left.a >> right))
+				ByteHelper.ClampToByte(left.r >> right),
+				ByteHelper.ClampToByte(left.g >> right),
+				ByteHelper.ClampToByte(left.b >> right),
+				ByteHelper.ClampToByte(left.a >> right)
 			);
 		}
 
@@ -262,10 +262,10 @@ namespace BCnEncoder.Shared
 		public static ColorRgba32 operator |(ColorRgba32 left, ColorRgba32 right)
 		{
 			return new ColorRgba32(
-				ByteHelper.ClampToByte((left.r | right.r)),
-				ByteHelper.ClampToByte((left.g | right.g)),
-				ByteHelper.ClampToByte((left.b | right.b)),
-				ByteHelper.ClampToByte((left.a | right.a))
+				ByteHelper.ClampToByte(left.r | right.r),
+				ByteHelper.ClampToByte(left.g | right.g),
+				ByteHelper.ClampToByte(left.b | right.b),
+				ByteHelper.ClampToByte(left.a | right.a)
 			);
 		}
 
@@ -275,10 +275,10 @@ namespace BCnEncoder.Shared
 		public static ColorRgba32 operator |(ColorRgba32 left, int right)
 		{
 			return new ColorRgba32(
-				ByteHelper.ClampToByte((left.r | right)),
-				ByteHelper.ClampToByte((left.g | right)),
-				ByteHelper.ClampToByte((left.b | right)),
-				ByteHelper.ClampToByte((left.a | right))
+				ByteHelper.ClampToByte(left.r | right),
+				ByteHelper.ClampToByte(left.g | right),
+				ByteHelper.ClampToByte(left.b | right),
+				ByteHelper.ClampToByte(left.a | right)
 			);
 		}
 
@@ -288,10 +288,10 @@ namespace BCnEncoder.Shared
 		public static ColorRgba32 operator &(ColorRgba32 left, ColorRgba32 right)
 		{
 			return new ColorRgba32(
-				ByteHelper.ClampToByte((left.r & right.r)),
-				ByteHelper.ClampToByte((left.g & right.g)),
-				ByteHelper.ClampToByte((left.b & right.b)),
-				ByteHelper.ClampToByte((left.a & right.a))
+				ByteHelper.ClampToByte(left.r & right.r),
+				ByteHelper.ClampToByte(left.g & right.g),
+				ByteHelper.ClampToByte(left.b & right.b),
+				ByteHelper.ClampToByte(left.a & right.a)
 			);
 		}
 
@@ -301,10 +301,10 @@ namespace BCnEncoder.Shared
 		public static ColorRgba32 operator &(ColorRgba32 left, int right)
 		{
 			return new ColorRgba32(
-				ByteHelper.ClampToByte((left.r & right)),
-				ByteHelper.ClampToByte((left.g & right)),
-				ByteHelper.ClampToByte((left.b & right)),
-				ByteHelper.ClampToByte((left.a & right))
+				ByteHelper.ClampToByte(left.r & right),
+				ByteHelper.ClampToByte(left.g & right),
+				ByteHelper.ClampToByte(left.b & right),
+				ByteHelper.ClampToByte(left.a & right)
 			);
 		}
 
@@ -359,7 +359,7 @@ namespace BCnEncoder.Shared
 		{
 			unchecked
 			{
-				int hashCode = r.GetHashCode();
+				var hashCode = r.GetHashCode();
 				hashCode = (hashCode * 397) ^ g.GetHashCode();
 				hashCode = (hashCode * 397) ^ b.GetHashCode();
 				return hashCode;
@@ -430,78 +430,78 @@ namespace BCnEncoder.Shared
 
 		public ColorYCbCr(ColorRgb24 rgb)
 		{
-			float fr = (float)rgb.r / 255;
-			float fg = (float)rgb.g / 255;
-			float fb = (float)rgb.b / 255;
+			var fr = (float)rgb.r / 255;
+			var fg = (float)rgb.g / 255;
+			var fb = (float)rgb.b / 255;
 
-			y = (0.2989f * fr + 0.5866f * fg + 0.1145f * fb);
-			cb = (-0.1687f * fr - 0.3313f * fg + 0.5000f * fb);
-			cr = (0.5000f * fr - 0.4184f * fg - 0.0816f * fb);
+			y = 0.2989f * fr + 0.5866f * fg + 0.1145f * fb;
+			cb = -0.1687f * fr - 0.3313f * fg + 0.5000f * fb;
+			cr = 0.5000f * fr - 0.4184f * fg - 0.0816f * fb;
 		}
 
 		public ColorYCbCr(ColorRgb565 rgb)
 		{
-			float fr = (float)rgb.R / 255;
-			float fg = (float)rgb.G / 255;
-			float fb = (float)rgb.B / 255;
+			var fr = (float)rgb.R / 255;
+			var fg = (float)rgb.G / 255;
+			var fb = (float)rgb.B / 255;
 
-			y = (0.2989f * fr + 0.5866f * fg + 0.1145f * fb);
-			cb = (-0.1687f * fr - 0.3313f * fg + 0.5000f * fb);
-			cr = (0.5000f * fr - 0.4184f * fg - 0.0816f * fb);
+			y = 0.2989f * fr + 0.5866f * fg + 0.1145f * fb;
+			cb = -0.1687f * fr - 0.3313f * fg + 0.5000f * fb;
+			cr = 0.5000f * fr - 0.4184f * fg - 0.0816f * fb;
 		}
 
 		public ColorYCbCr(ColorRgba32 rgba)
 		{
-			float fr = (float)rgba.r / 255;
-			float fg = (float)rgba.g / 255;
-			float fb = (float)rgba.b / 255;
+			var fr = (float)rgba.r / 255;
+			var fg = (float)rgba.g / 255;
+			var fb = (float)rgba.b / 255;
 
-			y = (0.2989f * fr + 0.5866f * fg + 0.1145f * fb);
-			cb = (-0.1687f * fr - 0.3313f * fg + 0.5000f * fb);
-			cr = (0.5000f * fr - 0.4184f * fg - 0.0816f * fb);
+			y = 0.2989f * fr + 0.5866f * fg + 0.1145f * fb;
+			cb = -0.1687f * fr - 0.3313f * fg + 0.5000f * fb;
+			cr = 0.5000f * fr - 0.4184f * fg - 0.0816f * fb;
 		}
 
 		public ColorYCbCr(Rgba32 rgb)
 		{
-			float fr = (float)rgb.R / 255;
-			float fg = (float)rgb.G / 255;
-			float fb = (float)rgb.B / 255;
+			var fr = (float)rgb.R / 255;
+			var fg = (float)rgb.G / 255;
+			var fb = (float)rgb.B / 255;
 
-			y = (0.2989f * fr + 0.5866f * fg + 0.1145f * fb);
-			cb = (-0.1687f * fr - 0.3313f * fg + 0.5000f * fb);
-			cr = (0.5000f * fr - 0.4184f * fg - 0.0816f * fb);
+			y = 0.2989f * fr + 0.5866f * fg + 0.1145f * fb;
+			cb = -0.1687f * fr - 0.3313f * fg + 0.5000f * fb;
+			cr = 0.5000f * fr - 0.4184f * fg - 0.0816f * fb;
 		}
 
 		public ColorYCbCr(Vector3 vec) {
-			float fr = (float) vec.X;
-			float fg = (float) vec.Y;
-			float fb = (float) vec.Z;
+			var fr = (float) vec.X;
+			var fg = (float) vec.Y;
+			var fb = (float) vec.Z;
 
-			y = (0.2989f * fr + 0.5866f * fg + 0.1145f * fb);
-			cb = (-0.1687f * fr - 0.3313f * fg + 0.5000f * fb);
-			cr = (0.5000f * fr - 0.4184f * fg - 0.0816f * fb);
+			y = 0.2989f * fr + 0.5866f * fg + 0.1145f * fb;
+			cb = -0.1687f * fr - 0.3313f * fg + 0.5000f * fb;
+			cr = 0.5000f * fr - 0.4184f * fg - 0.0816f * fb;
 		}
 
 		public ColorRgb565 ToColorRgb565() {
-			float r = Math.Max(0.0f, Math.Min(1.0f, (float)(y + 0.0000 * cb + 1.4022 * cr)));
-			float g = Math.Max(0.0f, Math.Min(1.0f, (float)(y - 0.3456 * cb - 0.7145 * cr)));
-			float b = Math.Max(0.0f, Math.Min(1.0f, (float)(y + 1.7710 * cb + 0.0000 * cr)));
+			var r = Math.Max(0.0f, Math.Min(1.0f, (float)(y + 0.0000 * cb + 1.4022 * cr)));
+			var g = Math.Max(0.0f, Math.Min(1.0f, (float)(y - 0.3456 * cb - 0.7145 * cr)));
+			var b = Math.Max(0.0f, Math.Min(1.0f, (float)(y + 1.7710 * cb + 0.0000 * cr)));
 
 			return new ColorRgb565((byte)(r * 255), (byte)(g * 255), (byte)(b * 255));
 		}
 
 		public override string ToString() {
-			float r = Math.Max(0.0f, Math.Min(1.0f, (float)(y + 0.0000 * cb + 1.4022 * cr)));
-			float g = Math.Max(0.0f, Math.Min(1.0f, (float)(y - 0.3456 * cb - 0.7145 * cr)));
-			float b = Math.Max(0.0f, Math.Min(1.0f, (float)(y + 1.7710 * cb + 0.0000 * cr)));
+			var r = Math.Max(0.0f, Math.Min(1.0f, (float)(y + 0.0000 * cb + 1.4022 * cr)));
+			var g = Math.Max(0.0f, Math.Min(1.0f, (float)(y - 0.3456 * cb - 0.7145 * cr)));
+			var b = Math.Max(0.0f, Math.Min(1.0f, (float)(y + 1.7710 * cb + 0.0000 * cr)));
 
 			return $"r : {r * 255} g : {g * 255} b : {b * 255}";
 		}
 
 		public float CalcDistWeighted(ColorYCbCr other, float yWeight = 4) {
-			float dy = (y - other.y) * (y - other.y) * yWeight;
-			float dcb = (cb - other.cb) * (cb - other.cb);
-			float dcr = (cr - other.cr) * (cr - other.cr);
+			var dy = (y - other.y) * (y - other.y) * yWeight;
+			var dcb = (cb - other.cb) * (cb - other.cb);
+			var dcr = (cr - other.cr) * (cr - other.cr);
 
 			return MathF.Sqrt(dy + dcb + dcr);
 		}
@@ -523,9 +523,9 @@ namespace BCnEncoder.Shared
 		}
 
 		public Rgba32 ToRgba32() {
-			float r = Math.Max(0.0f, Math.Min(1.0f, (float)(y + 0.0000 * cb + 1.4022 * cr)));
-			float g = Math.Max(0.0f, Math.Min(1.0f, (float)(y - 0.3456 * cb - 0.7145 * cr)));
-			float b = Math.Max(0.0f, Math.Min(1.0f, (float)(y + 1.7710 * cb + 0.0000 * cr)));
+			var r = Math.Max(0.0f, Math.Min(1.0f, (float)(y + 0.0000 * cb + 1.4022 * cr)));
+			var g = Math.Max(0.0f, Math.Min(1.0f, (float)(y - 0.3456 * cb - 0.7145 * cr)));
+			var b = Math.Max(0.0f, Math.Min(1.0f, (float)(y + 1.7710 * cb + 0.0000 * cr)));
 
 			return new Rgba32((byte)(r * 255), (byte)(g * 255), (byte)(b * 255), 255);
 		}
@@ -548,74 +548,74 @@ namespace BCnEncoder.Shared
 
 		public ColorYCbCrAlpha(ColorRgb24 rgb)
 		{
-			float fr = (float)rgb.r / 255;
-			float fg = (float)rgb.g / 255;
-			float fb = (float)rgb.b / 255;
+			var fr = (float)rgb.r / 255;
+			var fg = (float)rgb.g / 255;
+			var fb = (float)rgb.b / 255;
 
-			y = (0.2989f * fr + 0.5866f * fg + 0.1145f * fb);
-			cb = (-0.1687f * fr - 0.3313f * fg + 0.5000f * fb);
-			cr = (0.5000f * fr - 0.4184f * fg - 0.0816f * fb);
+			y = 0.2989f * fr + 0.5866f * fg + 0.1145f * fb;
+			cb = -0.1687f * fr - 0.3313f * fg + 0.5000f * fb;
+			cr = 0.5000f * fr - 0.4184f * fg - 0.0816f * fb;
 			alpha = 1;
 		}
 
 		public ColorYCbCrAlpha(ColorRgb565 rgb)
 		{
-			float fr = (float)rgb.R / 255;
-			float fg = (float)rgb.G / 255;
-			float fb = (float)rgb.B / 255;
+			var fr = (float)rgb.R / 255;
+			var fg = (float)rgb.G / 255;
+			var fb = (float)rgb.B / 255;
 
-			y = (0.2989f * fr + 0.5866f * fg + 0.1145f * fb);
-			cb = (-0.1687f * fr - 0.3313f * fg + 0.5000f * fb);
-			cr = (0.5000f * fr - 0.4184f * fg - 0.0816f * fb);
+			y = 0.2989f * fr + 0.5866f * fg + 0.1145f * fb;
+			cb = -0.1687f * fr - 0.3313f * fg + 0.5000f * fb;
+			cr = 0.5000f * fr - 0.4184f * fg - 0.0816f * fb;
 			alpha = 1;
 		}
 
 		public ColorYCbCrAlpha(ColorRgba32 rgba)
 		{
-			float fr = (float)rgba.r / 255;
-			float fg = (float)rgba.g / 255;
-			float fb = (float)rgba.b / 255;
+			var fr = (float)rgba.r / 255;
+			var fg = (float)rgba.g / 255;
+			var fb = (float)rgba.b / 255;
 
-			y = (0.2989f * fr + 0.5866f * fg + 0.1145f * fb);
-			cb = (-0.1687f * fr - 0.3313f * fg + 0.5000f * fb);
-			cr = (0.5000f * fr - 0.4184f * fg - 0.0816f * fb);
+			y = 0.2989f * fr + 0.5866f * fg + 0.1145f * fb;
+			cb = -0.1687f * fr - 0.3313f * fg + 0.5000f * fb;
+			cr = 0.5000f * fr - 0.4184f * fg - 0.0816f * fb;
 			alpha = rgba.a / 255f;
 		}
 
 		public ColorYCbCrAlpha(Rgba32 rgb)
 		{
-			float fr = (float)rgb.R / 255;
-			float fg = (float)rgb.G / 255;
-			float fb = (float)rgb.B / 255;
+			var fr = (float)rgb.R / 255;
+			var fg = (float)rgb.G / 255;
+			var fb = (float)rgb.B / 255;
 
-			y = (0.2989f * fr + 0.5866f * fg + 0.1145f * fb);
-			cb = (-0.1687f * fr - 0.3313f * fg + 0.5000f * fb);
-			cr = (0.5000f * fr - 0.4184f * fg - 0.0816f * fb);
+			y = 0.2989f * fr + 0.5866f * fg + 0.1145f * fb;
+			cb = -0.1687f * fr - 0.3313f * fg + 0.5000f * fb;
+			cr = 0.5000f * fr - 0.4184f * fg - 0.0816f * fb;
 			alpha = rgb.A / 255f;
 		}
 
 
 		public ColorRgb565 ToColorRgb565() {
-			float r = Math.Max(0.0f, Math.Min(1.0f, (float)(y + 0.0000 * cb + 1.4022 * cr)));
-			float g = Math.Max(0.0f, Math.Min(1.0f, (float)(y - 0.3456 * cb - 0.7145 * cr)));
-			float b = Math.Max(0.0f, Math.Min(1.0f, (float)(y + 1.7710 * cb + 0.0000 * cr)));
+			var r = Math.Max(0.0f, Math.Min(1.0f, (float)(y + 0.0000 * cb + 1.4022 * cr)));
+			var g = Math.Max(0.0f, Math.Min(1.0f, (float)(y - 0.3456 * cb - 0.7145 * cr)));
+			var b = Math.Max(0.0f, Math.Min(1.0f, (float)(y + 1.7710 * cb + 0.0000 * cr)));
 
 			return new ColorRgb565((byte)(r * 255), (byte)(g * 255), (byte)(b * 255));
 		}
 
 		public override string ToString() {
-			float r = Math.Max(0.0f, Math.Min(1.0f, (float)(y + 0.0000 * cb + 1.4022 * cr)));
-			float g = Math.Max(0.0f, Math.Min(1.0f, (float)(y - 0.3456 * cb - 0.7145 * cr)));
-			float b = Math.Max(0.0f, Math.Min(1.0f, (float)(y + 1.7710 * cb + 0.0000 * cr)));
+			var r = Math.Max(0.0f, Math.Min(1.0f, (float)(y + 0.0000 * cb + 1.4022 * cr)));
+			var g = Math.Max(0.0f, Math.Min(1.0f, (float)(y - 0.3456 * cb - 0.7145 * cr)));
+			var b = Math.Max(0.0f, Math.Min(1.0f, (float)(y + 1.7710 * cb + 0.0000 * cr)));
 
 			return $"r : {r * 255} g : {g * 255} b : {b * 255}";
 		}
 
 		public float CalcDistWeighted(ColorYCbCrAlpha other, float yWeight = 4, float aWeight = 1) {
-			float dy = (y - other.y) * (y - other.y) * yWeight;
-			float dcb = (cb - other.cb) * (cb - other.cb);
-			float dcr = (cr - other.cr) * (cr - other.cr);
-			float da = (alpha - other.alpha) * (alpha - other.alpha) * aWeight;
+			var dy = (y - other.y) * (y - other.y) * yWeight;
+			var dcb = (cb - other.cb) * (cb - other.cb);
+			var dcr = (cr - other.cr) * (cr - other.cr);
+			var da = (alpha - other.alpha) * (alpha - other.alpha) * aWeight;
 
 			return MathF.Sqrt(dy + dcb + dcr + da);
 		}
@@ -639,9 +639,9 @@ namespace BCnEncoder.Shared
 		}
 
 		public Rgba32 ToRgba32() {
-			float r = Math.Max(0.0f, Math.Min(1.0f, (float)(y + 0.0000 * cb + 1.4022 * cr)));
-			float g = Math.Max(0.0f, Math.Min(1.0f, (float)(y - 0.3456 * cb - 0.7145 * cr)));
-			float b = Math.Max(0.0f, Math.Min(1.0f, (float)(y + 1.7710 * cb + 0.0000 * cr)));
+			var r = Math.Max(0.0f, Math.Min(1.0f, (float)(y + 0.0000 * cb + 1.4022 * cr)));
+			var g = Math.Max(0.0f, Math.Min(1.0f, (float)(y - 0.3456 * cb - 0.7145 * cr)));
+			var b = Math.Max(0.0f, Math.Min(1.0f, (float)(y + 1.7710 * cb + 0.0000 * cr)));
 
 			return new Rgba32((byte)(r * 255), (byte)(g * 255), (byte)(b * 255), (byte)(alpha * 255));
 		}
@@ -663,9 +663,9 @@ namespace BCnEncoder.Shared
 		}
 
 		public static ColorXyz ColorToXyz(ColorRgb24 color) {
-			float r = PivotRgb(color.r / 255.0f);
-			float g = PivotRgb(color.g / 255.0f);
-			float b = PivotRgb(color.b / 255.0f);
+			var r = PivotRgb(color.r / 255.0f);
+			var g = PivotRgb(color.g / 255.0f);
+			var b = PivotRgb(color.b / 255.0f);
 
 			// Observer. = 2°, Illuminant = D65
 			return new ColorXyz(r * 0.4124f + g * 0.3576f + b * 0.1805f, r * 0.2126f + g * 0.7152f + b * 0.0722f, r * 0.0193f + g * 0.1192f + b * 0.9505f);
@@ -701,25 +701,25 @@ namespace BCnEncoder.Shared
 		}
 
 		public static ColorLab ColorToLab(ColorRgb24 color) {
-			ColorXyz xyz = new ColorXyz(color);
+			var xyz = new ColorXyz(color);
 			return XyzToLab(xyz);
 		}
 
 
 		public static ColorLab XyzToLab(ColorXyz xyz) {
-			float REF_X = 95.047f; // Observer= 2°, Illuminant= D65
-			float REF_Y = 100.000f;
-			float REF_Z = 108.883f;
+			var refX = 95.047f; // Observer= 2°, Illuminant= D65
+			var refY = 100.000f;
+			var refZ = 108.883f;
 
-			float x = PivotXyz(xyz.x / REF_X);
-			float y = PivotXyz(xyz.y / REF_Y);
-			float z = PivotXyz(xyz.z / REF_Z);
+			var x = PivotXyz(xyz.x / refX);
+			var y = PivotXyz(xyz.y / refY);
+			var z = PivotXyz(xyz.z / refZ);
 
 			return new ColorLab(116 * y - 16, 500 * (x - y), 200 * (y - z));
 		}
 
 		private static float PivotXyz(float n) {
-			float i = MathF.Cbrt(n);
+			var i = MathF.Cbrt(n);
 			return n > 0.008856f ? i : 7.787f * n + 16 / 116f;
 		}
 	}

@@ -294,8 +294,8 @@ namespace BCnEncTests
 
 			KtxFile output = new KtxFile(
 				KtxHeader.InitializeCompressed(numWidthBlocks * 8 * 4, numHeightBlocks * 8 * 4, 
-					GlInternalFormat.GL_COMPRESSED_RGBA_BPTC_UNORM_ARB, 
-					GLFormat.GL_RGBA));
+					GlInternalFormat.GlCompressedRgbaBptcUnormArb, 
+					GlFormat.GlRgba));
 			
 			
 			Span<Bc7Block> type0 = new Span<Bc7Block>(outputBlocks, 0 , 64);

@@ -9,47 +9,47 @@
         /// <summary>
         /// Raw unsigned byte 16-bit RG data
         /// </summary>
-        RG,
+        Rg,
         /// <summary>
         /// Raw unsigned byte 24-bit RGB data
         /// </summary>
-        RGB,
+        Rgb,
         /// <summary>
         /// Raw unsigned byte 32-bit RGBA data
         /// </summary>
-        RGBA,
+        Rgba,
         /// <summary>
         /// BC1 / DXT1 with no alpha. Very widely supported and good compression ratio.
         /// </summary>
-        BC1,
+        Bc1,
         /// <summary>
         /// BC1 / DXT1 with 1-bit of alpha.
         /// </summary>
-        BC1WithAlpha,
+        Bc1WithAlpha,
         /// <summary>
         /// BC2 / DXT3 encoding with alpha. Good for sharp alpha transitions.
         /// </summary>
-        BC2,
+        Bc2,
         /// <summary>
         /// BC3 / DXT5 encoding with alpha. Good for smooth alpha transitions.
         /// </summary>
-        BC3,
+        Bc3,
         /// <summary>
         /// BC4 single-channel encoding. Only luminance is encoded.
         /// </summary>
-        BC4,
+        Bc4,
         /// <summary>
         /// BC5 dual-channel encoding. Only red and green channels are encoded.
         /// </summary>
-        BC5,
+        Bc5,
         /// <summary>
         /// BC6H / BPTC float encoding. Can compress HDR textures without alpha. Currently not supported.
         /// </summary>
-        BC6,
+        Bc6,
         /// <summary>
-        /// BC7 / BPTC unorm encoding. Very high quality rgba or rgb encoding. Also very slow.
+        /// BC7 / BPTC unorm encoding. Very high Quality rgba or rgb encoding. Also very slow.
         /// </summary>
-        BC7
+        Bc7
     }
 
     public static class CompressionFormatExtensions
@@ -59,9 +59,9 @@
             switch (format)
             {
                 case CompressionFormat.R:
-                case CompressionFormat.RG:
-                case CompressionFormat.RGB:
-                case CompressionFormat.RGBA:
+                case CompressionFormat.Rg:
+                case CompressionFormat.Rgb:
+                case CompressionFormat.Rgba:
                     return false;
 
                 default:

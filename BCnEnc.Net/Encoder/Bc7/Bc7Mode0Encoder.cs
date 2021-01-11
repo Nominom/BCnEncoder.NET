@@ -8,7 +8,7 @@ namespace BCnEncoder.Encoder.Bc7
 
 		public static Bc7Block EncodeBlock(RawBlock4X4Rgba32 block, int startingVariation, int bestPartition)
 		{
-			Bc7Block output = new Bc7Block();
+			var output = new Bc7Block();
 			const Bc7BlockType type = Bc7BlockType.Type0;
 
 			if(bestPartition >= 16)
@@ -16,26 +16,26 @@ namespace BCnEncoder.Encoder.Bc7
 				throw new IndexOutOfRangeException("Mode0 only has 16 partitions");
 			}
 
-			ColorRgba32[] endpoints = new ColorRgba32[6];
-			byte[] pBits = new byte[6];
+			var endpoints = new ColorRgba32[6];
+			var pBits = new byte[6];
 			ReadOnlySpan<int> partitionTable = Bc7Block.Subsets3PartitionTable[bestPartition];
 
-			byte[] indices = new byte[16];
+			var indices = new byte[16];
 
-			int[] anchorIndices = new int[] {
+			var anchorIndices = new int[] {
 				0,
 				Bc7Block.Subsets3AnchorIndices2[bestPartition],
 				Bc7Block.Subsets3AnchorIndices3[bestPartition]
 			};
 
-			for (int subset = 0; subset < 3; subset++) {
+			for (var subset = 0; subset < 3; subset++) {
 				
 				Bc7EncodingHelpers.GetInitialUnscaledEndpointsForSubset(block, out var ep0, out var ep1,
 					partitionTable, subset);
-				ColorRgba32 scaledEp0 =
-					Bc7EncodingHelpers.ScaleDownEndpoint(ep0, type, true, out byte pBit0);
-				ColorRgba32 scaledEp1 =
-					Bc7EncodingHelpers.ScaleDownEndpoint(ep1, type, true, out byte pBit1);
+				var scaledEp0 =
+					Bc7EncodingHelpers.ScaleDownEndpoint(ep0, type, true, out var pBit0);
+				var scaledEp1 =
+					Bc7EncodingHelpers.ScaleDownEndpoint(ep1, type, true, out var pBit1);
 
 				Bc7EncodingHelpers.OptimizeSubsetEndpointsWithPBit(type, block, ref scaledEp0,
 					ref scaledEp1, ref pBit0, ref pBit1, startingVariation, partitionTable, subset, true, false);

@@ -33,10 +33,10 @@ namespace BCnEncoder.Encoder
         /// <summary>
         /// Creates a new instance of <see cref="BcEncoder"/>.
         /// </summary>
-        /// <param name="format">The block compression format to encode an image with.</param>
-        public BcEncoder(CompressionFormat format = CompressionFormat.BC1)
+        /// <param name="format">The block compression Format to encode an image with.</param>
+        public BcEncoder(CompressionFormat format = CompressionFormat.Bc1)
         {
-            OutputOptions.format = format;
+            OutputOptions.Format = format;
         }
 
         /// <summary>
@@ -46,7 +46,7 @@ namespace BCnEncoder.Encoder
         /// <param name="outputStream">The stream to write the encoded image to.</param>
         public void Encode(Image<Rgba32> inputImage, Stream outputStream)
         {
-            switch (OutputOptions.fileFormat)
+            switch (OutputOptions.FileFormat)
             {
                 case OutputFileFormat.Dds:
                     var dds = EncodeToDds(inputImage);
@@ -71,16 +71,18 @@ namespace BCnEncoder.Encoder
             IBcBlockEncoder compressedEncoder = null;
             IRawEncoder uncompressedEncoder = null;
 
-            var numMipMaps = OutputOptions.generateMipMaps ? (uint)OutputOptions.maxMipMapLevel : 1;
+            var numMipMaps = OutputOptions.GenerateMipMaps ? (uint)OutputOptions.MaxMipMapLevel : 1;
             var mipChain = MipMapper.GenerateMipChain(inputImage, ref numMipMaps);
 
             // Setup encoders
-            var isCompressedFormat = OutputOptions.format.IsCompressedFormat();
+            var isCompressedFormat = OutputOptions.Format.IsCompressedFormat();
             if (isCompressedFormat)
             {
-                compressedEncoder = GetEncoder(OutputOptions.format);
+                compressedEncoder = GetEncoder(OutputOptions.Format);
                 if (compressedEncoder == null)
-                    throw new NotSupportedException($"This format is not supported: {OutputOptions.format}");
+                {
+                    throw new NotSupportedException($"This Format is not supported: {OutputOptions.Format}");
+                }
 
                 output = new KtxFile(
                     KtxHeader.InitializeCompressed(inputImage.Width, inputImage.Height,
@@ -89,7 +91,7 @@ namespace BCnEncoder.Encoder
             }
             else
             {
-                uncompressedEncoder = GetRawEncoder(OutputOptions.format);
+                uncompressedEncoder = GetRawEncoder(OutputOptions.Format);
                 output = new KtxFile(
                     KtxHeader.InitializeUncompressed(inputImage.Width, inputImage.Height,
                         uncompressedEncoder.GetGlType(),
@@ -105,8 +107,8 @@ namespace BCnEncoder.Encoder
                 byte[] encoded;
                 if (isCompressedFormat)
                 {
-                    var blocks = ImageToBlocks.ImageTo4X4(mipChain[mip].Frames[0], out int blocksWidth, out int blocksHeight);
-                    encoded = compressedEncoder.Encode(blocks, blocksWidth, blocksHeight, OutputOptions.quality,
+                    var blocks = ImageToBlocks.ImageTo4X4(mipChain[mip].Frames[0], out var blocksWidth, out var blocksHeight);
+                    encoded = compressedEncoder.Encode(blocks, blocksWidth, blocksHeight, OutputOptions.Quality,
                         !Debugger.IsAttached && Options.multiThreaded);
                 }
                 else
@@ -129,8 +131,8 @@ namespace BCnEncoder.Encoder
             foreach (var image in mipChain)
                 image.Dispose();
 
-            output.Header.NumberOfFaces = 1;
-            output.Header.NumberOfMipmapLevels = numMipMaps;
+            output.header.NumberOfFaces = 1;
+            output.header.NumberOfMipmapLevels = numMipMaps;
 
             return output;
         }
@@ -146,30 +148,32 @@ namespace BCnEncoder.Encoder
             IBcBlockEncoder compressedEncoder = null;
             IRawEncoder uncompressedEncoder = null;
 
-            var numMipMaps = OutputOptions.generateMipMaps ? (uint)OutputOptions.maxMipMapLevel : 1;
+            var numMipMaps = OutputOptions.GenerateMipMaps ? (uint)OutputOptions.MaxMipMapLevel : 1;
             var mipChain = MipMapper.GenerateMipChain(inputImage, ref numMipMaps);
 
             // Setup encoder
-            var isCompressedFormat = OutputOptions.format.IsCompressedFormat();
+            var isCompressedFormat = OutputOptions.Format.IsCompressedFormat();
             if (isCompressedFormat)
             {
-                compressedEncoder = GetEncoder(OutputOptions.format);
+                compressedEncoder = GetEncoder(OutputOptions.Format);
                 if (compressedEncoder == null)
-                    throw new NotSupportedException($"This format is not supported: {OutputOptions.format}");
+                {
+                    throw new NotSupportedException($"This Format is not supported: {OutputOptions.Format}");
+                }
 
                 var (ddsHeader, dxt10Header) = DdsHeader.InitializeCompressed(inputImage.Width, inputImage.Height,
                     compressedEncoder.GetDxgiFormat());
                 output = new DdsFile(ddsHeader, dxt10Header);
 
-                if (OutputOptions.ddsBc1WriteAlphaFlag &&
-                    OutputOptions.format == CompressionFormat.BC1WithAlpha)
+                if (OutputOptions.DdsBc1WriteAlphaFlag &&
+                    OutputOptions.Format == CompressionFormat.Bc1WithAlpha)
                 {
-                    output.Header.ddsPixelFormat.dwFlags |= PixelFormatFlags.DDPF_ALPHAPIXELS;
+                    output.header.ddsPixelFormat.dwFlags |= PixelFormatFlags.DdpfAlphapixels;
                 }
             }
             else
             {
-                uncompressedEncoder = GetRawEncoder(OutputOptions.format);
+                uncompressedEncoder = GetRawEncoder(OutputOptions.Format);
                 var ddsHeader = DdsHeader.InitializeUncompressed(inputImage.Width, inputImage.Height,
                     uncompressedEncoder.GetDxgiFormat());
                 output = new DdsFile(ddsHeader);
@@ -182,13 +186,15 @@ namespace BCnEncoder.Encoder
                 if (isCompressedFormat)
                 {
                     var blocks = ImageToBlocks.ImageTo4X4(mipChain[mip].Frames[0], out var blocksWidth, out var blocksHeight);
-                    encoded = compressedEncoder.Encode(blocks, blocksWidth, blocksHeight, OutputOptions.quality,
+                    encoded = compressedEncoder.Encode(blocks, blocksWidth, blocksHeight, OutputOptions.Quality,
                         !Debugger.IsAttached && Options.multiThreaded);
                 }
                 else
                 {
                     if (!mipChain[mip].TryGetSinglePixelSpan(out var mipPixels))
+                    {
                         throw new Exception("Cannot get pixel span.");
+                    }
 
                     encoded = uncompressedEncoder.Encode(mipPixels);
                 }
@@ -206,11 +212,15 @@ namespace BCnEncoder.Encoder
 
             // Dispose all mipmap levels
             foreach (var image in mipChain)
+            {
                 image.Dispose();
+            }
 
-            output.Header.dwMipMapCount = numMipMaps;
+            output.header.dwMipMapCount = numMipMaps;
             if (numMipMaps > 1)
-                output.Header.dwCaps |= HeaderCaps.DDSCAPS_COMPLEX | HeaderCaps.DDSCAPS_MIPMAP;
+            {
+                output.header.dwCaps |= HeaderCaps.DdscapsComplex | HeaderCaps.DdscapsMipmap;
+            }
 
             return output;
         }
@@ -226,20 +236,22 @@ namespace BCnEncoder.Encoder
             IBcBlockEncoder compressedEncoder = null;
             IRawEncoder uncompressedEncoder = null;
 
-            var numMipMaps = OutputOptions.generateMipMaps ? (uint)OutputOptions.maxMipMapLevel : 1;
+            var numMipMaps = OutputOptions.GenerateMipMaps ? (uint)OutputOptions.MaxMipMapLevel : 1;
             var mipChain = MipMapper.GenerateMipChain(inputImage, ref numMipMaps);
 
             // Setup encoder
-            var isCompressedFormat = OutputOptions.format.IsCompressedFormat();
+            var isCompressedFormat = OutputOptions.Format.IsCompressedFormat();
             if (isCompressedFormat)
             {
-                compressedEncoder = GetEncoder(OutputOptions.format);
+                compressedEncoder = GetEncoder(OutputOptions.Format);
                 if (compressedEncoder == null)
-                    throw new NotSupportedException($"This format is not supported: {OutputOptions.format}");
+                {
+                    throw new NotSupportedException($"This Format is not supported: {OutputOptions.Format}");
+                }
             }
             else
             {
-                uncompressedEncoder = GetRawEncoder(OutputOptions.format);
+                uncompressedEncoder = GetRawEncoder(OutputOptions.Format);
             }
 
             // Encode all mipmap levels
@@ -248,14 +260,16 @@ namespace BCnEncoder.Encoder
                 byte[] encoded;
                 if (isCompressedFormat)
                 {
-                    var blocks = ImageToBlocks.ImageTo4X4(mipChain[mip].Frames[0], out int blocksWidth, out int blocksHeight);
-                    encoded = compressedEncoder.Encode(blocks, blocksWidth, blocksHeight, OutputOptions.quality,
+                    var blocks = ImageToBlocks.ImageTo4X4(mipChain[mip].Frames[0], out var blocksWidth, out var blocksHeight);
+                    encoded = compressedEncoder.Encode(blocks, blocksWidth, blocksHeight, OutputOptions.Quality,
                         !Debugger.IsAttached && Options.multiThreaded);
                 }
                 else
                 {
                     if (!mipChain[mip].TryGetSinglePixelSpan(out var mipPixels))
+                    {
                         throw new Exception("Cannot get pixel span.");
+                    }
 
                     encoded = uncompressedEncoder.Encode(mipPixels);
                 }
@@ -265,7 +279,9 @@ namespace BCnEncoder.Encoder
 
             // Dispose all mipmap levels
             foreach (var image in mipChain)
+            {
                 image.Dispose();
+            }
 
             return output;
         }
@@ -286,27 +302,31 @@ namespace BCnEncoder.Encoder
             IBcBlockEncoder compressedEncoder = null;
             IRawEncoder uncompressedEncoder = null;
 
-            var numMipMaps = OutputOptions.generateMipMaps ? (uint)OutputOptions.maxMipMapLevel : 1;
+            var numMipMaps = OutputOptions.GenerateMipMaps ? (uint)OutputOptions.MaxMipMapLevel : 1;
             var mipChain = MipMapper.GenerateMipChain(inputImage, ref numMipMaps);
 
             // Setup encoder
-            var isCompressedFormat = OutputOptions.format.IsCompressedFormat();
+            var isCompressedFormat = OutputOptions.Format.IsCompressedFormat();
             if (isCompressedFormat)
             {
-                compressedEncoder = GetEncoder(OutputOptions.format);
+                compressedEncoder = GetEncoder(OutputOptions.Format);
                 if (compressedEncoder == null)
-                    throw new NotSupportedException($"This format is not supported: {OutputOptions.format}");
+                {
+                    throw new NotSupportedException($"This Format is not supported: {OutputOptions.Format}");
+                }
             }
             else
             {
-                uncompressedEncoder = GetRawEncoder(OutputOptions.format);
+                uncompressedEncoder = GetRawEncoder(OutputOptions.Format);
             }
 
             // Dispose all mipmap levels
             if (mipLevel > numMipMaps - 1)
             {
                 foreach (var image in mipChain)
+                {
                     image.Dispose();
+                }
 
                 throw new ArgumentException($"{nameof(mipLevel)} cannot be more than number of mipmaps.");
             }
@@ -315,14 +335,16 @@ namespace BCnEncoder.Encoder
             byte[] encoded;
             if (isCompressedFormat)
             {
-                var blocks = ImageToBlocks.ImageTo4X4(mipChain[mipLevel].Frames[0], out int blocksWidth, out int blocksHeight);
-                encoded = compressedEncoder.Encode(blocks, blocksWidth, blocksHeight, OutputOptions.quality,
+                var blocks = ImageToBlocks.ImageTo4X4(mipChain[mipLevel].Frames[0], out var blocksWidth, out var blocksHeight);
+                encoded = compressedEncoder.Encode(blocks, blocksWidth, blocksHeight, OutputOptions.Quality,
                     !Debugger.IsAttached && Options.multiThreaded);
             }
             else
             {
                 if (!mipChain[mipLevel].TryGetSinglePixelSpan(out var mipPixels))
+                {
                     throw new Exception("Cannot get pixel span.");
+                }
 
                 encoded = uncompressedEncoder.Encode(mipPixels);
             }
@@ -332,7 +354,9 @@ namespace BCnEncoder.Encoder
 
             // Dispose all mipmap levels
             foreach (var image in mipChain)
+            {
                 image.Dispose();
+            }
 
             return encoded;
         }
@@ -351,7 +375,7 @@ namespace BCnEncoder.Encoder
         public void EncodeCubeMap(Image<Rgba32> right, Image<Rgba32> left, Image<Rgba32> top, Image<Rgba32> down,
             Image<Rgba32> back, Image<Rgba32> front, Stream outputStream)
         {
-            switch (OutputOptions.fileFormat)
+            switch (OutputOptions.FileFormat)
             {
                 case OutputFileFormat.Ktx:
                     var ktx = EncodeCubeMapToKtx(right, left, top, down, back, front);
@@ -394,12 +418,14 @@ namespace BCnEncoder.Encoder
             var faces = new[] { right, left, top, down, back, front };
 
             // Setup encoder
-            var isCompressedFormat = OutputOptions.format.IsCompressedFormat();
+            var isCompressedFormat = OutputOptions.Format.IsCompressedFormat();
             if (isCompressedFormat)
             {
-                compressedEncoder = GetEncoder(OutputOptions.format);
+                compressedEncoder = GetEncoder(OutputOptions.Format);
                 if (compressedEncoder == null)
-                    throw new NotSupportedException($"This format is not supported: {OutputOptions.format}");
+                {
+                    throw new NotSupportedException($"This Format is not supported: {OutputOptions.Format}");
+                }
 
                 output = new KtxFile(
                     KtxHeader.InitializeCompressed(right.Width, right.Height,
@@ -408,7 +434,7 @@ namespace BCnEncoder.Encoder
             }
             else
             {
-                uncompressedEncoder = GetRawEncoder(OutputOptions.format);
+                uncompressedEncoder = GetRawEncoder(OutputOptions.Format);
                 output = new KtxFile(
                     KtxHeader.InitializeUncompressed(right.Width, right.Height,
                         uncompressedEncoder.GetGlType(),
@@ -419,7 +445,7 @@ namespace BCnEncoder.Encoder
 
             }
 
-            var numMipMaps = OutputOptions.generateMipMaps ? (uint)OutputOptions.maxMipMapLevel : 1;
+            var numMipMaps = OutputOptions.GenerateMipMaps ? (uint)OutputOptions.MaxMipMapLevel : 1;
             var mipLength = MipMapper.CalculateMipChainLength(right.Width, right.Height, numMipMaps);
             for (uint i = 0; i < mipLength; i++)
             {
@@ -437,14 +463,16 @@ namespace BCnEncoder.Encoder
                     byte[] encoded;
                     if (isCompressedFormat)
                     {
-                        var blocks = ImageToBlocks.ImageTo4X4(mipChain[mip].Frames[0], out int blocksWidth, out int blocksHeight);
-                        encoded = compressedEncoder.Encode(blocks, blocksWidth, blocksHeight, OutputOptions.quality,
+                        var blocks = ImageToBlocks.ImageTo4X4(mipChain[mip].Frames[0], out var blocksWidth, out var blocksHeight);
+                        encoded = compressedEncoder.Encode(blocks, blocksWidth, blocksHeight, OutputOptions.Quality,
                             !Debugger.IsAttached && Options.multiThreaded);
                     }
                     else
                     {
                         if (!mipChain[mip].TryGetSinglePixelSpan(out var mipPixels))
+                        {
                             throw new Exception("Cannot get pixel span.");
+                        }
 
                         encoded = uncompressedEncoder.Encode(mipPixels);
                     }
@@ -463,11 +491,13 @@ namespace BCnEncoder.Encoder
 
                 // Dispose all mipmap levels
                 foreach (var image in mipChain)
+                {
                     image.Dispose();
+                }
             }
 
-            output.Header.NumberOfFaces = (uint)faces.Length;
-            output.Header.NumberOfMipmapLevels = mipLength;
+            output.header.NumberOfFaces = (uint)faces.Length;
+            output.header.NumberOfMipmapLevels = mipLength;
 
             return output;
         }
@@ -501,33 +531,35 @@ namespace BCnEncoder.Encoder
             var faces = new[] { right, left, top, down, back, front };
 
             // Setup encoder
-            var isCompressedFormat = OutputOptions.format.IsCompressedFormat();
+            var isCompressedFormat = OutputOptions.Format.IsCompressedFormat();
             if (isCompressedFormat)
             {
-                compressedEncoder = GetEncoder(OutputOptions.format);
+                compressedEncoder = GetEncoder(OutputOptions.Format);
                 if (compressedEncoder == null)
-                    throw new NotSupportedException($"This format is not supported: {OutputOptions.format}");
+                {
+                    throw new NotSupportedException($"This Format is not supported: {OutputOptions.Format}");
+                }
 
                 var (ddsHeader, dxt10Header) = DdsHeader.InitializeCompressed(right.Width, right.Height,
                     compressedEncoder.GetDxgiFormat());
                 output = new DdsFile(ddsHeader, dxt10Header);
 
-                if (OutputOptions.ddsBc1WriteAlphaFlag &&
-                    OutputOptions.format == CompressionFormat.BC1WithAlpha)
+                if (OutputOptions.DdsBc1WriteAlphaFlag &&
+                    OutputOptions.Format == CompressionFormat.Bc1WithAlpha)
                 {
-                    output.Header.ddsPixelFormat.dwFlags |= PixelFormatFlags.DDPF_ALPHAPIXELS;
+                    output.header.ddsPixelFormat.dwFlags |= PixelFormatFlags.DdpfAlphapixels;
                 }
             }
             else
             {
-                uncompressedEncoder = GetRawEncoder(OutputOptions.format);
+                uncompressedEncoder = GetRawEncoder(OutputOptions.Format);
                 var ddsHeader = DdsHeader.InitializeUncompressed(right.Width, right.Height,
                     uncompressedEncoder.GetDxgiFormat());
 
                 output = new DdsFile(ddsHeader);
             }
 
-            var numMipMaps = OutputOptions.generateMipMaps ? (uint)OutputOptions.maxMipMapLevel : 1;
+            var numMipMaps = OutputOptions.GenerateMipMaps ? (uint)OutputOptions.MaxMipMapLevel : 1;
 
             // Encode all faces
             for (var face = 0; face < faces.Length; face++)
@@ -540,14 +572,16 @@ namespace BCnEncoder.Encoder
                     byte[] encoded;
                     if (isCompressedFormat)
                     {
-                        var blocks = ImageToBlocks.ImageTo4X4(mipChain[mip].Frames[0], out int blocksWidth, out int blocksHeight);
-                        encoded = compressedEncoder.Encode(blocks, blocksWidth, blocksHeight, OutputOptions.quality,
+                        var blocks = ImageToBlocks.ImageTo4X4(mipChain[mip].Frames[0], out var blocksWidth, out var blocksHeight);
+                        encoded = compressedEncoder.Encode(blocks, blocksWidth, blocksHeight, OutputOptions.Quality,
                             !Debugger.IsAttached && Options.multiThreaded);
                     }
                     else
                     {
                         if (!mipChain[mip].TryGetSinglePixelSpan(out var mipPixels))
+                        {
                             throw new Exception("Cannot get pixel span.");
+                        }
 
                         encoded = uncompressedEncoder.Encode(mipPixels);
                     }
@@ -565,22 +599,25 @@ namespace BCnEncoder.Encoder
 
                 // Dispose all mipmap levels
                 foreach (var image in mipChain)
+                {
                     image.Dispose();
+                }
             }
 
-            output.Header.dwCaps |= HeaderCaps.DDSCAPS_COMPLEX;
-            output.Header.dwMipMapCount = numMipMaps;
+            output.header.dwCaps |= HeaderCaps.DdscapsComplex;
+            output.header.dwMipMapCount = numMipMaps;
             if (numMipMaps > 1)
             {
-                output.Header.dwCaps |= HeaderCaps.DDSCAPS_MIPMAP;
+                output.header.dwCaps |= HeaderCaps.DdscapsMipmap;
             }
-            output.Header.dwCaps2 |= HeaderCaps2.DDSCAPS2_CUBEMAP |
-                              HeaderCaps2.DDSCAPS2_CUBEMAP_POSITIVEX |
-                              HeaderCaps2.DDSCAPS2_CUBEMAP_NEGATIVEX |
-                              HeaderCaps2.DDSCAPS2_CUBEMAP_POSITIVEY |
-                              HeaderCaps2.DDSCAPS2_CUBEMAP_NEGATIVEY |
-                              HeaderCaps2.DDSCAPS2_CUBEMAP_POSITIVEZ |
-                              HeaderCaps2.DDSCAPS2_CUBEMAP_NEGATIVEZ;
+
+            output.header.dwCaps2 |= HeaderCaps2.Ddscaps2Cubemap |
+                              HeaderCaps2.Ddscaps2CubemapPositivex |
+                              HeaderCaps2.Ddscaps2CubemapNegativex |
+                              HeaderCaps2.Ddscaps2CubemapPositivey |
+                              HeaderCaps2.Ddscaps2CubemapNegativey |
+                              HeaderCaps2.Ddscaps2CubemapPositivez |
+                              HeaderCaps2.Ddscaps2CubemapNegativez;
 
             return output;
         }
@@ -589,25 +626,25 @@ namespace BCnEncoder.Encoder
         {
             switch (format)
             {
-                case CompressionFormat.BC1:
+                case CompressionFormat.Bc1:
                     return new Bc1BlockEncoder();
 
-                case CompressionFormat.BC1WithAlpha:
+                case CompressionFormat.Bc1WithAlpha:
                     return new Bc1AlphaBlockEncoder();
 
-                case CompressionFormat.BC2:
+                case CompressionFormat.Bc2:
                     return new Bc2BlockEncoder();
 
-                case CompressionFormat.BC3:
+                case CompressionFormat.Bc3:
                     return new Bc3BlockEncoder();
 
-                case CompressionFormat.BC4:
-                    return new Bc4BlockEncoder(InputOptions.luminanceAsRed);
+                case CompressionFormat.Bc4:
+                    return new Bc4BlockEncoder(InputOptions.LuminanceAsRed);
 
-                case CompressionFormat.BC5:
+                case CompressionFormat.Bc5:
                     return new Bc5BlockEncoder();
 
-                case CompressionFormat.BC7:
+                case CompressionFormat.Bc7:
                     return new Bc7Encoder();
 
                 default:
@@ -620,16 +657,16 @@ namespace BCnEncoder.Encoder
             switch (format)
             {
                 case CompressionFormat.R:
-                    return new RawLuminanceEncoder(InputOptions.luminanceAsRed);
+                    return new RawLuminanceEncoder(InputOptions.LuminanceAsRed);
 
-                case CompressionFormat.RG:
-                    return new RawRGEncoder();
+                case CompressionFormat.Rg:
+                    return new RawRgEncoder();
 
-                case CompressionFormat.RGB:
-                    return new RawRGBEncoder();
+                case CompressionFormat.Rgb:
+                    return new RawRgbEncoder();
 
-                case CompressionFormat.RGBA:
-                    return new RawRGBAEncoder();
+                case CompressionFormat.Rgba:
+                    return new RawRgbaEncoder();
 
                 default:
                     throw new ArgumentOutOfRangeException(nameof(format), format, null);

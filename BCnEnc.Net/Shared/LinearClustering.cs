@@ -65,25 +65,25 @@ namespace BCnEncoder.Shared
 
 			public readonly float Distance(LabXy other, float m, float s)
 			{
-				float dLab = MathF.Sqrt(
+				var dLab = MathF.Sqrt(
 					MathF.Pow(l - other.l, 2) +
 					MathF.Pow(a - other.a, 2) +
 					MathF.Pow(b - other.b, 2));
 
-				float dXy = MathF.Sqrt(
+				var dXy = MathF.Sqrt(
 					MathF.Pow(x - other.x, 2) +
 					MathF.Pow(y - other.y, 2));
-				return dLab + (m / s) * dXy;
+				return dLab + m / s * dXy;
 			}
 
 			public readonly float Distance(ClusterCenter other, float m, float s)
 			{
-				float dLab = MathF.Sqrt(
+				var dLab = MathF.Sqrt(
 					(l - other.l) * (l - other.l) +
 					(a - other.a) * (a - other.a) +
 					(b - other.b) * (b - other.b));
 
-				float dXy = MathF.Sqrt(
+				var dXy = MathF.Sqrt(
 					(x - other.x) * (x - other.x) +
 					(y - other.y) * (y - other.y));
 				return dLab + m / s * dXy;
@@ -131,19 +131,19 @@ namespace BCnEncoder.Shared
 			}
 
 			//Grid interval S
-			float S = MathF.Sqrt(pixels.Length / (float)clusters);
-			int[] clusterIndices = new int[pixels.Length];
+			var s = MathF.Sqrt(pixels.Length / (float)clusters);
+			var clusterIndices = new int[pixels.Length];
 
 			var labXys = ConvertToLabXy(pixels, width, height);
 
 
-			Span<ClusterCenter> clusterCenters = InitialClusterCenters(width, height, clusters, S, labXys);
+			Span<ClusterCenter> clusterCenters = InitialClusterCenters(width, height, clusters, s, labXys);
 			Span<ClusterCenter> previousCenters = new ClusterCenter[clusters];
 
-			float Error = 999;
+			float error = 999;
 			const float threshold = 0.1f;
-			int iter = 0;
-			while (Error > threshold)
+			var iter = 0;
+			while (error > threshold)
 			{
 				if (maxIterations > 0 && iter >= maxIterations)
 				{
@@ -156,18 +156,18 @@ namespace BCnEncoder.Shared
 				Array.Fill(clusterIndices, -1);
 
 				// Find closest cluster for pixels
-				for (int j = 0; j < clusters; j++)
+				for (var j = 0; j < clusters; j++)
 				{
-					int xL = Math.Max(0, (int)(clusterCenters[j].x - S));
-					int xH = Math.Min(width, (int)(clusterCenters[j].x + S));
-					int yL = Math.Max(0, (int)(clusterCenters[j].y - S));
-					int yH = Math.Min(height, (int)(clusterCenters[j].y + S));
+					var xL = Math.Max(0, (int)(clusterCenters[j].x - s));
+					var xH = Math.Min(width, (int)(clusterCenters[j].x + s));
+					var yL = Math.Max(0, (int)(clusterCenters[j].y - s));
+					var yH = Math.Min(height, (int)(clusterCenters[j].y + s));
 
-					for (int x = xL; x < xH; x++)
+					for (var x = xL; x < xH; x++)
 					{
-						for (int y = yL; y < yH; y++)
+						for (var y = yL; y < yH; y++)
 						{
-							int i = x + y * width;
+							var i = x + y * width;
 
 							if (clusterIndices[i] == -1)
 							{
@@ -175,8 +175,8 @@ namespace BCnEncoder.Shared
 							}
 							else
 							{
-								float prevDistance = clusterCenters[clusterIndices[i]].Distance(labXys[i], m, S);
-								float distance = clusterCenters[j].Distance(labXys[i], m, S);
+								var prevDistance = clusterCenters[clusterIndices[i]].Distance(labXys[i], m, s);
+								var distance = clusterCenters[j].Distance(labXys[i], m, s);
 								if (distance < prevDistance)
 								{
 									clusterIndices[i] = j;
@@ -186,7 +186,7 @@ namespace BCnEncoder.Shared
 					}
 				}
 
-				Error = RecalculateCenters(clusters, m, labXys, clusterIndices, previousCenters, S, ref clusterCenters);
+				error = RecalculateCenters(clusters, m, labXys, clusterIndices, previousCenters, s, ref clusterCenters);
 			}
 
 			if (enforceConnectivity) {
@@ -197,20 +197,20 @@ namespace BCnEncoder.Shared
 		}
 
 		private static float RecalculateCenters(int clusters, float m, LabXy[] labXys, int[] clusterIndices,
-			Span<ClusterCenter> previousCenters, float S, ref Span<ClusterCenter> clusterCenters)
+			Span<ClusterCenter> previousCenters, float s, ref Span<ClusterCenter> clusterCenters)
 		{
 			clusterCenters.Clear();
-			for (int i = 0; i < labXys.Length; i++)
+			for (var i = 0; i < labXys.Length; i++)
 			{
-				int clusterIndex = clusterIndices[i];
+				var clusterIndex = clusterIndices[i];
 				// Sometimes a pixel is out of the range of any cluster,
 				// in that case, find the nearest cluster and add it to it
 				if (clusterIndex == -1)
 				{
-					int bestCluster = 0;
-					float bestDistance = previousCenters[0].Distance(labXys[i], m, S);
-					for (int j = 1; j < clusters; j++) {
-						float dist = previousCenters[j].Distance(labXys[i], m, S);
+					var bestCluster = 0;
+					var bestDistance = previousCenters[0].Distance(labXys[i], m, s);
+					for (var j = 1; j < clusters; j++) {
+						var dist = previousCenters[j].Distance(labXys[i], m, s);
 						if (dist < bestDistance) {
 							bestDistance = dist;
 							bestCluster = j;
@@ -225,12 +225,12 @@ namespace BCnEncoder.Shared
 			}
 
 			float error = 0;
-			for (int i = 0; i < clusters; i++)
+			for (var i = 0; i < clusters; i++)
 			{
 				if (clusterCenters[i].count > 0)
 				{
 					clusterCenters[i] /= clusterCenters[i].count;
-					error += clusterCenters[i].Distance(previousCenters[i], m, S);
+					error += clusterCenters[i].Distance(previousCenters[i], m, s);
 				}
 			}
 
@@ -238,52 +238,52 @@ namespace BCnEncoder.Shared
 			return error;
 		}
 
-		private static ClusterCenter[] InitialClusterCenters(int width, int height, int clusters, float S, LabXy[] labXys)
+		private static ClusterCenter[] InitialClusterCenters(int width, int height, int clusters, float s, LabXy[] labXys)
 		{
-			ClusterCenter[] clusterCenters = new ClusterCenter[clusters];
+			var clusterCenters = new ClusterCenter[clusters];
 
 			if (clusters == 2) {
-				int x0 = (int)MathF.Floor(width * 0.333f);
-				int y0 = (int)MathF.Floor(height * 0.333f);
+				var x0 = (int)MathF.Floor(width * 0.333f);
+				var y0 = (int)MathF.Floor(height * 0.333f);
 
-				int x1 = (int)MathF.Floor(width * 0.666f);
-				int y1 = (int)MathF.Floor(height * 0.666f);
+				var x1 = (int)MathF.Floor(width * 0.666f);
+				var y1 = (int)MathF.Floor(height * 0.666f);
 
-				int i0 = x0 + y0 * width;
+				var i0 = x0 + y0 * width;
 				clusterCenters[0] = new ClusterCenter(labXys[i0]);
 
-				int i1 = x1 + y1 * width;
+				var i1 = x1 + y1 * width;
 				clusterCenters[1] = new ClusterCenter(labXys[i1]);
 			}else if(clusters == 3)
 			{
-				int x0 = (int)MathF.Floor(width * 0.333f);
-				int y0 = (int)MathF.Floor(height * 0.333f);
-				int i0 = x0 + y0 * width;
+				var x0 = (int)MathF.Floor(width * 0.333f);
+				var y0 = (int)MathF.Floor(height * 0.333f);
+				var i0 = x0 + y0 * width;
 				clusterCenters[0] = new ClusterCenter(labXys[i0]);
 
-				int x1 = (int)MathF.Floor(width * 0.666f);
-				int y1 = (int)MathF.Floor(height * 0.333f);
-				int i1 = x1 + y1 * width;
+				var x1 = (int)MathF.Floor(width * 0.666f);
+				var y1 = (int)MathF.Floor(height * 0.333f);
+				var i1 = x1 + y1 * width;
 				clusterCenters[1] = new ClusterCenter(labXys[i1]);
 
-				int x2 = (int)MathF.Floor(width * 0.5f);
-				int y2 = (int)MathF.Floor(height * 0.666f);
-				int i2 = x2 + y2 * width;
+				var x2 = (int)MathF.Floor(width * 0.5f);
+				var y2 = (int)MathF.Floor(height * 0.666f);
+				var i2 = x2 + y2 * width;
 				clusterCenters[2] = new ClusterCenter(labXys[i2]);
 			}
 			else {
-				int cIdx = 0;
+				var cIdx = 0;
 				//Choose initial centers
-				for (float x = S / 2; x < width; x += S)
+				for (var x = s / 2; x < width; x += s)
 				{
-					for (float y = S / 2; y < height; y += S)
+					for (var y = s / 2; y < height; y += s)
 					{
 						if (cIdx >= clusterCenters.Length)
 						{
 							break;
 						}
 
-						int i = (int)x + (int)y * width;
+						var i = (int)x + (int)y * width;
 						clusterCenters[cIdx] = new ClusterCenter(labXys[i]);
 						cIdx++;
 					}
@@ -294,13 +294,13 @@ namespace BCnEncoder.Shared
 
 		private static LabXy[] ConvertToLabXy(ReadOnlySpan<Rgba32> pixels, int width, int height)
 		{
-			LabXy[] labXys = new LabXy[pixels.Length];
+			var labXys = new LabXy[pixels.Length];
 			//Convert pixels to LabXy
-			for (int x = 0; x < width; x++)
+			for (var x = 0; x < width; x++)
 			{
-				for (int y = 0; y < height; y++)
+				for (var y = 0; y < height; y++)
 				{
-					int i = x + y * width;
+					var i = x + y * width;
 					var lab = new ColorLab(pixels[i]);
 					labXys[i] = new LabXy()
 					{
@@ -321,23 +321,23 @@ namespace BCnEncoder.Shared
 			ReadOnlySpan<int> neighborX = new[] { -1, 0, 1, 0 };
 			ReadOnlySpan<int> neighborY = new[] { 0, -1, 0, 1 };
 			
-			int sSquared = (width * height) / clusters;
+			var sSquared = width * height / clusters;
 
-			List<int> clusterX = new List<int>(sSquared);
-			List<int> clusterY = new List<int>(sSquared);
+			var clusterX = new List<int>(sSquared);
+			var clusterY = new List<int>(sSquared);
 
-			int adjacentLabel = 0;
-			int[] newLabels = new int[oldLabels.Length];
-			bool[] usedLabels = new bool[clusters];
+			var adjacentLabel = 0;
+			var newLabels = new int[oldLabels.Length];
+			var usedLabels = new bool[clusters];
 			Array.Fill(newLabels, -1);
 
-			for (int y = 0; y < height; ++y)
+			for (var y = 0; y < height; ++y)
 			{
-				for (int x = 0; x < width; ++x)
+				for (var x = 0; x < width; ++x)
 				{
-					int xyIndex = x + y * width;
+					var xyIndex = x + y * width;
 					if (newLabels[xyIndex] < 0) {
-						int label = oldLabels[xyIndex];
+						var label = oldLabels[xyIndex];
 						newLabels[xyIndex] = label;
 
 						//New cluster
@@ -345,11 +345,11 @@ namespace BCnEncoder.Shared
 						clusterY.Add(y);
 
 						//Search neighbors for already completed clusters
-						for (int i = 0; i < neighborX.Length; ++i)
+						for (var i = 0; i < neighborX.Length; ++i)
 						{
-							int nX = x + neighborX[i];
-							int nY = y + neighborY[i];
-							int nI = nX + nY * width;
+							var nX = x + neighborX[i];
+							var nY = y + neighborY[i];
+							var nI = nX + nY * width;
 							if (nX < width && nX >= 0 && nY < height && nY >= 0)
 							{
 								if (newLabels[nI] >= 0)
@@ -361,13 +361,13 @@ namespace BCnEncoder.Shared
 						}
 
 						//Count pixels in this cluster
-						for (int c = 0; c < clusterX.Count; ++c)
+						for (var c = 0; c < clusterX.Count; ++c)
 						{
-							for (int i = 0; i < neighborX.Length; ++i)
+							for (var i = 0; i < neighborX.Length; ++i)
 							{
-								int nX = clusterX[c] + neighborX[i];
-								int nY = clusterY[c] + neighborY[i];
-								int nI = nX + nY * width;
+								var nX = clusterX[c] + neighborX[i];
+								var nY = clusterY[c] + neighborY[i];
+								var nI = nX + nY * width;
 								if (nX < width && nX >= 0 && nY < height && nY >= 0)
 								{
 									if (newLabels[nI] == -1 && label == oldLabels[nI])
@@ -382,11 +382,11 @@ namespace BCnEncoder.Shared
 
 						// If this is unusually small cluster or this label is already used,
 						// merge with adjacent cluster
-						if (clusterX.Count < (sSquared / 4) || usedLabels[label])
+						if (clusterX.Count < sSquared / 4 || usedLabels[label])
 						{
-							for (int i = 0; i < clusterX.Count; ++i)
+							for (var i = 0; i < clusterX.Count; ++i)
 							{
-								newLabels[(clusterY[i] * width + clusterX[i])] = adjacentLabel;
+								newLabels[clusterY[i] * width + clusterX[i]] = adjacentLabel;
 							}
 						}
 						else {

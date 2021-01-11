@@ -8,8 +8,8 @@ namespace BCnEncoder.Encoder
 	{
 		byte[] Encode(RawBlock4X4Rgba32[] blocks, int blockWidth, int blockHeight, CompressionQuality quality, bool parallel = true);
 		GlInternalFormat GetInternalFormat();
-		GLFormat GetBaseInternalFormat();
-		DXGI_FORMAT GetDxgiFormat();
+		GlFormat GetBaseInternalFormat();
+		DxgiFormat GetDxgiFormat();
 	}
 
 

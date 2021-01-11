@@ -26,7 +26,7 @@ namespace BCnEncoder.Shared
 			float error = 0;
 			var pix1 = AsSpan;
 			var pix2 = other.AsSpan;
-			for (int i = 0; i < pix1.Length; i++) {
+			for (var i = 0; i < pix1.Length; i++) {
 				var col1 = pix1[i];
 				var col2 = pix2[i];
 
@@ -56,7 +56,7 @@ namespace BCnEncoder.Shared
 			float crError = 0;
 			var pix1 = AsSpan;
 			var pix2 = other.AsSpan;
-			for (int i = 0; i < pix1.Length; i++) {
+			for (var i = 0; i < pix1.Length; i++) {
 				var col1 = new ColorYCbCr(pix1[i]);
 				var col2 = new ColorYCbCr(pix2[i]);
 
@@ -81,7 +81,7 @@ namespace BCnEncoder.Shared
 			float alphaError = 0;
 			var pix1 = AsSpan;
 			var pix2 = other.AsSpan;
-			for (int i = 0; i < pix1.Length; i++) {
+			for (var i = 0; i < pix1.Length; i++) {
 				var col1 = new ColorYCbCrAlpha(pix1[i]);
 				var col2 = new ColorYCbCrAlpha(pix2[i]);
 
@@ -101,10 +101,10 @@ namespace BCnEncoder.Shared
 		}
 
 		public RawBlock4X4Ycbcr ToRawBlockYcbcr() {
-			RawBlock4X4Ycbcr rawYcbcr = new RawBlock4X4Ycbcr();
+			var rawYcbcr = new RawBlock4X4Ycbcr();
 			var pixels = AsSpan;
 			var ycbcrPs = rawYcbcr.AsSpan;
-			for (int i = 0; i < pixels.Length; i++) {
+			for (var i = 0; i < pixels.Length; i++) {
 				ycbcrPs[i] = new ColorYCbCr(pixels[i]);
 			}
 			return rawYcbcr;
@@ -112,7 +112,7 @@ namespace BCnEncoder.Shared
 
 		public bool HasTransparentPixels() {
 			var pixels = AsSpan;
-			for (int i = 0; i < pixels.Length; i++) {
+			for (var i = 0; i < pixels.Length; i++) {
 				if (pixels[i].A < 255) return true;
 			}
 			return false;
@@ -138,7 +138,7 @@ namespace BCnEncoder.Shared
 			float crError = 0;
 			var pix1 = AsSpan;
 			var pix2 = other.AsSpan;
-			for (int i = 0; i < pix1.Length; i++) {
+			for (var i = 0; i < pix1.Length; i++) {
 				var col1 = pix1[i];
 				var col2 = new ColorYCbCr(pix2[i]);
 

@@ -19,13 +19,13 @@ namespace BCnEncTests
             var originalImage = decoder.Decode(ktx);
 
             var rawBytes = encoder.EncodeToRawBytes(originalImage);
-            var recodedImage = decoder.DecodeRaw(rawBytes[0], CompressionFormat.BC1, originalImage.Width, originalImage.Height);
+            var recodedImage = decoder.DecodeRaw(rawBytes[0], CompressionFormat.Bc1, originalImage.Width, originalImage.Height);
 
             originalImage.TryGetSinglePixelSpan(out var originalPixels);
             recodedImage.TryGetSinglePixelSpan(out var recodedPixels);
 
             var psnr=ImageQuality.PeakSignalToNoiseRatio(originalPixels, recodedPixels);
-            if (encoder.OutputOptions.quality == CompressionQuality.Fast)
+            if (encoder.OutputOptions.Quality == CompressionQuality.Fast)
             {
                 Assert.True(psnr > 25);
             }

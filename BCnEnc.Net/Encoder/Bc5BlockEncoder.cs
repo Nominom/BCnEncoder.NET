@@ -10,17 +10,17 @@ namespace BCnEncoder.Encoder
 
 		public byte[] Encode(RawBlock4X4Rgba32[] blocks, int blockWidth, int blockHeight, CompressionQuality quality, bool parallel)
 		{
-			byte[] outputData = new byte[blockWidth * blockHeight * Marshal.SizeOf<Bc5Block>()];
-			Span<Bc5Block> outputBlocks = MemoryMarshal.Cast<byte, Bc5Block>(outputData);
+			var outputData = new byte[blockWidth * blockHeight * Marshal.SizeOf<Bc5Block>()];
+			var outputBlocks = MemoryMarshal.Cast<byte, Bc5Block>(outputData);
 
 			if (parallel) {
 				Parallel.For(0, blocks.Length, i => {
-					Span<Bc5Block> outputBlocks = MemoryMarshal.Cast<byte, Bc5Block>(outputData);
+					var outputBlocks = MemoryMarshal.Cast<byte, Bc5Block>(outputData);
 					outputBlocks[i] = EncodeBlock(blocks[i], quality);
 				});
 			}
 			else {
-				for (int i = 0; i < blocks.Length; i++) {
+				for (var i = 0; i < blocks.Length; i++) {
 					outputBlocks[i] = EncodeBlock(blocks[i], quality);
 				}
 			}
@@ -29,17 +29,17 @@ namespace BCnEncoder.Encoder
 		}
 
 		private Bc5Block EncodeBlock(RawBlock4X4Rgba32 block, CompressionQuality quality) {
-			Bc5Block output = new Bc5Block();
-			byte[] reds = new byte[16];
-			byte[] greens = new byte[16];
+			var output = new Bc5Block();
+			var reds = new byte[16];
+			var greens = new byte[16];
 			var pixels = block.AsSpan;
-			for (int i = 0; i < 16; i++) {
+			for (var i = 0; i < 16; i++) {
 				reds[i] = pixels[i].R;
 				greens[i] = pixels[i].G;
 			}
 
-			int variations = 0;
-			int errorThreshold = 0;
+			var variations = 0;
+			var errorThreshold = 0;
  			switch (quality) {
 				case CompressionQuality.Fast:
 					variations = 3;
@@ -101,15 +101,15 @@ namespace BCnEncoder.Encoder
 		}
 
 		public GlInternalFormat GetInternalFormat() {
-			return GlInternalFormat.GL_COMPRESSED_RED_GREEN_RGTC2_EXT;
+			return GlInternalFormat.GlCompressedRedGreenRgtc2Ext;
 		}
 
-		public GLFormat GetBaseInternalFormat() {
-			return GLFormat.GL_RG;
+		public GlFormat GetBaseInternalFormat() {
+			return GlFormat.GlRg;
 		}
 
-		public DXGI_FORMAT GetDxgiFormat() {
-			return DXGI_FORMAT.DXGI_FORMAT_BC5_UNORM;
+		public DxgiFormat GetDxgiFormat() {
+			return DxgiFormat.DxgiFormatBc5Unorm;
 		}
 
 		#region Encoding private stuff
@@ -124,8 +124,8 @@ namespace BCnEncoder.Encoder
 			//Find min and max alpha
 			byte min = 255;
 			byte max = 0;
-			bool hasExtremeValues = false;
-			for (int i = 0; i < pixels.Length; i++) {
+			var hasExtremeValues = false;
+			for (var i = 0; i < pixels.Length; i++) {
 				if (pixels[i] < 255 && pixels[i] > 0) {
 					if (pixels[i] < min) min = pixels[i];
 					if (pixels[i] > max) max = pixels[i];
@@ -137,12 +137,12 @@ namespace BCnEncoder.Encoder
 
 
 			int SelectIndices(ref Bc5Block block) {
-				int cumulativeError = 0;
+				var cumulativeError = 0;
 				//var c0 = block.Red0;
 				//var c1 = block.Red1;
 				var c0 = col0Getter(block);
 				var c1 = col1Getter(block);
-				Span<byte> colors = c0 > c1
+				var colors = c0 > c1
 					? stackalloc byte[] {
 						c0,
 						c1,
@@ -163,11 +163,11 @@ namespace BCnEncoder.Encoder
 						0,
 						255
 					};
-				for (int i = 0; i < pixels.Length; i++) {
+				for (var i = 0; i < pixels.Length; i++) {
 					byte bestIndex = 0;
-					int bestError = Math.Abs(pixels[i] - colors[0]);
+					var bestError = Math.Abs(pixels[i] - colors[0]);
 					for (byte j = 1; j < colors.Length; j++) {
-						int error = Math.Abs(pixels[i] - colors[j]);
+						var error = Math.Abs(pixels[i] - colors[j]);
 						if (error < bestError) {
 							bestIndex = j;
 							bestError = error;
@@ -200,21 +200,21 @@ namespace BCnEncoder.Encoder
 			//best.Red1 = min;
 			best = col0Setter(best, max);
 			best = col1Setter(best, min);
-			int bestError = SelectIndices(ref best);
+			var bestError = SelectIndices(ref best);
 			if (bestError == 0) {
 				return best;
 			}
 
-			for (byte i = (byte)variations; i > 0; i--) {
+			for (var i = (byte)variations; i > 0; i--) {
 				{
-					byte c0 = ByteHelper.ClampToByte(max - i);
-					byte c1 = ByteHelper.ClampToByte(min + i);
+					var c0 = ByteHelper.ClampToByte(max - i);
+					var c1 = ByteHelper.ClampToByte(min + i);
 					var block = colorBlock;
 					//block.Red0 = hasExtremeValues ? c1 : c0;
 					//block.Red1 = hasExtremeValues ? c0 : c1;
 					block = col0Setter(block, hasExtremeValues ? c1 : c0);
 					block = col1Setter(block, hasExtremeValues ? c0 : c1);
-					int error = SelectIndices(ref block);
+					var error = SelectIndices(ref block);
 					if (error < bestError) {
 						best = block;
 						bestError = error;
@@ -223,14 +223,14 @@ namespace BCnEncoder.Encoder
 					}
 				}
 				{
-					byte c0 = ByteHelper.ClampToByte(max + i);
-					byte c1 = ByteHelper.ClampToByte(min - i);
+					var c0 = ByteHelper.ClampToByte(max + i);
+					var c1 = ByteHelper.ClampToByte(min - i);
 					var block = colorBlock;
 					//block.Red0 = hasExtremeValues ? c1 : c0;
 					//block.Red1 = hasExtremeValues ? c0 : c1;
 					block = col0Setter(block, hasExtremeValues ? c1 : c0);
 					block = col1Setter(block, hasExtremeValues ? c0 : c1);
-					int error = SelectIndices(ref block);
+					var error = SelectIndices(ref block);
 					if (error < bestError) {
 						best = block;
 						bestError = error;
@@ -239,14 +239,14 @@ namespace BCnEncoder.Encoder
 					}
 				}
 				{
-					byte c0 = ByteHelper.ClampToByte(max);
-					byte c1 = ByteHelper.ClampToByte(min - i);
+					var c0 = ByteHelper.ClampToByte(max);
+					var c1 = ByteHelper.ClampToByte(min - i);
 					var block = colorBlock;
 					//block.Red0 = hasExtremeValues ? c1 : c0;
 					//block.Red1 = hasExtremeValues ? c0 : c1;
 					block = col0Setter(block, hasExtremeValues ? c1 : c0);
 					block = col1Setter(block, hasExtremeValues ? c0 : c1);
-					int error = SelectIndices(ref block);
+					var error = SelectIndices(ref block);
 					if (error < bestError) {
 						best = block;
 						bestError = error;
@@ -255,14 +255,14 @@ namespace BCnEncoder.Encoder
 					}
 				}
 				{
-					byte c0 = ByteHelper.ClampToByte(max + i);
-					byte c1 = ByteHelper.ClampToByte(min);
+					var c0 = ByteHelper.ClampToByte(max + i);
+					var c1 = ByteHelper.ClampToByte(min);
 					var block = colorBlock;
 					//block.Red0 = hasExtremeValues ? c1 : c0;
 					//block.Red1 = hasExtremeValues ? c0 : c1;
 					block = col0Setter(block, hasExtremeValues ? c1 : c0);
 					block = col1Setter(block, hasExtremeValues ? c0 : c1);
-					int error = SelectIndices(ref block);
+					var error = SelectIndices(ref block);
 					if (error < bestError) {
 						best = block;
 						bestError = error;
@@ -271,14 +271,14 @@ namespace BCnEncoder.Encoder
 					}
 				}
 				{
-					byte c0 = ByteHelper.ClampToByte(max);
-					byte c1 = ByteHelper.ClampToByte(min + i);
+					var c0 = ByteHelper.ClampToByte(max);
+					var c1 = ByteHelper.ClampToByte(min + i);
 					var block = colorBlock;
 					//block.Red0 = hasExtremeValues ? c1 : c0;
 					//block.Red1 = hasExtremeValues ? c0 : c1;
 					block = col0Setter(block, hasExtremeValues ? c1 : c0);
 					block = col1Setter(block, hasExtremeValues ? c0 : c1);
-					int error = SelectIndices(ref block);
+					var error = SelectIndices(ref block);
 					if (error < bestError) {
 						best = block;
 						bestError = error;
@@ -287,14 +287,14 @@ namespace BCnEncoder.Encoder
 					}
 				}
 				{
-					byte c0 = ByteHelper.ClampToByte(max - i);
-					byte c1 = ByteHelper.ClampToByte(min);
+					var c0 = ByteHelper.ClampToByte(max - i);
+					var c1 = ByteHelper.ClampToByte(min);
 					var block = colorBlock;
 					//block.Red0 = hasExtremeValues ? c1 : c0;
 					//block.Red1 = hasExtremeValues ? c0 : c1;
 					block = col0Setter(block, hasExtremeValues ? c1 : c0);
 					block = col1Setter(block, hasExtremeValues ? c0 : c1);
-					int error = SelectIndices(ref block);
+					var error = SelectIndices(ref block);
 					if (error < bestError) {
 						best = block;
 						bestError = error;

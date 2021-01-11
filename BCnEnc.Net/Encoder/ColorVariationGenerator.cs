@@ -15,7 +15,7 @@ namespace BCnEncoder.Encoder
 		public static int VarPatternCount => varPatternEp0R.Length;
 
 		public static (ColorRgb565, ColorRgb565) Variate565(ColorRgb565 c0, ColorRgb565 c1, int i) {
-			int idx = i % varPatternEp0R.Length;
+			var idx = i % varPatternEp0R.Length;
 			var newEp0 = new ColorRgb565();
 			var newEp1 = new ColorRgb565();
 
@@ -33,11 +33,11 @@ namespace BCnEncoder.Encoder
 
 		public static List<ColorRgb565> GenerateVariationsSidewaysMax(int variations, ColorYCbCr min, ColorYCbCr max)
 		{
-			List<ColorRgb565> colors = new List<ColorRgb565>();
+			var colors = new List<ColorRgb565>();
 			colors.Add(min.ToColorRgb565());
 			colors.Add(max.ToColorRgb565());
 
-			for (int i = 0; i < variations; i++)
+			for (var i = 0; i < variations; i++)
 			{
 				max.y -= 0.05f;
 				min.y += 0.05f;
@@ -86,11 +86,11 @@ namespace BCnEncoder.Encoder
 
 		public static List<ColorRgb565> GenerateVariationsSidewaysMinMax(int variations, ColorYCbCr min, ColorYCbCr max)
 		{
-			List<ColorRgb565> colors = new List<ColorRgb565>();
+			var colors = new List<ColorRgb565>();
 			colors.Add(min.ToColorRgb565());
 			colors.Add(max.ToColorRgb565());
 
-			for (int i = 0; i < variations; i++)
+			for (var i = 0; i < variations; i++)
 			{
 				max.y -= 0.05f;
 				min.y += 0.05f;

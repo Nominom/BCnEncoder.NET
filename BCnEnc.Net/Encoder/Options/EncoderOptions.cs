@@ -1,5 +1,8 @@
 ﻿namespace BCnEncoder.Encoder.Options
 {
+    /// <summary>
+    /// General options for the encoder.
+    /// </summary>
 	public class EncoderOptions
     {
         /// <summary>
