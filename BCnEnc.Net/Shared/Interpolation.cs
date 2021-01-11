@@ -29,10 +29,10 @@
         /// <param name="num">The dividend.</param>
         /// <param name="den">The divisor.</param>
         /// <returns>The interpolated component.</returns>
-        public static int Interpolate(int a, int b, int num, float den) =>
-            (int)(((den - num) * a + num * b) / den);
+        public static int Interpolate(int a, int b, int num, int den) =>
+            (int)(((den - num) * a + num * b) / (float)den);
 
-        private static ColorRgb24 InterpolateColor(ColorRgb24 c0, ColorRgb24 c1, int num, float den) => new ColorRgb24(
+        private static ColorRgb24 InterpolateColor(ColorRgb24 c0, ColorRgb24 c1, int num, int den) => new ColorRgb24(
             (byte)Interpolate(c0.r, c1.r, num, den),
             (byte)Interpolate(c0.g, c1.g, num, den),
             (byte)Interpolate(c0.b, c1.b, num, den));
