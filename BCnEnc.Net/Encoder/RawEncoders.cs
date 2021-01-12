@@ -8,11 +8,11 @@ namespace BCnEncoder.Encoder
 	{
 		byte[] Encode(ReadOnlySpan<Rgba32> pixels);
 		GlInternalFormat GetInternalFormat();
-		GLFormat GetBaseInternalFormat();
-		GLFormat GetGlFormat();
-		GLType GetGlType();
+		GlFormat GetBaseInternalFormat();
+		GlFormat GetGlFormat();
+		GlType GetGlType();
 		uint GetGlTypeSize();
-		DXGI_FORMAT GetDxgiFormat();
+		DxgiFormat GetDxgiFormat();
 	}
 
 	internal class RawLuminanceEncoder : IRawEncoder {
@@ -23,8 +23,8 @@ namespace BCnEncoder.Encoder
 		}
 
 		public byte[] Encode(ReadOnlySpan<Rgba32> pixels) {
-			byte[] output = new byte[pixels.Length];
-			for (int i = 0; i < pixels.Length; i++) {
+			var output = new byte[pixels.Length];
+			for (var i = 0; i < pixels.Length; i++) {
 				if (useLuminance) {
 					output[i] = (byte)(new ColorYCbCr(pixels[i]).y * 255);
 				}
@@ -37,27 +37,27 @@ namespace BCnEncoder.Encoder
 		}
 
 		public GlInternalFormat GetInternalFormat()
-			=> GlInternalFormat.GL_R8;
+			=> GlInternalFormat.GlR8;
 
-		public GLFormat GetBaseInternalFormat()
-			=> GLFormat.GL_RED;
+		public GlFormat GetBaseInternalFormat()
+			=> GlFormat.GlRed;
 
-		public GLFormat GetGlFormat() => GLFormat.GL_RED;
+		public GlFormat GetGlFormat() => GlFormat.GlRed;
 
-		public GLType GetGlType()
-			=> GLType.GL_BYTE;
+		public GlType GetGlType()
+			=> GlType.GlByte;
 
 		public uint GetGlTypeSize()
 			=> 1;
 
-		public DXGI_FORMAT GetDxgiFormat() => DXGI_FORMAT.DXGI_FORMAT_R8_UNORM;
+		public DxgiFormat GetDxgiFormat() => DxgiFormat.DxgiFormatR8Unorm;
 	}
 
-	internal class RawRGEncoder : IRawEncoder
+	internal class RawRgEncoder : IRawEncoder
 	{
 		public byte[] Encode(ReadOnlySpan<Rgba32> pixels) {
-			byte[] output = new byte[pixels.Length * 2];
-			for (int i = 0; i < pixels.Length; i++) {
+			var output = new byte[pixels.Length * 2];
+			for (var i = 0; i < pixels.Length; i++) {
 				output[i * 2] = pixels[i].R;
 				output[i * 2 + 1] = pixels[i].G;
 			}
@@ -65,27 +65,27 @@ namespace BCnEncoder.Encoder
 		}
 
 		public GlInternalFormat GetInternalFormat()
-			=> GlInternalFormat.GL_RG8;
+			=> GlInternalFormat.GlRg8;
 
-		public GLFormat GetBaseInternalFormat()
-			=> GLFormat.GL_RG;
+		public GlFormat GetBaseInternalFormat()
+			=> GlFormat.GlRg;
 
-		public GLFormat GetGlFormat() => GLFormat.GL_RG;
+		public GlFormat GetGlFormat() => GlFormat.GlRg;
 
-		public GLType GetGlType()
-			=> GLType.GL_BYTE;
+		public GlType GetGlType()
+			=> GlType.GlByte;
 
 		public uint GetGlTypeSize()
 			=> 1;
 
-		public DXGI_FORMAT GetDxgiFormat() => DXGI_FORMAT.DXGI_FORMAT_R8G8_UNORM;
+		public DxgiFormat GetDxgiFormat() => DxgiFormat.DxgiFormatR8G8Unorm;
 	}
 
-	internal class RawRGBEncoder : IRawEncoder
+	internal class RawRgbEncoder : IRawEncoder
 	{
 		public byte[] Encode(ReadOnlySpan<Rgba32> pixels) {
-			byte[] output = new byte[pixels.Length * 3];
-			for (int i = 0; i < pixels.Length; i++) {
+			var output = new byte[pixels.Length * 3];
+			for (var i = 0; i < pixels.Length; i++) {
 				output[i * 3] = pixels[i].R;
 				output[i * 3 + 1] = pixels[i].G;
 				output[i * 3 + 2] = pixels[i].B;
@@ -94,27 +94,27 @@ namespace BCnEncoder.Encoder
 		}
 
 		public GlInternalFormat GetInternalFormat()
-			=> GlInternalFormat.GL_RGB8;
+			=> GlInternalFormat.GlRgb8;
 
-		public GLFormat GetBaseInternalFormat()
-			=> GLFormat.GL_RGB;
+		public GlFormat GetBaseInternalFormat()
+			=> GlFormat.GlRgb;
 
-		public GLFormat GetGlFormat() => GLFormat.GL_RGB;
+		public GlFormat GetGlFormat() => GlFormat.GlRgb;
 
-		public GLType GetGlType()
-			=> GLType.GL_BYTE;
+		public GlType GetGlType()
+			=> GlType.GlByte;
 
 		public uint GetGlTypeSize()
 			=> 1;
 
-		public DXGI_FORMAT GetDxgiFormat() => throw new NotSupportedException("RGB format is not supported for dds files.");
+		public DxgiFormat GetDxgiFormat() => throw new NotSupportedException("RGB Format is not supported for dds files.");
 	}
 
-	internal class RawRGBAEncoder : IRawEncoder
+	internal class RawRgbaEncoder : IRawEncoder
 	{
 		public byte[] Encode(ReadOnlySpan<Rgba32> pixels) {
-			byte[] output = new byte[pixels.Length * 4];
-			for (int i = 0; i < pixels.Length; i++) {
+			var output = new byte[pixels.Length * 4];
+			for (var i = 0; i < pixels.Length; i++) {
 				output[i * 4] = pixels[i].R;
 				output[i * 4 + 1] = pixels[i].G;
 				output[i * 4 + 2] = pixels[i].B;
@@ -124,19 +124,19 @@ namespace BCnEncoder.Encoder
 		}
 
 		public GlInternalFormat GetInternalFormat()
-			=> GlInternalFormat.GL_RGBA8;
+			=> GlInternalFormat.GlRgba8;
 
-		public GLFormat GetBaseInternalFormat()
-			=> GLFormat.GL_RGBA;
+		public GlFormat GetBaseInternalFormat()
+			=> GlFormat.GlRgba;
 
-		public GLFormat GetGlFormat() => GLFormat.GL_RGBA;
+		public GlFormat GetGlFormat() => GlFormat.GlRgba;
 
-		public GLType GetGlType()
-			=> GLType.GL_BYTE;
+		public GlType GetGlType()
+			=> GlType.GlByte;
 
 		public uint GetGlTypeSize()
 			=> 1;
 
-		public DXGI_FORMAT GetDxgiFormat() => DXGI_FORMAT.DXGI_FORMAT_R8G8B8A8_UNORM;
+		public DxgiFormat GetDxgiFormat() => DxgiFormat.DxgiFormatR8G8B8A8Unorm;
 	}
 }

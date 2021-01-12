@@ -10,20 +10,20 @@ namespace BCnEncoder.Encoder
 
 		public byte[] Encode(RawBlock4X4Rgba32[] blocks, int blockWidth, int blockHeight, CompressionQuality quality, bool parallel)
 		{
-			byte[] outputData = new byte[blockWidth * blockHeight * Marshal.SizeOf<Bc2Block>()];
-			Span<Bc2Block> outputBlocks = MemoryMarshal.Cast<byte, Bc2Block>(outputData);
+			var outputData = new byte[blockWidth * blockHeight * Marshal.SizeOf<Bc2Block>()];
+			var outputBlocks = MemoryMarshal.Cast<byte, Bc2Block>(outputData);
 
 			if (parallel)
 			{
 				Parallel.For(0, blocks.Length, i =>
 				{
-					Span<Bc2Block> outputBlocks = MemoryMarshal.Cast<byte, Bc2Block>(outputData);
+					var outputBlocks = MemoryMarshal.Cast<byte, Bc2Block>(outputData);
 					outputBlocks[i] = EncodeBlock(blocks[i], quality);
 				});
 			}
 			else
 			{
-				for (int i = 0; i < blocks.Length; i++)
+				for (var i = 0; i < blocks.Length; i++)
 				{
 					outputBlocks[i] = EncodeBlock(blocks[i], quality);
 				}
@@ -50,23 +50,23 @@ namespace BCnEncoder.Encoder
 
 		public GlInternalFormat GetInternalFormat()
 		{
-			return GlInternalFormat.GL_COMPRESSED_RGBA_S3TC_DXT3_EXT;
+			return GlInternalFormat.GlCompressedRgbaS3TcDxt3Ext;
 		}
 
-		public GLFormat GetBaseInternalFormat()
+		public GlFormat GetBaseInternalFormat()
 		{
-			return GLFormat.GL_RGBA;
+			return GlFormat.GlRgba;
 		}
 
-		public DXGI_FORMAT GetDxgiFormat() {
-			return DXGI_FORMAT.DXGI_FORMAT_BC2_UNORM;
+		public DxgiFormat GetDxgiFormat() {
+			return DxgiFormat.DxgiFormatBc2Unorm;
 		}
 
 		#region Encoding private stuff
 
 		private static Bc2Block TryColors(RawBlock4X4Rgba32 rawBlock, ColorRgb565 color0, ColorRgb565 color1, out float error, float rWeight = 0.3f, float gWeight = 0.6f, float bWeight = 0.1f)
 		{
-			Bc2Block output = new Bc2Block();
+			var output = new Bc2Block();
 
 			var pixels = rawBlock.AsSpan;
 
@@ -84,7 +84,7 @@ namespace BCnEncoder.Encoder
 				};
 
 			error = 0;
-			for (int i = 0; i < 16; i++)
+			for (var i = 0; i < 16; i++)
 			{
 				var color = pixels[i];
 				output.SetAlpha(i, color.A);
@@ -110,8 +110,8 @@ namespace BCnEncoder.Encoder
 				PcaVectors.Create(pixels, out var mean, out var principalAxis);
 				PcaVectors.GetMinMaxColor565(pixels, mean, principalAxis, out var min, out var max);
 				
-				ColorRgb565 c0 = max;
-				ColorRgb565 c1 = min;
+				var c0 = max;
+				var c1 = min;
 
 				var output = TryColors(rawBlock, c0, c1, out var _);
 
@@ -120,22 +120,22 @@ namespace BCnEncoder.Encoder
 		}
 
 		private static class Bc2BlockEncoderBalanced {
-			private const int maxTries = 24 * 2;
-			private const float errorThreshold = 0.05f;
+			private const int MaxTries_ = 24 * 2;
+			private const float ErrorThreshold_ = 0.05f;
 
 			internal static Bc2Block EncodeBlock(RawBlock4X4Rgba32 rawBlock)
 			{
 				var pixels = rawBlock.AsSpan;
 
-				PcaVectors.Create(pixels, out System.Numerics.Vector3 mean, out System.Numerics.Vector3 pa);
+				PcaVectors.Create(pixels, out var mean, out var pa);
 				PcaVectors.GetMinMaxColor565(pixels, mean, pa, out var min, out var max);
 
 				var c0 = max;
 				var c1 = min;
 
-				Bc2Block best = TryColors(rawBlock, c0, c1, out float bestError);
+				var best = TryColors(rawBlock, c0, c1, out var bestError);
 				
-				for (int i = 0; i < maxTries; i++) {
+				for (var i = 0; i < MaxTries_; i++) {
 					var (newC0, newC1) = ColorVariationGenerator.Variate565(c0, c1, i);
 					
 					var block = TryColors(rawBlock, newC0, newC1, out var error);
@@ -148,7 +148,7 @@ namespace BCnEncoder.Encoder
 						c1 = newC1;
 					}
 
-					if (bestError < errorThreshold) {
+					if (bestError < ErrorThreshold_) {
 						break;
 					}
 				}
@@ -159,15 +159,15 @@ namespace BCnEncoder.Encoder
 
 		private static class Bc2BlockEncoderSlow
 		{
-			private const int maxTries = 9999;
-			private const float errorThreshold = 0.01f;
+			private const int MaxTries_ = 9999;
+			private const float ErrorThreshold_ = 0.01f;
 
 
 			internal static Bc2Block EncodeBlock(RawBlock4X4Rgba32 rawBlock)
 			{
 				var pixels = rawBlock.AsSpan;
 
-				PcaVectors.Create(pixels, out System.Numerics.Vector3 mean, out System.Numerics.Vector3 pa);
+				PcaVectors.Create(pixels, out var mean, out var pa);
 				PcaVectors.GetMinMaxColor565(pixels, mean, pa, out var min, out var max);
 
 				var c0 = max;
@@ -180,11 +180,11 @@ namespace BCnEncoder.Encoder
 					c1 = c;
 				}
 
-				Bc2Block best = TryColors(rawBlock, c0, c1, out float bestError);
+				var best = TryColors(rawBlock, c0, c1, out var bestError);
 
-				int lastChanged = 0;
+				var lastChanged = 0;
 
-				for (int i = 0; i < maxTries; i++) {
+				for (var i = 0; i < MaxTries_; i++) {
 					var (newC0, newC1) = ColorVariationGenerator.Variate565(c0, c1, i);
 					
 					if (newC0.data < newC1.data)
@@ -207,7 +207,7 @@ namespace BCnEncoder.Encoder
 						lastChanged = 0;
 					}
 
-					if (bestError < errorThreshold || lastChanged > ColorVariationGenerator.VarPatternCount) {
+					if (bestError < ErrorThreshold_ || lastChanged > ColorVariationGenerator.VarPatternCount) {
 						break;
 					}
 				}

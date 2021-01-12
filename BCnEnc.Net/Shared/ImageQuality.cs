@@ -10,14 +10,14 @@ namespace BCnEncoder.Shared
 				throw new ArgumentException("Both spans should be the same length");
 			}
 			float error = 0;
-			for (int i = 0; i < original.Length; i++) {
+			for (var i = 0; i < original.Length; i++) {
 				var o = new ColorYCbCr(original[i]);
 				var c = new ColorYCbCr(other[i]);
 				error += (o.y - c.y) * (o.y - c.y);
 				error += (o.cb - c.cb) * (o.cb - c.cb);
 				error += (o.cr - c.cr) * (o.cr - c.cr);
 				if (countAlpha) {
-					error += ((original[i].A - other[i].A) / 255.0f) * ((original[i].A - other[i].A) / 255.0f);
+					error += (original[i].A - other[i].A) / 255.0f * ((original[i].A - other[i].A) / 255.0f);
 				}
 				
 			}
@@ -40,12 +40,12 @@ namespace BCnEncoder.Shared
 				throw new ArgumentException("Both spans should be the same length");
 			}
 			float error = 0;
-			for (int i = 0; i < original.Length; i++) {
+			for (var i = 0; i < original.Length; i++) {
 				var o = new ColorYCbCr(original[i]);
 				var c = new ColorYCbCr(other[i]);
 				error += (o.y - c.y) * (o.y - c.y);
 				if (countAlpha) {
-					error += ((original[i].A - other[i].A) / 255.0f) * ((original[i].A - other[i].A) / 255.0f);
+					error += (original[i].A - other[i].A) / 255.0f * ((original[i].A - other[i].A) / 255.0f);
 				}
 				
 			}

@@ -18,14 +18,14 @@ namespace BCnEncTests
 		public void ReadRgba() {
 			using FileStream fs = File.OpenRead(@"../../../testImages/test_decompress_rgba.dds");
 			DdsFile file = DdsFile.Load(fs);
-			Assert.Equal(DXGI_FORMAT.DXGI_FORMAT_R8G8B8A8_UNORM, file.Header.ddsPixelFormat.DxgiFormat);
-			Assert.Equal(file.Header.dwMipMapCount, (uint)file.Faces[0].MipMaps.Length);
+			Assert.Equal(DxgiFormat.DxgiFormatR8G8B8A8Unorm, file.header.ddsPixelFormat.DxgiFormat);
+			Assert.Equal(file.header.dwMipMapCount, (uint)file.Faces[0].MipMaps.Length);
 
 			BcDecoder decoder = new BcDecoder();
 			var images = decoder.DecodeAllMipMaps(file);
 
-			Assert.Equal((uint)images[0].Width, file.Header.dwWidth);
-			Assert.Equal((uint)images[0].Height, file.Header.dwHeight);
+			Assert.Equal((uint)images[0].Width, file.header.dwWidth);
+			Assert.Equal((uint)images[0].Height, file.header.dwHeight);
 
 			for (int i = 0; i < images.Length; i++) {
 				using FileStream outFs = File.OpenWrite($"decoding_test_dds_rgba_mip{i}.png");
@@ -38,15 +38,15 @@ namespace BCnEncTests
 		public void ReadBc1() {
 			using FileStream fs = File.OpenRead(@"../../../testImages/test_decompress_bc1.dds");
 			DdsFile file = DdsFile.Load(fs);
-			Assert.Equal(DXGI_FORMAT.DXGI_FORMAT_BC1_UNORM, file.Header.ddsPixelFormat.DxgiFormat);
-			Assert.Equal(file.Header.dwMipMapCount, (uint)file.Faces[0].MipMaps.Length);
+			Assert.Equal(DxgiFormat.DxgiFormatBc1Unorm, file.header.ddsPixelFormat.DxgiFormat);
+			Assert.Equal(file.header.dwMipMapCount, (uint)file.Faces[0].MipMaps.Length);
 
 
 			BcDecoder decoder = new BcDecoder();
 			var images = decoder.DecodeAllMipMaps(file);
 
-			Assert.Equal((uint)images[0].Width, file.Header.dwWidth);
-			Assert.Equal((uint)images[0].Height, file.Header.dwHeight);
+			Assert.Equal((uint)images[0].Width, file.header.dwWidth);
+			Assert.Equal((uint)images[0].Height, file.header.dwHeight);
 
 			for (int i = 0; i < images.Length; i++) {
 				using FileStream outFs = File.OpenWrite($"decoding_test_dds_bc1_mip{i}.png");
@@ -59,16 +59,16 @@ namespace BCnEncTests
 		public void ReadBc1a() {
 			using FileStream fs = File.OpenRead(@"../../../testImages/test_decompress_bc1a.dds");
 			DdsFile file = DdsFile.Load(fs);
-			Assert.Equal(DXGI_FORMAT.DXGI_FORMAT_BC1_UNORM, file.Header.ddsPixelFormat.DxgiFormat);
-			Assert.Equal(file.Header.dwMipMapCount, (uint)file.Faces[0].MipMaps.Length);
+			Assert.Equal(DxgiFormat.DxgiFormatBc1Unorm, file.header.ddsPixelFormat.DxgiFormat);
+			Assert.Equal(file.header.dwMipMapCount, (uint)file.Faces[0].MipMaps.Length);
 
 
 			BcDecoder decoder = new BcDecoder();
-			decoder.InputOptions.ddsBc1ExpectAlpha = true;
+			decoder.InputOptions.DdsBc1ExpectAlpha = true;
 			var image = decoder.Decode(file);
 
-			Assert.Equal((uint)image.Width, file.Header.dwWidth);
-			Assert.Equal((uint)image.Height, file.Header.dwHeight);
+			Assert.Equal((uint)image.Width, file.header.dwWidth);
+			Assert.Equal((uint)image.Height, file.header.dwHeight);
 
 			if (!image.TryGetSinglePixelSpan(out var pixels)) {
 				throw new Exception("Cannot get pixel span.");

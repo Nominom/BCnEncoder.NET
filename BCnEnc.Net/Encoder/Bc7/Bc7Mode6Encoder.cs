@@ -8,15 +8,15 @@ namespace BCnEncoder.Encoder.Bc7
 
 		public static Bc7Block EncodeBlock(RawBlock4X4Rgba32 block, int startingVariation)
 		{
-			bool hasAlpha = block.HasTransparentPixels();
+			var hasAlpha = block.HasTransparentPixels();
 
-			Bc7Block output = new Bc7Block();
+			var output = new Bc7Block();
 			Bc7EncodingHelpers.GetInitialUnscaledEndpoints(block, out var ep0, out var ep1);
 
-			ColorRgba32 scaledEp0 =
-				Bc7EncodingHelpers.ScaleDownEndpoint(ep0, Bc7BlockType.Type6, false, out byte pBit0);
-			ColorRgba32 scaledEp1 =
-				Bc7EncodingHelpers.ScaleDownEndpoint(ep1, Bc7BlockType.Type6, false, out byte pBit1);
+			var scaledEp0 =
+				Bc7EncodingHelpers.ScaleDownEndpoint(ep0, Bc7BlockType.Type6, false, out var pBit0);
+			var scaledEp1 =
+				Bc7EncodingHelpers.ScaleDownEndpoint(ep1, Bc7BlockType.Type6, false, out var pBit1);
 
 			ReadOnlySpan<int> partitionTable = new int[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 			const int subset = 0;
@@ -33,7 +33,7 @@ namespace BCnEncoder.Encoder.Bc7
 
 			ep0 = Bc7EncodingHelpers.ExpandEndpoint(Bc7BlockType.Type6, scaledEp0, pBit0);
 			ep1 = Bc7EncodingHelpers.ExpandEndpoint(Bc7BlockType.Type6, scaledEp1, pBit1);
-			byte[] indices = new byte[16];
+			var indices = new byte[16];
 			Bc7EncodingHelpers.FillSubsetIndices(Bc7BlockType.Type6, block,
 				ep0,
 				ep1,

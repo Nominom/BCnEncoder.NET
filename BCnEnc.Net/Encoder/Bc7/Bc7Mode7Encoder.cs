@@ -8,28 +8,28 @@ namespace BCnEncoder.Encoder.Bc7
 
 		public static Bc7Block EncodeBlock(RawBlock4X4Rgba32 block, int startingVariation, int bestPartition)
 		{
-			Bc7Block output = new Bc7Block();
+			var output = new Bc7Block();
 			const Bc7BlockType type = Bc7BlockType.Type7;
 
-			ColorRgba32[] endpoints = new ColorRgba32[4];
-			byte[] pBits = new byte[4];
+			var endpoints = new ColorRgba32[4];
+			var pBits = new byte[4];
 			ReadOnlySpan<int> partitionTable = Bc7Block.Subsets2PartitionTable[bestPartition];
 
-			byte[] indices = new byte[16];
+			var indices = new byte[16];
 
-			int[] anchorIndices = new int[] {
+			var anchorIndices = new int[] {
 				0,
 				Bc7Block.Subsets2AnchorIndices[bestPartition]
 			};
 
-			for (int subset = 0; subset < 2; subset++) {
+			for (var subset = 0; subset < 2; subset++) {
 				
 				Bc7EncodingHelpers.GetInitialUnscaledEndpointsForSubset(block, out var ep0, out var ep1,
 					partitionTable, subset);
-				ColorRgba32 scaledEp0 =
-					Bc7EncodingHelpers.ScaleDownEndpoint(ep0, type, false, out byte pBit0);
-				ColorRgba32 scaledEp1 =
-					Bc7EncodingHelpers.ScaleDownEndpoint(ep1, type, false, out byte pBit1);
+				var scaledEp0 =
+					Bc7EncodingHelpers.ScaleDownEndpoint(ep0, type, false, out var pBit0);
+				var scaledEp1 =
+					Bc7EncodingHelpers.ScaleDownEndpoint(ep1, type, false, out var pBit1);
 
 				Bc7EncodingHelpers.OptimizeSubsetEndpointsWithPBit(type, block, ref scaledEp0,
 					ref scaledEp1, ref pBit0, ref pBit1, startingVariation, partitionTable, subset, true, true);

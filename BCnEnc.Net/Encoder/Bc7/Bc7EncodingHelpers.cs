@@ -33,12 +33,12 @@ namespace BCnEncoder.Encoder.Bc7
 			{
 				var t = AsSpan;
 				Span<int> clusters = stackalloc int[16];
-				int distinct = 0;
-				for (int i = 0; i < 16; i++)
+				var distinct = 0;
+				for (var i = 0; i < 16; i++)
 				{
 					var cluster = t[i];
-					bool found = false;
-					for (int j = 0; j < distinct; j++)
+					var found = false;
+					for (var j = 0; j < distinct; j++)
 					{
 						if (clusters[j] == cluster)
 						{
@@ -67,12 +67,12 @@ namespace BCnEncoder.Encoder.Bc7
 			Span<int> mapKey = stackalloc int[numClusters];
 			var indices = AsSpan;
 			var outIndices = result.AsSpan;
-			int next = 0;
-			for (int i = 0; i < 16; i++)
+			var next = 0;
+			for (var i = 0; i < 16; i++)
 			{
 				var cluster = indices[i];
-				bool found = false;
-				for (int j = 0; j < next; j++)
+				var found = false;
+				for (var j = 0; j < next; j++)
 				{
 					if (mapKey[j] == cluster)
 					{
@@ -210,7 +210,7 @@ namespace BCnEncoder.Encoder.Bc7
 		{
 			if (type == Bc7BlockType.Type0 || type == Bc7BlockType.Type1 || type == Bc7BlockType.Type3 || type == Bc7BlockType.Type6 || type == Bc7BlockType.Type7)
 			{
-				for (int i = 0; i < endpoints.Length; i++)
+				for (var i = 0; i < endpoints.Length; i++)
 				{
 					endpoints[i] <<= 1;
 				}
@@ -224,7 +224,7 @@ namespace BCnEncoder.Encoder.Bc7
 				}
 				else
 				{
-					for (int i = 0; i < endpoints.Length; i++)
+					for (var i = 0; i < endpoints.Length; i++)
 					{
 						endpoints[i] |= pBits[i];
 					}
@@ -233,7 +233,7 @@ namespace BCnEncoder.Encoder.Bc7
 
 			var colorPrecision = GetColorComponentPrecisionWithPBit(type);
 			var alphaPrecision = GetAlphaComponentPrecisionWithPBit(type);
-			for (int i = 0; i < endpoints.Length; i++)
+			for (var i = 0; i < endpoints.Length; i++)
 			{
 				// ColorComponentPrecision & AlphaComponentPrecision includes pbit
 				// left shift endpoint components so that their MSB lies in bit 7
@@ -253,7 +253,7 @@ namespace BCnEncoder.Encoder.Bc7
 			//set alpha equal to 255
 			if (type == Bc7BlockType.Type0 || type == Bc7BlockType.Type1 || type == Bc7BlockType.Type2 || type == Bc7BlockType.Type3)
 			{
-				for (int i = 0; i < endpoints.Length; i++)
+				for (var i = 0; i < endpoints.Length; i++)
 				{
 					endpoints[i].a = 255;
 				}
@@ -294,28 +294,28 @@ namespace BCnEncoder.Encoder.Bc7
 
 		public static int SelectBest2SubsetPartition(ClusterIndices4X4 reducedIndicesBlock, int numDistinctClusters, out int bestError)
 		{
-			bool first = true;
+			var first = true;
 			bestError = 999;
-			int bestPartition = 0;
+			var bestPartition = 0;
 
 
 			int CalculatePartitionError(int partitionIndex)
 			{
-				int error = 0;
+				var error = 0;
 				ReadOnlySpan<int> partitionTable = Bc7Block.Subsets2PartitionTable[partitionIndex];
 				Span<int> subset0 = stackalloc int[numDistinctClusters];
 				Span<int> subset1 = stackalloc int[numDistinctClusters];
-				int max0Idx = 0;
-				int max1Idx = 0;
+				var max0Idx = 0;
+				var max1Idx = 0;
 
 				//Calculate largest cluster index for each subset 
-				for (int i = 0; i < 16; i++)
+				for (var i = 0; i < 16; i++)
 				{
 					if (partitionTable[i] == 0)
 					{
-						int r = reducedIndicesBlock[i];
+						var r = reducedIndicesBlock[i];
 						subset0[r]++;
-						int count = subset0[r];
+						var count = subset0[r];
 						if (count > subset0[max0Idx])
 						{
 							max0Idx = r;
@@ -323,9 +323,9 @@ namespace BCnEncoder.Encoder.Bc7
 					}
 					else
 					{
-						int r = reducedIndicesBlock[i];
+						var r = reducedIndicesBlock[i];
 						subset1[r]++;
-						int count = subset1[r];
+						var count = subset1[r];
 						if (count > subset1[max1Idx])
 						{
 							max1Idx = r;
@@ -334,7 +334,7 @@ namespace BCnEncoder.Encoder.Bc7
 				}
 
 				// Calculate error by counting as error everything that does not match the largest cluster
-				for (int i = 0; i < 16; i++)
+				for (var i = 0; i < 16; i++)
 				{
 					if (partitionTable[i] == 0)
 					{
@@ -349,9 +349,9 @@ namespace BCnEncoder.Encoder.Bc7
 				return error;
 			}
 
-			for (int i = 0; i < 64; i++) // Loop through all possible indices
+			for (var i = 0; i < 64; i++) // Loop through all possible indices
 			{
-				int error = CalculatePartitionError(i);
+				var error = CalculatePartitionError(i);
 				if (first)
 				{
 					bestError = error;
@@ -375,26 +375,26 @@ namespace BCnEncoder.Encoder.Bc7
 
 		public static int[] Rank2SubsetPartitions(ClusterIndices4X4 reducedIndicesBlock, int numDistinctClusters)
 		{
-			int[] output = Enumerable.Range(0, 64).ToArray();
+			var output = Enumerable.Range(0, 64).ToArray();
 
 			
 			int CalculatePartitionError(int partitionIndex)
 			{
-				int error = 0;
+				var error = 0;
 				ReadOnlySpan<int> partitionTable = Bc7Block.Subsets2PartitionTable[partitionIndex];
 				Span<int> subset0 = stackalloc int[numDistinctClusters];
 				Span<int> subset1 = stackalloc int[numDistinctClusters];
-				int max0Idx = 0;
-				int max1Idx = 0;
+				var max0Idx = 0;
+				var max1Idx = 0;
 
 				//Calculate largest cluster index for each subset 
-				for (int i = 0; i < 16; i++)
+				for (var i = 0; i < 16; i++)
 				{
 					if (partitionTable[i] == 0)
 					{
-						int r = reducedIndicesBlock[i];
+						var r = reducedIndicesBlock[i];
 						subset0[r]++;
-						int count = subset0[r];
+						var count = subset0[r];
 						if (count > subset0[max0Idx])
 						{
 							max0Idx = r;
@@ -402,9 +402,9 @@ namespace BCnEncoder.Encoder.Bc7
 					}
 					else
 					{
-						int r = reducedIndicesBlock[i];
+						var r = reducedIndicesBlock[i];
 						subset1[r]++;
-						int count = subset1[r];
+						var count = subset1[r];
 						if (count > subset1[max1Idx])
 						{
 							max1Idx = r;
@@ -413,7 +413,7 @@ namespace BCnEncoder.Encoder.Bc7
 				}
 
 				// Calculate error by counting as error everything that does not match the largest cluster
-				for (int i = 0; i < 16; i++)
+				for (var i = 0; i < 16; i++)
 				{
 					if (partitionTable[i] == 0)
 					{
@@ -435,32 +435,32 @@ namespace BCnEncoder.Encoder.Bc7
 
 		public static int SelectBest3SubsetPartition(ClusterIndices4X4 reducedIndicesBlock, int numDistinctClusters, out int bestError)
 		{
-			bool first = true;
+			var first = true;
 			bestError = 999;
-			int bestPartition = 0;
+			var bestPartition = 0;
 
 
 
 			int CalculatePartitionError(int partitionIndex)
 			{
-				int error = 0;
+				var error = 0;
 				ReadOnlySpan<int> partitionTable = Bc7Block.Subsets3PartitionTable[partitionIndex];
 
 				Span<int> subset0 = stackalloc int[numDistinctClusters];
 				Span<int> subset1 = stackalloc int[numDistinctClusters];
 				Span<int> subset2 = stackalloc int[numDistinctClusters];
-				int max0Idx = 0;
-				int max1Idx = 0;
-				int max2Idx = 0;
+				var max0Idx = 0;
+				var max1Idx = 0;
+				var max2Idx = 0;
 
 				//Calculate largest cluster index for each subset 
-				for (int i = 0; i < 16; i++)
+				for (var i = 0; i < 16; i++)
 				{
 					if (partitionTable[i] == 0)
 					{
-						int r = reducedIndicesBlock[i];
+						var r = reducedIndicesBlock[i];
 						subset0[r]++;
-						int count = subset0[r];
+						var count = subset0[r];
 						if (count > subset0[max0Idx])
 						{
 							max0Idx = r;
@@ -468,9 +468,9 @@ namespace BCnEncoder.Encoder.Bc7
 					}
 					else if (partitionTable[i] == 1)
 					{
-						int r = reducedIndicesBlock[i];
+						var r = reducedIndicesBlock[i];
 						subset1[r]++;
-						int count = subset1[r];
+						var count = subset1[r];
 						if (count > subset1[max1Idx])
 						{
 							max1Idx = r;
@@ -478,9 +478,9 @@ namespace BCnEncoder.Encoder.Bc7
 					}
 					else
 					{
-						int r = reducedIndicesBlock[i];
+						var r = reducedIndicesBlock[i];
 						subset2[r]++;
-						int count = subset2[r];
+						var count = subset2[r];
 						if (count > subset2[max2Idx])
 						{
 							max2Idx = r;
@@ -489,7 +489,7 @@ namespace BCnEncoder.Encoder.Bc7
 				}
 
 				// Calculate error by counting as error everything that does not match the largest cluster
-				for (int i = 0; i < 16; i++)
+				for (var i = 0; i < 16; i++)
 				{
 					if (partitionTable[i] == 0)
 					{
@@ -508,9 +508,9 @@ namespace BCnEncoder.Encoder.Bc7
 				return error;
 			}
 
-			for (int i = 0; i < 64; i++) // Loop through all possible indices
+			for (var i = 0; i < 64; i++) // Loop through all possible indices
 			{
-				int error = CalculatePartitionError(i);
+				var error = CalculatePartitionError(i);
 				if (first)
 				{
 					bestError = error;
@@ -534,28 +534,28 @@ namespace BCnEncoder.Encoder.Bc7
 
 		public static int[] Rank3SubsetPartitions(ClusterIndices4X4 reducedIndicesBlock, int numDistinctClusters)
 		{
-			int[] output = Enumerable.Range(0, 64).ToArray();
+			var output = Enumerable.Range(0, 64).ToArray();
 
 			int CalculatePartitionError(int partitionIndex)
 			{
-				int error = 0;
+				var error = 0;
 				ReadOnlySpan<int> partitionTable = Bc7Block.Subsets3PartitionTable[partitionIndex];
 
 				Span<int> subset0 = stackalloc int[numDistinctClusters];
 				Span<int> subset1 = stackalloc int[numDistinctClusters];
 				Span<int> subset2 = stackalloc int[numDistinctClusters];
-				int max0Idx = 0;
-				int max1Idx = 0;
-				int max2Idx = 0;
+				var max0Idx = 0;
+				var max1Idx = 0;
+				var max2Idx = 0;
 
 				//Calculate largest cluster index for each subset 
-				for (int i = 0; i < 16; i++)
+				for (var i = 0; i < 16; i++)
 				{
 					if (partitionTable[i] == 0)
 					{
-						int r = reducedIndicesBlock[i];
+						var r = reducedIndicesBlock[i];
 						subset0[r]++;
-						int count = subset0[r];
+						var count = subset0[r];
 						if (count > subset0[max0Idx])
 						{
 							max0Idx = r;
@@ -563,9 +563,9 @@ namespace BCnEncoder.Encoder.Bc7
 					}
 					else if (partitionTable[i] == 1)
 					{
-						int r = reducedIndicesBlock[i];
+						var r = reducedIndicesBlock[i];
 						subset1[r]++;
-						int count = subset1[r];
+						var count = subset1[r];
 						if (count > subset1[max1Idx])
 						{
 							max1Idx = r;
@@ -573,9 +573,9 @@ namespace BCnEncoder.Encoder.Bc7
 					}
 					else
 					{
-						int r = reducedIndicesBlock[i];
+						var r = reducedIndicesBlock[i];
 						subset2[r]++;
-						int count = subset2[r];
+						var count = subset2[r];
 						if (count > subset2[max2Idx])
 						{
 							max2Idx = r;
@@ -584,7 +584,7 @@ namespace BCnEncoder.Encoder.Bc7
 				}
 
 				// Calculate error by counting as error everything that does not match the largest cluster
-				for (int i = 0; i < 16; i++)
+				for (var i = 0; i < 16; i++)
 				{
 					if (partitionTable[i] == 0)
 					{
@@ -627,8 +627,8 @@ namespace BCnEncoder.Encoder.Bc7
 
 			var originalPixels = block.AsSpan;
 
-			int count = 0;
-			for (int i = 0; i < 16; i++)
+			var count = 0;
+			for (var i = 0; i < 16; i++)
 			{
 				if (partitionTable[i] == subsetIndex)
 				{
@@ -637,8 +637,8 @@ namespace BCnEncoder.Encoder.Bc7
 			}
 
 			Span<Rgba32> subsetColors = stackalloc Rgba32[count];
-			int next = 0;
-			for (int i = 0; i < 16; i++)
+			var next = 0;
+			for (var i = 0; i < 16; i++)
 			{
 				if (partitionTable[i] == subsetIndex)
 				{
@@ -655,8 +655,8 @@ namespace BCnEncoder.Encoder.Bc7
 
 		public static ColorRgba32 ScaleDownEndpoint(ColorRgba32 endpoint, Bc7BlockType type, bool ignoreAlpha, out byte pBit)
 		{
-			int colorPrecision = GetColorComponentPrecisionWithPBit(type);
-			int alphaPrecision = GetAlphaComponentPrecisionWithPBit(type);
+			var colorPrecision = GetColorComponentPrecisionWithPBit(type);
+			var alphaPrecision = GetAlphaComponentPrecisionWithPBit(type);
 
 			var r = (byte)(endpoint.r >> (8 - colorPrecision));
 			var g = (byte)(endpoint.g >> (8 - colorPrecision));
@@ -665,14 +665,14 @@ namespace BCnEncoder.Encoder.Bc7
 
 			if (TypeHasPBits(type))
 			{
-				int pBitVotingMask = (1 << (8 - colorPrecision + 1)) - 1;
+				var pBitVotingMask = (1 << (8 - colorPrecision + 1)) - 1;
 				float pBitVotes = 0;
 				pBitVotes += endpoint.r & pBitVotingMask;
 				pBitVotes += endpoint.g & pBitVotingMask;
 				pBitVotes += endpoint.b & pBitVotingMask;
 				pBitVotes /= 3;
 
-				if (pBitVotes >= (pBitVotingMask / 2f))
+				if (pBitVotes >= pBitVotingMask / 2f)
 				{
 					pBit = 1;
 				}
@@ -708,19 +708,19 @@ namespace BCnEncoder.Encoder.Bc7
 			byte InterpolateByte(byte e0, byte e1, int index, int indexPrecision)
 			{
 				if (indexPrecision == 0) return e0;
-				ReadOnlySpan<byte> aWeights2 = Bc7Block.colorInterpolationWeights2;
-				ReadOnlySpan<byte> aWeights3 = Bc7Block.colorInterpolationWeights3;
-				ReadOnlySpan<byte> aWeights4 = Bc7Block.colorInterpolationWeights4;
+				var aWeights2 = Bc7Block.ColorInterpolationWeights2;
+				var aWeights3 = Bc7Block.ColorInterpolationWeights3;
+				var aWeights4 = Bc7Block.ColorInterpolationWeights4;
 
 				if(indexPrecision == 2)
-					return (byte) (((64 - aWeights2[index])* (e0) + aWeights2[index]*(e1) + 32) >> 6);
+					return (byte) (((64 - aWeights2[index])* e0 + aWeights2[index]*e1 + 32) >> 6);
 				else if(indexPrecision == 3)
-					return (byte) (((64 - aWeights3[index])*(e0) + aWeights3[index]*(e1) + 32) >> 6);
+					return (byte) (((64 - aWeights3[index])*e0 + aWeights3[index]*e1 + 32) >> 6);
 				else // indexprecision == 4
-					return (byte) (((64 - aWeights4[index])*(e0) + aWeights4[index]*(e1) + 32) >> 6);
+					return (byte) (((64 - aWeights4[index])*e0 + aWeights4[index]*e1 + 32) >> 6);
 			}
 
-			ColorRgba32 result = new ColorRgba32(
+			var result = new ColorRgba32(
 				InterpolateByte(endPointStart.r, endPointEnd.r, colorIndex, colorBitCount),
 				InterpolateByte(endPointStart.g, endPointEnd.g, colorIndex, colorBitCount),
 				InterpolateByte(endPointStart.b, endPointEnd.b, colorIndex, colorBitCount),
@@ -741,10 +741,10 @@ namespace BCnEncoder.Encoder.Bc7
 		private static int FindClosestColorIndex(ColorYCbCrAlpha color, ReadOnlySpan<ColorYCbCrAlpha> colors, out float bestError)
 		{
 			bestError = color.CalcDistWeighted(colors[0], 4, 2);
-			int bestIndex = 0;
-			for (int i = 1; i < colors.Length; i++)
+			var bestIndex = 0;
+			for (var i = 1; i < colors.Length; i++)
 			{
-				float error = color.CalcDistWeighted(colors[i], 4, 2);
+				var error = color.CalcDistWeighted(colors[i], 4, 2);
 				if (error < bestError)
 				{
 					bestIndex = i;
@@ -757,10 +757,10 @@ namespace BCnEncoder.Encoder.Bc7
 		private static int FindClosestColorIndex(ColorYCbCr color, ReadOnlySpan<ColorYCbCr> colors, out float bestError)
 		{
 			bestError = color.CalcDistWeighted(colors[0], 4);
-			int bestIndex = 0;
-			for (int i = 1; i < colors.Length; i++)
+			var bestIndex = 0;
+			for (var i = 1; i < colors.Length; i++)
 			{
-				float error = color.CalcDistWeighted(colors[i], 4);
+				var error = color.CalcDistWeighted(colors[i], 4);
 				if (error < bestError)
 				{
 					bestIndex = i;
@@ -777,8 +777,8 @@ namespace BCnEncoder.Encoder.Bc7
 		private static int FindClosestAlphaIndex(byte alpha, ReadOnlySpan<byte> alphas, out float bestError)
 		{
 			bestError = (alpha - alphas[0]) * (alpha - alphas[0]);
-			int bestIndex = 0;
-			for (int i = 1; i < alphas.Length; i++)
+			var bestIndex = 0;
+			for (var i = 1; i < alphas.Length; i++)
 			{
 				float error = (alpha - alphas[i]) * (alpha - alphas[i]);
 				if (error < bestError)
@@ -799,21 +799,21 @@ namespace BCnEncoder.Encoder.Bc7
 		private static float TrySubsetEndpoints(Bc7BlockType type, RawBlock4X4Rgba32 raw, ColorRgba32 ep0, ColorRgba32 ep1,
 			ReadOnlySpan<int> partitionTable, int subsetIndex, int type4IdxMode)
 		{
-			int colorIndexPrecision = GetColorIndexBitCount(type, type4IdxMode);
-			int alphaIndexPrecision = GetAlphaIndexBitCount(type, type4IdxMode);
+			var colorIndexPrecision = GetColorIndexBitCount(type, type4IdxMode);
+			var alphaIndexPrecision = GetAlphaIndexBitCount(type, type4IdxMode);
 
 			if (type == Bc7BlockType.Type4 || type == Bc7BlockType.Type5)
 			{ //separate indices for color and alpha
 				Span<ColorYCbCr> colors = stackalloc ColorYCbCr[1 << colorIndexPrecision];
 				Span<byte> alphas = stackalloc byte[1 << alphaIndexPrecision];
 
-				for (int i = 0; i < colors.Length; i++)
+				for (var i = 0; i < colors.Length; i++)
 				{
 					colors[i] = new ColorYCbCr(InterpolateColor(ep0, ep1, i,
 						0, colorIndexPrecision, 0));
 				}
 
-				for (int i = 0; i < alphas.Length; i++)
+				for (var i = 0; i < alphas.Length; i++)
 				{
 					alphas[i] = InterpolateColor(ep0, ep1, 0,
 						i, 0, alphaIndexPrecision).a;
@@ -822,7 +822,7 @@ namespace BCnEncoder.Encoder.Bc7
 				var pixels = raw.AsSpan;
 				float error = 0;
 
-				for (int i = 0; i < 16; i++)
+				for (var i = 0; i < 16; i++)
 				{
 					var pixelColor = new ColorYCbCr(pixels[i]);
 
@@ -837,7 +837,7 @@ namespace BCnEncoder.Encoder.Bc7
 			else
 			{
 				Span<ColorYCbCrAlpha> colors = stackalloc ColorYCbCrAlpha[1 << colorIndexPrecision];
-				for (int i = 0; i < colors.Length; i++)
+				for (var i = 0; i < colors.Length; i++)
 				{
 					colors[i] = new ColorYCbCrAlpha(InterpolateColor(ep0, ep1, i,
 						i, colorIndexPrecision, alphaIndexPrecision));
@@ -847,7 +847,7 @@ namespace BCnEncoder.Encoder.Bc7
 				float error = 0;
 				float count = 0;
 
-				for (int i = 0; i < 16; i++)
+				for (var i = 0; i < 16; i++)
 				{
 					if (partitionTable[i] == subsetIndex)
 					{
@@ -868,8 +868,8 @@ namespace BCnEncoder.Encoder.Bc7
 		public static void FillSubsetIndices(Bc7BlockType type, RawBlock4X4Rgba32 raw, ColorRgba32 ep0, ColorRgba32 ep1, ReadOnlySpan<int> partitionTable, int subsetIndex,
 			Span<byte> indicesToFill)
 		{
-			int colorIndexPrecision = GetColorIndexBitCount(type);
-			int alphaIndexPrecision = GetAlphaIndexBitCount(type);
+			var colorIndexPrecision = GetColorIndexBitCount(type);
+			var alphaIndexPrecision = GetAlphaIndexBitCount(type);
 
 			if (type == Bc7BlockType.Type4 || type == Bc7BlockType.Type5)
 			{ //separate indices for color and alpha
@@ -878,7 +878,7 @@ namespace BCnEncoder.Encoder.Bc7
 			else
 			{
 				Span<ColorYCbCrAlpha> colors = stackalloc ColorYCbCrAlpha[1 << colorIndexPrecision];
-				for (int i = 0; i < colors.Length; i++)
+				for (var i = 0; i < colors.Length; i++)
 				{
 					colors[i] = new ColorYCbCrAlpha(InterpolateColor(ep0, ep1, i,
 						i, colorIndexPrecision, alphaIndexPrecision));
@@ -886,7 +886,7 @@ namespace BCnEncoder.Encoder.Bc7
 
 				var pixels = raw.AsSpan;
 
-				for (int i = 0; i < 16; i++)
+				for (var i = 0; i < 16; i++)
 				{
 					if (partitionTable[i] == subsetIndex)
 					{
@@ -905,21 +905,21 @@ namespace BCnEncoder.Encoder.Bc7
 		public static void FillAlphaColorIndices(Bc7BlockType type, RawBlock4X4Rgba32 raw, ColorRgba32 ep0, ColorRgba32 ep1,
 			Span<byte> colorIndicesToFill, Span<byte> alphaIndicesToFill, int idxMode = 0)
 		{
-			int colorIndexPrecision = GetColorIndexBitCount(type, idxMode);
-			int alphaIndexPrecision = GetAlphaIndexBitCount(type, idxMode);
+			var colorIndexPrecision = GetColorIndexBitCount(type, idxMode);
+			var alphaIndexPrecision = GetAlphaIndexBitCount(type, idxMode);
 
 			if (type == Bc7BlockType.Type4 || type == Bc7BlockType.Type5)
 			{
 				Span<ColorYCbCr> colors = stackalloc ColorYCbCr[1 << colorIndexPrecision];
 				Span<byte> alphas = stackalloc byte[1 << alphaIndexPrecision];
 
-				for (int i = 0; i < colors.Length; i++)
+				for (var i = 0; i < colors.Length; i++)
 				{
 					colors[i] = new ColorYCbCr(InterpolateColor(ep0, ep1, i,
 						0, colorIndexPrecision, 0));
 				}
 
-				for (int i = 0; i < alphas.Length; i++)
+				for (var i = 0; i < alphas.Length; i++)
 				{
 					alphas[i] = InterpolateColor(ep0, ep1, 0,
 						i, 0, alphaIndexPrecision).a;
@@ -927,7 +927,7 @@ namespace BCnEncoder.Encoder.Bc7
 
 				var pixels = raw.AsSpan;
 
-				for (int i = 0; i < 16; i++)
+				for (var i = 0; i < 16; i++)
 				{
 					var pixelColor = new ColorYCbCr(pixels[i]);
 
@@ -948,51 +948,51 @@ namespace BCnEncoder.Encoder.Bc7
 			int variation, ReadOnlySpan<int> partitionTable, int subsetIndex, bool variatePBits, bool variateAlpha, int type4IdxMode = 0)
 		{
 
-			byte colorMax = (byte)((1 << GetColorComponentPrecision(type)) - 1);
-			byte alphaMax = (byte)((1 << GetAlphaComponentPrecision(type)) - 1);
+			var colorMax = (byte)((1 << GetColorComponentPrecision(type)) - 1);
+			var alphaMax = (byte)((1 << GetAlphaComponentPrecision(type)) - 1);
 
-			float bestError = TrySubsetEndpoints(type, raw,
+			var bestError = TrySubsetEndpoints(type, raw,
 				ExpandEndpoint(type, ep0, pBit0),
 				ExpandEndpoint(type, ep1, pBit1), partitionTable, subsetIndex, type4IdxMode
 			);
 
-			ReadOnlySpan<int> varPatternR = variateAlpha
+			ReadOnlySpan<int> patternR = variateAlpha
 				? varPatternRAlpha
 				: varPatternRNoAlpha;
-			ReadOnlySpan<int> varPatternG = variateAlpha
+			ReadOnlySpan<int> patternG = variateAlpha
 				? varPatternGAlpha
 				: varPatternGNoAlpha;
-			ReadOnlySpan<int> varPatternB = variateAlpha
+			ReadOnlySpan<int> patternB = variateAlpha
 				? varPatternBAlpha
 				: varPatternBNoAlpha;
-			ReadOnlySpan<int> varPatternA = variateAlpha
+			ReadOnlySpan<int> patternA = variateAlpha
 				? varPatternAAlpha
 				: varPatternANoAlpha;
 
 
 			while (variation > 0)
 			{
-				bool foundBetter = false;
+				var foundBetter = false;
 
-				for (int i = 0; i < varPatternR.Length; i++)
+				for (var i = 0; i < patternR.Length; i++)
 				{
-					ColorRgba32 testEndPoint0 = new ColorRgba32(
-						(byte)(ep0.r - variation * varPatternR[i]),
-						(byte)(ep0.g - variation * varPatternG[i]),
-						(byte)(ep0.b - variation * varPatternB[i]),
-						(byte)(ep0.a - variation * varPatternA[i])
+					var testEndPoint0 = new ColorRgba32(
+						(byte)(ep0.r - variation * patternR[i]),
+						(byte)(ep0.g - variation * patternG[i]),
+						(byte)(ep0.b - variation * patternB[i]),
+						(byte)(ep0.a - variation * patternA[i])
 					);
 
-					ColorRgba32 testEndPoint1 = new ColorRgba32(
-						(byte)(ep1.r + variation * varPatternR[i]),
-						(byte)(ep1.g + variation * varPatternG[i]),
-						(byte)(ep1.b + variation * varPatternB[i]),
-						(byte)(ep1.a + variation * varPatternA[i])
+					var testEndPoint1 = new ColorRgba32(
+						(byte)(ep1.r + variation * patternR[i]),
+						(byte)(ep1.g + variation * patternG[i]),
+						(byte)(ep1.b + variation * patternB[i]),
+						(byte)(ep1.a + variation * patternA[i])
 					);
 					ClampEndpoint(ref testEndPoint0, colorMax, alphaMax);
 					ClampEndpoint(ref testEndPoint1, colorMax, alphaMax);
 
-					float error = TrySubsetEndpoints(type, raw,
+					var error = TrySubsetEndpoints(type, raw,
 						ExpandEndpoint(type, testEndPoint0, pBit0),
 						ExpandEndpoint(type, testEndPoint1, pBit1), partitionTable, subsetIndex, type4IdxMode
 					);
@@ -1005,17 +1005,17 @@ namespace BCnEncoder.Encoder.Bc7
 					}
 				}
 
-				for (int i = 0; i < varPatternR.Length; i++)
+				for (var i = 0; i < patternR.Length; i++)
 				{
-					ColorRgba32 testEndPoint0 = new ColorRgba32(
-						(byte)(ep0.r + variation * varPatternR[i]),
-						(byte)(ep0.g + variation * varPatternG[i]),
-						(byte)(ep0.b + variation * varPatternB[i]),
-						(byte)(ep0.a + variation * varPatternA[i])
+					var testEndPoint0 = new ColorRgba32(
+						(byte)(ep0.r + variation * patternR[i]),
+						(byte)(ep0.g + variation * patternG[i]),
+						(byte)(ep0.b + variation * patternB[i]),
+						(byte)(ep0.a + variation * patternA[i])
 						);
 					ClampEndpoint(ref testEndPoint0, colorMax, alphaMax);
 
-					float error = TrySubsetEndpoints(type, raw,
+					var error = TrySubsetEndpoints(type, raw,
 						ExpandEndpoint(type, testEndPoint0, pBit0),
 						ExpandEndpoint(type, ep1, pBit1), partitionTable, subsetIndex, type4IdxMode
 					);
@@ -1027,17 +1027,17 @@ namespace BCnEncoder.Encoder.Bc7
 					}
 				}
 
-				for (int i = 0; i < varPatternR.Length; i++)
+				for (var i = 0; i < patternR.Length; i++)
 				{
-					ColorRgba32 testEndPoint1 = new ColorRgba32(
-						(byte)(ep1.r + variation * varPatternR[i]),
-						(byte)(ep1.g + variation * varPatternG[i]),
-						(byte)(ep1.b + variation * varPatternB[i]),
-						(byte)(ep1.a + variation * varPatternA[i])
+					var testEndPoint1 = new ColorRgba32(
+						(byte)(ep1.r + variation * patternR[i]),
+						(byte)(ep1.g + variation * patternG[i]),
+						(byte)(ep1.b + variation * patternB[i]),
+						(byte)(ep1.a + variation * patternA[i])
 					);
 					ClampEndpoint(ref testEndPoint1, colorMax, alphaMax);
 
-					float error = TrySubsetEndpoints(type, raw,
+					var error = TrySubsetEndpoints(type, raw,
 						ExpandEndpoint(type, ep0, pBit0),
 						ExpandEndpoint(type, testEndPoint1, pBit1), partitionTable, subsetIndex, type4IdxMode
 					);
@@ -1052,8 +1052,8 @@ namespace BCnEncoder.Encoder.Bc7
 				if (variatePBits)
 				{
 					{
-						byte testPBit0 = pBit0 == 0 ? (byte)1 : (byte)0;
-						float error = TrySubsetEndpoints(type, raw,
+						var testPBit0 = pBit0 == 0 ? (byte)1 : (byte)0;
+						var error = TrySubsetEndpoints(type, raw,
 							ExpandEndpoint(type, ep0, testPBit0),
 							ExpandEndpoint(type, ep1, pBit1), partitionTable, subsetIndex, type4IdxMode
 						);
@@ -1065,8 +1065,8 @@ namespace BCnEncoder.Encoder.Bc7
 						}
 					}
 					{
-						byte testPBit1 = pBit1 == 0 ? (byte)1 : (byte)0;
-						float error = TrySubsetEndpoints(type, raw,
+						var testPBit1 = pBit1 == 0 ? (byte)1 : (byte)0;
+						var error = TrySubsetEndpoints(type, raw,
 							ExpandEndpoint(type, ep0, pBit0),
 							ExpandEndpoint(type, ep1, testPBit1), partitionTable, subsetIndex, type4IdxMode
 						);
@@ -1092,10 +1092,10 @@ namespace BCnEncoder.Encoder.Bc7
 				return block;
 			}
 
-			RawBlock4X4Rgba32 rotated = new RawBlock4X4Rgba32();
+			var rotated = new RawBlock4X4Rgba32();
 			var pixels = block.AsSpan;
 			var output = rotated.AsSpan;
-			for (int i = 0; i < 16; i++)
+			for (var i = 0; i < 16; i++)
 			{
 				var c = pixels[i];
 				switch (rotation)

@@ -128,8 +128,8 @@
 		{
 			unchecked
 			{
-				ulong mask = (0b1UL << bitCount) - 1;
-				return ((source >> index) & mask);
+				var mask = (0b1UL << bitCount) - 1;
+				return (source >> index) & mask;
 			}
 		}
 
@@ -137,7 +137,7 @@
 		{
 			unchecked
 			{
-				ulong mask = (0b1UL << bitCount) - 1;
+				var mask = (0b1UL << bitCount) - 1;
 				dest &= ~(mask << index);
 				dest |= (value & mask) << index;
 				return dest;
@@ -156,13 +156,13 @@
 			}
 			else
 			{ //handle boundary case
-				int lowIndex = index;
-				int lowBitCount = 64 - index;
-				int highBitCount = bitCount - lowBitCount;
-				int highIndex = 0;
+				var lowIndex = index;
+				var lowBitCount = 64 - index;
+				var highBitCount = bitCount - lowBitCount;
+				var highIndex = 0;
 
-				ulong value = Extract(low, lowIndex, lowBitCount);
-				ulong hVal = Extract(high, highIndex, highBitCount);
+				var value = Extract(low, lowIndex, lowBitCount);
+				var hVal = Extract(high, highIndex, highBitCount);
 				value = Store(value, lowBitCount, highBitCount, hVal);
 				return value;
 			}
@@ -180,10 +180,10 @@
 			}
 			else
 			{ //handle boundary case
-				int lowIndex = index;
-				int lowBitCount = 64 - index;
-				int highBitCount = bitCount - lowBitCount;
-				int highIndex = 0;
+				var lowIndex = index;
+				var lowBitCount = 64 - index;
+				var highBitCount = bitCount - lowBitCount;
+				var highIndex = 0;
 
 				var l = Store(low, lowIndex, lowBitCount, value);
 				value >>= lowBitCount;

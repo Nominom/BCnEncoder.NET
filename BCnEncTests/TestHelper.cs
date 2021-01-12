@@ -33,9 +33,9 @@ namespace BCnEncTests
 
 		public static void ExecuteEncodingTest(Image<Rgba32> image, CompressionFormat format, CompressionQuality quality, string filename, ITestOutputHelper output) {
 			BcEncoder encoder = new BcEncoder();
-			encoder.OutputOptions.quality = quality;
-			encoder.OutputOptions.generateMipMaps = true;
-			encoder.OutputOptions.format = format;
+			encoder.OutputOptions.Quality = quality;
+			encoder.OutputOptions.GenerateMipMaps = true;
+			encoder.OutputOptions.Format = format;
 
 			using FileStream fs = File.OpenWrite(filename);
 			encoder.Encode(image, fs);

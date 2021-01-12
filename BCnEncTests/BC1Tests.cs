@@ -94,10 +94,10 @@ namespace BCnEncTests
 			Assert.Equal(new Rgba32(0, 0, 0), raw.p21);
 			Assert.Equal(new Rgba32(0, 0, 0), raw.p31);
 
-			Assert.Equal(new Rgba32(230, 228, 230), raw.p02);
-			Assert.Equal(new Rgba32(230, 228, 230), raw.p12);
-			Assert.Equal(new Rgba32(230, 228, 230), raw.p22);
-			Assert.Equal(new Rgba32(230, 228, 230), raw.p32);
+			Assert.Equal(new Rgba32(230, 229, 230), raw.p02);
+			Assert.Equal(new Rgba32(230, 229, 230), raw.p12);
+			Assert.Equal(new Rgba32(230, 229, 230), raw.p22);
+			Assert.Equal(new Rgba32(230, 229, 230), raw.p32);
 
 			Assert.Equal(new Rgba32(255, 255, 255), raw.p03);
 			Assert.Equal(new Rgba32(255, 255, 255), raw.p13);
@@ -143,10 +143,10 @@ namespace BCnEncTests
 			Assert.Equal(new Rgba32(0,0,0,0), raw.p21);
 			Assert.Equal(new Rgba32(0,0,0,0), raw.p31);
 
-			Assert.Equal(new Rgba32(230, 228, 230), raw.p02);
-			Assert.Equal(new Rgba32(230, 228, 230), raw.p12);
-			Assert.Equal(new Rgba32(230, 228, 230), raw.p22);
-			Assert.Equal(new Rgba32(230, 228, 230), raw.p32);
+			Assert.Equal(new Rgba32(230, 229, 230), raw.p02);
+			Assert.Equal(new Rgba32(230, 229, 230), raw.p12);
+			Assert.Equal(new Rgba32(230, 229, 230), raw.p22);
+			Assert.Equal(new Rgba32(230, 229, 230), raw.p32);
 
 			Assert.Equal(new Rgba32(255, 255, 255), raw.p03);
 			Assert.Equal(new Rgba32(255, 255, 255), raw.p13);
