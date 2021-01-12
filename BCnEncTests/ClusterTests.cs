@@ -1,12 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
+using System;
 using System.IO;
-using System.Linq;
-using System.Text;
 using BCnEncoder.Shared;
 using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Advanced;
-using SixLabors.ImageSharp.PixelFormats;
 using Xunit;
 
 namespace BCnEncTests
@@ -15,7 +10,7 @@ namespace BCnEncTests
 	{
 		[Fact]
 		public void Clusterize() {
-			using var testImage = ImageLoader.testBlur1.Clone();
+			using var testImage = ImageLoader.TestBlur1.Clone();
 			
 			if (!testImage.TryGetSinglePixelSpan(out var pixels)) {
 				throw new Exception("Cannot get pixel span.");

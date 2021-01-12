@@ -1,7 +1,6 @@
-﻿using System;
+using System;
 using BCnEncoder.Shared;
 using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Advanced;
 using SixLabors.ImageSharp.PixelFormats;
 using Xunit;
 

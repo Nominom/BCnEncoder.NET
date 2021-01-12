@@ -6,7 +6,7 @@ using SixLabors.ImageSharp.Processing;
 
 namespace BCnEncoder.Shared
 {
-	public static class MipMapper
+	internal static class MipMapper
 	{
 
 		public static uint CalculateMipChainLength(int width, int height, uint maxNumMipMaps) {
@@ -26,6 +26,25 @@ namespace BCnEncoder.Shared
 				}
 			}
 			return output;
+		}
+
+		public static void CalculateMipLevelSize(int width, int height, int mipIdx, out int mipWidth, out int mipHeight)
+		{
+			mipWidth = width;
+			mipHeight = height;
+
+			if (mipIdx == 0) return;
+			
+			for (uint mipLevel = 1; mipLevel < 99999; mipLevel++)
+			{
+				mipWidth = Math.Max(1, width / (int)Math.Pow(2, mipLevel));
+				mipHeight = Math.Max(1, height / (int)Math.Pow(2, mipLevel));
+				if (mipLevel == mipIdx) return;
+				if (mipWidth == 1 && mipHeight == 1)
+				{
+					return;
+				}
+			}
 		}
 
 		public static List<Image<Rgba32>> GenerateMipChain(Image<Rgba32> sourceImage, ref uint numMipMaps) {

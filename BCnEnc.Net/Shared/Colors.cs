@@ -31,76 +31,76 @@ namespace BCnEncoder.Shared
 			return !left.Equals(right);
 		}
 
-		private const ushort RedMask_ = 0b11111_000000_00000;
-		private const int RedShift_ = 11;
-		private const ushort GreenMask_ = 0b00000_111111_00000;
-		private const int GreenShift_ = 5;
-		private const ushort BlueMask_ = 0b00000_000000_11111;
+		private const ushort RedMask = 0b11111_000000_00000;
+		private const int RedShift = 11;
+		private const ushort GreenMask = 0b00000_111111_00000;
+		private const int GreenShift = 5;
+		private const ushort BlueMask = 0b00000_000000_11111;
 
 		public ushort data;
 
 		public byte R {
 			readonly get {
-				var r5 = (data & RedMask_) >> RedShift_;
+				var r5 = (data & RedMask) >> RedShift;
 				return (byte)((r5 << 3) | (r5 >> 2));
 			}
 			set {
 				var r5 = value >> 3;
-				data = (ushort)(data & ~RedMask_);
-				data = (ushort)(data | (r5 << RedShift_));
+				data = (ushort)(data & ~RedMask);
+				data = (ushort)(data | (r5 << RedShift));
 			}
 		}
 
 		public byte G {
 			readonly get {
-				var g6 = (data & GreenMask_) >> GreenShift_;
+				var g6 = (data & GreenMask) >> GreenShift;
 				return (byte)((g6 << 2) | (g6 >> 4));
 			}
 			set {
 				var g6 = value >> 2;
-				data = (ushort)(data & ~GreenMask_);
-				data = (ushort)(data | (g6 << GreenShift_));
+				data = (ushort)(data & ~GreenMask);
+				data = (ushort)(data | (g6 << GreenShift));
 			}
 		}
 
 		public byte B {
 			readonly get {
-				var b5 = data & BlueMask_;
+				var b5 = data & BlueMask;
 				return (byte)((b5 << 3) | (b5 >> 2));
 			}
 			set {
 				var b5 = value >> 3;
-				data = (ushort)(data & ~BlueMask_);
+				data = (ushort)(data & ~BlueMask);
 				data = (ushort)(data | b5);
 			}
 		}
 
 		public int RawR {
-			readonly get { return (data & RedMask_) >> RedShift_; }
+			readonly get { return (data & RedMask) >> RedShift; }
 			set {
 				if (value > 31) value = 31;
 				if (value < 0) value = 0;
-				data = (ushort)(data & ~RedMask_);
-				data = (ushort)(data | (value << RedShift_));
+				data = (ushort)(data & ~RedMask);
+				data = (ushort)(data | (value << RedShift));
 			}
 		}
 
 		public int RawG {
-			readonly get { return (data & GreenMask_) >> GreenShift_; }
+			readonly get { return (data & GreenMask) >> GreenShift; }
 			set {
 				if (value > 63) value = 63;
 				if (value < 0) value = 0;
-				data = (ushort)(data & ~GreenMask_);
-				data = (ushort)(data | (value << GreenShift_));
+				data = (ushort)(data & ~GreenMask);
+				data = (ushort)(data | (value << GreenShift));
 			}
 		}
 
 		public int RawB {
-			readonly get { return data & BlueMask_; }
+			readonly get { return data & BlueMask; }
 			set {
 				if (value > 31) value = 31;
 				if (value < 0) value = 0;
-				data = (ushort)(data & ~BlueMask_);
+				data = (ushort)(data & ~BlueMask);
 				data = (ushort)(data | value);
 			}
 		}

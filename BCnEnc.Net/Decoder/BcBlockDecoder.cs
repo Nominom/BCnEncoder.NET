@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using BCnEncoder.Shared;
 
@@ -12,14 +13,14 @@ namespace BCnEncoder.Decoder
     }
 
     internal abstract class BaseBcBlockDecoder<T> : IBcBlockDecoder
-        where T : struct
+        where T : unmanaged
     {
         public RawBlock4X4Rgba32[,] Decode(ReadOnlySpan<byte> data, int pixelWidth, int pixelHeight, out int blockWidth, out int blockHeight)
         {
             blockWidth = (int)MathF.Ceiling(pixelWidth / 4.0f);
             blockHeight = (int)MathF.Ceiling(pixelHeight / 4.0f);
 
-            if (data.Length != blockWidth * blockHeight * Marshal.SizeOf<T>())
+            if (data.Length != blockWidth * blockHeight * Unsafe.SizeOf<T>())
             {
                 throw new InvalidDataException("Given data does not match expected length.");
             }

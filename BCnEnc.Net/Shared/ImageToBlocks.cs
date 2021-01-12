@@ -1,6 +1,5 @@
 ﻿using System;
 using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Advanced;
 using SixLabors.ImageSharp.PixelFormats;
 
 namespace BCnEncoder.Shared
@@ -129,6 +128,13 @@ namespace BCnEncoder.Shared
 			}
 
 			return output;
+		}
+
+		public static int CalculateNumOfBlocks(int pixelWidth, int pixelHeight)
+		{
+			int blocksWidth = (int)MathF.Ceiling(pixelWidth / 4.0f);
+			int blocksHeight = (int)MathF.Ceiling(pixelHeight / 4.0f);
+			return blocksWidth * blocksHeight;
 		}
 	}
 }

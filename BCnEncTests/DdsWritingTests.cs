@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using BCnEncoder.Encoder;
 using BCnEncoder.Shared;
 using Xunit;
@@ -12,7 +9,7 @@ namespace BCnEncTests
 	{
 		[Fact]
 		public void DdsWriteRgba() {
-			var image = ImageLoader.testLenna;
+			var image = ImageLoader.TestLenna;
 
 			BcEncoder encoder = new BcEncoder();
 			encoder.OutputOptions.Quality = CompressionQuality.Fast;
@@ -27,7 +24,7 @@ namespace BCnEncTests
 
 		[Fact]
 		public void DdsWriteBc1() {
-			var image = ImageLoader.testLenna;
+			var image = ImageLoader.TestLenna;
 
 			BcEncoder encoder = new BcEncoder();
 			encoder.OutputOptions.Quality = CompressionQuality.Fast;
@@ -42,7 +39,7 @@ namespace BCnEncTests
 
 		[Fact]
 		public void DdsWriteBc2() {
-			var image = ImageLoader.testAlpha1;
+			var image = ImageLoader.TestAlpha1;
 
 			BcEncoder encoder = new BcEncoder();
 			encoder.OutputOptions.Quality = CompressionQuality.Fast;
@@ -57,7 +54,7 @@ namespace BCnEncTests
 
 		[Fact]
 		public void DdsWriteBc3() {
-			var image = ImageLoader.testAlpha1;
+			var image = ImageLoader.TestAlpha1;
 
 			BcEncoder encoder = new BcEncoder();
 			encoder.OutputOptions.Quality = CompressionQuality.Fast;
@@ -72,7 +69,7 @@ namespace BCnEncTests
 
 		[Fact]
 		public void DdsWriteBc4() {
-			var image = ImageLoader.testHeight1;
+			var image = ImageLoader.TestHeight1;
 
 			BcEncoder encoder = new BcEncoder();
 			encoder.OutputOptions.Quality = CompressionQuality.Fast;
@@ -87,7 +84,7 @@ namespace BCnEncTests
 
 		[Fact]
 		public void DdsWriteBc5() {
-			var image = ImageLoader.testRedGreen1;
+			var image = ImageLoader.TestRedGreen1;
 
 			BcEncoder encoder = new BcEncoder();
 			encoder.OutputOptions.Quality = CompressionQuality.Fast;
@@ -102,7 +99,7 @@ namespace BCnEncTests
 
 		[Fact]
 		public void DdsWriteBc7() {
-			var image = ImageLoader.testLenna;
+			var image = ImageLoader.TestLenna;
 
 			BcEncoder encoder = new BcEncoder();
 			encoder.OutputOptions.Quality = CompressionQuality.Fast;
@@ -117,7 +114,7 @@ namespace BCnEncTests
 
 		[Fact]
 		public void DdsWriteCubemap() {
-			var images = ImageLoader.testCubemap;
+			var images = ImageLoader.TestCubemap;
 
 			BcEncoder encoder = new BcEncoder();
 			encoder.OutputOptions.Quality = CompressionQuality.Fast;

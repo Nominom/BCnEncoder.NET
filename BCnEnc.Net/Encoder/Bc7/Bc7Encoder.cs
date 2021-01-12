@@ -6,45 +6,35 @@ using BCnEncoder.Shared;
 
 namespace BCnEncoder.Encoder.Bc7
 {
-	internal class Bc7Encoder : IBcBlockEncoder
+	internal class Bc7Encoder : BaseBcBlockEncoder<Bc7Block>
 	{
 
-		public byte[] Encode(RawBlock4X4Rgba32[] blocks, int blockWidth, int blockHeight, CompressionQuality quality, bool parallel)
+		protected override Bc7Block EncodeBlock(RawBlock4X4Rgba32 rawBlock, CompressionQuality quality)
 		{
-			var outputData = new byte[blockWidth * blockHeight * Marshal.SizeOf<Bc7Block>()];
-			var outputBlocks = MemoryMarshal.Cast<byte, Bc7Block>(outputData);
-
-			if (parallel)
+			switch (quality)
 			{
-				Parallel.For(0, blocks.Length, i =>
-				{
-					var outputBlocks = MemoryMarshal.Cast<byte, Bc7Block>(outputData);
-					outputBlocks[i] = EncodeBlock(blocks[i], quality);
-				});
+				case CompressionQuality.Fast:
+					return Bc7EncoderFast.EncodeBlock(rawBlock);
+				case CompressionQuality.Balanced:
+					return Bc7EncoderBalanced.EncodeBlock(rawBlock);
+				case CompressionQuality.BestQuality:
+					return Bc7EncoderBestQuality.EncodeBlock(rawBlock);
+				default:
+					throw new ArgumentOutOfRangeException(nameof(quality), quality, null);
 			}
-			else
-			{
-				for (var i = 0; i < blocks.Length; i++)
-				{
-					outputBlocks[i] = EncodeBlock(blocks[i], quality);
-				}
-			}
-
-
-			return outputData;
 		}
 
-		public GlInternalFormat GetInternalFormat()
+		public override GlInternalFormat GetInternalFormat()
 		{
 			return GlInternalFormat.GlCompressedRgbaBptcUnormArb;
 		}
 
-		public GlFormat GetBaseInternalFormat()
+		public override GlFormat GetBaseInternalFormat()
 		{
 			return GlFormat.GlRgba;
 		}
 
-		public DxgiFormat GetDxgiFormat() {
+		public override DxgiFormat GetDxgiFormat() {
 			return DxgiFormat.DxgiFormatBc7Unorm;
 		}
 
@@ -73,26 +63,10 @@ namespace BCnEncoder.Encoder.Bc7
 			return indexBlock;
 		}
 
-
-		private static Bc7Block EncodeBlock(RawBlock4X4Rgba32 rawBlock, CompressionQuality quality)
-		{
-			switch (quality)
-			{
-				case CompressionQuality.Fast:
-					return Bc7EncoderFast.EncodeBlock(rawBlock);
-				case CompressionQuality.Balanced:
-					return Bc7EncoderBalanced.EncodeBlock(rawBlock);
-				case CompressionQuality.BestQuality:
-					return Bc7EncoderBestQuality.EncodeBlock(rawBlock);
-				default:
-					throw new ArgumentOutOfRangeException(nameof(quality), quality, null);
-			}
-		}
-
 		private static class Bc7EncoderFast
 		{
-			private const float ErrorThreshold_ = 0.005f;
-			private const int MaxTries_ = 5;
+			private const float ErrorThreshold = 0.005f;
+			private const int MaxTries = 5;
 
 			private static IEnumerable<Bc7Block> TryMethods(RawBlock4X4Rgba32 rawBlock, int[] best2SubsetPartitions, int[] best3SubsetPartitions, bool alpha)
 			{
@@ -143,7 +117,7 @@ namespace BCnEncoder.Encoder.Bc7
 						bestError = error;
 					}
 
-					if (error < ErrorThreshold_ || tries > MaxTries_) {
+					if (error < ErrorThreshold || tries > MaxTries) {
 						break;
 					}
 
@@ -155,8 +129,8 @@ namespace BCnEncoder.Encoder.Bc7
 
 		private static class Bc7EncoderBalanced
 		{
-			private const float ErrorThreshold_ = 0.005f;
-			private const int MaxTries_ = 25;
+			private const float ErrorThreshold = 0.005f;
+			private const int MaxTries = 25;
 
 			private static IEnumerable<Bc7Block> TryMethods(RawBlock4X4Rgba32 rawBlock, int[] best2SubsetPartitions, int[] best3SubsetPartitions, bool alpha)
 			{
@@ -216,7 +190,7 @@ namespace BCnEncoder.Encoder.Bc7
 						bestError = error;
 					}
 
-					if (error < ErrorThreshold_ || tries > MaxTries_) {
+					if (error < ErrorThreshold || tries > MaxTries) {
 						break;
 					}
 
@@ -229,8 +203,8 @@ namespace BCnEncoder.Encoder.Bc7
 		private static class Bc7EncoderBestQuality
 		{
 
-			private const float ErrorThreshold_ = 0.001f;
-			private const int MaxTries_ = 40;
+			private const float ErrorThreshold = 0.001f;
+			private const int MaxTries = 40;
 
 			private static IEnumerable<Bc7Block> TryMethods(RawBlock4X4Rgba32 rawBlock, int[] best2SubsetPartitions, int[] best3SubsetPartitions, bool alpha)
 			{
@@ -292,7 +266,7 @@ namespace BCnEncoder.Encoder.Bc7
 						bestError = error;
 					}
 
-					if (error < ErrorThreshold_ || tries > MaxTries_) {
+					if (error < ErrorThreshold || tries > MaxTries) {
 						break;
 					}
 

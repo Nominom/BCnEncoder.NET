@@ -6,7 +6,7 @@ namespace BCnEncoder.Encoder.Bc7
 	internal static class Bc7Mode5Encoder {
 
 		private static ReadOnlySpan<int> PartitionTable => new int[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-		const int Subset_ = 0;
+		const int Subset = 0;
 		
 		public static Bc7Block EncodeBlock(RawBlock4X4Rgba32 block, int startingVariation)
 		{
@@ -28,7 +28,7 @@ namespace BCnEncoder.Encoder.Bc7
 				byte pBit = 0; //fake pBit
 
 				Bc7EncodingHelpers.OptimizeSubsetEndpointsWithPBit(type, rotatedBlock, ref scaledEp0,
-					ref scaledEp1, ref pBit, ref pBit, startingVariation, PartitionTable, Subset_, false, true);
+					ref scaledEp1, ref pBit, ref pBit, startingVariation, PartitionTable, Subset, false, true);
 
 				ep0 = Bc7EncodingHelpers.ExpandEndpoint(type, scaledEp0, 0);
 				ep1 = Bc7EncodingHelpers.ExpandEndpoint(type, scaledEp1, 0);

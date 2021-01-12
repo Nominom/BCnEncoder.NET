@@ -4,7 +4,7 @@ using Xunit;
 
 namespace BCnEncTests
 {
-	public class BC1Tests
+	public class Bc1Tests
 	{
 		
 		[Fact]

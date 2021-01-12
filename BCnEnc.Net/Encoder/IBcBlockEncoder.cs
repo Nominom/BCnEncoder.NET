@@ -1,6 +1,4 @@
-﻿using System;
-using BCnEncoder.Shared;
-using SixLabors.ImageSharp.PixelFormats;
+﻿using BCnEncoder.Shared;
 
 namespace BCnEncoder.Encoder
 {

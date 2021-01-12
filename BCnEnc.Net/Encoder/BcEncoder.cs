@@ -362,15 +362,102 @@ namespace BCnEncoder.Encoder
         }
 
         /// <summary>
+        /// Encodes all mipmap levels into a list of byte buffers.
+        /// </summary>
+        /// <param name="inputPixelsRgba">The raw pixels of the input image in rgba format.</param>
+        /// <param name="inputImageWidth">The width of the input image.</param>
+        /// <param name="inputImageHeight">The height of the input image.</param>
+        /// <returns>A list of raw encoded mipmap data.</returns>
+        public IList<byte[]> EncodeToRawBytes(byte[] inputPixelsRgba, int inputImageWidth, int inputImageHeight)
+        {
+	        if (inputPixelsRgba.Length != inputImageWidth * inputImageHeight * 4)
+	        {
+		        throw new ArgumentException("The input pixels must be provided in 4 bytes per pixel rgba format.");
+	        }
+	        using var image = Image.LoadPixelData<Rgba32>(inputPixelsRgba, inputImageWidth, inputImageHeight);
+	        return EncodeToRawBytes(image);
+        }
+
+        /// <summary>
+        /// Encodes a single mip level of the input image to a byte buffer.
+        /// </summary>
+        /// <param name="inputPixelsRgba">The raw pixels of the input image in rgba format.</param>
+        /// <param name="inputImageWidth">The width of the input image.</param>
+        /// <param name="inputImageHeight">The height of the input image.</param>
+        /// <param name="mipLevel">The mipmap to encode.</param>
+        /// <param name="mipWidth">The width of the mipmap.</param>
+        /// <param name="mipHeight">The height of the mipmap.</param>
+        /// <returns>The raw encoded data.</returns>
+        public byte[] EncodeToRawBytes(byte[] inputPixelsRgba, int inputImageWidth, int inputImageHeight, int mipLevel, out int mipWidth, out int mipHeight)
+        {
+	        if (inputPixelsRgba.Length != inputImageWidth * inputImageHeight * 4)
+	        {
+		        throw new ArgumentException("The input pixels must be provided in 4 bytes per pixel rgba format.");
+	        }
+	        using var image = Image.LoadPixelData<Rgba32>(inputPixelsRgba, inputImageWidth, inputImageHeight);
+	        return EncodeToRawBytes(image, mipLevel, out mipWidth, out mipHeight);
+        }
+
+        /// <summary>
+		/// Calculates the number of mipmap levels that will be generated for the given input image.
+		/// </summary>
+		/// <param name="inputImage">The image to use for the calculation.</param>
+		/// <returns>The number of mipmap levels that will be generated for the input image.</returns>
+        public int CalculateNumberOfMipLevels(Image<Rgba32> inputImage)
+        {
+	        return (int) MipMapper.CalculateMipChainLength(inputImage.Width, inputImage.Height,
+		        (OutputOptions.GenerateMipMaps ? (uint) OutputOptions.MaxMipMapLevel : 1));
+        }
+
+        /// <summary>
+        /// Calculates the number of mipmap levels that will be generated for the given input image.
+        /// </summary>
+        /// <param name="imagePixelWidth">The width of the input image in pixels</param>
+        /// <param name="imagePixelHeight">The height of the input image in pixels</param>
+        /// <returns>The number of mipmap levels that will be generated for the input image.</returns>
+        public int CalculateNumberOfMipLevels(int imagePixelWidth, int imagePixelHeight)
+        {
+	        return (int)MipMapper.CalculateMipChainLength(imagePixelWidth, imagePixelHeight,
+		        (OutputOptions.GenerateMipMaps ? (uint)OutputOptions.MaxMipMapLevel : 1));
+        }
+
+        /// <summary>
+		/// Calculates the size of a given mipmap level.
+		/// </summary>
+		/// <param name="inputImage">The image to use for the calculation.</param>
+		/// <param name="mipLevel">The mipLevel to calculate (0 is original image)</param>
+		/// <param name="mipWidth">The mipmap width calculated</param>
+		/// <param name="mipHeight">The mipmap height calculated</param>
+        public void CalculateMipMapSize(Image<Rgba32> inputImage, int mipLevel, out int mipWidth, out int mipHeight)
+        {
+	        MipMapper.CalculateMipLevelSize(inputImage.Width, inputImage.Height, mipLevel, out mipWidth,
+		        out mipHeight);
+        }
+        
+        /// <summary>
+        /// Calculates the size of a given mipmap level.
+        /// </summary>
+        /// <param name="imagePixelWidth">The width of the input image in pixels</param>
+        /// <param name="imagePixelHeight">The height of the input image in pixels</param>
+        /// <param name="mipLevel">The mipLevel to calculate (0 is original image)</param>
+        /// <param name="mipWidth">The mipmap width calculated</param>
+        /// <param name="mipHeight">The mipmap height calculated</param>
+        public void CalculateMipMapSize(int imagePixelWidth, int imagePixelHeight, int mipLevel, out int mipWidth, out int mipHeight)
+        {
+	        MipMapper.CalculateMipLevelSize(imagePixelWidth, imagePixelHeight, mipLevel, out mipWidth,
+		        out mipHeight);
+        }
+
+        /// <summary>
         /// Encodes all cubemap faces and mipmap levels into Ktx file and writes it to the output stream.
         /// Order is +X, -X, +Y, -Y, +Z, -Z
         /// </summary>
         /// <param name="right">The right face of the cubemap.</param>
-        /// <param name="left">The right face of the cubemap.</param>
-        /// <param name="top">The right face of the cubemap.</param>
-        /// <param name="down">The right face of the cubemap.</param>
-        /// <param name="back">The right face of the cubemap.</param>
-        /// <param name="front">The right face of the cubemap.</param>
+        /// <param name="left">The left face of the cubemap.</param>
+        /// <param name="top">The top face of the cubemap.</param>
+        /// <param name="down">The bottom face of the cubemap.</param>
+        /// <param name="back">The back face of the cubemap.</param>
+        /// <param name="front">The front face of the cubemap.</param>
         /// <param name="outputStream">The stream to write the encoded image to.</param>
         public void EncodeCubeMap(Image<Rgba32> right, Image<Rgba32> left, Image<Rgba32> top, Image<Rgba32> down,
             Image<Rgba32> back, Image<Rgba32> front, Stream outputStream)
@@ -394,11 +481,11 @@ namespace BCnEncoder.Encoder
         /// Order is +X, -X, +Y, -Y, +Z, -Z. Back maps to positive Z and front to negative Z.
         /// </summary>
         /// <param name="right">The right face of the cubemap.</param>
-        /// <param name="left">The right face of the cubemap.</param>
-        /// <param name="top">The right face of the cubemap.</param>
-        /// <param name="down">The right face of the cubemap.</param>
-        /// <param name="back">The right face of the cubemap.</param>
-        /// <param name="front">The right face of the cubemap.</param>
+        /// <param name="left">The left face of the cubemap.</param>
+        /// <param name="top">The top face of the cubemap.</param>
+        /// <param name="down">The bottom face of the cubemap.</param>
+        /// <param name="back">The back face of the cubemap.</param>
+        /// <param name="front">The front face of the cubemap.</param>
         /// <returns>The Ktx file containing the encoded image.</returns>
         public KtxFile EncodeCubeMapToKtx(Image<Rgba32> right, Image<Rgba32> left, Image<Rgba32> top, Image<Rgba32> down,
             Image<Rgba32> back, Image<Rgba32> front)
@@ -507,11 +594,11 @@ namespace BCnEncoder.Encoder
         /// Order is +X, -X, +Y, -Y, +Z, -Z. Back maps to positive Z and front to negative Z.
         /// </summary>
         /// <param name="right">The right face of the cubemap.</param>
-        /// <param name="left">The right face of the cubemap.</param>
-        /// <param name="top">The right face of the cubemap.</param>
-        /// <param name="down">The right face of the cubemap.</param>
-        /// <param name="back">The right face of the cubemap.</param>
-        /// <param name="front">The right face of the cubemap.</param>
+        /// <param name="left">The left face of the cubemap.</param>
+        /// <param name="top">The top face of the cubemap.</param>
+        /// <param name="down">The bottom face of the cubemap.</param>
+        /// <param name="back">The back face of the cubemap.</param>
+        /// <param name="front">The front face of the cubemap.</param>
         /// <returns>The Dds file containing the encoded image.</returns>
         public DdsFile EncodeCubeMapToDds(Image<Rgba32> right, Image<Rgba32> left, Image<Rgba32> top, Image<Rgba32> down,
             Image<Rgba32> back, Image<Rgba32> front)

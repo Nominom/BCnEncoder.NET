@@ -1,13 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+using System;
 using System.IO;
-using System.Linq;
-using System.Text;
 using BCnEncoder.Decoder;
 using BCnEncoder.Shared;
 using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Advanced;
-using SixLabors.ImageSharp.PixelFormats;
 using Xunit;
 
 namespace BCnEncTests
@@ -56,7 +51,7 @@ namespace BCnEncTests
 		}
 
 		[Fact]
-		public void ReadBc1a() {
+		public void ReadBc1A() {
 			using FileStream fs = File.OpenRead(@"../../../testImages/test_decompress_bc1a.dds");
 			DdsFile file = DdsFile.Load(fs);
 			Assert.Equal(DxgiFormat.DxgiFormatBc1Unorm, file.header.ddsPixelFormat.DxgiFormat);
