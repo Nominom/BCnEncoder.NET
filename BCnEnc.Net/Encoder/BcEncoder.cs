@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -109,7 +109,7 @@ namespace BCnEncoder.Encoder
                 {
                     var blocks = ImageToBlocks.ImageTo4X4(mipChain[mip].Frames[0], out var blocksWidth, out var blocksHeight);
                     encoded = compressedEncoder.Encode(blocks, blocksWidth, blocksHeight, OutputOptions.Quality,
-                        !Debugger.IsAttached && Options.multiThreaded);
+                        !Debugger.IsAttached && Options.IsParallel);
                 }
                 else
                 {
@@ -187,7 +187,7 @@ namespace BCnEncoder.Encoder
                 {
                     var blocks = ImageToBlocks.ImageTo4X4(mipChain[mip].Frames[0], out var blocksWidth, out var blocksHeight);
                     encoded = compressedEncoder.Encode(blocks, blocksWidth, blocksHeight, OutputOptions.Quality,
-                        !Debugger.IsAttached && Options.multiThreaded);
+                        !Debugger.IsAttached && Options.IsParallel);
                 }
                 else
                 {
@@ -262,7 +262,7 @@ namespace BCnEncoder.Encoder
                 {
                     var blocks = ImageToBlocks.ImageTo4X4(mipChain[mip].Frames[0], out var blocksWidth, out var blocksHeight);
                     encoded = compressedEncoder.Encode(blocks, blocksWidth, blocksHeight, OutputOptions.Quality,
-                        !Debugger.IsAttached && Options.multiThreaded);
+                        !Debugger.IsAttached && Options.IsParallel);
                 }
                 else
                 {
@@ -337,7 +337,7 @@ namespace BCnEncoder.Encoder
             {
                 var blocks = ImageToBlocks.ImageTo4X4(mipChain[mipLevel].Frames[0], out var blocksWidth, out var blocksHeight);
                 encoded = compressedEncoder.Encode(blocks, blocksWidth, blocksHeight, OutputOptions.Quality,
-                    !Debugger.IsAttached && Options.multiThreaded);
+                    !Debugger.IsAttached && Options.IsParallel);
             }
             else
             {
@@ -552,7 +552,7 @@ namespace BCnEncoder.Encoder
                     {
                         var blocks = ImageToBlocks.ImageTo4X4(mipChain[mip].Frames[0], out var blocksWidth, out var blocksHeight);
                         encoded = compressedEncoder.Encode(blocks, blocksWidth, blocksHeight, OutputOptions.Quality,
-                            !Debugger.IsAttached && Options.multiThreaded);
+                            !Debugger.IsAttached && Options.IsParallel);
                     }
                     else
                     {
@@ -661,7 +661,7 @@ namespace BCnEncoder.Encoder
                     {
                         var blocks = ImageToBlocks.ImageTo4X4(mipChain[mip].Frames[0], out var blocksWidth, out var blocksHeight);
                         encoded = compressedEncoder.Encode(blocks, blocksWidth, blocksHeight, OutputOptions.Quality,
-                            !Debugger.IsAttached && Options.multiThreaded);
+                            !Debugger.IsAttached && Options.IsParallel);
                     }
                     else
                     {
