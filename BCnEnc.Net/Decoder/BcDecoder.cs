@@ -238,7 +238,7 @@ namespace BCnEncoder.Decoder
 							var ddsFile = DdsFile.Load(inputStream);
 							return Decode(ddsFile, allMipMaps, token);
 
-						case ".file":
+						case ".ktx":
 							var ktxFile = KtxFile.Load(inputStream);
 							return Decode(ktxFile, allMipMaps, token);
 					}

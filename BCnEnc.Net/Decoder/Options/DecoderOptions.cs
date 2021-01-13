@@ -13,6 +13,7 @@ namespace BCnEncoder.Decoder.Options
 		/// When a debugger is attached, the decoder defaults to single-threaded operation to ease debugging.
 		/// Default is false.
 		/// </summary>
+		/// <remarks>Parallel execution will be ignored in RawDecoders, due to minimal performance gain.</remarks>
 		public bool IsParallel { get; set; }
 
 		/// <summary>

@@ -1,6 +1,5 @@
 using SixLabors.ImageSharp.PixelFormats;
 using System;
-using System.Threading.Tasks;
 using BCnEncoder.Shared;
 
 namespace BCnEncoder.Decoder
@@ -20,7 +19,7 @@ namespace BCnEncoder.Decoder
 		/// <summary>
 		/// Create a new instance of <see cref="RawRDecoder"/>.
 		/// </summary>
-		/// <param name="redAsLuminance">If the decoded component should be used as the red component or luminence.</param>
+		/// <param name="redAsLuminance">If the decoded component should be used as the red component or luminance.</param>
 		public RawRDecoder(bool redAsLuminance)
 		{
 			this.redAsLuminance = redAsLuminance;
@@ -38,52 +37,30 @@ namespace BCnEncoder.Decoder
 		{
 			var output = new Rgba32[pixelWidth * pixelHeight];
 
-			if (context.IsParallel)
-			{
-				var options = new ParallelOptions
-				{
-					MaxDegreeOfParallelism = context.TaskCount,
-					CancellationToken = context.CancellationToken
-				};
-				Parallel.For(0, pixelWidth * pixelHeight, options, i =>
-				{
-					var span = data.Span;
-					if (redAsLuminance)
-					{
-						output[i].R = span[i];
-						output[i].G = span[i];
-						output[i].B = span[i];
-					}
-					else
-					{
-						output[i].R = span[i];
-						output[i].G = 0;
-						output[i].B = 0;
-					}
+			// HINT: Ignoring parallel execution since we wouldn't gain performance from it.
 
-					output[i].A = 255;
-				});
-			}
-			else
+			var span = data.Span;
+			for (var i = 0; i < output.Length; i++)
 			{
-				var span = data.Span;
-				for (var i = 0; i < output.Length; i++)
+				if (context.CancellationToken.IsCancellationRequested)
 				{
-					if (redAsLuminance)
-					{
-						output[i].R = span[i];
-						output[i].G = span[i];
-						output[i].B = span[i];
-					}
-					else
-					{
-						output[i].R = span[i];
-						output[i].G = 0;
-						output[i].B = 0;
-					}
-
-					output[i].A = 255;
+					break;
 				}
+
+				if (redAsLuminance)
+				{
+					output[i].R = span[i];
+					output[i].G = span[i];
+					output[i].B = span[i];
+				}
+				else
+				{
+					output[i].R = span[i];
+					output[i].G = 0;
+					output[i].B = 0;
+				}
+
+				output[i].A = 255;
 			}
 
 			return output;
@@ -107,32 +84,20 @@ namespace BCnEncoder.Decoder
 		{
 			var output = new Rgba32[pixelWidth * pixelHeight];
 
-			if (context.IsParallel)
+			// HINT: Ignoring parallel execution since we wouldn't gain performance from it.
+
+			var span = data.Span;
+			for (var i = 0; i < output.Length; i++)
 			{
-				var options = new ParallelOptions
+				if (context.CancellationToken.IsCancellationRequested)
 				{
-					MaxDegreeOfParallelism = context.TaskCount,
-					CancellationToken = context.CancellationToken
-				};
-				Parallel.For(0, pixelWidth * pixelHeight, options, i =>
-				{
-					var span = data.Span;
-					output[i].R = span[i * 2];
-					output[i].G = span[i * 2 + 1];
-					output[i].B = 0;
-					output[i].A = 255;
-				});
-			}
-			else
-			{
-				var span = data.Span;
-				for (var i = 0; i < output.Length; i++)
-				{
-					output[i].R = span[i * 2];
-					output[i].G = span[i * 2 + 1];
-					output[i].B = 0;
-					output[i].A = 255;
+					break;
 				}
+
+				output[i].R = span[i * 2];
+				output[i].G = span[i * 2 + 1];
+				output[i].B = 0;
+				output[i].A = 255;
 			}
 
 			return output;
@@ -156,32 +121,20 @@ namespace BCnEncoder.Decoder
 		{
 			var output = new Rgba32[pixelWidth * pixelHeight];
 
-			if (context.IsParallel)
+			// HINT: Ignoring parallel execution since we wouldn't gain performance from it.
+
+			var span = data.Span;
+			for (var i = 0; i < output.Length; i++)
 			{
-				var options = new ParallelOptions
+				if (context.CancellationToken.IsCancellationRequested)
 				{
-					MaxDegreeOfParallelism = context.TaskCount,
-					CancellationToken = context.CancellationToken
-				};
-				Parallel.For(0, pixelWidth * pixelHeight, options, i =>
-				{
-					var span = data.Span;
-					output[i].R = span[i * 3];
-					output[i].G = span[i * 3 + 1];
-					output[i].B = span[i * 3 + 2];
-					output[i].A = 255;
-				});
-			}
-			else
-			{
-				var span = data.Span;
-				for (var i = 0; i < output.Length; i++)
-				{
-					output[i].R = span[i * 3];
-					output[i].G = span[i * 3 + 1];
-					output[i].B = span[i * 3 + 2];
-					output[i].A = 255;
+					break;
 				}
+
+				output[i].R = span[i * 3];
+				output[i].G = span[i * 3 + 1];
+				output[i].B = span[i * 3 + 2];
+				output[i].A = 255;
 			}
 
 			return output;
@@ -205,32 +158,20 @@ namespace BCnEncoder.Decoder
 		{
 			var output = new Rgba32[pixelWidth * pixelHeight];
 
-			if (context.IsParallel)
+			// HINT: Ignoring parallel execution since we wouldn't gain performance from it.
+
+			var span = data.Span;
+			for (var i = 0; i < output.Length; i++)
 			{
-				var options = new ParallelOptions
+				if (context.CancellationToken.IsCancellationRequested)
 				{
-					MaxDegreeOfParallelism = context.TaskCount,
-					CancellationToken = context.CancellationToken
-				};
-				Parallel.For(0, pixelWidth * pixelHeight, options, i =>
-				{
-					var span = data.Span;
-					output[i].R = span[i * 4];
-					output[i].G = span[i * 4 + 1];
-					output[i].B = span[i * 4 + 2];
-					output[i].A = span[i * 4 + 3];
-				});
-			}
-			else
-			{
-				var span = data.Span;
-				for (var i = 0; i < output.Length; i++)
-				{
-					output[i].R = span[i * 4];
-					output[i].G = span[i * 4 + 1];
-					output[i].B = span[i * 4 + 2];
-					output[i].A = span[i * 4 + 3];
+					break;
 				}
+
+				output[i].R = span[i * 4];
+				output[i].G = span[i * 4 + 1];
+				output[i].B = span[i * 4 + 2];
+				output[i].A = span[i * 4 + 3];
 			}
 
 			return output;
