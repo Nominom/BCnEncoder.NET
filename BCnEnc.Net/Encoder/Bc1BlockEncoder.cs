@@ -5,34 +5,9 @@ using BCnEncoder.Shared;
 
 namespace BCnEncoder.Encoder
 {
-	internal class Bc1BlockEncoder : IBcBlockEncoder
+	internal class Bc1BlockEncoder : BaseBcBlockEncoder<Bc1Block>
 	{
-
-		public byte[] Encode(RawBlock4X4Rgba32[] blocks, int blockWidth, int blockHeight, CompressionQuality quality, bool parallel)
-		{
-			var outputData = new byte[blockWidth * blockHeight * Marshal.SizeOf<Bc1Block>()];
-			var outputBlocks = MemoryMarshal.Cast<byte, Bc1Block>(outputData);
-
-			if (parallel)
-			{
-				Parallel.For(0, blocks.Length, i =>
-				{
-					var outputBlocks = MemoryMarshal.Cast<byte, Bc1Block>(outputData);
-					outputBlocks[i] = EncodeBlock(blocks[i], quality);
-				});
-			}
-			else
-			{
-				for (var i = 0; i < blocks.Length; i++)
-				{
-					outputBlocks[i] = EncodeBlock(blocks[i], quality);
-				}
-			}
-
-			return outputData;
-		}
-
-		private Bc1Block EncodeBlock(RawBlock4X4Rgba32 block, CompressionQuality quality)
+		protected override Bc1Block EncodeBlock(RawBlock4X4Rgba32 block, CompressionQuality quality)
 		{
 			switch (quality)
 			{
@@ -48,17 +23,17 @@ namespace BCnEncoder.Encoder
 			}
 		}
 
-		public GlInternalFormat GetInternalFormat()
+		public override GlInternalFormat GetInternalFormat()
 		{
 			return GlInternalFormat.GlCompressedRgbS3TcDxt1Ext;
 		}
 
-		public GlFormat GetBaseInternalFormat()
+		public override GlFormat GetBaseInternalFormat()
 		{
 			return GlFormat.GlRgb;
 		}
 
-		public DxgiFormat GetDxgiFormat()
+		public override DxgiFormat GetDxgiFormat()
 		{
 			return DxgiFormat.DxgiFormatBc1Unorm;
 		}
@@ -127,8 +102,8 @@ namespace BCnEncoder.Encoder
 		}
 
 		private static class Bc1BlockEncoderBalanced {
-			private const int MaxTries_ = 24 * 2;
-			private const float ErrorThreshold_ = 0.05f;
+			private const int MaxTries = 24 * 2;
+			private const float ErrorThreshold = 0.05f;
 
 			internal static Bc1Block EncodeBlock(RawBlock4X4Rgba32 rawBlock)
 			{
@@ -149,7 +124,7 @@ namespace BCnEncoder.Encoder
 
 				var best = TryColors(rawBlock, c0, c1, out var bestError);
 				
-				for (var i = 0; i < MaxTries_; i++) {
+				for (var i = 0; i < MaxTries; i++) {
 					var (newC0, newC1) = ColorVariationGenerator.Variate565(c0, c1, i);
 					
 					if (newC0.data < newC1.data)
@@ -169,7 +144,7 @@ namespace BCnEncoder.Encoder
 						c1 = newC1;
 					}
 
-					if (bestError < ErrorThreshold_) {
+					if (bestError < ErrorThreshold) {
 						break;
 					}
 				}
@@ -180,8 +155,8 @@ namespace BCnEncoder.Encoder
 
 		private static class Bc1BlockEncoderSlow
 		{
-			private const int MaxTries_ = 9999;
-			private const float ErrorThreshold_ = 0.01f;
+			private const int MaxTries = 9999;
+			private const float ErrorThreshold = 0.01f;
 
 			internal static Bc1Block EncodeBlock(RawBlock4X4Rgba32 rawBlock)
 			{
@@ -204,7 +179,7 @@ namespace BCnEncoder.Encoder
 
 				var lastChanged = 0;
 
-				for (var i = 0; i < MaxTries_; i++) {
+				for (var i = 0; i < MaxTries; i++) {
 					var (newC0, newC1) = ColorVariationGenerator.Variate565(c0, c1, i);
 					
 					if (newC0.data < newC1.data)
@@ -227,7 +202,7 @@ namespace BCnEncoder.Encoder
 						lastChanged = 0;
 					}
 
-					if (bestError < ErrorThreshold_ || lastChanged > ColorVariationGenerator.VarPatternCount) {
+					if (bestError < ErrorThreshold || lastChanged > ColorVariationGenerator.VarPatternCount) {
 						break;
 					}
 				}
@@ -239,34 +214,9 @@ namespace BCnEncoder.Encoder
 		#endregion
 	}
 
-	internal class Bc1AlphaBlockEncoder : IBcBlockEncoder
+	internal class Bc1AlphaBlockEncoder : BaseBcBlockEncoder<Bc1Block>
 	{
-
-		public byte[] Encode(RawBlock4X4Rgba32[] blocks, int blockWidth, int blockHeight, CompressionQuality quality, bool parallel)
-		{
-			var outputData = new byte[blockWidth * blockHeight * Marshal.SizeOf<Bc1Block>()];
-			var outputBlocks = MemoryMarshal.Cast<byte, Bc1Block>(outputData);
-
-			if (parallel)
-			{
-				Parallel.For(0, blocks.Length, i =>
-				{
-					var outputBlocks = MemoryMarshal.Cast<byte, Bc1Block>(outputData);
-					outputBlocks[i] = EncodeBlock(blocks[i], quality);
-				});
-			}
-			else
-			{
-				for (var i = 0; i < blocks.Length; i++)
-				{
-					outputBlocks[i] = EncodeBlock(blocks[i], quality);
-				}
-			}
-
-			return outputData;
-		}
-
-		private Bc1Block EncodeBlock(RawBlock4X4Rgba32 block, CompressionQuality quality)
+		protected override Bc1Block EncodeBlock(RawBlock4X4Rgba32 block, CompressionQuality quality)
 		{
 			switch (quality)
 			{
@@ -282,17 +232,17 @@ namespace BCnEncoder.Encoder
 			}
 		}
 
-		public GlInternalFormat GetInternalFormat()
+		public override GlInternalFormat GetInternalFormat()
 		{
 			return GlInternalFormat.GlCompressedRgbaS3TcDxt1Ext;
 		}
 
-		public GlFormat GetBaseInternalFormat()
+		public override GlFormat GetBaseInternalFormat()
 		{
 			return GlFormat.GlRgba;
 		}
 
-		public DxgiFormat GetDxgiFormat()
+		public override DxgiFormat GetDxgiFormat()
 		{
 			return DxgiFormat.DxgiFormatBc1Unorm;
 		}
@@ -370,8 +320,8 @@ namespace BCnEncoder.Encoder
 
 		private static class Bc1AlphaBlockEncoderBalanced
 		{
-			private const int MaxTries_ = 24 * 2;
-			private const float ErrorThreshold_ = 0.05f;
+			private const int MaxTries = 24 * 2;
+			private const float ErrorThreshold = 0.05f;
 
 
 			internal static Bc1Block EncodeBlock(RawBlock4X4Rgba32 rawBlock)
@@ -399,7 +349,7 @@ namespace BCnEncoder.Encoder
 
 				var best = TryColors(rawBlock, c0, c1, out var bestError);
 				
-				for (var i = 0; i < MaxTries_; i++) {
+				for (var i = 0; i < MaxTries; i++) {
 					var (newC0, newC1) = ColorVariationGenerator.Variate565(c0, c1, i);
 					
 					if (!hasAlpha && newC0.data < newC1.data)
@@ -423,7 +373,7 @@ namespace BCnEncoder.Encoder
 						c1 = newC1;
 					}
 
-					if (bestError < ErrorThreshold_) {
+					if (bestError < ErrorThreshold) {
 						break;
 					}
 				}
@@ -434,8 +384,8 @@ namespace BCnEncoder.Encoder
 
 		private static class Bc1AlphaBlockEncoderSlow
 		{
-			private const int MaxTries_ = 9999;
-			private const float ErrorThreshold_ = 0.05f;
+			private const int MaxTries = 9999;
+			private const float ErrorThreshold = 0.05f;
 
 			internal static Bc1Block EncodeBlock(RawBlock4X4Rgba32 rawBlock)
 			{
@@ -463,7 +413,7 @@ namespace BCnEncoder.Encoder
 				var best = TryColors(rawBlock, c0, c1, out var bestError);
 
 				var lastChanged = 0;
-				for (var i = 0; i < MaxTries_; i++) {
+				for (var i = 0; i < MaxTries; i++) {
 					var (newC0, newC1) = ColorVariationGenerator.Variate565(c0, c1, i);
 					
 					if (!hasAlpha && newC0.data < newC1.data)
@@ -490,7 +440,7 @@ namespace BCnEncoder.Encoder
 						lastChanged = 0;
 					}
 
-					if (bestError < ErrorThreshold_ || lastChanged > ColorVariationGenerator.VarPatternCount) {
+					if (bestError < ErrorThreshold || lastChanged > ColorVariationGenerator.VarPatternCount) {
 						break;
 					}
 				}

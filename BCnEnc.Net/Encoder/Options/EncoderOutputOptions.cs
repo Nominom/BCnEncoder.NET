@@ -19,7 +19,7 @@ namespace BCnEncoder.Encoder.Options
         public int MaxMipMapLevel { get; set; } = -1;
 
         /// <summary>
-        /// The compression Format to use. Default is BC1.
+        /// The compression Format to use. Default is Bc1.
         /// </summary>
         public CompressionFormat Format { get; set; } = CompressionFormat.Bc1;
 

@@ -1,15 +1,13 @@
 ﻿using System;
+using System.Numerics;
 using SixLabors.ImageSharp.PixelFormats;
-using Vector3 = System.Numerics.Vector3;
-using Vector4 = System.Numerics.Vector4;
-using Matrix4x4 = System.Numerics.Matrix4x4;
 
 namespace BCnEncoder.Shared
 {
 	internal static class PcaVectors
 	{
-		private const int C5655Mask_ = 0xF8;
-		private const int C5656Mask_ = 0xFC;
+		private const int C565_5Mask = 0xF8;
+		private const int C565_6Mask = 0xFC;
 
 		private static void ConvertToVector4(ReadOnlySpan<Rgba32> colors, Span<Vector4> vectors)
 		{
@@ -223,13 +221,13 @@ namespace BCnEncoder.Shared
 			maxB = maxB <= 255 ? maxB : 255;
 
 			// Optimal round
-			minR = (minR & C5655Mask_) | (minR >> 5);
-			minG = (minG & C5656Mask_) | (minG >> 6);
-			minB = (minB & C5655Mask_) | (minB >> 5);
+			minR = (minR & C565_5Mask) | (minR >> 5);
+			minG = (minG & C565_6Mask) | (minG >> 6);
+			minB = (minB & C565_5Mask) | (minB >> 5);
 
-			maxR = (maxR & C5655Mask_) | (maxR >> 5);
-			maxG = (maxG & C5656Mask_) | (maxG >> 6);
-			maxB = (maxB & C5655Mask_) | (maxB >> 5);
+			maxR = (maxR & C565_5Mask) | (maxR >> 5);
+			maxG = (maxG & C565_6Mask) | (maxG >> 6);
+			maxB = (maxB & C565_5Mask) | (maxB >> 5);
 
 			min = new ColorRgb565((byte)minR, (byte)minG, (byte)minB);
 			max = new ColorRgb565((byte)maxR, (byte)maxG, (byte)maxB);

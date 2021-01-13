@@ -6,29 +6,9 @@ using BCnEncoder.Shared;
 
 namespace BCnEncoder.Encoder
 {
-	internal class Bc5BlockEncoder : IBcBlockEncoder {
-
-		public byte[] Encode(RawBlock4X4Rgba32[] blocks, int blockWidth, int blockHeight, CompressionQuality quality, bool parallel)
-		{
-			var outputData = new byte[blockWidth * blockHeight * Marshal.SizeOf<Bc5Block>()];
-			var outputBlocks = MemoryMarshal.Cast<byte, Bc5Block>(outputData);
-
-			if (parallel) {
-				Parallel.For(0, blocks.Length, i => {
-					var outputBlocks = MemoryMarshal.Cast<byte, Bc5Block>(outputData);
-					outputBlocks[i] = EncodeBlock(blocks[i], quality);
-				});
-			}
-			else {
-				for (var i = 0; i < blocks.Length; i++) {
-					outputBlocks[i] = EncodeBlock(blocks[i], quality);
-				}
-			}
-
-			return outputData;
-		}
-
-		private Bc5Block EncodeBlock(RawBlock4X4Rgba32 block, CompressionQuality quality) {
+	internal class Bc5BlockEncoder : BaseBcBlockEncoder<Bc5Block>
+	{
+		protected override Bc5Block EncodeBlock(RawBlock4X4Rgba32 block, CompressionQuality quality) {
 			var output = new Bc5Block();
 			var reds = new byte[16];
 			var greens = new byte[16];
@@ -100,15 +80,15 @@ namespace BCnEncoder.Encoder
             return output;
 		}
 
-		public GlInternalFormat GetInternalFormat() {
+		public override GlInternalFormat GetInternalFormat() {
 			return GlInternalFormat.GlCompressedRedGreenRgtc2Ext;
 		}
 
-		public GlFormat GetBaseInternalFormat() {
+		public override GlFormat GetBaseInternalFormat() {
 			return GlFormat.GlRg;
 		}
 
-		public DxgiFormat GetDxgiFormat() {
+		public override DxgiFormat GetDxgiFormat() {
 			return DxgiFormat.DxgiFormatBc5Unorm;
 		}
 

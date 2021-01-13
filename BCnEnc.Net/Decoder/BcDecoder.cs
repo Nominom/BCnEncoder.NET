@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Text;
 using BCnEncoder.Decoder.Options;
 using BCnEncoder.Shared;
@@ -33,7 +34,7 @@ namespace BCnEncoder.Decoder
         /// <returns>The decoded Rgba32 image.</returns>
         public Image<Rgba32> DecodeRaw(Stream inputStream, CompressionFormat format, int pixelWidth, int pixelHeight)
         {
-            var dataArray = new byte[inputStream.Position];
+            var dataArray = new byte[GetBufferSize(format, pixelWidth, pixelHeight)];
             inputStream.Read(dataArray, 0, dataArray.Length);
 
             return DecodeRaw(dataArray, format, pixelWidth, pixelHeight);
@@ -47,8 +48,13 @@ namespace BCnEncoder.Decoder
         /// <param name="pixelWidth">The pixelWidth of the image.</param>
         /// <param name="pixelHeight">The pixelHeight of the image.</param>
         /// <returns>The decoded Rgba32 image.</returns>
-        public Image<Rgba32> DecodeRaw(byte[] input, CompressionFormat format, int pixelWidth, int pixelHeight)
+        public Image<Rgba32> DecodeRaw(ReadOnlySpan<byte> input, CompressionFormat format, int pixelWidth, int pixelHeight)
         {
+	        if (input.Length != GetBufferSize(format, pixelWidth, pixelHeight))
+	        {
+		        throw new ArgumentException("The size of the input buffer does not match the expected size");
+	        }
+	        
             var isCompressedFormat = format.IsCompressedFormat();
             if (isCompressedFormat)
             {
@@ -501,6 +507,46 @@ namespace BCnEncoder.Decoder
                 default:
                     throw new ArgumentOutOfRangeException(nameof(format), format, null);
             }
+        }
+
+        private int GetBufferSize(CompressionFormat format, int pixelWidth, int pixelHeight)
+        {
+	        switch (format)
+	        {
+		        case CompressionFormat.R:
+			        return pixelWidth * pixelHeight;
+
+		        case CompressionFormat.Rg:
+			        return 2 * pixelWidth * pixelHeight;
+
+		        case CompressionFormat.Rgb:
+			        return 3 * pixelWidth * pixelHeight;
+
+		        case CompressionFormat.Rgba:
+			        return 4 * pixelWidth * pixelHeight;
+		        
+		        case CompressionFormat.Bc1:
+		        case CompressionFormat.Bc1WithAlpha:
+			        return Unsafe.SizeOf<Bc1Block>() * ImageToBlocks.CalculateNumOfBlocks(pixelWidth, pixelHeight);
+
+		        case CompressionFormat.Bc2:
+			        return Unsafe.SizeOf<Bc2Block>() * ImageToBlocks.CalculateNumOfBlocks(pixelWidth, pixelHeight);
+
+                case CompressionFormat.Bc3:
+	                return Unsafe.SizeOf<Bc3Block>() * ImageToBlocks.CalculateNumOfBlocks(pixelWidth, pixelHeight);
+
+                case CompressionFormat.Bc4:
+	                return Unsafe.SizeOf<Bc4Block>() * ImageToBlocks.CalculateNumOfBlocks(pixelWidth, pixelHeight);
+
+                case CompressionFormat.Bc5:
+	                return Unsafe.SizeOf<Bc5Block>() * ImageToBlocks.CalculateNumOfBlocks(pixelWidth, pixelHeight);
+
+                case CompressionFormat.Bc7:
+	                return Unsafe.SizeOf<Bc7Block>() * ImageToBlocks.CalculateNumOfBlocks(pixelWidth, pixelHeight);
+
+                default:
+			        throw new ArgumentOutOfRangeException(nameof(format), format, null);
+	        }
         }
     }
 }

@@ -1,12 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+using System;
 using System.IO;
-using System.Text;
 using BCnEncoder.Decoder;
 using BCnEncoder.Encoder;
 using BCnEncoder.Shared;
 using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Advanced;
 using SixLabors.ImageSharp.PixelFormats;
 using Xunit;
 using Xunit.Abstractions;
