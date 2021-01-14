@@ -56,9 +56,14 @@ namespace BCnEncoder.Shared
 		/// </summary>
 		/// <returns>The awaiter for the running operation.</returns>
 		/// <remarks>The operation should be started before awaiting it.</remarks>
-		public TaskAwaiter<T>? GetAwaiter()
+		public TaskAwaiter<T> GetAwaiter()
 		{
-			return task?.GetAwaiter();
+			if (task == null)
+			{
+				throw new InvalidOperationException("No operation is currently running.");
+			}
+
+			return task.GetAwaiter();
 		}
 
 		/// <inheritdoc cref="Dispose"/>
