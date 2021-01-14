@@ -50,10 +50,7 @@ namespace BCnEncoder.Decoder
 				{
 					for (var y = 0; y < blockHeight; y++)
 					{
-						if (context.CancellationToken.IsCancellationRequested)
-						{
-							return output;
-						}
+						context.CancellationToken.ThrowIfCancellationRequested();
 
 						output[x, y] = DecodeBlock(encodedBlocks[x + y * blockWidth]);
 					}

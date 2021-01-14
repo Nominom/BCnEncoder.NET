@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
@@ -29,10 +30,7 @@ namespace BCnEncoder.Encoder
 				var outputBlocks = MemoryMarshal.Cast<byte, T>(outputData);
 				for (var i = 0; i < blocks.Length; i++)
 				{
-					if (context.CancellationToken.IsCancellationRequested)
-					{
-						break;
-					}
+					context.CancellationToken.ThrowIfCancellationRequested();
 
 					outputBlocks[i] = EncodeBlock(blocks[i], quality);
 				}
