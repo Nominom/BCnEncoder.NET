@@ -29,6 +29,11 @@ namespace BCnEncoder.Encoder
 				var outputBlocks = MemoryMarshal.Cast<byte, T>(outputData);
 				for (var i = 0; i < blocks.Length; i++)
 				{
+					if (context.CancellationToken.IsCancellationRequested)
+					{
+						break;
+					}
+
 					outputBlocks[i] = EncodeBlock(blocks[i], quality);
 				}
 			}
