@@ -1,8 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Threading.Tasks;
 using BCnEncoder.Shared;
 
@@ -10,21 +7,26 @@ namespace BCnEncoder.Encoder
 {
 	internal abstract class BaseBcBlockEncoder<T> : IBcBlockEncoder where T : unmanaged
 	{
-		public byte[] Encode(RawBlock4X4Rgba32[] blocks, int blockWidth, int blockHeight, CompressionQuality quality, bool parallel)
+		public byte[] Encode(RawBlock4X4Rgba32[] blocks, int blockWidth, int blockHeight, CompressionQuality quality, OperationContext context)
 		{
 			var outputData = new byte[blockWidth * blockHeight * Unsafe.SizeOf<T>()];
-			var outputBlocks = MemoryMarshal.Cast<byte, T>(outputData);
 
-			if (parallel)
+			if (context.IsParallel)
 			{
-				Parallel.For(0, blocks.Length, i =>
+				var options = new ParallelOptions
 				{
-					var outputBlocks = MemoryMarshal.Cast<byte, T>(outputData);
-					outputBlocks[i] = EncodeBlock(blocks[i], quality);
-				});
+					CancellationToken = context.CancellationToken,
+					MaxDegreeOfParallelism = context.TaskCount
+				};
+				Parallel.For(0, blocks.Length, options, i =>
+				 {
+					 var outputBlocks = MemoryMarshal.Cast<byte, T>(outputData);
+					 outputBlocks[i] = EncodeBlock(blocks[i], quality);
+				 });
 			}
 			else
 			{
+				var outputBlocks = MemoryMarshal.Cast<byte, T>(outputData);
 				for (var i = 0; i < blocks.Length; i++)
 				{
 					outputBlocks[i] = EncodeBlock(blocks[i], quality);
