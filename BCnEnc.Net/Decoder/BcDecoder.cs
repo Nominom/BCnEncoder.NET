@@ -51,12 +51,12 @@ namespace BCnEncoder.Decoder
 		/// <summary>
 		/// Decode raw encoded image data asynchronously.
 		/// </summary>
-		/// <param name="input">The array containing the encoded data.</param>
+		/// <param name="input">The <see cref="ReadOnlyMemory{T}"/> containing the encoded data.</param>
 		/// <param name="format">The Format the encoded data is in.</param>
 		/// <param name="pixelWidth">The pixelWidth of the image.</param>
 		/// <param name="pixelHeight">The pixelHeight of the image.</param>
 		/// <returns>The awaitable operation to retrieve the decoded Rgba32 image.</returns>
-		public AsyncOperation<Image<Rgba32>> DecodeRawAsync(byte[] input, CompressionFormat format, int pixelWidth, int pixelHeight)
+		public AsyncOperation<Image<Rgba32>> DecodeRawAsync(ReadOnlyMemory<byte> input, CompressionFormat format, int pixelWidth, int pixelHeight)
 		{
 			return CreateAsyncOperation(token => DecodeRawInternal(input, format, pixelWidth, pixelHeight, token));
 		}
@@ -409,13 +409,13 @@ namespace BCnEncoder.Decoder
 		/// <summary>
 		/// Decode raw encoded image asynchronously.
 		/// </summary>
-		/// <param name="input">The array containing the encoded data.</param>
+		/// <param name="input">The <see cref="ReadOnlyMemory{T}"/> containing the encoded data.</param>
 		/// <param name="format">The Format the encoded data is in.</param>
 		/// <param name="pixelWidth">The pixelWidth of the image.</param>
 		/// <param name="pixelHeight">The pixelHeight of the image.</param>
 		/// <param name="token">The cancellation token for this operation. May be default, if the operation is not asynchronous.</param>
 		/// <returns>The decoded Rgba32 image.</returns>
-		private Image<Rgba32> DecodeRawInternal(byte[] input, CompressionFormat format, int pixelWidth, int pixelHeight, CancellationToken token)
+		private Image<Rgba32> DecodeRawInternal(ReadOnlyMemory<byte> input, CompressionFormat format, int pixelWidth, int pixelHeight, CancellationToken token)
 		{
 			if (input.Length != GetBufferSize(format, pixelWidth, pixelHeight))
 			{
