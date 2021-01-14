@@ -40,13 +40,14 @@ namespace BCnEncoder.Decoder
 		/// <param name="format">The Format the encoded data is in.</param>
 		/// <param name="pixelWidth">The pixelWidth of the image.</param>
 		/// <param name="pixelHeight">The pixelHeight of the image.</param>
+		/// <param name="token">The cancellation token for this asynchronous operation.</param>
 		/// <returns>The awaitable operation to retrieve the decoded Rgba32 image.</returns>
-		public AsyncOperation<Image<Rgba32>> DecodeRawAsync(Stream inputStream, CompressionFormat format, int pixelWidth, int pixelHeight)
+		public Task<Image<Rgba32>> DecodeRawAsync(Stream inputStream, CompressionFormat format, int pixelWidth, int pixelHeight, CancellationToken token = default)
 		{
 			var dataArray = new byte[GetBufferSize(format, pixelWidth, pixelHeight)];
 			inputStream.Read(dataArray, 0, dataArray.Length);
 
-			return CreateAsyncOperation(token => DecodeRawInternal(dataArray, format, pixelWidth, pixelHeight, token));
+			return Task.Run(() => DecodeRawInternal(dataArray, format, pixelWidth, pixelHeight, token), token);
 		}
 
 		/// <summary>
@@ -56,70 +57,77 @@ namespace BCnEncoder.Decoder
 		/// <param name="format">The Format the encoded data is in.</param>
 		/// <param name="pixelWidth">The pixelWidth of the image.</param>
 		/// <param name="pixelHeight">The pixelHeight of the image.</param>
+		/// <param name="token">The cancellation token for this asynchronous operation.</param>
 		/// <returns>The awaitable operation to retrieve the decoded Rgba32 image.</returns>
-		public AsyncOperation<Image<Rgba32>> DecodeRawAsync(ReadOnlyMemory<byte> input, CompressionFormat format, int pixelWidth, int pixelHeight)
+		public Task<Image<Rgba32>> DecodeRawAsync(ReadOnlyMemory<byte> input, CompressionFormat format, int pixelWidth, int pixelHeight, CancellationToken token = default)
 		{
-			return CreateAsyncOperation(token => DecodeRawInternal(input, format, pixelWidth, pixelHeight, token));
+			return Task.Run(() => DecodeRawInternal(input, format, pixelWidth, pixelHeight, token), token);
 		}
 
 		/// <summary>
 		/// Read a Ktx or a Dds file from a stream and decode it asynchronously.
 		/// </summary>
 		/// <param name="inputStream">The stream containing a Ktx or Dds file.</param>
+		/// <param name="token">The cancellation token for this asynchronous operation.</param>
 		/// <returns>The awaitable operation to retrieve the decoded Rgba32 image.</returns>
-		public AsyncOperation<Image<Rgba32>> DecodeAsync(Stream inputStream)
+		public Task<Image<Rgba32>> DecodeAsync(Stream inputStream, CancellationToken token = default)
 		{
-			return CreateAsyncOperation(token => Decode(inputStream, false, token)[0]);
+			return Task.Run(() => Decode(inputStream, false, token)[0], token);
 		}
 
 		/// <summary>
 		/// Read a Ktx or a Dds file from a stream and decode it.
 		/// </summary>
 		/// <param name="inputStream">The stream containing a Ktx or Dds file.</param>
+		/// <param name="token">The cancellation token for this asynchronous operation.</param>
 		/// <returns>The awaitable operation to retrieve the decoded Rgba32 image.</returns>
-		public AsyncOperation<Image<Rgba32>[]> DecodeAllMipMapsAsync(Stream inputStream)
+		public Task<Image<Rgba32>[]> DecodeAllMipMapsAsync(Stream inputStream, CancellationToken token = default)
 		{
-			return CreateAsyncOperation(token => Decode(inputStream, true, token));
+			return Task.Run(() => Decode(inputStream, true, token), token);
 		}
 
 		/// <summary>
 		/// Read a Ktx file and decode it.
 		/// </summary>
 		/// <param name="file">The loaded Ktx file.</param>
+		/// <param name="token">The cancellation token for this asynchronous operation.</param>
 		/// <returns>The awaitable operation to retrieve the decoded Rgba32 image.</returns>
-		public AsyncOperation<Image<Rgba32>> DecodeAsync(KtxFile file)
+		public Task<Image<Rgba32>> DecodeAsync(KtxFile file, CancellationToken token = default)
 		{
-			return CreateAsyncOperation(token => Decode(file, false, token)[0]);
+			return Task.Run(() => Decode(file, false, token)[0], token);
 		}
 
 		/// <summary>
 		/// Read a Ktx file and decode it.
 		/// </summary>
 		/// <param name="file">The loaded Ktx file.</param>
+		/// <param name="token">The cancellation token for this asynchronous operation.</param>
 		/// <returns>The awaitable operation to retrieve the decoded Rgba32 image.</returns>
-		public AsyncOperation<Image<Rgba32>[]> DecodeAllMipMapsAsync(KtxFile file)
+		public Task<Image<Rgba32>[]> DecodeAllMipMapsAsync(KtxFile file, CancellationToken token = default)
 		{
-			return CreateAsyncOperation(token => Decode(file, true, token));
+			return Task.Run(() => Decode(file, true, token), token);
 		}
 
 		/// <summary>
 		/// Read a Dds file and decode it.
 		/// </summary>
 		/// <param name="file">The loaded Dds file.</param>
+		/// <param name="token">The cancellation token for this asynchronous operation.</param>
 		/// <returns>The awaitable operation to retrieve the decoded Rgba32 image.</returns>
-		public AsyncOperation<Image<Rgba32>> DecodeAsync(DdsFile file)
+		public Task<Image<Rgba32>> DecodeAsync(DdsFile file, CancellationToken token = default)
 		{
-			return CreateAsyncOperation(token => Decode(file, false, token)[0]);
+			return Task.Run(() => Decode(file, false, token)[0], token);
 		}
 
 		/// <summary>
 		/// Read a Dds file and decode it.
 		/// </summary>
 		/// <param name="file">The loaded Dds file.</param>
+		/// <param name="token">The cancellation token for this asynchronous operation.</param>
 		/// <returns>The awaitable operation to retrieve the decoded Rgba32 image.</returns>
-		public AsyncOperation<Image<Rgba32>[]> DecodeAllMipMapsAsync(DdsFile file)
+		public Task<Image<Rgba32>[]> DecodeAllMipMapsAsync(DdsFile file, CancellationToken token = default)
 		{
-			return CreateAsyncOperation(token => Decode(file, true, token));
+			return Task.Run(() => Decode(file, true, token), token);
 		}
 
 		#endregion
@@ -455,14 +463,6 @@ namespace BCnEncoder.Decoder
 		}
 
 		#region Support
-
-		private AsyncOperation<T> CreateAsyncOperation<T>(Func<CancellationToken, T> func)
-		{
-			var operation = new AsyncOperation<T>();
-			operation.Start(func);
-
-			return operation;
-		}
 
 		private bool IsSupportedRawFormat(GlInternalFormat format)
 		{
