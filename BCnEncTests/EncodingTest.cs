@@ -1,6 +1,7 @@
 using System.IO;
 using BCnEncoder.Encoder;
 using BCnEncoder.Shared;
+using BCnEncTests.Support;
 using Xunit;
 using Xunit.Abstractions;
 

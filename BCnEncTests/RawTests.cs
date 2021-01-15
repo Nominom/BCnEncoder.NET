@@ -2,6 +2,7 @@ using System.IO;
 using BCnEncoder.Decoder;
 using BCnEncoder.Encoder;
 using BCnEncoder.Shared;
+using BCnEncTests.Support;
 using SixLabors.ImageSharp.Processing;
 using Xunit;
 
@@ -25,9 +26,7 @@ namespace BCnEncTests
 			ImageLoader.TestGradient1.TryGetSinglePixelSpan(out var originalPixels);
 			decodedImage.TryGetSinglePixelSpan(out var decodedPixels);
 
-			var psnr = ImageQuality.PeakSignalToNoiseRatio(originalPixels, decodedPixels);
-
-			Assert.True(psnr > 30);
+			TestHelper.AssertPixelsEqual(originalPixels, decodedPixels, encoder.OutputOptions.Quality);
 		}
 
 		[Fact]
@@ -51,9 +50,7 @@ namespace BCnEncTests
 			inputImage.TryGetSinglePixelSpan(out var originalPixels);
 			decodedImage.TryGetSinglePixelSpan(out var decodedPixels);
 
-			var psnr = ImageQuality.PeakSignalToNoiseRatio(originalPixels, decodedPixels);
-
-			Assert.True(psnr > 30);
+			TestHelper.AssertPixelsEqual(originalPixels, decodedPixels, encoder.OutputOptions.Quality);
 		}
 
 
@@ -95,13 +92,13 @@ namespace BCnEncTests
 				var decodedImage = decoder.DecodeRaw(ms, CompressionFormat.Bc1, mipWidth, mipHeight);
 				resized.TryGetSinglePixelSpan(out var originalPixels);
 				decodedImage.TryGetSinglePixelSpan(out var decodedPixels);
-				var psnr = ImageQuality.PeakSignalToNoiseRatio(originalPixels, decodedPixels);
-				Assert.True(psnr > 30);
+
+				TestHelper.AssertPixelsEqual(originalPixels, decodedPixels, encoder.OutputOptions.Quality);
 			}
 
 			encoder.CalculateMipMapSize(inputImage, mipLevels - 1, out var lastMWidth, out var lastMHeight);
 			Assert.Equal(1, lastMWidth);
-			Assert.Equal(1, lastMWidth);
+			Assert.Equal(1, lastMHeight);
 		}
 	}
 }

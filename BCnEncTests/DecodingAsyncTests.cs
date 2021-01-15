@@ -1,8 +1,7 @@
-using System.IO;
 using BCnEncoder.Decoder;
 using BCnEncoder.Encoder;
 using BCnEncoder.Shared;
-using SixLabors.ImageSharp;
+using BCnEncTests.Support;
 using Xunit;
 
 namespace BCnEncTests
@@ -19,15 +18,7 @@ namespace BCnEncTests
 			var file = encoder.EncodeToKtx(original);
 			var image = await decoder.DecodeAsync(file);
 
-			var psnr = TestHelper.CalculatePSNR(original, image);
-			if (encoder.OutputOptions.Quality == CompressionQuality.Fast)
-			{
-				Assert.True(psnr > 25);
-			}
-			else
-			{
-				Assert.True(psnr > 30);
-			}
+			TestHelper.AssertImagesEqual(original, image,encoder.OutputOptions.Quality);
 		}
 
 		[Fact]
@@ -40,15 +31,7 @@ namespace BCnEncTests
 			var file = encoder.EncodeToKtx(original);
 			var image = await decoder.DecodeAllMipMapsAsync(file);
 
-			var psnr = TestHelper.CalculatePSNR(original, image[0]);
-			if (encoder.OutputOptions.Quality == CompressionQuality.Fast)
-			{
-				Assert.True(psnr > 25);
-			}
-			else
-			{
-				Assert.True(psnr > 30);
-			}
+			TestHelper.AssertImagesEqual(original, image[0], encoder.OutputOptions.Quality);
 		}
 
 		[Fact]
@@ -62,15 +45,7 @@ namespace BCnEncTests
 			var image = await decoder.DecodeRawAsync(file.MipMaps[0].Faces[0].Data, CompressionFormat.Bc1,
 				(int) file.MipMaps[0].Width, (int) file.MipMaps[0].Height);
 
-			var psnr = TestHelper.CalculatePSNR(original, image);
-			if (encoder.OutputOptions.Quality == CompressionQuality.Fast)
-			{
-				Assert.True(psnr > 25);
-			}
-			else
-			{
-				Assert.True(psnr > 30);
-			}
+			TestHelper.AssertImagesEqual(original, image, encoder.OutputOptions.Quality);
 		}
 	}
 }

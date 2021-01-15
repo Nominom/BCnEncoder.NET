@@ -3,7 +3,7 @@ using BCnEncoder.Shared;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
-namespace BCnEncTests
+namespace BCnEncTests.Support
 {
 	public static class ImageLoader
 	{
@@ -37,10 +37,15 @@ namespace BCnEncTests
 
 	public static class DdsLoader
 	{
-		public static DdsFile TestDecompressBc1 { get; } = LoadDdsFile("../../../testImages/test_decompress_bc1.dds");
-		public static DdsFile TestDecompressBc1A { get; } = LoadDdsFile("../../../testImages/test_decompress_bc1a.dds");
-		public static DdsFile TestDecompressBc7 { get; } = LoadDdsFile("../../../testImages/test_decompress_bc7.dds");
-		public static DdsFile TestDecompressRgba { get; } = LoadDdsFile("../../../testImages/test_decompress_rgba.dds");
+		public const string TestDecompressBc1Name = "../../../testImages/test_decompress_bc1.dds";
+		public const string TestDecompressBc1AName = "../../../testImages/test_decompress_bc1a.dds";
+		public const string TestDecompressBc7Name = "../../../testImages/test_decompress_bc7.dds";
+		public const string TestDecompressRgbaName = "../../../testImages/test_decompress_rgba.dds";
+
+		public static DdsFile TestDecompressBc1 { get; } = LoadDdsFile(TestDecompressBc1Name);
+		public static DdsFile TestDecompressBc1A { get; } = LoadDdsFile(TestDecompressBc1AName);
+		public static DdsFile TestDecompressBc7 { get; } = LoadDdsFile(TestDecompressBc7Name);
+		public static DdsFile TestDecompressRgba { get; } = LoadDdsFile(TestDecompressRgbaName);
 
 		private static DdsFile LoadDdsFile(string filename)
 		{

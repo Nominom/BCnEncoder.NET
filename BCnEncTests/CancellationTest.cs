@@ -1,10 +1,7 @@
 using System;
-using System.IO;
 using System.Threading;
-using System.Threading.Tasks;
 using BCnEncoder.Decoder;
-using BCnEncoder.Encoder;
-using BCnEncoder.Shared;
+using BCnEncTests.Support;
 using Xunit;
 
 namespace BCnEncTests
@@ -14,29 +11,13 @@ namespace BCnEncTests
 		[Fact]
 		public async void EncodeParallelCancellation()
 		{
-			var alphaGradient = ImageLoader.TestAlphaGradient1;
-
-			var encoder = new BcEncoder(CompressionFormat.Bc7);
-			encoder.OutputOptions.Quality = CompressionQuality.Fast;
-			encoder.Options.IsParallel = true;
-
-			var source = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
-			await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
-				encoder.EncodeToRawBytesAsync(alphaGradient, 0, source.Token));
+			await TestHelper.ExecuteCancellationTest(ImageLoader.TestAlphaGradient1, true);
 		}
 
 		[Fact]
 		public async void EncodeNonParallelCancellation()
 		{
-			var alphaGradient = ImageLoader.TestAlphaGradient1;
-
-			var encoder = new BcEncoder(CompressionFormat.Bc7);
-			encoder.OutputOptions.Quality = CompressionQuality.Fast;
-			encoder.Options.IsParallel = false;
-
-			var source = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
-			await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
-				encoder.EncodeToRawBytesAsync(alphaGradient, 0, source.Token));
+			await TestHelper.ExecuteCancellationTest(ImageLoader.TestAlphaGradient1, false);
 		}
 
 		// HINT: Parallel decoding is too fast to be cancelled.
@@ -45,8 +26,7 @@ namespace BCnEncTests
 		[Fact]
 		public async void DecodeNonParallelCancellation()
 		{
-			using var fs = File.OpenRead(@"../../../testImages/test_decompress_bc7.dds");
-			var file = DdsFile.Load(fs);
+			var file = DdsLoader.TestDecompressBc7;
 
 			var decoder = new BcDecoder();
 			decoder.Options.IsParallel = false;
