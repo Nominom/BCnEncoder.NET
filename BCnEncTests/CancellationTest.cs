@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using System.Threading;
-using System.Threading.Tasks;
 using BCnEncoder.Decoder;
 using BCnEncoder.Encoder;
 using BCnEncoder.Shared;
@@ -9,7 +8,7 @@ using Xunit;
 
 namespace BCnEncTests
 {
-	public class AsyncTests
+	public class CancellationTest
 	{
 		[Fact]
 		public async void EncodeParallelCancellation()
@@ -45,8 +44,8 @@ namespace BCnEncTests
 		[Fact]
 		public async void DecodeNonParallelCancellation()
 		{
-			using FileStream fs = File.OpenRead(@"../../../testImages/test_decompress_bc7.dds");
-			DdsFile file = DdsFile.Load(fs);
+			using var fs = File.OpenRead(@"../../../testImages/test_decompress_bc7.dds");
+			var file = DdsFile.Load(fs);
 
 			var decoder = new BcDecoder();
 			decoder.Options.IsParallel = false;

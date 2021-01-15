@@ -14,7 +14,7 @@ namespace BCnEncTests
 		{
 			var inputImage = ImageLoader.TestGradient1;
 			var decoder = new BcDecoder();
-			var encoder = new BcEncoder()
+			var encoder = new BcEncoder
 			{
 				OutputOptions = { Quality = CompressionQuality.BestQuality }
 			};
@@ -42,7 +42,7 @@ namespace BCnEncTests
 
 			var encodedRawBytes = encoder.EncodeToRawBytes(inputImage);
 
-			using MemoryStream ms = new MemoryStream(encodedRawBytes[0]);
+			using var ms = new MemoryStream(encodedRawBytes[0]);
 
 			Assert.Equal(0, ms.Position);
 
@@ -72,14 +72,14 @@ namespace BCnEncTests
 				}
 			};
 
-			using MemoryStream ms = new MemoryStream();
+			using var ms = new MemoryStream();
 
 			var encodedRawBytes = encoder.EncodeToRawBytes(inputImage);
 
-			int mipLevels = encoder.CalculateNumberOfMipLevels(inputImage);
+			var mipLevels = encoder.CalculateNumberOfMipLevels(inputImage);
 			Assert.True(mipLevels > 1);
 
-			for (int i = 0; i < mipLevels; i++)
+			for (var i = 0; i < mipLevels; i++)
 			{
 				ms.Write(encodedRawBytes[i]);
 			}
@@ -87,9 +87,9 @@ namespace BCnEncTests
 			ms.Position = 0;
 			Assert.Equal(0, ms.Position);
 
-			for (int i = 0; i < mipLevels; i++)
+			for (var i = 0; i < mipLevels; i++)
 			{
-				encoder.CalculateMipMapSize(inputImage, i, out int mipWidth, out int mipHeight);
+				encoder.CalculateMipMapSize(inputImage, i, out var mipWidth, out var mipHeight);
 				using var resized = inputImage.Clone(x => x.Resize(mipWidth, mipHeight));
 
 				var decodedImage = decoder.DecodeRaw(ms, CompressionFormat.Bc1, mipWidth, mipHeight);
@@ -99,7 +99,7 @@ namespace BCnEncTests
 				Assert.True(psnr > 30);
 			}
 
-			encoder.CalculateMipMapSize(inputImage, mipLevels - 1, out int lastMWidth, out int lastMHeight);
+			encoder.CalculateMipMapSize(inputImage, mipLevels - 1, out var lastMWidth, out var lastMHeight);
 			Assert.Equal(1, lastMWidth);
 			Assert.Equal(1, lastMWidth);
 		}

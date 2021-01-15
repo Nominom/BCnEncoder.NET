@@ -3,12 +3,14 @@ using BCnEncoder.Shared;
 using Xunit;
 using Vector4 = System.Numerics.Vector4;
 
-namespace BCnEncTests {
-	public class PcaTests {
-
+namespace BCnEncTests
+{
+	public class PcaTests
+	{
 		[Fact]
-		public void PrincipalAxisTest() {
-			Vector4[] testData = new[] {
+		public void PrincipalAxisTest()
+		{
+			var testData = new[] {
 				new Vector4(0.4f, 0.3f, 0.5f, 0.1f),
 				new Vector4(0.3f, 0.3f, 0.5f, 0.3f),
 				new Vector4(0.5f, 0.3f, 0.6f, 0.2f),
@@ -16,7 +18,7 @@ namespace BCnEncTests {
 				new Vector4(0.456f, 0.34f, 0.23f, 0.45f)
 			};
 
-			var refMean = new[] { 0.3712, 0.308, 0.48600000000000004, 0.25};
+			var refMean = new[] { 0.3712, 0.308, 0.48600000000000004, 0.25 };
 			var refCovar = new[] {
 				new[] {0.014747200000000002, 0.00084800000000000088, -0.0067839999999999992, 0.0028000000000000004},
 				new[] {0.00084800000000000088, 0.00032000000000000062, -0.0025600000000000024, 0.0020000000000000018},
@@ -24,11 +26,10 @@ namespace BCnEncTests {
 				new[] {0.0028000000000000004, 0.0020000000000000018, -0.015999999999999997, 0.0174999}
 			};
 
-			var covarianceMatrix = PcaVectors.CalculateCovariance(testData, out Vector4 mean);
+			var covarianceMatrix = PcaVectors.CalculateCovariance(testData, out var mean);
 			var pa = PcaVectors.CalculatePrincipalAxis(covarianceMatrix);
 
-			var refPa = new double[4]
-				{0.282, 0.087, -0.744, 0.603};
+			var refPa = new[] { 0.282, 0.087, -0.744, 0.603 };
 
 			Assert.Equal(refMean[0], mean.X, 2);
 			Assert.Equal(refMean[1], mean.Y, 2);
@@ -60,6 +61,5 @@ namespace BCnEncTests {
 			Assert.True(Math.Abs(pa.Z - refPa[2]) < 0.1f, $"actual: {pa.Z} expected: {refPa[2]}");
 			Assert.True(Math.Abs(pa.W - refPa[3]) < 0.1f, $"actual: {pa.W} expected: {refPa[3]}");
 		}
-
 	}
 }
