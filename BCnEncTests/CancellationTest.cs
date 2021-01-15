@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Threading;
+using System.Threading.Tasks;
 using BCnEncoder.Decoder;
 using BCnEncoder.Encoder;
 using BCnEncoder.Shared;
@@ -20,7 +21,7 @@ namespace BCnEncTests
 			encoder.Options.IsParallel = true;
 
 			var source = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
-			await Assert.ThrowsAsync<OperationCanceledException>(() =>
+			await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
 				encoder.EncodeToRawBytesAsync(alphaGradient, 0, source.Token));
 		}
 
@@ -34,7 +35,7 @@ namespace BCnEncTests
 			encoder.Options.IsParallel = false;
 
 			var source = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
-			await Assert.ThrowsAsync<OperationCanceledException>(() =>
+			await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
 				encoder.EncodeToRawBytesAsync(alphaGradient, 0, source.Token));
 		}
 
@@ -50,9 +51,9 @@ namespace BCnEncTests
 			var decoder = new BcDecoder();
 			decoder.Options.IsParallel = false;
 
-			var source = new CancellationTokenSource(TimeSpan.FromMilliseconds(10));
-			await Assert.ThrowsAsync<OperationCanceledException>(() =>
-				decoder.DecodeAsync(file, source.Token));
+			var source = new CancellationTokenSource(TimeSpan.FromMilliseconds(1));
+			await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+					decoder.DecodeAsync(file, source.Token));
 		}
 	}
 }
