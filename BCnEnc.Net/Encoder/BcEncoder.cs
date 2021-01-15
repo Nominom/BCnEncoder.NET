@@ -329,8 +329,8 @@ namespace BCnEncoder.Encoder
 		/// <returns>The number of mipmap levels that will be generated for the input image.</returns>
 		public int CalculateNumberOfMipLevels(Image<Rgba32> inputImage)
 		{
-			return (int)MipMapper.CalculateMipChainLength(inputImage.Width, inputImage.Height,
-				(OutputOptions.GenerateMipMaps ? (uint)OutputOptions.MaxMipMapLevel : 1));
+			return MipMapper.CalculateMipChainLength(inputImage.Width, inputImage.Height,
+				OutputOptions.GenerateMipMaps ? OutputOptions.MaxMipMapLevel : 1);
 		}
 
 		/// <summary>
@@ -341,8 +341,8 @@ namespace BCnEncoder.Encoder
 		/// <returns>The number of mipmap levels that will be generated for the input image.</returns>
 		public int CalculateNumberOfMipLevels(int imagePixelWidth, int imagePixelHeight)
 		{
-			return (int)MipMapper.CalculateMipChainLength(imagePixelWidth, imagePixelHeight,
-				(OutputOptions.GenerateMipMaps ? (uint)OutputOptions.MaxMipMapLevel : 1));
+			return MipMapper.CalculateMipChainLength(imagePixelWidth, imagePixelHeight,
+				OutputOptions.GenerateMipMaps ? OutputOptions.MaxMipMapLevel : 1);
 		}
 
 		/// <summary>
@@ -398,7 +398,7 @@ namespace BCnEncoder.Encoder
 			IBcBlockEncoder compressedEncoder = null;
 			IRawEncoder uncompressedEncoder = null;
 
-			var numMipMaps = OutputOptions.GenerateMipMaps ? (uint)OutputOptions.MaxMipMapLevel : 1;
+			var numMipMaps = OutputOptions.GenerateMipMaps ? OutputOptions.MaxMipMapLevel : 1;
 			var mipChain = MipMapper.GenerateMipChain(inputImage, ref numMipMaps);
 
 			// Setup encoders
@@ -453,11 +453,11 @@ namespace BCnEncoder.Encoder
 				}
 
 				output.MipMaps.Add(new KtxMipmap((uint)encoded.Length,
-					(uint)inputImage.Width,
-					(uint)inputImage.Height, 1));
+					(uint)mipChain[mip].Width,
+					(uint)mipChain[mip].Height, 1));
 				output.MipMaps[mip].Faces[0] = new KtxMipFace(encoded,
-					(uint)inputImage.Width,
-					(uint)inputImage.Height);
+					(uint)mipChain[mip].Width,
+					(uint)mipChain[mip].Height);
 			}
 
 			// Dispose all mipmap levels
@@ -465,7 +465,7 @@ namespace BCnEncoder.Encoder
 				image.Dispose();
 
 			output.header.NumberOfFaces = 1;
-			output.header.NumberOfMipmapLevels = numMipMaps;
+			output.header.NumberOfMipmapLevels = (uint)numMipMaps;
 
 			return output;
 		}
@@ -476,7 +476,7 @@ namespace BCnEncoder.Encoder
 			IBcBlockEncoder compressedEncoder = null;
 			IRawEncoder uncompressedEncoder = null;
 
-			var numMipMaps = OutputOptions.GenerateMipMaps ? (uint)OutputOptions.MaxMipMapLevel : 1;
+			var numMipMaps = OutputOptions.GenerateMipMaps ? OutputOptions.MaxMipMapLevel : 1;
 			var mipChain = MipMapper.GenerateMipChain(inputImage, ref numMipMaps);
 
 			// Setup encoder
@@ -540,8 +540,8 @@ namespace BCnEncoder.Encoder
 				}
 
 				output.Faces[0].MipMaps[mip] = new DdsMipMap(encoded,
-					(uint)inputImage.Width,
-					(uint)inputImage.Height);
+					(uint)mipChain[mip].Width,
+					(uint)mipChain[mip].Height);
 			}
 
 			// Dispose all mipmap levels
@@ -550,7 +550,7 @@ namespace BCnEncoder.Encoder
 				image.Dispose();
 			}
 
-			output.header.dwMipMapCount = numMipMaps;
+			output.header.dwMipMapCount = (uint)numMipMaps;
 			if (numMipMaps > 1)
 			{
 				output.header.dwCaps |= HeaderCaps.DdscapsComplex | HeaderCaps.DdscapsMipmap;
@@ -576,7 +576,7 @@ namespace BCnEncoder.Encoder
 			IBcBlockEncoder compressedEncoder = null;
 			IRawEncoder uncompressedEncoder = null;
 
-			var numMipMaps = OutputOptions.GenerateMipMaps ? (uint)OutputOptions.MaxMipMapLevel : 1;
+			var numMipMaps = OutputOptions.GenerateMipMaps ? OutputOptions.MaxMipMapLevel : 1;
 			var mipChain = MipMapper.GenerateMipChain(inputImage, ref numMipMaps);
 
 			// Setup encoder
@@ -650,7 +650,7 @@ namespace BCnEncoder.Encoder
 			IBcBlockEncoder compressedEncoder = null;
 			IRawEncoder uncompressedEncoder = null;
 
-			var numMipMaps = OutputOptions.GenerateMipMaps ? (uint)OutputOptions.MaxMipMapLevel : 1;
+			var numMipMaps = OutputOptions.GenerateMipMaps ? OutputOptions.MaxMipMapLevel : 1;
 			var mipChain = MipMapper.GenerateMipChain(inputImage, ref numMipMaps);
 
 			// Setup encoder
@@ -777,7 +777,7 @@ namespace BCnEncoder.Encoder
 
 			}
 
-			var numMipMaps = OutputOptions.GenerateMipMaps ? (uint)OutputOptions.MaxMipMapLevel : 1;
+			var numMipMaps = OutputOptions.GenerateMipMaps ? OutputOptions.MaxMipMapLevel : 1;
 			var mipLength = MipMapper.CalculateMipChainLength(right.Width, right.Height, numMipMaps);
 			for (uint i = 0; i < mipLength; i++)
 			{
@@ -835,7 +835,7 @@ namespace BCnEncoder.Encoder
 			}
 
 			output.header.NumberOfFaces = (uint)faces.Length;
-			output.header.NumberOfMipmapLevels = mipLength;
+			output.header.NumberOfMipmapLevels = (uint)mipLength;
 
 			return output;
 		}
@@ -886,7 +886,7 @@ namespace BCnEncoder.Encoder
 				output = new DdsFile(ddsHeader);
 			}
 
-			var numMipMaps = OutputOptions.GenerateMipMaps ? (uint)OutputOptions.MaxMipMapLevel : 1;
+			var numMipMaps = OutputOptions.GenerateMipMaps ? OutputOptions.MaxMipMapLevel : 1;
 
 			var context = new OperationContext
 			{
@@ -938,7 +938,7 @@ namespace BCnEncoder.Encoder
 			}
 
 			output.header.dwCaps |= HeaderCaps.DdscapsComplex;
-			output.header.dwMipMapCount = numMipMaps;
+			output.header.dwMipMapCount = (uint)numMipMaps;
 			if (numMipMaps > 1)
 			{
 				output.header.dwCaps |= HeaderCaps.DdscapsMipmap;
