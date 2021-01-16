@@ -30,6 +30,7 @@ namespace BCnEncTests
 			var image = decoder.Decode(file);
 
 			TestHelper.AssertImagesEqual(originalImage, image, encoder.OutputOptions.Quality);
+			image.Dispose();
 		}
 
 		[Fact]
@@ -39,6 +40,7 @@ namespace BCnEncTests
 			var image = decoder.Decode(file);
 
 			TestHelper.AssertImagesEqual(originalImage, image, encoder.OutputOptions.Quality);
+			image.Dispose();
 		}
 
 		[Fact]
@@ -52,6 +54,7 @@ namespace BCnEncTests
 				var image = decoder.DecodeRaw(file.Faces[i].MipMaps[0].Data, CompressionFormat.Bc1, (int)file.Faces[i].Width, (int)file.Faces[i].Height);
 
 				TestHelper.AssertImagesEqual(originalCubeMap[i], image, encoder.OutputOptions.Quality);
+				image.Dispose();
 			}
 		}
 
@@ -66,6 +69,7 @@ namespace BCnEncTests
 				var image = decoder.DecodeRaw(file.MipMaps[0].Faces[i].Data, CompressionFormat.Bc1, (int)file.MipMaps[0].Faces[i].Width, (int)file.MipMaps[0].Faces[i].Height);
 
 				TestHelper.AssertImagesEqual(originalCubeMap[i], image, encoder.OutputOptions.Quality);
+				image.Dispose();
 			}
 		}
 
@@ -76,6 +80,7 @@ namespace BCnEncTests
 			var image = decoder.DecodeRaw(data[0], CompressionFormat.Bc1, originalImage.Width, originalImage.Height);
 
 			TestHelper.AssertImagesEqual(originalImage, image, encoder.OutputOptions.Quality);
+			image.Dispose();
 		}
 	}
 }

@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using BCnEncoder.Decoder;
 using BCnEncoder.Encoder;
 using BCnEncoder.Shared;
@@ -19,6 +20,7 @@ namespace BCnEncTests
 			var image = await decoder.DecodeAsync(file);
 
 			TestHelper.AssertImagesEqual(original, image,encoder.OutputOptions.Quality);
+			image.Dispose();
 		}
 
 		[Fact]
@@ -29,9 +31,11 @@ namespace BCnEncTests
 			var original = ImageLoader.TestGradient1;
 
 			var file = encoder.EncodeToKtx(original);
-			var image = await decoder.DecodeAllMipMapsAsync(file);
+			var images = await decoder.DecodeAllMipMapsAsync(file);
 
-			TestHelper.AssertImagesEqual(original, image[0], encoder.OutputOptions.Quality);
+			TestHelper.AssertImagesEqual(original, images[0], encoder.OutputOptions.Quality);
+			foreach(var img in images)
+				img.Dispose();
 		}
 
 		[Fact]
@@ -46,6 +50,7 @@ namespace BCnEncTests
 				(int) file.MipMaps[0].Width, (int) file.MipMaps[0].Height);
 
 			TestHelper.AssertImagesEqual(original, image, encoder.OutputOptions.Quality);
+			image.Dispose();
 		}
 	}
 }

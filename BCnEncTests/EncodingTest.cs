@@ -495,7 +495,6 @@ namespace BCnEncTests
 
 			using var fs = File.OpenWrite(filename);
 			encoder.EncodeCubeMap(images[0], images[1], images[2], images[3], images[4], images[5], fs);
-			fs.Close();
 		}
 	}
 }

@@ -139,19 +139,13 @@ namespace BCnEncTests.Support
 			encoder.OutputOptions.GenerateMipMaps = true;
 			encoder.OutputOptions.Format = format;
 
-			using var fs = File.OpenWrite(filename);
+			var fs = File.OpenWrite(filename);
 			encoder.Encode(image, fs);
 			fs.Close();
+
 			var psnr = DecodeCheckPSNR(filename, image);
 			output.WriteLine("RGBA PSNR: " + psnr + "db");
-			if (quality == CompressionQuality.Fast)
-			{
-				Assert.True(psnr > 25);
-			}
-			else
-			{
-				Assert.True(psnr > 30);
-			}
+			AssertPSNR(psnr, encoder.OutputOptions.Quality);
 		}
 
 		private static float CalculatePSNR(Image<Rgba32> original, Image<Rgba32> decoded)

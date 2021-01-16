@@ -34,7 +34,7 @@ namespace BCnEncTests
 		{
 			var inputImage = ImageLoader.TestGradient1;
 			var decoder = new BcDecoder();
-			var encoder = new BcEncoder()
+			var encoder = new BcEncoder
 			{
 				OutputOptions = { Quality = CompressionQuality.BestQuality }
 			};
