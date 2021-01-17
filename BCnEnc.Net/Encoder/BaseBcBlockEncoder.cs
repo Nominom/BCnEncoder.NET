@@ -43,6 +43,6 @@ namespace BCnEncoder.Encoder
 		public abstract GlFormat GetBaseInternalFormat();
 		public abstract DxgiFormat GetDxgiFormat();
 
-		protected abstract T EncodeBlock(RawBlock4X4Rgba32 block, CompressionQuality quality);
+		public abstract T EncodeBlock(RawBlock4X4Rgba32 block, CompressionQuality quality);
 	}
 }

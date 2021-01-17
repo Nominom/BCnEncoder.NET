@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
@@ -8,7 +8,7 @@ namespace BCnEncoder.Encoder
 {
 	internal class Bc5BlockEncoder : BaseBcBlockEncoder<Bc5Block>
 	{
-		protected override Bc5Block EncodeBlock(RawBlock4X4Rgba32 block, CompressionQuality quality) {
+		public override Bc5Block EncodeBlock(RawBlock4X4Rgba32 block, CompressionQuality quality) {
 			var output = new Bc5Block();
 			var reds = new byte[16];
 			var greens = new byte[16];
@@ -118,8 +118,8 @@ namespace BCnEncoder.Encoder
 
 			int SelectIndices(ref Bc5Block block) {
 				var cumulativeError = 0;
-				//var c0 = block.Red0;
-				//var c1 = block.Red1;
+				//var c0 = block.Endpoint0;
+				//var c1 = block.Endpoint1;
 				var c0 = col0Getter(block);
 				var c1 = col1Getter(block);
 				var colors = c0 > c1
@@ -157,7 +157,7 @@ namespace BCnEncoder.Encoder
 					}
 
 					block = indexSetter(block, i, bestIndex);
-					//block.SetRedIndex(i, bestIndex);
+					//block.SetComponentIndex(i, bestIndex);
 					cumulativeError += bestError * bestError;
 				}
 
@@ -166,8 +166,8 @@ namespace BCnEncoder.Encoder
 
 			//everything is either fully black or fully red
 			if (hasExtremeValues && min == 255 && max == 0) {
-				//colorBlock.Red0 = 0;
-				//colorBlock.Red1 = 255;
+				//colorBlock.Endpoint0 = 0;
+				//colorBlock.Endpoint1 = 255;
 				colorBlock = col0Setter(colorBlock, 0);
 				colorBlock = col1Setter(colorBlock, 255);
 				var error = SelectIndices(ref colorBlock);
@@ -176,8 +176,8 @@ namespace BCnEncoder.Encoder
 			}
 
 			var best = colorBlock;
-			//best.Red0 = max;
-			//best.Red1 = min;
+			//best.Endpoint0 = max;
+			//best.Endpoint1 = min;
 			best = col0Setter(best, max);
 			best = col1Setter(best, min);
 			var bestError = SelectIndices(ref best);
@@ -190,8 +190,8 @@ namespace BCnEncoder.Encoder
 					var c0 = ByteHelper.ClampToByte(max - i);
 					var c1 = ByteHelper.ClampToByte(min + i);
 					var block = colorBlock;
-					//block.Red0 = hasExtremeValues ? c1 : c0;
-					//block.Red1 = hasExtremeValues ? c0 : c1;
+					//block.Endpoint0 = hasExtremeValues ? c1 : c0;
+					//block.Endpoint1 = hasExtremeValues ? c0 : c1;
 					block = col0Setter(block, hasExtremeValues ? c1 : c0);
 					block = col1Setter(block, hasExtremeValues ? c0 : c1);
 					var error = SelectIndices(ref block);
@@ -206,8 +206,8 @@ namespace BCnEncoder.Encoder
 					var c0 = ByteHelper.ClampToByte(max + i);
 					var c1 = ByteHelper.ClampToByte(min - i);
 					var block = colorBlock;
-					//block.Red0 = hasExtremeValues ? c1 : c0;
-					//block.Red1 = hasExtremeValues ? c0 : c1;
+					//block.Endpoint0 = hasExtremeValues ? c1 : c0;
+					//block.Endpoint1 = hasExtremeValues ? c0 : c1;
 					block = col0Setter(block, hasExtremeValues ? c1 : c0);
 					block = col1Setter(block, hasExtremeValues ? c0 : c1);
 					var error = SelectIndices(ref block);
@@ -222,8 +222,8 @@ namespace BCnEncoder.Encoder
 					var c0 = ByteHelper.ClampToByte(max);
 					var c1 = ByteHelper.ClampToByte(min - i);
 					var block = colorBlock;
-					//block.Red0 = hasExtremeValues ? c1 : c0;
-					//block.Red1 = hasExtremeValues ? c0 : c1;
+					//block.Endpoint0 = hasExtremeValues ? c1 : c0;
+					//block.Endpoint1 = hasExtremeValues ? c0 : c1;
 					block = col0Setter(block, hasExtremeValues ? c1 : c0);
 					block = col1Setter(block, hasExtremeValues ? c0 : c1);
 					var error = SelectIndices(ref block);
@@ -238,8 +238,8 @@ namespace BCnEncoder.Encoder
 					var c0 = ByteHelper.ClampToByte(max + i);
 					var c1 = ByteHelper.ClampToByte(min);
 					var block = colorBlock;
-					//block.Red0 = hasExtremeValues ? c1 : c0;
-					//block.Red1 = hasExtremeValues ? c0 : c1;
+					//block.Endpoint0 = hasExtremeValues ? c1 : c0;
+					//block.Endpoint1 = hasExtremeValues ? c0 : c1;
 					block = col0Setter(block, hasExtremeValues ? c1 : c0);
 					block = col1Setter(block, hasExtremeValues ? c0 : c1);
 					var error = SelectIndices(ref block);
@@ -254,8 +254,8 @@ namespace BCnEncoder.Encoder
 					var c0 = ByteHelper.ClampToByte(max);
 					var c1 = ByteHelper.ClampToByte(min + i);
 					var block = colorBlock;
-					//block.Red0 = hasExtremeValues ? c1 : c0;
-					//block.Red1 = hasExtremeValues ? c0 : c1;
+					//block.Endpoint0 = hasExtremeValues ? c1 : c0;
+					//block.Endpoint1 = hasExtremeValues ? c0 : c1;
 					block = col0Setter(block, hasExtremeValues ? c1 : c0);
 					block = col1Setter(block, hasExtremeValues ? c0 : c1);
 					var error = SelectIndices(ref block);
@@ -270,8 +270,8 @@ namespace BCnEncoder.Encoder
 					var c0 = ByteHelper.ClampToByte(max - i);
 					var c1 = ByteHelper.ClampToByte(min);
 					var block = colorBlock;
-					//block.Red0 = hasExtremeValues ? c1 : c0;
-					//block.Red1 = hasExtremeValues ? c0 : c1;
+					//block.Endpoint0 = hasExtremeValues ? c1 : c0;
+					//block.Endpoint1 = hasExtremeValues ? c0 : c1;
 					block = col0Setter(block, hasExtremeValues ? c1 : c0);
 					block = col1Setter(block, hasExtremeValues ? c0 : c1);
 					var error = SelectIndices(ref block);

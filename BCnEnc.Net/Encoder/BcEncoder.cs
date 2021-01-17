@@ -984,6 +984,15 @@ namespace BCnEncoder.Encoder
 				case CompressionFormat.Bc7:
 					return new Bc7Encoder();
 
+				case CompressionFormat.Atc:
+					return new AtcBlockEncoder();
+
+				case CompressionFormat.AtcExplicitAlpha:
+					return new AtcExplicitAlphaBlockEncoder();
+
+				case CompressionFormat.AtcInterpolatedAlpha:
+					return new AtcInterpolatedAlphaBlockEncoder();
+
 				default:
 					return null;
 			}

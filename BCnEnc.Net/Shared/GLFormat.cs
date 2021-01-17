@@ -1,4 +1,4 @@
-﻿namespace BCnEncoder.Shared
+namespace BCnEncoder.Shared
 {
 	public enum GlFormat : uint
 	{
@@ -143,6 +143,9 @@
 		GlCompressedRgbaBptcUnormArb = 36492,
 		GlCompressedSrgbAlphaBptcUnormArb = 36493,
 
+		GlCompressedRgbAtc = 0x8C92,
+		GlCompressedRgbaAtcExplicitAlpha = 0x8C93,
+		GlCompressedRgbaAtcInterpolatedAlpha = 0x87EE,
 
 		// ETC1 & 2
 		GlEtc1Rgb8Oes = 0x8D64,

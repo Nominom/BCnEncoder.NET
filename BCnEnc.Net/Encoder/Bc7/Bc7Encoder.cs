@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
@@ -9,7 +9,7 @@ namespace BCnEncoder.Encoder.Bc7
 	internal class Bc7Encoder : BaseBcBlockEncoder<Bc7Block>
 	{
 
-		protected override Bc7Block EncodeBlock(RawBlock4X4Rgba32 rawBlock, CompressionQuality quality)
+		public override Bc7Block EncodeBlock(RawBlock4X4Rgba32 rawBlock, CompressionQuality quality)
 		{
 			switch (quality)
 			{
