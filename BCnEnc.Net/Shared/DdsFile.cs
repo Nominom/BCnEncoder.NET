@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -379,7 +379,7 @@ namespace BCnEncoder.Shared
 								{
 									return DxgiFormat.DxgiFormatR8G8B8A8Unorm;
 								}
-								else if (dwRBitMask == 0x0000ff && dwGBitMask == 0xff00 && dwBBitMask == 0xff &&
+								else if (dwRBitMask == 0xff0000 && dwGBitMask == 0xff00 && dwBBitMask == 0xff &&
 										 dwABitMask == 0xff000000)
 								{
 									return DxgiFormat.DxgiFormatB8G8R8A8Unorm;
@@ -390,7 +390,7 @@ namespace BCnEncoder.Shared
 						{
 							if (dwRgbBitCount == 32)
 							{
-								if (dwRBitMask == 0x0000ff && dwGBitMask == 0xff00 && dwBBitMask == 0xff)
+								if (dwRBitMask == 0xff0000 && dwGBitMask == 0xff00 && dwBBitMask == 0xff)
 								{
 									return DxgiFormat.DxgiFormatB8G8R8X8Unorm;
 								}
@@ -403,7 +403,7 @@ namespace BCnEncoder.Shared
 						{
 							if (dwRgbBitCount == 16)
 							{
-								if (dwRBitMask == 0x0000ff && dwGBitMask == 0xff00)
+								if (dwRBitMask == 0xff && dwGBitMask == 0xff00)
 								{
 									return DxgiFormat.DxgiFormatR8G8Unorm;
 								}
@@ -413,7 +413,7 @@ namespace BCnEncoder.Shared
 						{
 							if (dwRgbBitCount == 8)
 							{
-								if (dwRBitMask == 0x0000ff && dwGBitMask == 0xff00)
+								if (dwRBitMask == 0xff)
 								{
 									return DxgiFormat.DxgiFormatR8Unorm;
 								}
