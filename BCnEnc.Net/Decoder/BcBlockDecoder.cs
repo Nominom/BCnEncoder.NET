@@ -3,6 +3,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using BCnEncoder.Encoder;
 using BCnEncoder.Shared;
 
 namespace BCnEncoder.Decoder
@@ -106,7 +107,7 @@ namespace BCnEncoder.Decoder
 
 		protected override RawBlock4X4Rgba32 DecodeBlock(Bc4Block block)
 		{
-			return block.Decode(redAsLuminance);
+			return block.Decode(redAsLuminance, Bc4Component.R);
 		}
 	}
 
@@ -121,6 +122,30 @@ namespace BCnEncoder.Decoder
 	internal class Bc7Decoder : BaseBcBlockDecoder<Bc7Block>
 	{
 		protected override RawBlock4X4Rgba32 DecodeBlock(Bc7Block block)
+		{
+			return block.Decode();
+		}
+	}
+
+	internal class AtcDecoder : BaseBcBlockDecoder<AtcBlock>
+	{
+		protected override RawBlock4X4Rgba32 DecodeBlock(AtcBlock block)
+		{
+			return block.Decode();
+		}
+	}
+
+	internal class AtcExplicitAlphaDecoder : BaseBcBlockDecoder<AtcExplicitAlphaBlock>
+	{
+		protected override RawBlock4X4Rgba32 DecodeBlock(AtcExplicitAlphaBlock block)
+		{
+			return block.Decode();
+		}
+	}
+
+	internal class AtcInterpolatedAlphaDecoder : BaseBcBlockDecoder<AtcInterpolatedAlphaBlock>
+	{
+		protected override RawBlock4X4Rgba32 DecodeBlock(AtcInterpolatedAlphaBlock block)
 		{
 			return block.Decode();
 		}

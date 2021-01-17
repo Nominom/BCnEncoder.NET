@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using BCnEncoder.Shared;
@@ -8,7 +8,7 @@ namespace BCnEncoder.Encoder
 	internal class Bc2BlockEncoder : BaseBcBlockEncoder<Bc2Block>
 	{
 
-		protected override Bc2Block EncodeBlock(RawBlock4X4Rgba32 block, CompressionQuality quality)
+		public override Bc2Block EncodeBlock(RawBlock4X4Rgba32 block, CompressionQuality quality)
 		{
 			switch (quality)
 			{

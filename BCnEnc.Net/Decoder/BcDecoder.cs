@@ -522,6 +522,15 @@ namespace BCnEncoder.Decoder
 				case GlInternalFormat.GlCompressedSrgbAlphaBptcUnormArb:
 					return new Bc7Decoder();
 
+				case GlInternalFormat.GlCompressedRgbAtc:
+					return new AtcDecoder();
+
+				case GlInternalFormat.GlCompressedRgbaAtcExplicitAlpha:
+					return new AtcExplicitAlphaDecoder();
+
+				case GlInternalFormat.GlCompressedRgbaAtcInterpolatedAlpha:
+					return new AtcInterpolatedAlphaDecoder();
+
 				default:
 					return null;
 			}
@@ -566,6 +575,15 @@ namespace BCnEncoder.Decoder
 				case DxgiFormat.DxgiFormatBc7UnormSrgb:
 				case DxgiFormat.DxgiFormatBc7Typeless:
 					return new Bc7Decoder();
+
+				case DxgiFormat.DxgiFormatAtc:
+					return new AtcDecoder();
+
+				case DxgiFormat.DxgiFormatAtcExplicitAlpha:
+					return new AtcExplicitAlphaDecoder();
+
+				case DxgiFormat.DxgiFormatAtcInterpolatedAlpha:
+					return new AtcInterpolatedAlphaDecoder();
 
 				default:
 					return null;
@@ -636,6 +654,15 @@ namespace BCnEncoder.Decoder
 				case CompressionFormat.Bc7:
 					return new Bc7Decoder();
 
+				case CompressionFormat.Atc:
+					return new AtcDecoder();
+
+				case CompressionFormat.AtcExplicitAlpha:
+					return new AtcExplicitAlphaDecoder();
+
+				case CompressionFormat.AtcInterpolatedAlpha:
+					return new AtcInterpolatedAlphaDecoder();
+
 				default:
 					return null;
 			}
@@ -696,6 +723,15 @@ namespace BCnEncoder.Decoder
 
 				case CompressionFormat.Bc7:
 					return Unsafe.SizeOf<Bc7Block>() * ImageToBlocks.CalculateNumOfBlocks(pixelWidth, pixelHeight);
+
+				case CompressionFormat.Atc:
+					return Unsafe.SizeOf<AtcBlock>() * ImageToBlocks.CalculateNumOfBlocks(pixelWidth, pixelHeight);
+
+				case CompressionFormat.AtcExplicitAlpha:
+					return Unsafe.SizeOf<AtcExplicitAlphaBlock>() * ImageToBlocks.CalculateNumOfBlocks(pixelWidth, pixelHeight);
+
+				case CompressionFormat.AtcInterpolatedAlpha:
+					return Unsafe.SizeOf<AtcInterpolatedAlphaBlock>() * ImageToBlocks.CalculateNumOfBlocks(pixelWidth, pixelHeight);
 
 				default:
 					throw new ArgumentOutOfRangeException(nameof(format), format, null);

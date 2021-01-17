@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -339,6 +339,11 @@ namespace BCnEncoder.Shared
 		public const uint Dxt3 = 0x33545844U;
 		public const uint Dxt4 = 0x34545844U;
 		public const uint Dxt5 = 0x35545844U;
+		public const uint Ati1 = 0x41544931U;
+		public const uint Ati2 = 0x41544932U;
+		public const uint Atc = 0x42544320U;
+		public const uint Atci = 0x42544349U;
+		public const uint Atca = 0x42544341U;
 		public const uint Dx10 = 0x30315844U;
 
 		public uint dwSize;
@@ -358,12 +363,24 @@ namespace BCnEncoder.Shared
 				{
 					switch (dwFourCc)
 					{
-						case 0x31545844U:
+						case Dxt1:
 							return DxgiFormat.DxgiFormatBc1Unorm;
-						case 0x33545844U:
+						case Dxt2:
+						case Dxt3:
 							return DxgiFormat.DxgiFormatBc2Unorm;
-						case 0x35545844U:
+						case Dxt4:
+						case Dxt5:
 							return DxgiFormat.DxgiFormatBc3Unorm;
+						case Ati1:
+							return DxgiFormat.DxgiFormatBc4Unorm;
+						case Ati2:
+							return DxgiFormat.DxgiFormatBc5Unorm;
+						case Atc:
+							return DxgiFormat.DxgiFormatAtc;
+						case Atci:
+							return DxgiFormat.DxgiFormatAtcExplicitAlpha;
+						case Atca:
+							return DxgiFormat.DxgiFormatAtcInterpolatedAlpha;
 					}
 				}
 				else
@@ -738,7 +755,12 @@ namespace BCnEncoder.Shared
 		DxgiFormatP208,
 		DxgiFormatV208,
 		DxgiFormatV408,
-		DxgiFormatForceUint
+		DxgiFormatForceUint,
+
+		// Added here due to missing documentation of an official value
+		DxgiFormatAtc,
+		DxgiFormatAtcExplicitAlpha,
+		DxgiFormatAtcInterpolatedAlpha
 	};
 
 	public static class DxgiFormatExtensions
