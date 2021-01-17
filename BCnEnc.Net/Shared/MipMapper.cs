@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
@@ -9,22 +9,31 @@ namespace BCnEncoder.Shared
 	internal static class MipMapper
 	{
 
-		public static uint CalculateMipChainLength(int width, int height, uint maxNumMipMaps) {
-			if (maxNumMipMaps == 1) {
+		public static int CalculateMipChainLength(int width, int height, int maxNumMipMaps)
+		{
+			if (maxNumMipMaps == 1)
+			{
 				return 1;
 			}
-			if (maxNumMipMaps == 0) {
-				maxNumMipMaps = 999;
+
+			if (maxNumMipMaps <= 0)
+			{
+				maxNumMipMaps = int.MaxValue;
 			}
-			uint output = 0;
-			for (uint mipLevel = 1; mipLevel < maxNumMipMaps; mipLevel++) {
+
+			var output = 0;
+			for (var mipLevel = 1; mipLevel < maxNumMipMaps; mipLevel++)
+			{
 				var mipWidth = Math.Max(1, width / (int)Math.Pow(2, mipLevel));
 				var mipHeight = Math.Max(1, height / (int)Math.Pow(2, mipLevel));
-				if (mipWidth == 1 && mipHeight == 1) {
+
+				if (mipWidth == 1 && mipHeight == 1)
+				{
 					output = mipLevel + 1;
 					break;
 				}
 			}
+
 			return output;
 		}
 
@@ -33,13 +42,21 @@ namespace BCnEncoder.Shared
 			mipWidth = width;
 			mipHeight = height;
 
-			if (mipIdx == 0) return;
-			
-			for (uint mipLevel = 1; mipLevel < 99999; mipLevel++)
+			if (mipIdx == 0)
+			{
+				return;
+			}
+
+			for (var mipLevel = 1; mipLevel < int.MaxValue; mipLevel++)
 			{
 				mipWidth = Math.Max(1, width / (int)Math.Pow(2, mipLevel));
 				mipHeight = Math.Max(1, height / (int)Math.Pow(2, mipLevel));
-				if (mipLevel == mipIdx) return;
+
+				if (mipLevel == mipIdx)
+				{
+					return;
+				}
+
 				if (mipWidth == 1 && mipHeight == 1)
 				{
 					return;
@@ -47,26 +64,41 @@ namespace BCnEncoder.Shared
 			}
 		}
 
-		public static List<Image<Rgba32>> GenerateMipChain(Image<Rgba32> sourceImage, ref uint numMipMaps) {
-			var result = new List<Image<Rgba32>>();
-			result.Add(sourceImage.Clone());
+		/// <summary>
+		/// Generate a chain of <paramref name="numMipMaps"/> elements.
+		/// </summary>
+		/// <param name="sourceImage">The image to scale down.</param>
+		/// <param name="numMipMaps">The number of mipmaps to generate.</param>
+		/// <returns></returns>
+		/// <returns>Will generate as many mipmaps as possible until a mipmap of 1x1 is reached for <paramref name="numMipMaps"/> 0 or smaller.</returns>
+		public static List<Image<Rgba32>> GenerateMipChain(Image<Rgba32> sourceImage, ref int numMipMaps)
+		{
+			var result = new List<Image<Rgba32>> { sourceImage.Clone() };
 
-			if (numMipMaps == 1) {
+			// If only one mipmap was requested, return original image only
+			if (numMipMaps == 1)
+			{
 				return result;
 			}
 
-			if (numMipMaps == 0) {
-				numMipMaps = 999;
+			// If number of mipmaps is "marked as boundless", do as many mipmaps as it takes to reach a size of 1x1
+			if (numMipMaps <= 0)
+			{
+				numMipMaps = int.MaxValue;
 			}
 
-			for (uint mipLevel = 1; mipLevel < numMipMaps; mipLevel++) {
+			// Generate mipmaps
+			for (var mipLevel = 1; mipLevel < numMipMaps; mipLevel++)
+			{
 				var mipWidth = Math.Max(1, sourceImage.Width / (int)Math.Pow(2, mipLevel));
 				var mipHeight = Math.Max(1, sourceImage.Height / (int)Math.Pow(2, mipLevel));
 
 				var newImage = sourceImage.Clone(x => x.Resize(mipWidth, mipHeight));
 				result.Add(newImage);
 
-				if (mipWidth == 1 && mipHeight == 1) {
+				// Stop generating of last generated mipmap was of size 1x1
+				if (mipWidth == 1 && mipHeight == 1)
+				{
 					numMipMaps = mipLevel + 1;
 					break;
 				}
