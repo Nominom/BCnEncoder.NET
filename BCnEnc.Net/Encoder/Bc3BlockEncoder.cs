@@ -34,7 +34,8 @@ namespace BCnEncoder.Encoder
 			return GlFormat.GlRgba;
 		}
 
-		public override DxgiFormat GetDxgiFormat() {
+		public override DxgiFormat GetDxgiFormat()
+		{
 			return DxgiFormat.DxgiFormatBc3Unorm;
 		}
 
@@ -55,8 +56,8 @@ namespace BCnEncoder.Encoder
 			ReadOnlySpan<ColorRgb24> colors = stackalloc ColorRgb24[] {
 				c0,
 				c1,
-				c0 * (2.0 / 3.0) + c1 * (1.0 / 3.0),
-				c0 * (1.0 / 3.0) + c1 * (2.0 / 3.0)
+				c0.InterpolateThird(c1, 1),
+				c0.InterpolateThird(c1, 2)
 			};
 
 			error = 0;
@@ -70,54 +71,62 @@ namespace BCnEncoder.Encoder
 			return output;
 		}
 
-		private static Bc3Block FindAlphaValues(Bc3Block colorBlock, RawBlock4X4Rgba32 rawBlock, int variations) {
+		private static Bc3Block FindAlphaValues(Bc3Block colorBlock, RawBlock4X4Rgba32 rawBlock, int variations)
+		{
 			var pixels = rawBlock.AsSpan;
 
 			//Find min and max alpha
 			byte minAlpha = 255;
 			byte maxAlpha = 0;
 			var hasExtremeValues = false;
-			for (var i = 0; i < pixels.Length; i++) {
-				if (pixels[i].A < 255 && pixels[i].A > 0) {
+			for (var i = 0; i < pixels.Length; i++)
+			{
+				if (pixels[i].A < 255 && pixels[i].A > 0)
+				{
 					if (pixels[i].A < minAlpha) minAlpha = pixels[i].A;
 					if (pixels[i].A > maxAlpha) maxAlpha = pixels[i].A;
 				}
-				else {
+				else
+				{
 					hasExtremeValues = true;
 				}
 			}
 
 
-			int SelectAlphaIndices(ref Bc3Block block) {
+			int SelectAlphaIndices(ref Bc3Block block)
+			{
 				var cumulativeError = 0;
 				var a0 = block.Alpha0;
 				var a1 = block.Alpha1;
 				var alphas = a0 > a1 ? stackalloc byte[] {
 					a0,
 					a1,
-					(byte) (6/7.0 * a0 + 1/7.0 * a1),
-					(byte) (5/7.0 * a0 + 2/7.0 * a1),
-					(byte) (4/7.0 * a0 + 3/7.0 * a1),
-					(byte) (3/7.0 * a0 + 4/7.0 * a1),
-					(byte) (2/7.0 * a0 + 5/7.0 * a1),
-					(byte) (1/7.0 * a0 + 6/7.0 * a1),
+					a0.InterpolateSeventh(a1, 1),
+					a0.InterpolateSeventh(a1, 2),
+					a0.InterpolateSeventh(a1, 3),
+					a0.InterpolateSeventh(a1, 4),
+					a0.InterpolateSeventh(a1, 5),
+					a0.InterpolateSeventh(a1, 6)
 				} : stackalloc byte[] {
 					a0,
 					a1,
-					(byte) (4/5.0 * a0 + 1/5.0 * a1),
-					(byte) (3/5.0 * a0 + 2/5.0 * a1),
-					(byte) (2/5.0 * a0 + 3/5.0 * a1),
-					(byte) (1/5.0 * a0 + 4/5.0 * a1),
+					a0.InterpolateFifth(a1, 1),
+					a0.InterpolateFifth(a1, 2),
+					a0.InterpolateFifth(a1, 3),
+					a0.InterpolateFifth(a1, 4),
 					0,
 					255
 				};
 				var pixels = rawBlock.AsSpan;
-				for (var i = 0; i < pixels.Length; i++) {
+				for (var i = 0; i < pixels.Length; i++)
+				{
 					byte bestIndex = 0;
 					var bestError = Math.Abs(pixels[i].A - alphas[0]);
-					for (byte j = 1; j < alphas.Length; j++) {
+					for (byte j = 1; j < alphas.Length; j++)
+					{
 						var error = Math.Abs(pixels[i].A - alphas[j]);
-						if (error < bestError) {
+						if (error < bestError)
+						{
 							bestIndex = j;
 							bestError = error;
 						}
@@ -131,7 +140,8 @@ namespace BCnEncoder.Encoder
 			}
 
 			//everything is either fully opaque or fully transparent
-			if (hasExtremeValues && minAlpha == 255 && maxAlpha == 0) {
+			if (hasExtremeValues && minAlpha == 255 && maxAlpha == 0)
+			{
 				colorBlock.Alpha0 = 0;
 				colorBlock.Alpha1 = 255;
 				var error = SelectAlphaIndices(ref colorBlock);
@@ -143,10 +153,12 @@ namespace BCnEncoder.Encoder
 			best.Alpha0 = maxAlpha;
 			best.Alpha1 = minAlpha;
 			var bestError = SelectAlphaIndices(ref best);
-			if (bestError == 0) {
+			if (bestError == 0)
+			{
 				return best;
 			}
-			for (byte i = 1; i < variations; i++) {
+			for (byte i = 1; i < variations; i++)
+			{
 				{
 					var a0 = ByteHelper.ClampToByte(maxAlpha - i * 2);
 					var a1 = ByteHelper.ClampToByte(minAlpha + i * 2);
@@ -154,7 +166,8 @@ namespace BCnEncoder.Encoder
 					block.Alpha0 = hasExtremeValues ? a1 : a0;
 					block.Alpha1 = hasExtremeValues ? a0 : a1;
 					var error = SelectAlphaIndices(ref block);
-					if (error < bestError) {
+					if (error < bestError)
+					{
 						best = block;
 						bestError = error;
 					}
@@ -166,7 +179,8 @@ namespace BCnEncoder.Encoder
 					block.Alpha0 = hasExtremeValues ? a1 : a0;
 					block.Alpha1 = hasExtremeValues ? a0 : a1;
 					var error = SelectAlphaIndices(ref block);
-					if (error < bestError) {
+					if (error < bestError)
+					{
 						best = block;
 						bestError = error;
 					}
@@ -178,7 +192,8 @@ namespace BCnEncoder.Encoder
 					block.Alpha0 = hasExtremeValues ? a1 : a0;
 					block.Alpha1 = hasExtremeValues ? a0 : a1;
 					var error = SelectAlphaIndices(ref block);
-					if (error < bestError) {
+					if (error < bestError)
+					{
 						best = block;
 						bestError = error;
 					}
@@ -190,7 +205,8 @@ namespace BCnEncoder.Encoder
 					block.Alpha0 = hasExtremeValues ? a1 : a0;
 					block.Alpha1 = hasExtremeValues ? a0 : a1;
 					var error = SelectAlphaIndices(ref block);
-					if (error < bestError) {
+					if (error < bestError)
+					{
 						best = block;
 						bestError = error;
 					}
@@ -202,7 +218,8 @@ namespace BCnEncoder.Encoder
 					block.Alpha0 = hasExtremeValues ? a1 : a0;
 					block.Alpha1 = hasExtremeValues ? a0 : a1;
 					var error = SelectAlphaIndices(ref block);
-					if (error < bestError) {
+					if (error < bestError)
+					{
 						best = block;
 						bestError = error;
 					}
@@ -214,20 +231,21 @@ namespace BCnEncoder.Encoder
 					block.Alpha0 = hasExtremeValues ? a1 : a0;
 					block.Alpha1 = hasExtremeValues ? a0 : a1;
 					var error = SelectAlphaIndices(ref block);
-					if (error < bestError) {
+					if (error < bestError)
+					{
 						best = block;
 						bestError = error;
 					}
 				}
 
-				if (bestError < 10) {
+				if (bestError < 10)
+				{
 					break;
 				}
 			}
-			
+
 			return best;
 		}
-
 
 		#endregion
 
@@ -260,7 +278,8 @@ namespace BCnEncoder.Encoder
 			}
 		}
 
-		private static class Bc3BlockEncoderBalanced {
+		private static class Bc3BlockEncoderBalanced
+		{
 			private const int MaxTries = 24 * 2;
 			private const float ErrorThreshold = 0.05f;
 
@@ -275,12 +294,13 @@ namespace BCnEncoder.Encoder
 				var c1 = min;
 
 				var best = TryColors(rawBlock, c0, c1, out var bestError);
-				
-				for (var i = 0; i < MaxTries; i++) {
+
+				for (var i = 0; i < MaxTries; i++)
+				{
 					var (newC0, newC1) = ColorVariationGenerator.Variate565(c0, c1, i);
-					
+
 					var block = TryColors(rawBlock, newC0, newC1, out var error);
-					
+
 					if (error < bestError)
 					{
 						best = block;
@@ -289,7 +309,8 @@ namespace BCnEncoder.Encoder
 						c1 = newC1;
 					}
 
-					if (bestError < ErrorThreshold) {
+					if (bestError < ErrorThreshold)
+					{
 						break;
 					}
 				}
@@ -325,16 +346,17 @@ namespace BCnEncoder.Encoder
 
 				var lastChanged = 0;
 
-				for (var i = 0; i < MaxTries; i++) {
+				for (var i = 0; i < MaxTries; i++)
+				{
 					var (newC0, newC1) = ColorVariationGenerator.Variate565(c0, c1, i);
-					
+
 					if (newC0.data < newC1.data)
 					{
 						var c = newC0;
 						newC0 = newC1;
 						newC1 = c;
 					}
-					
+
 					var block = TryColors(rawBlock, newC0, newC1, out var error);
 
 					lastChanged++;
@@ -348,7 +370,8 @@ namespace BCnEncoder.Encoder
 						lastChanged = 0;
 					}
 
-					if (bestError < ErrorThreshold || lastChanged > ColorVariationGenerator.VarPatternCount) {
+					if (bestError < ErrorThreshold || lastChanged > ColorVariationGenerator.VarPatternCount)
+					{
 						break;
 					}
 				}

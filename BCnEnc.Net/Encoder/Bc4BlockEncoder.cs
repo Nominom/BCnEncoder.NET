@@ -113,24 +113,22 @@ namespace BCnEncoder.Encoder
 				var cumulativeError = 0;
 				var c0 = block.Endpoint0;
 				var c1 = block.Endpoint1;
-				var colors = c0 > c1
-					? stackalloc byte[] {
+				var colors = c0 > c1 ? stackalloc byte[] {
 					c0,
 					c1,
-					(byte)(6 / 7.0 * c0 + 1 / 7.0 * c1),
-					(byte)(5 / 7.0 * c0 + 2 / 7.0 * c1),
-					(byte)(4 / 7.0 * c0 + 3 / 7.0 * c1),
-					(byte)(3 / 7.0 * c0 + 4 / 7.0 * c1),
-					(byte)(2 / 7.0 * c0 + 5 / 7.0 * c1),
-					(byte)(1 / 7.0 * c0 + 6 / 7.0 * c1),
-				}
-					: stackalloc byte[] {
+					c0.InterpolateSeventh(c1, 1),
+					c0.InterpolateSeventh(c1, 2),
+					c0.InterpolateSeventh(c1, 3),
+					c0.InterpolateSeventh(c1, 4),
+					c0.InterpolateSeventh(c1, 5),
+					c0.InterpolateSeventh(c1, 6)
+				} : stackalloc byte[] {
 					c0,
 					c1,
-					(byte)(4 / 5.0 * c0 + 1 / 5.0 * c1),
-					(byte)(3 / 5.0 * c0 + 2 / 5.0 * c1),
-					(byte)(2 / 5.0 * c0 + 3 / 5.0 * c1),
-					(byte)(1 / 5.0 * c0 + 4 / 5.0 * c1),
+					c0.InterpolateFifth(c1, 1),
+					c0.InterpolateFifth(c1, 2),
+					c0.InterpolateFifth(c1, 3),
+					c0.InterpolateFifth(c1, 4),
 					0,
 					255
 				};

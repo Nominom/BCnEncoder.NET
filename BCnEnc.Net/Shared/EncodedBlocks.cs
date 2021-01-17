@@ -314,80 +314,40 @@ namespace BCnEncoder.Shared
 	[StructLayout(LayoutKind.Sequential)]
 	internal unsafe struct Bc5Block
 	{
-		public ulong redBlock;
-		public ulong greenBlock;
+		public Bc4Block redBlock;
+		public Bc4Block greenBlock;
 
 		public byte Red0
 		{
-			readonly get => (byte)(redBlock & 0xFFUL);
-			set
-			{
-				redBlock &= ~0xFFUL;
-				redBlock |= value;
-			}
+			readonly get => redBlock.Endpoint0;
+			set => redBlock.Endpoint0 = value;
 		}
 
 		public byte Red1
 		{
-			readonly get => (byte)((redBlock >> 8) & 0xFFUL);
-			set
-			{
-				redBlock &= ~0xFF00UL;
-				redBlock |= (ulong)value << 8;
-			}
+			readonly get => redBlock.Endpoint1;
+			set => redBlock.Endpoint1 = value;
 		}
 
 		public byte Green0
 		{
-			readonly get => (byte)(greenBlock & 0xFFUL);
-			set
-			{
-				greenBlock &= ~0xFFUL;
-				greenBlock |= value;
-			}
+			readonly get => greenBlock.Endpoint0;
+			set => greenBlock.Endpoint0 = value;
 		}
 
 		public byte Green1
 		{
-			readonly get => (byte)((greenBlock >> 8) & 0xFFUL);
-			set
-			{
-				greenBlock &= ~0xFF00UL;
-				greenBlock |= (ulong)value << 8;
-			}
+			readonly get => greenBlock.Endpoint1;
+			set => greenBlock.Endpoint1 = value;
 		}
 
-		public readonly byte GetRedIndex(int pixelIndex)
-		{
-			var mask = 0b0111UL << (pixelIndex * 3 + 16);
-			var shift = pixelIndex * 3 + 16;
-			var redIndex = (redBlock & mask) >> shift;
-			return (byte)redIndex;
-		}
+		public readonly byte GetRedIndex(int pixelIndex) => redBlock.GetComponentIndex(pixelIndex);
 
-		public void SetRedIndex(int pixelIndex, byte redIndex)
-		{
-			var mask = 0b0111UL << (pixelIndex * 3 + 16);
-			var shift = pixelIndex * 3 + 16;
-			redBlock &= ~mask;
-			redBlock |= (ulong)(redIndex & 0b111) << shift;
-		}
+		public void SetRedIndex(int pixelIndex, byte redIndex) => redBlock.SetComponentIndex(pixelIndex, redIndex);
 
-		public readonly byte GetGreenIndex(int pixelIndex)
-		{
-			var mask = 0b0111UL << (pixelIndex * 3 + 16);
-			var shift = pixelIndex * 3 + 16;
-			var greenIndex = (greenBlock & mask) >> shift;
-			return (byte)greenIndex;
-		}
+		public readonly byte GetGreenIndex(int pixelIndex) => greenBlock.GetComponentIndex(pixelIndex);
 
-		public void SetGreenIndex(int pixelIndex, byte greenIndex)
-		{
-			var mask = 0b0111UL << (pixelIndex * 3 + 16);
-			var shift = pixelIndex * 3 + 16;
-			greenBlock &= ~mask;
-			greenBlock |= (ulong)(greenIndex & 0b111) << shift;
-		}
+		public void SetGreenIndex(int pixelIndex, byte greenIndex) => greenBlock.SetComponentIndex(pixelIndex, greenIndex);
 
 		public readonly RawBlock4X4Rgba32 Decode()
 		{
@@ -442,9 +402,7 @@ namespace BCnEncoder.Shared
 
 			for (var i = 0; i < pixels.Length; i++)
 			{
-				var redIndex = GetRedIndex(i);
-				var greenIndex = GetGreenIndex(i);
-				pixels[i] = new Rgba32(reds[redIndex], greens[greenIndex], 0, 255);
+				pixels[i] = new Rgba32(redBlock.DecodeSingle(i), greenBlock.DecodeSingle(i), 0, 255);
 			}
 
 			return output;

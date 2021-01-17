@@ -231,44 +231,91 @@ namespace BCnEncoder.Shared
 			header.dwMipMapCount = 1;
 			header.dwCaps = HeaderCaps.DdscapsTexture;
 
-			if (format == DxgiFormat.DxgiFormatBc1Unorm)
+			switch (format)
 			{
-				header.ddsPixelFormat = new DdsPixelFormat()
-				{
-					dwSize = 32,
-					dwFlags = PixelFormatFlags.DdpfFourcc,
-					dwFourCc = DdsPixelFormat.Dxt1
-				};
-			}
-			else if (format == DxgiFormat.DxgiFormatBc2Unorm)
-			{
-				header.ddsPixelFormat = new DdsPixelFormat()
-				{
-					dwSize = 32,
-					dwFlags = PixelFormatFlags.DdpfFourcc,
-					dwFourCc = DdsPixelFormat.Dxt3
-				};
-			}
-			else if (format == DxgiFormat.DxgiFormatBc3Unorm)
-			{
-				header.ddsPixelFormat = new DdsPixelFormat()
-				{
-					dwSize = 32,
-					dwFlags = PixelFormatFlags.DdpfFourcc,
-					dwFourCc = DdsPixelFormat.Dxt5
-				};
-			}
-			else
-			{
-				header.ddsPixelFormat = new DdsPixelFormat()
-				{
-					dwSize = 32,
-					dwFlags = PixelFormatFlags.DdpfFourcc,
-					dwFourCc = DdsPixelFormat.Dx10
-				};
-				dxt10Header.arraySize = 1;
-				dxt10Header.dxgiFormat = format;
-				dxt10Header.resourceDimension = D3D10ResourceDimension.D3D10ResourceDimensionTexture2D;
+				case DxgiFormat.DxgiFormatBc1Unorm:
+					header.ddsPixelFormat=new DdsPixelFormat
+					{
+						dwSize = 32,
+						dwFlags = PixelFormatFlags.DdpfFourcc,
+						dwFourCc = DdsPixelFormat.Dxt1
+					};
+					break;
+
+				case DxgiFormat.DxgiFormatBc2Unorm:
+					header.ddsPixelFormat = new DdsPixelFormat
+					{
+						dwSize = 32,
+						dwFlags = PixelFormatFlags.DdpfFourcc,
+						dwFourCc = DdsPixelFormat.Dxt3
+					};
+					break;
+
+				case DxgiFormat.DxgiFormatBc3Unorm:
+					header.ddsPixelFormat = new DdsPixelFormat
+					{
+						dwSize = 32,
+						dwFlags = PixelFormatFlags.DdpfFourcc,
+						dwFourCc = DdsPixelFormat.Dxt5
+					};
+					break;
+
+				case DxgiFormat.DxgiFormatBc4Unorm:
+					header.ddsPixelFormat = new DdsPixelFormat
+					{
+						dwSize = 32,
+						dwFlags = PixelFormatFlags.DdpfFourcc,
+						dwFourCc = DdsPixelFormat.Ati1
+					};
+					break;
+
+				case DxgiFormat.DxgiFormatBc5Unorm:
+					header.ddsPixelFormat = new DdsPixelFormat
+					{
+						dwSize = 32,
+						dwFlags = PixelFormatFlags.DdpfFourcc,
+						dwFourCc = DdsPixelFormat.Ati2
+					};
+					break;
+
+				case DxgiFormat.DxgiFormatAtc:
+					header.ddsPixelFormat = new DdsPixelFormat
+					{
+						dwSize = 32,
+						dwFlags = PixelFormatFlags.DdpfFourcc,
+						dwFourCc = DdsPixelFormat.Atc
+					};
+					break;
+
+				case DxgiFormat.DxgiFormatAtcExplicitAlpha:
+					header.ddsPixelFormat = new DdsPixelFormat
+					{
+						dwSize = 32,
+						dwFlags = PixelFormatFlags.DdpfFourcc,
+						dwFourCc = DdsPixelFormat.Atci
+					};
+					break;
+
+				case DxgiFormat.DxgiFormatAtcInterpolatedAlpha:
+					header.ddsPixelFormat = new DdsPixelFormat
+					{
+						dwSize = 32,
+						dwFlags = PixelFormatFlags.DdpfFourcc,
+						dwFourCc = DdsPixelFormat.Atca
+					};
+					break;
+
+				default:
+					header.ddsPixelFormat = new DdsPixelFormat
+					{
+						dwSize = 32,
+						dwFlags = PixelFormatFlags.DdpfFourcc,
+						dwFourCc = DdsPixelFormat.Dx10
+					};
+					dxt10Header.arraySize = 1;
+					dxt10Header.dxgiFormat = format;
+					dxt10Header.resourceDimension = D3D10ResourceDimension.D3D10ResourceDimensionTexture2D;
+					break;
 			}
 
 			return (header, dxt10Header);
@@ -758,7 +805,7 @@ namespace BCnEncoder.Shared
 		DxgiFormatForceUint,
 
 		// Added here due to missing documentation of an official value
-		DxgiFormatAtc,
+		DxgiFormatAtc = 300,
 		DxgiFormatAtcExplicitAlpha,
 		DxgiFormatAtcInterpolatedAlpha
 	};
