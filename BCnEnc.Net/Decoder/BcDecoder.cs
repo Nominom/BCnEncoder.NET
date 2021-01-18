@@ -294,7 +294,8 @@ namespace BCnEncoder.Decoder
 			{
 				CancellationToken = token,
 				IsParallel = Options.IsParallel,
-				TaskCount = Options.TaskCount
+				TaskCount = Options.TaskCount,
+				Progress = Options.Progress
 			};
 
 			if (IsSupportedRawFormat(file.header.GlInternalFormat))
@@ -359,7 +360,8 @@ namespace BCnEncoder.Decoder
 			{
 				CancellationToken = token,
 				IsParallel = Options.IsParallel,
-				TaskCount = Options.TaskCount
+				TaskCount = Options.TaskCount,
+				Progress = Options.Progress
 			};
 
 			if (IsSupportedRawFormat(file.header.ddsPixelFormat.DxgiFormat))
@@ -435,7 +437,8 @@ namespace BCnEncoder.Decoder
 			{
 				CancellationToken = token,
 				IsParallel = Options.IsParallel,
-				TaskCount = Options.TaskCount
+				TaskCount = Options.TaskCount,
+				Progress = Options.Progress
 			};
 
 			var isCompressedFormat = format.IsCompressedFormat();

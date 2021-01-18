@@ -433,7 +433,8 @@ namespace BCnEncoder.Encoder
 				{
 					CancellationToken = token,
 					IsParallel = !Debugger.IsAttached && Options.IsParallel,
-					TaskCount = Options.TaskCount
+					TaskCount = Options.TaskCount,
+					Progress = Options.Progress
 				};
 
 				// Encode mipmap levels
@@ -518,7 +519,8 @@ namespace BCnEncoder.Encoder
 				{
 					CancellationToken = token,
 					IsParallel = !Debugger.IsAttached && Options.IsParallel,
-					TaskCount = Options.TaskCount
+					TaskCount = Options.TaskCount,
+					Progress = Options.Progress
 				};
 
 				// Encode mipmap levels
@@ -609,7 +611,8 @@ namespace BCnEncoder.Encoder
 				{
 					CancellationToken = token,
 					IsParallel = !Debugger.IsAttached && Options.IsParallel,
-					TaskCount = Options.TaskCount
+					TaskCount = Options.TaskCount,
+					Progress = Options.Progress
 				};
 
 				// Encode all mipmap levels
@@ -651,6 +654,7 @@ namespace BCnEncoder.Encoder
 			{
 				throw new ArgumentException("The input pixels must be provided in 4 bytes per pixel rgba format.");
 			}
+
 			using var image = Image.LoadPixelData<Rgba32>(inputPixelsRgba, inputImageWidth, inputImageHeight);
 			return EncodeToRawBytesInternal(image, mipLevel, out mipWidth, out mipHeight, token);
 		}
@@ -692,7 +696,8 @@ namespace BCnEncoder.Encoder
 				{
 					CancellationToken = token,
 					IsParallel = !Debugger.IsAttached && Options.IsParallel,
-					TaskCount = Options.TaskCount
+					TaskCount = Options.TaskCount,
+					Progress = Options.Progress
 				};
 
 				// Encode mipmap level
@@ -799,7 +804,8 @@ namespace BCnEncoder.Encoder
 			{
 				CancellationToken = token,
 				IsParallel = !Debugger.IsAttached && Options.IsParallel,
-				TaskCount = Options.TaskCount
+				TaskCount = Options.TaskCount,
+				Progress = Options.Progress
 			};
 
 			// EncodeBlock all faces
@@ -905,7 +911,8 @@ namespace BCnEncoder.Encoder
 			{
 				CancellationToken = token,
 				IsParallel = !Debugger.IsAttached && Options.IsParallel,
-				TaskCount = Options.TaskCount
+				TaskCount = Options.TaskCount,
+				Progress = Options.Progress
 			};
 
 			// EncodeBlock all faces

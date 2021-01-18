@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Threading.Tasks;
 using BCnEncoder.Shared;
 
@@ -28,6 +29,7 @@ namespace BCnEncoder.Decoder
 
 			var output = new RawBlock4X4Rgba32[blockWidth, blockHeight];
 
+			var currentBlocks = 0;
 			if (context.IsParallel)
 			{
 				var localBlockWidth = blockWidth;
@@ -41,6 +43,9 @@ namespace BCnEncoder.Decoder
 				{
 					var encodedBlocks = MemoryMarshal.Cast<byte, T>(data.Span);
 					output[i % localBlockWidth, i / localBlockWidth] = DecodeBlock(encodedBlocks[i]);
+
+					var progressValue = Interlocked.Add(ref currentBlocks, 1);
+					context.Progress.Report(new ProgressElement(progressValue, output.Length));
 				});
 			}
 			else
@@ -53,6 +58,8 @@ namespace BCnEncoder.Decoder
 						context.CancellationToken.ThrowIfCancellationRequested();
 
 						output[x, y] = DecodeBlock(encodedBlocks[x + y * blockWidth]);
+
+						context.Progress.Report(new ProgressElement(currentBlocks++, output.Length));
 					}
 				}
 			}

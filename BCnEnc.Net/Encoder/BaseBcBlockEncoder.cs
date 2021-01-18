@@ -1,6 +1,6 @@
-using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Threading.Tasks;
 using BCnEncoder.Shared;
 
@@ -12,6 +12,7 @@ namespace BCnEncoder.Encoder
 		{
 			var outputData = new byte[blockWidth * blockHeight * Unsafe.SizeOf<T>()];
 
+			var currentBlocks = 0;
 			if (context.IsParallel)
 			{
 				var options = new ParallelOptions
@@ -23,6 +24,9 @@ namespace BCnEncoder.Encoder
 				 {
 					 var outputBlocks = MemoryMarshal.Cast<byte, T>(outputData);
 					 outputBlocks[i] = EncodeBlock(blocks[i], quality);
+
+					 var progressValue = Interlocked.Add(ref currentBlocks, 1);
+					 context.Progress.Report(new ProgressElement(progressValue, blocks.Length));
 				 });
 			}
 			else
@@ -33,6 +37,8 @@ namespace BCnEncoder.Encoder
 					context.CancellationToken.ThrowIfCancellationRequested();
 
 					outputBlocks[i] = EncodeBlock(blocks[i], quality);
+
+					context.Progress.Report(new ProgressElement(currentBlocks++, blocks.Length));
 				}
 			}
 
