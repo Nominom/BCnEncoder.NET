@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -912,11 +912,11 @@ namespace BCnEncoder.Shared
 				case DxgiFormat.DxgiFormatBc4Snorm:
 					return 8;
 				case DxgiFormat.DxgiFormatBc5Typeless:
-					return 8;
+					return 16;
 				case DxgiFormat.DxgiFormatBc5Unorm:
-					return 8;
+					return 16;
 				case DxgiFormat.DxgiFormatBc5Snorm:
-					return 8;
+					return 16;
 				case DxgiFormat.DxgiFormatB5G6R5Unorm:
 					return 2;
 				case DxgiFormat.DxgiFormatB5G5R5A1Unorm:
