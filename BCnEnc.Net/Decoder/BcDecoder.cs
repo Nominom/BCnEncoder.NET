@@ -486,6 +486,7 @@ namespace BCnEncoder.Decoder
 				case DxgiFormat.DxgiFormatR8Unorm:
 				case DxgiFormat.DxgiFormatR8G8Unorm:
 				case DxgiFormat.DxgiFormatR8G8B8A8Unorm:
+				case DxgiFormat.DxgiFormatB8G8R8A8Unorm:
 					return true;
 
 				default:
@@ -606,6 +607,9 @@ namespace BCnEncoder.Decoder
 				case DxgiFormat.DxgiFormatR8G8B8A8Unorm:
 					return new RawRgbaDecoder();
 
+				case DxgiFormat.DxgiFormatB8G8R8A8Unorm:
+					return new RawBgraDecoder();
+
 				default:
 					return null;
 			}
@@ -657,6 +661,9 @@ namespace BCnEncoder.Decoder
 				case CompressionFormat.Rgba:
 					return new RawRgbaDecoder();
 
+				case CompressionFormat.Bgra:
+					return new RawBgraDecoder();
+
 				default:
 					throw new ArgumentOutOfRangeException(nameof(format), format, null);
 			}
@@ -676,6 +683,7 @@ namespace BCnEncoder.Decoder
 					return 3 * pixelWidth * pixelHeight;
 
 				case CompressionFormat.Rgba:
+				case CompressionFormat.Bgra:
 					return 4 * pixelWidth * pixelHeight;
 
 				case CompressionFormat.Bc1:

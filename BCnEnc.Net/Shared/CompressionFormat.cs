@@ -1,4 +1,4 @@
-﻿namespace BCnEncoder.Shared
+namespace BCnEncoder.Shared
 {
     public enum CompressionFormat
     {
@@ -18,10 +18,14 @@
         /// Raw unsigned byte 32-bit RGBA data
         /// </summary>
         Rgba,
-        /// <summary>
-        /// BC1 / DXT1 with no alpha. Very widely supported and good compression ratio.
-        /// </summary>
-        Bc1,
+		/// <summary>
+		/// Raw unsigned byte 32-bit BGRA data
+		/// </summary>
+		Bgra,
+		/// <summary>
+		/// BC1 / DXT1 with no alpha. Very widely supported and good compression ratio.
+		/// </summary>
+		Bc1,
         /// <summary>
         /// BC1 / DXT1 with 1-bit of alpha.
         /// </summary>
@@ -62,6 +66,7 @@
                 case CompressionFormat.Rg:
                 case CompressionFormat.Rgb:
                 case CompressionFormat.Rgba:
+				case CompressionFormat.Bgra:
                     return false;
 
                 default:
