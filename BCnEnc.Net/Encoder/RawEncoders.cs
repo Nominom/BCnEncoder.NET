@@ -15,49 +15,71 @@ namespace BCnEncoder.Encoder
 		DxgiFormat GetDxgiFormat();
 	}
 
-	internal class RawLuminanceEncoder : IRawEncoder {
+	internal class RawLuminanceEncoder : IRawEncoder
+	{
 		private readonly bool useLuminance;
 
-		public RawLuminanceEncoder(bool useLuminance) {
+		public RawLuminanceEncoder(bool useLuminance)
+		{
 			this.useLuminance = useLuminance;
 		}
 
-		public byte[] Encode(ReadOnlySpan<Rgba32> pixels) {
+		public byte[] Encode(ReadOnlySpan<Rgba32> pixels)
+		{
 			var output = new byte[pixels.Length];
-			for (var i = 0; i < pixels.Length; i++) {
-				if (useLuminance) {
+			for (var i = 0; i < pixels.Length; i++)
+			{
+				if (useLuminance)
+				{
 					output[i] = (byte)(new ColorYCbCr(pixels[i]).y * 255);
 				}
-				else {
+				else
+				{
 					output[i] = pixels[i].R;
 				}
-				
+
 			}
 			return output;
 		}
 
 		public GlInternalFormat GetInternalFormat()
-			=> GlInternalFormat.GlR8;
+		{
+			return GlInternalFormat.GlR8;
+		}
 
 		public GlFormat GetBaseInternalFormat()
-			=> GlFormat.GlRed;
+		{
+			return GlFormat.GlRed;
+		}
 
-		public GlFormat GetGlFormat() => GlFormat.GlRed;
+		public GlFormat GetGlFormat()
+		{
+			return GlFormat.GlRed;
+		}
 
 		public GlType GetGlType()
-			=> GlType.GlByte;
+		{
+			return GlType.GlByte;
+		}
 
 		public uint GetGlTypeSize()
-			=> 1;
+		{
+			return 1;
+		}
 
-		public DxgiFormat GetDxgiFormat() => DxgiFormat.DxgiFormatR8Unorm;
+		public DxgiFormat GetDxgiFormat()
+		{
+			return DxgiFormat.DxgiFormatR8Unorm;
+		}
 	}
 
 	internal class RawRgEncoder : IRawEncoder
 	{
-		public byte[] Encode(ReadOnlySpan<Rgba32> pixels) {
+		public byte[] Encode(ReadOnlySpan<Rgba32> pixels)
+		{
 			var output = new byte[pixels.Length * 2];
-			for (var i = 0; i < pixels.Length; i++) {
+			for (var i = 0; i < pixels.Length; i++)
+			{
 				output[i * 2] = pixels[i].R;
 				output[i * 2 + 1] = pixels[i].G;
 			}
@@ -65,27 +87,43 @@ namespace BCnEncoder.Encoder
 		}
 
 		public GlInternalFormat GetInternalFormat()
-			=> GlInternalFormat.GlRg8;
+		{
+			return GlInternalFormat.GlRg8;
+		}
 
 		public GlFormat GetBaseInternalFormat()
-			=> GlFormat.GlRg;
+		{
+			return GlFormat.GlRg;
+		}
 
-		public GlFormat GetGlFormat() => GlFormat.GlRg;
+		public GlFormat GetGlFormat()
+		{
+			return GlFormat.GlRg;
+		}
 
 		public GlType GetGlType()
-			=> GlType.GlByte;
+		{
+			return GlType.GlByte;
+		}
 
 		public uint GetGlTypeSize()
-			=> 1;
+		{
+			return 1;
+		}
 
-		public DxgiFormat GetDxgiFormat() => DxgiFormat.DxgiFormatR8G8Unorm;
+		public DxgiFormat GetDxgiFormat()
+		{
+			return DxgiFormat.DxgiFormatR8G8Unorm;
+		}
 	}
 
 	internal class RawRgbEncoder : IRawEncoder
 	{
-		public byte[] Encode(ReadOnlySpan<Rgba32> pixels) {
+		public byte[] Encode(ReadOnlySpan<Rgba32> pixels)
+		{
 			var output = new byte[pixels.Length * 3];
-			for (var i = 0; i < pixels.Length; i++) {
+			for (var i = 0; i < pixels.Length; i++)
+			{
 				output[i * 3] = pixels[i].R;
 				output[i * 3 + 1] = pixels[i].G;
 				output[i * 3 + 2] = pixels[i].B;
@@ -94,27 +132,43 @@ namespace BCnEncoder.Encoder
 		}
 
 		public GlInternalFormat GetInternalFormat()
-			=> GlInternalFormat.GlRgb8;
+		{
+			return GlInternalFormat.GlRgb8;
+		}
 
 		public GlFormat GetBaseInternalFormat()
-			=> GlFormat.GlRgb;
+		{
+			return GlFormat.GlRgb;
+		}
 
-		public GlFormat GetGlFormat() => GlFormat.GlRgb;
+		public GlFormat GetGlFormat()
+		{
+			return GlFormat.GlRgb;
+		}
 
 		public GlType GetGlType()
-			=> GlType.GlByte;
+		{
+			return GlType.GlByte;
+		}
 
 		public uint GetGlTypeSize()
-			=> 1;
+		{
+			return 1;
+		}
 
-		public DxgiFormat GetDxgiFormat() => throw new NotSupportedException("RGB Format is not supported for dds files.");
+		public DxgiFormat GetDxgiFormat()
+		{
+			throw new NotSupportedException("RGB Format is not supported for dds files.");
+		}
 	}
 
 	internal class RawRgbaEncoder : IRawEncoder
 	{
-		public byte[] Encode(ReadOnlySpan<Rgba32> pixels) {
+		public byte[] Encode(ReadOnlySpan<Rgba32> pixels)
+		{
 			var output = new byte[pixels.Length * 4];
-			for (var i = 0; i < pixels.Length; i++) {
+			for (var i = 0; i < pixels.Length; i++)
+			{
 				output[i * 4] = pixels[i].R;
 				output[i * 4 + 1] = pixels[i].G;
 				output[i * 4 + 2] = pixels[i].B;
@@ -124,20 +178,34 @@ namespace BCnEncoder.Encoder
 		}
 
 		public GlInternalFormat GetInternalFormat()
-			=> GlInternalFormat.GlRgba8;
+		{
+			return GlInternalFormat.GlRgba8;
+		}
 
 		public GlFormat GetBaseInternalFormat()
-			=> GlFormat.GlRgba;
+		{
+			return GlFormat.GlRgba;
+		}
 
-		public GlFormat GetGlFormat() => GlFormat.GlRgba;
+		public GlFormat GetGlFormat()
+		{
+			return GlFormat.GlRgba;
+		}
 
 		public GlType GetGlType()
-			=> GlType.GlByte;
+		{
+			return GlType.GlByte;
+		}
 
 		public uint GetGlTypeSize()
-			=> 1;
+		{
+			return 1;
+		}
 
-		public DxgiFormat GetDxgiFormat() => DxgiFormat.DxgiFormatR8G8B8A8Unorm;
+		public DxgiFormat GetDxgiFormat()
+		{
+			return DxgiFormat.DxgiFormatR8G8B8A8Unorm;
+		}
 	}
 
 	internal class RawBgraEncoder : IRawEncoder
@@ -156,19 +224,33 @@ namespace BCnEncoder.Encoder
 		}
 
 		public GlInternalFormat GetInternalFormat()
-			=> throw new NotImplementedException();
+		{
+			throw new NotImplementedException();
+		}
 
 		public GlFormat GetBaseInternalFormat()
-			=> GlFormat.GlBgra;
+		{
+			return GlFormat.GlBgra;
+		}
 
-		public GlFormat GetGlFormat() => GlFormat.GlBgra;
+		public GlFormat GetGlFormat()
+		{
+			return GlFormat.GlBgra;
+		}
 
 		public GlType GetGlType()
-			=> GlType.GlByte;
+		{
+			return GlType.GlByte;
+		}
 
 		public uint GetGlTypeSize()
-			=> 1;
+		{
+			return 1;
+		}
 
-		public DxgiFormat GetDxgiFormat() => DxgiFormat.DxgiFormatB8G8R8A8Unorm;
+		public DxgiFormat GetDxgiFormat()
+		{
+			return DxgiFormat.DxgiFormatB8G8R8A8Unorm;
+		}
 	}
 }

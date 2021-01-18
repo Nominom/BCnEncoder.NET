@@ -42,10 +42,7 @@ namespace BCnEncoder.Decoder
 			var span = data.Span;
 			for (var i = 0; i < output.Length; i++)
 			{
-				if (context.CancellationToken.IsCancellationRequested)
-				{
-					break;
-				}
+				context.CancellationToken.ThrowIfCancellationRequested();
 
 				if (redAsLuminance)
 				{
@@ -89,10 +86,7 @@ namespace BCnEncoder.Decoder
 			var span = data.Span;
 			for (var i = 0; i < output.Length; i++)
 			{
-				if (context.CancellationToken.IsCancellationRequested)
-				{
-					break;
-				}
+				context.CancellationToken.ThrowIfCancellationRequested();
 
 				output[i].R = span[i * 2];
 				output[i].G = span[i * 2 + 1];
@@ -126,10 +120,7 @@ namespace BCnEncoder.Decoder
 			var span = data.Span;
 			for (var i = 0; i < output.Length; i++)
 			{
-				if (context.CancellationToken.IsCancellationRequested)
-				{
-					break;
-				}
+				context.CancellationToken.ThrowIfCancellationRequested();
 
 				output[i].R = span[i * 3];
 				output[i].G = span[i * 3 + 1];
@@ -163,10 +154,7 @@ namespace BCnEncoder.Decoder
 			var span = data.Span;
 			for (var i = 0; i < output.Length; i++)
 			{
-				if (context.CancellationToken.IsCancellationRequested)
-				{
-					break;
-				}
+				context.CancellationToken.ThrowIfCancellationRequested();
 
 				output[i].R = span[i * 4];
 				output[i].G = span[i * 4 + 1];
@@ -200,10 +188,7 @@ namespace BCnEncoder.Decoder
 			var span = data.Span;
 			for (var i = 0; i < output.Length; i++)
 			{
-				if (context.CancellationToken.IsCancellationRequested)
-				{
-					break;
-				}
+				context.CancellationToken.ThrowIfCancellationRequested();
 
 				output[i].B = span[i * 4];
 				output[i].G = span[i * 4 + 1];
