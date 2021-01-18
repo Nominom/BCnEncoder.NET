@@ -398,8 +398,6 @@ namespace BCnEncoder.Encoder
 			IBcBlockEncoder compressedEncoder = null;
 			IRawEncoder uncompressedEncoder = null;
 
-
-
 			var numMipMaps = OutputOptions.GenerateMipMaps ? OutputOptions.MaxMipMapLevel : 1;
 			var mipChain = MipMapper.GenerateMipChain(inputImage, ref numMipMaps);
 			try
@@ -593,6 +591,7 @@ namespace BCnEncoder.Encoder
 			{
 				// Setup encoder
 				var isCompressedFormat = OutputOptions.Format.IsCompressedFormat();
+
 				if (isCompressedFormat)
 				{
 					compressedEncoder = GetEncoder(OutputOptions.Format);
@@ -803,7 +802,7 @@ namespace BCnEncoder.Encoder
 				TaskCount = Options.TaskCount
 			};
 
-			// Encode all faces
+			// EncodeBlock all faces
 			for (var face = 0; face < faces.Length; face++)
 			{
 				var mipChain = MipMapper.GenerateMipChain(faces[face], ref numMipMaps);
@@ -909,7 +908,7 @@ namespace BCnEncoder.Encoder
 				TaskCount = Options.TaskCount
 			};
 
-			// Encode all faces
+			// EncodeBlock all faces
 			for (var face = 0; face < faces.Length; face++)
 			{
 				var mipChain = MipMapper.GenerateMipChain(faces[face], ref numMipMaps);
@@ -999,6 +998,15 @@ namespace BCnEncoder.Encoder
 
 				case CompressionFormat.Bc7:
 					return new Bc7Encoder();
+
+				case CompressionFormat.Atc:
+					return new AtcBlockEncoder();
+
+				case CompressionFormat.AtcExplicitAlpha:
+					return new AtcExplicitAlphaBlockEncoder();
+
+				case CompressionFormat.AtcInterpolatedAlpha:
+					return new AtcInterpolatedAlphaBlockEncoder();
 
 				default:
 					return null;

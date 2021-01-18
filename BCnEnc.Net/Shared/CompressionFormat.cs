@@ -53,8 +53,20 @@ namespace BCnEncoder.Shared
         /// <summary>
         /// BC7 / BPTC unorm encoding. Very high Quality rgba or rgb encoding. Also very slow.
         /// </summary>
-        Bc7
-    }
+        Bc7,
+		/// <summary>
+		/// ATC / Adreno Texture Compression encoding. Derivative of BC1.
+		/// </summary>
+		Atc,
+		/// <summary>
+		/// ATC / Adreno Texture Compression encoding. Derivative of BC1. Good for sharp alpha transitions.
+		/// </summary>
+		AtcExplicitAlpha,
+		/// <summary>
+		/// ATC / Adreno Texture Compression encoding. Derivative of BC1. Good for smooth alpha transitions.
+		/// </summary>
+		AtcInterpolatedAlpha
+	}
 
     public static class CompressionFormatExtensions
     {

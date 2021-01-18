@@ -1,13 +1,11 @@
-﻿using System;
-using System.Runtime.InteropServices;
-using System.Threading.Tasks;
+using System;
 using BCnEncoder.Shared;
 
 namespace BCnEncoder.Encoder
 {
 	internal class Bc1BlockEncoder : BaseBcBlockEncoder<Bc1Block>
 	{
-		protected override Bc1Block EncodeBlock(RawBlock4X4Rgba32 block, CompressionQuality quality)
+		public override Bc1Block EncodeBlock(RawBlock4X4Rgba32 block, CompressionQuality quality)
 		{
 			switch (quality)
 			{
@@ -56,13 +54,13 @@ namespace BCnEncoder.Encoder
 				stackalloc ColorRgb24[] {
 				c0,
 				c1,
-				c0 * (1.0 / 2.0) + c1 * (1.0 / 2.0),
+				c0.InterpolateHalf(c1),
 				new ColorRgb24(0, 0, 0)
 			} : stackalloc ColorRgb24[] {
 				c0,
 				c1,
-				c0 * (2.0 / 3.0) + c1 * (1.0 / 3.0),
-				c0 * (1.0 / 3.0) + c1 * (2.0 / 3.0)
+				c0.InterpolateThird(c1, 1),
+				c0.InterpolateThird(c1, 2)
 			};
 
 			error = 0;
@@ -101,7 +99,8 @@ namespace BCnEncoder.Encoder
 			}
 		}
 
-		private static class Bc1BlockEncoderBalanced {
+		private static class Bc1BlockEncoderBalanced
+		{
 			private const int MaxTries = 24 * 2;
 			private const float ErrorThreshold = 0.05f;
 
@@ -123,19 +122,20 @@ namespace BCnEncoder.Encoder
 				}
 
 				var best = TryColors(rawBlock, c0, c1, out var bestError);
-				
-				for (var i = 0; i < MaxTries; i++) {
+
+				for (var i = 0; i < MaxTries; i++)
+				{
 					var (newC0, newC1) = ColorVariationGenerator.Variate565(c0, c1, i);
-					
+
 					if (newC0.data < newC1.data)
 					{
 						var c = newC0;
 						newC0 = newC1;
 						newC1 = c;
 					}
-					
+
 					var block = TryColors(rawBlock, newC0, newC1, out var error);
-					
+
 					if (error < bestError)
 					{
 						best = block;
@@ -144,7 +144,8 @@ namespace BCnEncoder.Encoder
 						c1 = newC1;
 					}
 
-					if (bestError < ErrorThreshold) {
+					if (bestError < ErrorThreshold)
+					{
 						break;
 					}
 				}
@@ -179,16 +180,17 @@ namespace BCnEncoder.Encoder
 
 				var lastChanged = 0;
 
-				for (var i = 0; i < MaxTries; i++) {
+				for (var i = 0; i < MaxTries; i++)
+				{
 					var (newC0, newC1) = ColorVariationGenerator.Variate565(c0, c1, i);
-					
+
 					if (newC0.data < newC1.data)
 					{
 						var c = newC0;
 						newC0 = newC1;
 						newC1 = c;
 					}
-					
+
 					var block = TryColors(rawBlock, newC0, newC1, out var error);
 
 					lastChanged++;
@@ -202,7 +204,8 @@ namespace BCnEncoder.Encoder
 						lastChanged = 0;
 					}
 
-					if (bestError < ErrorThreshold || lastChanged > ColorVariationGenerator.VarPatternCount) {
+					if (bestError < ErrorThreshold || lastChanged > ColorVariationGenerator.VarPatternCount)
+					{
 						break;
 					}
 				}
@@ -216,7 +219,7 @@ namespace BCnEncoder.Encoder
 
 	internal class Bc1AlphaBlockEncoder : BaseBcBlockEncoder<Bc1Block>
 	{
-		protected override Bc1Block EncodeBlock(RawBlock4X4Rgba32 block, CompressionQuality quality)
+		public override Bc1Block EncodeBlock(RawBlock4X4Rgba32 block, CompressionQuality quality)
 		{
 			switch (quality)
 			{
@@ -247,6 +250,8 @@ namespace BCnEncoder.Encoder
 			return DxgiFormat.DxgiFormatBc1Unorm;
 		}
 
+		#region Encoding private stuff
+
 		private static Bc1Block TryColors(RawBlock4X4Rgba32 rawBlock, ColorRgb565 color0, ColorRgb565 color1, out float error, float rWeight = 0.3f, float gWeight = 0.6f, float bWeight = 0.1f)
 		{
 			var output = new Bc1Block();
@@ -265,13 +270,13 @@ namespace BCnEncoder.Encoder
 				stackalloc ColorRgb24[] {
 				c0,
 				c1,
-				c0 * (1.0 / 2.0) + c1 * (1.0 / 2.0),
+				c0.InterpolateHalf(c1),
 				new ColorRgb24(0, 0, 0)
 			} : stackalloc ColorRgb24[] {
 				c0,
 				c1,
-				c0 * (2.0 / 3.0) + c1 * (1.0 / 3.0),
-				c0 * (1.0 / 3.0) + c1 * (2.0 / 3.0)
+				c0.InterpolateThird(c1, 1),
+				c0.InterpolateThird(c1, 2)
 			};
 
 			error = 0;
@@ -286,6 +291,7 @@ namespace BCnEncoder.Encoder
 			return output;
 		}
 
+		#endregion
 
 		#region Encoders
 
@@ -341,30 +347,35 @@ namespace BCnEncoder.Encoder
 					var c = c0;
 					c0 = c1;
 					c1 = c;
-				}else if (hasAlpha && c1.data < c0.data) {
+				}
+				else if (hasAlpha && c1.data < c0.data)
+				{
 					var c = c0;
 					c0 = c1;
 					c1 = c;
 				}
 
 				var best = TryColors(rawBlock, c0, c1, out var bestError);
-				
-				for (var i = 0; i < MaxTries; i++) {
+
+				for (var i = 0; i < MaxTries; i++)
+				{
 					var (newC0, newC1) = ColorVariationGenerator.Variate565(c0, c1, i);
-					
+
 					if (!hasAlpha && newC0.data < newC1.data)
 					{
 						var c = newC0;
 						newC0 = newC1;
 						newC1 = c;
-					}else if (hasAlpha && newC1.data < newC0.data) {
+					}
+					else if (hasAlpha && newC1.data < newC0.data)
+					{
 						var c = newC0;
 						newC0 = newC1;
 						newC1 = c;
 					}
-					
+
 					var block = TryColors(rawBlock, newC0, newC1, out var error);
-					
+
 					if (error < bestError)
 					{
 						best = block;
@@ -373,7 +384,8 @@ namespace BCnEncoder.Encoder
 						c1 = newC1;
 					}
 
-					if (bestError < ErrorThreshold) {
+					if (bestError < ErrorThreshold)
+					{
 						break;
 					}
 				}
@@ -404,7 +416,9 @@ namespace BCnEncoder.Encoder
 					var c = c0;
 					c0 = c1;
 					c1 = c;
-				}else if (hasAlpha && c1.data < c0.data) {
+				}
+				else if (hasAlpha && c1.data < c0.data)
+				{
 					var c = c0;
 					c0 = c1;
 					c1 = c;
@@ -413,20 +427,23 @@ namespace BCnEncoder.Encoder
 				var best = TryColors(rawBlock, c0, c1, out var bestError);
 
 				var lastChanged = 0;
-				for (var i = 0; i < MaxTries; i++) {
+				for (var i = 0; i < MaxTries; i++)
+				{
 					var (newC0, newC1) = ColorVariationGenerator.Variate565(c0, c1, i);
-					
+
 					if (!hasAlpha && newC0.data < newC1.data)
 					{
 						var c = newC0;
 						newC0 = newC1;
 						newC1 = c;
-					}else if (hasAlpha && newC1.data < newC0.data) {
+					}
+					else if (hasAlpha && newC1.data < newC0.data)
+					{
 						var c = newC0;
 						newC0 = newC1;
 						newC1 = c;
 					}
-					
+
 					var block = TryColors(rawBlock, newC0, newC1, out var error);
 
 					lastChanged++;
@@ -440,7 +457,8 @@ namespace BCnEncoder.Encoder
 						lastChanged = 0;
 					}
 
-					if (bestError < ErrorThreshold || lastChanged > ColorVariationGenerator.VarPatternCount) {
+					if (bestError < ErrorThreshold || lastChanged > ColorVariationGenerator.VarPatternCount)
+					{
 						break;
 					}
 				}

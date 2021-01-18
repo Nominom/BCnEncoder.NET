@@ -125,4 +125,28 @@ namespace BCnEncoder.Decoder
 			return block.Decode();
 		}
 	}
+
+	internal class AtcDecoder : BaseBcBlockDecoder<AtcBlock>
+	{
+		protected override RawBlock4X4Rgba32 DecodeBlock(AtcBlock block)
+		{
+			return block.Decode();
+		}
+	}
+
+	internal class AtcExplicitAlphaDecoder : BaseBcBlockDecoder<AtcExplicitAlphaBlock>
+	{
+		protected override RawBlock4X4Rgba32 DecodeBlock(AtcExplicitAlphaBlock block)
+		{
+			return block.Decode();
+		}
+	}
+
+	internal class AtcInterpolatedAlphaDecoder : BaseBcBlockDecoder<AtcInterpolatedAlphaBlock>
+	{
+		protected override RawBlock4X4Rgba32 DecodeBlock(AtcInterpolatedAlphaBlock block)
+		{
+			return block.Decode();
+		}
+	}
 }
