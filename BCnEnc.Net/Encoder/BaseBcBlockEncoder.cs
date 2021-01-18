@@ -28,7 +28,7 @@ namespace BCnEncoder.Encoder
 					 if (context.Progress != null)
 					 {
 						 var progressValue = Interlocked.Add(ref currentBlocks, 1);
-						 context.Progress.Report(new ProgressElement(progressValue, blocks.Length));
+						 context.Progress.Report(progressValue);
 					 }
 				 });
 			}
@@ -41,7 +41,7 @@ namespace BCnEncoder.Encoder
 
 					outputBlocks[i] = EncodeBlock(blocks[i], quality);
 
-					context.Progress?.Report(new ProgressElement(currentBlocks++, blocks.Length));
+					context.Progress?.Report(currentBlocks++);
 				}
 			}
 

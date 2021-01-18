@@ -26,6 +26,6 @@ namespace BCnEncoder.Shared
 		/// <summary>
 		/// The progress context for the operation.
 		/// </summary>
-		public IProgress<ProgressElement> Progress { get; set; }
+		public OperationProgress Progress { get; set; }
 	}
 }

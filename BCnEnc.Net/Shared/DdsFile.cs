@@ -9,7 +9,7 @@ namespace BCnEncoder.Shared
 	public class DdsFile
 	{
 		public DdsHeader header;
-		public DdsHeaderDxt10 dxt10Header;
+		public DdsHeaderDx10 dx10Header;
 		public List<DdsFace> Faces { get; } = new List<DdsFace>();
 
 		public DdsFile() { }
@@ -18,10 +18,10 @@ namespace BCnEncoder.Shared
 			this.header = header;
 		}
 
-		public DdsFile(DdsHeader header, DdsHeaderDxt10 dxt10Header)
+		public DdsFile(DdsHeader header, DdsHeaderDx10 dx10Header)
 		{
 			this.header = header;
-			this.dxt10Header = dxt10Header;
+			this.dx10Header = dx10Header;
 		}
 
 		public static DdsFile Load(Stream s)
@@ -34,20 +34,20 @@ namespace BCnEncoder.Shared
 					throw new FormatException("The file does not contain a dds file.");
 				}
 				var header = br.ReadStruct<DdsHeader>();
-				DdsHeaderDxt10 dxt10Header = default;
+				DdsHeaderDx10 dx10Header = default;
 				if (header.dwSize != 124)
 				{
 					throw new FormatException("The file header contains invalid dwSize.");
 				}
 
-				var dxt10Format = header.ddsPixelFormat.IsDxt10Format;
+				var dx10Format = header.ddsPixelFormat.IsDxt10Format;
 
 				DdsFile output;
 
-				if (dxt10Format)
+				if (dx10Format)
 				{
-					dxt10Header = br.ReadStruct<DdsHeaderDxt10>();
-					output = new DdsFile(header, dxt10Header);
+					dx10Header = br.ReadStruct<DdsHeaderDx10>();
+					output = new DdsFile(header, dx10Header);
 				}
 				else
 				{
@@ -62,7 +62,7 @@ namespace BCnEncoder.Shared
 				for (var face = 0; face < faceCount; face++)
 				{
 					var sizeInBytes = Math.Max(1, (width + 3) / 4) * Math.Max(1, (height + 3) / 4);
-					if (!dxt10Format)
+					if (!dx10Format)
 					{
 						if (header.ddsPixelFormat.IsDxt1To5CompressedFormat)
 						{
@@ -80,9 +80,9 @@ namespace BCnEncoder.Shared
 							sizeInBytes = header.dwPitchOrLinearSize * height;
 						}
 					}
-					else if (dxt10Header.dxgiFormat.IsCompressedFormat())
+					else if (dx10Header.dxgiFormat.IsCompressedFormat())
 					{
-						sizeInBytes = (uint)(sizeInBytes * dxt10Header.dxgiFormat.GetByteSize());
+						sizeInBytes = (uint)(sizeInBytes * dx10Header.dxgiFormat.GetByteSize());
 					}
 					else
 					{
@@ -101,7 +101,7 @@ namespace BCnEncoder.Shared
 						if (mip > 0) //Calculate new byteSize
 						{
 							sizeInBytes = Math.Max(1, (mipWidth + 3) / 4) * Math.Max(1, (mipHeight + 3) / 4);
-							if (!dxt10Format)
+							if (!dx10Format)
 							{
 								if (header.ddsPixelFormat.IsDxt1To5CompressedFormat)
 								{
@@ -119,9 +119,9 @@ namespace BCnEncoder.Shared
 									sizeInBytes = header.dwPitchOrLinearSize / (uint)Math.Pow(2, mip) * mipHeight;
 								}
 							}
-							else if (dxt10Header.dxgiFormat.IsCompressedFormat())
+							else if (dx10Header.dxgiFormat.IsCompressedFormat())
 							{
-								sizeInBytes = (uint)(sizeInBytes * dxt10Header.dxgiFormat.GetByteSize());
+								sizeInBytes = (uint)(sizeInBytes * dx10Header.dxgiFormat.GetByteSize());
 							}
 							else
 							{
@@ -186,7 +186,7 @@ namespace BCnEncoder.Shared
 
 				if (header.ddsPixelFormat.IsDxt10Format)
 				{
-					bw.WriteStruct(dxt10Header);
+					bw.WriteStruct(dx10Header);
 				}
 
 				for (var face = 0; face < faceCount; face++)
@@ -221,10 +221,10 @@ namespace BCnEncoder.Shared
 		public uint dwCaps4;
 		public uint dwReserved2;
 
-		public static (DdsHeader, DdsHeaderDxt10) InitializeCompressed(int width, int height, DxgiFormat format)
+		public static (DdsHeader, DdsHeaderDx10) InitializeCompressed(int width, int height, DxgiFormat format)
 		{
 			var header = new DdsHeader();
-			var dxt10Header = new DdsHeaderDxt10();
+			var dxt10Header = new DdsHeaderDx10();
 
 			header.dwSize = 124;
 			header.dwFlags = HeaderFlags.Required;
@@ -237,7 +237,7 @@ namespace BCnEncoder.Shared
 			switch (format)
 			{
 				case DxgiFormat.DxgiFormatBc1Unorm:
-					header.ddsPixelFormat=new DdsPixelFormat
+					header.ddsPixelFormat = new DdsPixelFormat
 					{
 						dwSize = 32,
 						dwFlags = PixelFormatFlags.DdpfFourcc,
@@ -423,7 +423,7 @@ namespace BCnEncoder.Shared
 		{
 			get
 			{
-				if ((dwFlags & PixelFormatFlags.DdpfFourcc) != 0)
+				if (dwFlags.HasFlag(PixelFormatFlags.DdpfFourcc))
 				{
 					switch (dwFourCc)
 					{
@@ -449,9 +449,9 @@ namespace BCnEncoder.Shared
 				}
 				else
 				{
-					if ((dwFlags & PixelFormatFlags.DdpfRgb) != 0) // RGB/A
+					if (dwFlags.HasFlag(PixelFormatFlags.DdpfRgb)) // RGB/A
 					{
-						if ((dwFlags & PixelFormatFlags.DdpfAlphapixels) != 0) //RGBA
+						if (dwFlags.HasFlag(PixelFormatFlags.DdpfAlphapixels)) //RGBA
 						{
 							if (dwRgbBitCount == 32)
 							{
@@ -460,8 +460,9 @@ namespace BCnEncoder.Shared
 								{
 									return DxgiFormat.DxgiFormatR8G8B8A8Unorm;
 								}
-								else if (dwRBitMask == 0xff0000 && dwGBitMask == 0xff00 && dwBBitMask == 0xff &&
-										 dwABitMask == 0xff000000)
+
+								if (dwRBitMask == 0xff0000 && dwGBitMask == 0xff00 && dwBBitMask == 0xff &&
+								    dwABitMask == 0xff000000)
 								{
 									return DxgiFormat.DxgiFormatB8G8R8A8Unorm;
 								}
@@ -478,9 +479,9 @@ namespace BCnEncoder.Shared
 							}
 						}
 					}
-					else if ((dwFlags & PixelFormatFlags.DdpfLuminance) != 0) // R/RG
+					else if (dwFlags.HasFlag(PixelFormatFlags.DdpfLuminance)) // R/RG
 					{
-						if ((dwFlags & PixelFormatFlags.DdpfAlphapixels) != 0) // RG
+						if (dwFlags.HasFlag(PixelFormatFlags.DdpfAlphapixels)) // RG
 						{
 							if (dwRgbBitCount == 16)
 							{
@@ -517,7 +518,7 @@ namespace BCnEncoder.Shared
 										 || dwFourCc == Dxt5);
 	}
 
-	public struct DdsHeaderDxt10
+	public struct DdsHeaderDx10
 	{
 		public DxgiFormat dxgiFormat;
 		public D3D10ResourceDimension resourceDimension;

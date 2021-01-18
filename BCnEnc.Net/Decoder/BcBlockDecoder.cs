@@ -47,7 +47,7 @@ namespace BCnEncoder.Decoder
 					if (context.Progress != null)
 					{
 						var progressValue = Interlocked.Add(ref currentBlocks, 1);
-						context.Progress.Report(new ProgressElement(progressValue, output.Length));
+						context.Progress.Report(progressValue);
 					}
 				});
 			}
@@ -62,7 +62,7 @@ namespace BCnEncoder.Decoder
 
 						output[x, y] = DecodeBlock(encodedBlocks[x + y * blockWidth]);
 
-						context.Progress?.Report(new ProgressElement(currentBlocks++, output.Length));
+						context.Progress?.Report(currentBlocks++);
 					}
 				}
 			}

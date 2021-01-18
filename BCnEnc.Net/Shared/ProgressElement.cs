@@ -1,6 +1,6 @@
 namespace BCnEncoder.Shared
 {
-	public class ProgressElement
+	public struct ProgressElement
 	{
 		public int CurrentBlock { get; }
 

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
@@ -73,7 +73,6 @@ namespace BCnEncoder.Shared
 		internal static Image<Rgba32> ImageFromRawBlocks(RawBlock4X4Rgba32[,] blocks, int blocksWidth, int blocksHeight)
 			=> ImageFromRawBlocks(blocks, blocksWidth, blocksHeight, blocksWidth * 4, blocksHeight * 4);
 
-
 		internal static Image<Rgba32> ImageFromRawBlocks(RawBlock4X4Rgba32[,] blocks, int blocksWidth, int blocksHeight, int pixelWidth, int pixelHeight)
 		{
 			var output = new Image<Rgba32>(pixelWidth, pixelHeight);
@@ -102,7 +101,6 @@ namespace BCnEncoder.Shared
 
 		internal static Image<Rgba32> ImageFromRawBlocks(RawBlock4X4Rgba32[] blocks, int blocksWidth, int blocksHeight)
 			=> ImageFromRawBlocks(blocks, blocksWidth, blocksHeight, blocksWidth * 4, blocksHeight * 4);
-
 
 		internal static Image<Rgba32> ImageFromRawBlocks(RawBlock4X4Rgba32[] blocks, int blocksWidth, int blocksHeight, int pixelWidth, int pixelHeight)
 		{
