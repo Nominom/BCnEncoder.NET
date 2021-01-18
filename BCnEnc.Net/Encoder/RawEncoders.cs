@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using BCnEncoder.Shared;
 using SixLabors.ImageSharp.PixelFormats;
 
@@ -138,5 +138,37 @@ namespace BCnEncoder.Encoder
 			=> 1;
 
 		public DxgiFormat GetDxgiFormat() => DxgiFormat.DxgiFormatR8G8B8A8Unorm;
+	}
+
+	internal class RawBgraEncoder : IRawEncoder
+	{
+		public byte[] Encode(ReadOnlySpan<Rgba32> pixels)
+		{
+			var output = new byte[pixels.Length * 4];
+			for (var i = 0; i < pixels.Length; i++)
+			{
+				output[i * 4] = pixels[i].B;
+				output[i * 4 + 1] = pixels[i].G;
+				output[i * 4 + 2] = pixels[i].R;
+				output[i * 4 + 3] = pixels[i].A;
+			}
+			return output;
+		}
+
+		public GlInternalFormat GetInternalFormat()
+			=> throw new NotImplementedException();
+
+		public GlFormat GetBaseInternalFormat()
+			=> GlFormat.GlBgra;
+
+		public GlFormat GetGlFormat() => GlFormat.GlBgra;
+
+		public GlType GetGlType()
+			=> GlType.GlByte;
+
+		public uint GetGlTypeSize()
+			=> 1;
+
+		public DxgiFormat GetDxgiFormat() => DxgiFormat.DxgiFormatB8G8R8A8Unorm;
 	}
 }

@@ -94,6 +94,9 @@ namespace BCnEncoder.Shared
 					{
 						var mipWidth = header.dwWidth / (uint)Math.Pow(2, mip);
 						var mipHeight = header.dwHeight / (uint)Math.Pow(2, mip);
+						// Saw this in a 1024x512 dds with 11 mipMapCount. Height became 0 (should be 1)
+						mipWidth = Math.Max(mipWidth, 1);
+						mipHeight = Math.Max(mipHeight, 1);
 
 						if (mip > 0) //Calculate new byteSize
 						{
@@ -319,6 +322,20 @@ namespace BCnEncoder.Shared
 					dwRBitMask = 0xFF,
 					dwGBitMask = 0xFF00,
 					dwBBitMask = 0xFF0000,
+					dwABitMask = 0xFF000000,
+				};
+				header.dwPitchOrLinearSize = (uint)((width * 32 + 7) / 8);
+			}
+			else if (format == DxgiFormat.DxgiFormatB8G8R8A8Unorm)
+			{
+				header.ddsPixelFormat = new DdsPixelFormat()
+				{
+					dwSize = 32,
+					dwFlags = PixelFormatFlags.DdpfRgb | PixelFormatFlags.DdpfAlphapixels,
+					dwRgbBitCount = 32,
+					dwRBitMask = 0xFF0000,
+					dwGBitMask = 0xFF00,
+					dwBBitMask = 0xFF,
 					dwABitMask = 0xFF000000,
 				};
 				header.dwPitchOrLinearSize = (uint)((width * 32 + 7) / 8);
