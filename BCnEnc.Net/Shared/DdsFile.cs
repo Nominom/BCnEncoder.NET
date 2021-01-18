@@ -94,6 +94,9 @@ namespace BCnEncoder.Shared
 					{
 						var mipWidth = header.dwWidth / (uint)Math.Pow(2, mip);
 						var mipHeight = header.dwHeight / (uint)Math.Pow(2, mip);
+						// Saw this in a 1024x512 dds with 11 mipMapCount. Height became 0 (should be 1)
+						mipWidth = Math.Max(mipWidth, 1);
+						mipHeight = Math.Max(mipHeight, 1);
 
 						if (mip > 0) //Calculate new byteSize
 						{
@@ -370,6 +373,20 @@ namespace BCnEncoder.Shared
 				};
 				header.dwPitchOrLinearSize = (uint)((width * 32 + 7) / 8);
 			}
+			else if (format == DxgiFormat.DxgiFormatB8G8R8A8Unorm)
+			{
+				header.ddsPixelFormat = new DdsPixelFormat()
+				{
+					dwSize = 32,
+					dwFlags = PixelFormatFlags.DdpfRgb | PixelFormatFlags.DdpfAlphapixels,
+					dwRgbBitCount = 32,
+					dwRBitMask = 0xFF0000,
+					dwGBitMask = 0xFF00,
+					dwBBitMask = 0xFF,
+					dwABitMask = 0xFF000000,
+				};
+				header.dwPitchOrLinearSize = (uint)((width * 32 + 7) / 8);
+			}
 			else
 			{
 				throw new NotImplementedException("This Format is not implemented in this method");
@@ -443,7 +460,7 @@ namespace BCnEncoder.Shared
 								{
 									return DxgiFormat.DxgiFormatR8G8B8A8Unorm;
 								}
-								else if (dwRBitMask == 0x0000ff && dwGBitMask == 0xff00 && dwBBitMask == 0xff &&
+								else if (dwRBitMask == 0xff0000 && dwGBitMask == 0xff00 && dwBBitMask == 0xff &&
 										 dwABitMask == 0xff000000)
 								{
 									return DxgiFormat.DxgiFormatB8G8R8A8Unorm;
@@ -454,7 +471,7 @@ namespace BCnEncoder.Shared
 						{
 							if (dwRgbBitCount == 32)
 							{
-								if (dwRBitMask == 0x0000ff && dwGBitMask == 0xff00 && dwBBitMask == 0xff)
+								if (dwRBitMask == 0xff0000 && dwGBitMask == 0xff00 && dwBBitMask == 0xff)
 								{
 									return DxgiFormat.DxgiFormatB8G8R8X8Unorm;
 								}
@@ -467,7 +484,7 @@ namespace BCnEncoder.Shared
 						{
 							if (dwRgbBitCount == 16)
 							{
-								if (dwRBitMask == 0x0000ff && dwGBitMask == 0xff00)
+								if (dwRBitMask == 0xff && dwGBitMask == 0xff00)
 								{
 									return DxgiFormat.DxgiFormatR8G8Unorm;
 								}
@@ -477,7 +494,7 @@ namespace BCnEncoder.Shared
 						{
 							if (dwRgbBitCount == 8)
 							{
-								if (dwRBitMask == 0x0000ff && dwGBitMask == 0xff00)
+								if (dwRBitMask == 0xff)
 								{
 									return DxgiFormat.DxgiFormatR8Unorm;
 								}

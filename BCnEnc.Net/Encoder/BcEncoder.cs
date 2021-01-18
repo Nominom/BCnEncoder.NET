@@ -1036,6 +1036,9 @@ namespace BCnEncoder.Encoder
 				case CompressionFormat.Rgba:
 					return new RawRgbaEncoder();
 
+				case CompressionFormat.Bgra:
+					return new RawBgraEncoder();
+
 				default:
 					throw new ArgumentOutOfRangeException(nameof(format), format, null);
 			}

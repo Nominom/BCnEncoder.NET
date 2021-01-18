@@ -42,10 +42,7 @@ namespace BCnEncoder.Decoder
 			var span = data.Span;
 			for (var i = 0; i < output.Length; i++)
 			{
-				if (context.CancellationToken.IsCancellationRequested)
-				{
-					break;
-				}
+				context.CancellationToken.ThrowIfCancellationRequested();
 
 				if (redAsLuminance)
 				{
@@ -89,10 +86,7 @@ namespace BCnEncoder.Decoder
 			var span = data.Span;
 			for (var i = 0; i < output.Length; i++)
 			{
-				if (context.CancellationToken.IsCancellationRequested)
-				{
-					break;
-				}
+				context.CancellationToken.ThrowIfCancellationRequested();
 
 				output[i].R = span[i * 2];
 				output[i].G = span[i * 2 + 1];
@@ -126,10 +120,7 @@ namespace BCnEncoder.Decoder
 			var span = data.Span;
 			for (var i = 0; i < output.Length; i++)
 			{
-				if (context.CancellationToken.IsCancellationRequested)
-				{
-					break;
-				}
+				context.CancellationToken.ThrowIfCancellationRequested();
 
 				output[i].R = span[i * 3];
 				output[i].G = span[i * 3 + 1];
@@ -163,14 +154,45 @@ namespace BCnEncoder.Decoder
 			var span = data.Span;
 			for (var i = 0; i < output.Length; i++)
 			{
-				if (context.CancellationToken.IsCancellationRequested)
-				{
-					break;
-				}
+				context.CancellationToken.ThrowIfCancellationRequested();
 
 				output[i].R = span[i * 4];
 				output[i].G = span[i * 4 + 1];
 				output[i].B = span[i * 4 + 2];
+				output[i].A = span[i * 4 + 3];
+			}
+
+			return output;
+		}
+	}
+
+	/// <summary>
+	/// A class to decode data to BGRA components.
+	/// </summary>
+	public class RawBgraDecoder : IRawDecoder
+	{
+		/// <summary>
+		/// Decode the data to color components.
+		/// </summary>
+		/// <param name="data">The data to decode.</param>
+		/// <param name="pixelWidth">The width of the image in pixels.</param>
+		/// <param name="pixelHeight">The height of the image in pixels.</param>
+		/// <param name="context">The context of the current operation.</param>
+		/// <returns>The decoded color components.</returns>
+		public Rgba32[] Decode(ReadOnlyMemory<byte> data, int pixelWidth, int pixelHeight, OperationContext context)
+		{
+			var output = new Rgba32[pixelWidth * pixelHeight];
+
+			// HINT: Ignoring parallel execution since we wouldn't gain performance from it.
+
+			var span = data.Span;
+			for (var i = 0; i < output.Length; i++)
+			{
+				context.CancellationToken.ThrowIfCancellationRequested();
+
+				output[i].B = span[i * 4];
+				output[i].G = span[i * 4 + 1];
+				output[i].R = span[i * 4 + 2];
 				output[i].A = span[i * 4 + 3];
 			}
 
