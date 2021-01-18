@@ -25,8 +25,11 @@ namespace BCnEncoder.Encoder
 					 var outputBlocks = MemoryMarshal.Cast<byte, T>(outputData);
 					 outputBlocks[i] = EncodeBlock(blocks[i], quality);
 
-					 var progressValue = Interlocked.Add(ref currentBlocks, 1);
-					 context.Progress.Report(new ProgressElement(progressValue, blocks.Length));
+					 if (context.Progress != null)
+					 {
+						 var progressValue = Interlocked.Add(ref currentBlocks, 1);
+						 context.Progress.Report(new ProgressElement(progressValue, blocks.Length));
+					 }
 				 });
 			}
 			else
@@ -38,7 +41,7 @@ namespace BCnEncoder.Encoder
 
 					outputBlocks[i] = EncodeBlock(blocks[i], quality);
 
-					context.Progress.Report(new ProgressElement(currentBlocks++, blocks.Length));
+					context.Progress?.Report(new ProgressElement(currentBlocks++, blocks.Length));
 				}
 			}
 

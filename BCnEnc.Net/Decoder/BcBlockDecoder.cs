@@ -44,8 +44,11 @@ namespace BCnEncoder.Decoder
 					var encodedBlocks = MemoryMarshal.Cast<byte, T>(data.Span);
 					output[i % localBlockWidth, i / localBlockWidth] = DecodeBlock(encodedBlocks[i]);
 
-					var progressValue = Interlocked.Add(ref currentBlocks, 1);
-					context.Progress.Report(new ProgressElement(progressValue, output.Length));
+					if (context.Progress != null)
+					{
+						var progressValue = Interlocked.Add(ref currentBlocks, 1);
+						context.Progress.Report(new ProgressElement(progressValue, output.Length));
+					}
 				});
 			}
 			else
@@ -59,7 +62,7 @@ namespace BCnEncoder.Decoder
 
 						output[x, y] = DecodeBlock(encodedBlocks[x + y * blockWidth]);
 
-						context.Progress.Report(new ProgressElement(currentBlocks++, output.Length));
+						context.Progress?.Report(new ProgressElement(currentBlocks++, output.Length));
 					}
 				}
 			}
