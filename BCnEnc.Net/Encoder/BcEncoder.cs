@@ -694,7 +694,7 @@ namespace BCnEncoder.Encoder
 					IsParallel = !Debugger.IsAttached && Options.IsParallel,
 					TaskCount = Options.TaskCount
 				};
-        
+
 				// Encode mipmap level
 				byte[] encoded;
 				if (isCompressedFormat)

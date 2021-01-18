@@ -56,8 +56,8 @@ namespace BCnEncTests
 		{
 			var block = new Bc5Block()
 			{
-				greenBlock = 0x91824260008935ee,
-				redBlock = 0x6d900f66d3c0a70d
+				greenBlock = new Bc4ComponentBlock(){componentBlock = 0x91824260008935ee},
+				redBlock = new Bc4ComponentBlock() { componentBlock = 0x6d900f66d3c0a70d }
 			};
 			
 			var referenceBlock = new RawBlock4X4Rgba32
