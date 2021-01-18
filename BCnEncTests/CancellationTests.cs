@@ -6,7 +6,7 @@ using Xunit;
 
 namespace BCnEncTests
 {
-	public class CancellationTest
+	public class CancellationTests
 	{
 		[Fact]
 		public async void EncodeParallelCancellation()

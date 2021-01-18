@@ -19,6 +19,7 @@ namespace BCnEncTests.Support
 		public static Image<Rgba32> TestRedGreen1 { get; } = LoadTestImage("../../../testImages/test_red_green_1_64.png");
 		public static Image<Rgba32> TestRgbHard1 { get; } = LoadTestImage("../../../testImages/test_rgb_hard_1.png");
 		public static Image<Rgba32> TestLenna { get; } = LoadTestImage("../../../testImages/test_lenna_512.png");
+		public static Image<Rgba32> TestDecodingBc5Reference { get; } = LoadTestImage("../../../testImages/decoding_dds_bc5_reference.png");
 
 		public static Image<Rgba32>[] TestCubemap { get; } = {
 			LoadTestImage("../../../testImages/cubemap/right.png"),
@@ -40,16 +41,19 @@ namespace BCnEncTests.Support
 		public const string TestDecompressBc1Name = "../../../testImages/test_decompress_bc1.dds";
 		public const string TestDecompressBc1AName = "../../../testImages/test_decompress_bc1a.dds";
 		public const string TestDecompressBc7Name = "../../../testImages/test_decompress_bc7.dds";
+		public const string TestDecompressBc5Name = "../../../testImages/decoding_dds_bc5.dds";
 		public const string TestDecompressRgbaName = "../../../testImages/test_decompress_rgba.dds";
 
 		public static DdsFile TestDecompressBc1 { get; } = LoadDdsFile(TestDecompressBc1Name);
 		public static DdsFile TestDecompressBc1A { get; } = LoadDdsFile(TestDecompressBc1AName);
+		public static DdsFile TestDecompressBc5 { get; } = LoadDdsFile(TestDecompressBc5Name);
 		public static DdsFile TestDecompressBc7 { get; } = LoadDdsFile(TestDecompressBc7Name);
 		public static DdsFile TestDecompressRgba { get; } = LoadDdsFile(TestDecompressRgbaName);
 
 		private static DdsFile LoadDdsFile(string filename)
 		{
-			return DdsFile.Load(File.OpenRead(filename));
+			using var fs = File.OpenRead(filename);
+			return DdsFile.Load(fs);
 		}
 	}
 
@@ -67,7 +71,8 @@ namespace BCnEncTests.Support
 
 		private static KtxFile LoadKtxFile(string filename)
 		{
-			return KtxFile.Load(File.OpenRead(filename));
+			using var fs = File.OpenRead(filename);
+			return KtxFile.Load(fs);
 		}
 	}
 }
