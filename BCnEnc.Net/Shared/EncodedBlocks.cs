@@ -1,7 +1,5 @@
 using System;
-using System.Diagnostics;
 using System.Runtime.InteropServices;
-using BCnEncoder.Encoder;
 using SixLabors.ImageSharp.PixelFormats;
 
 namespace BCnEncoder.Shared
@@ -118,7 +116,7 @@ namespace BCnEncoder.Shared
 	[StructLayout(LayoutKind.Sequential)]
 	internal unsafe struct Bc3Block
 	{
-		public Bc4Block alphaBlock;
+		public Bc4ComponentBlock alphaBlock;
 		public ColorRgb565 color0;
 		public ColorRgb565 color1;
 		public uint colorIndices;
@@ -165,120 +163,53 @@ namespace BCnEncoder.Shared
 				color0.InterpolateThird(color1, 2)
 			};
 
+			var alphas = alphaBlock.Decode();
+
 			for (var i = 0; i < pixels.Length; i++)
 			{
 				var colorIndex = (int)((colorIndices >> (i * 2)) & 0b11);
 				var color = colors[colorIndex];
 
-				pixels[i] = new Rgba32(color.r, color.g, color.b, alphaBlock.DecodeSingle(i));
+				pixels[i] = new Rgba32(color.r, color.g, color.b, alphas[i]);
 			}
 			return output;
 		}
 	}
 
 	[StructLayout(LayoutKind.Sequential)]
-	internal unsafe struct Bc4Block
+	internal struct Bc4Block
 	{
-		public ulong componentBlock;
+		public Bc4ComponentBlock redBlock;
 
 		public byte Endpoint0
 		{
-			readonly get => (byte)(componentBlock & 0xFFUL);
-			set
-			{
-				componentBlock &= ~0xFFUL;
-				componentBlock |= value;
-			}
+			readonly get => redBlock.Endpoint0;
+			set => redBlock.Endpoint0 = value;
 		}
 
 		public byte Endpoint1
 		{
-			readonly get => (byte)((componentBlock >> 8) & 0xFFUL);
-			set
-			{
-				componentBlock &= ~0xFF00UL;
-				componentBlock |= (ulong)value << 8;
-			}
+			readonly get => redBlock.Endpoint1;
+			set => redBlock.Endpoint1 = value;
 		}
 
-		public readonly byte GetComponentIndex(int pixelIndex)
-		{
-			var mask = 0b0111UL << (pixelIndex * 3 + 16);
-			var shift = pixelIndex * 3 + 16;
-			var redIndex = (componentBlock & mask) >> shift;
-			return (byte)redIndex;
-		}
+		public readonly byte GetComponentIndex(int pixelIndex) => redBlock.GetComponentIndex(pixelIndex);
 
-		public void SetComponentIndex(int pixelIndex, byte redIndex)
-		{
-			var mask = 0b0111UL << (pixelIndex * 3 + 16);
-			var shift = pixelIndex * 3 + 16;
-			componentBlock &= ~mask;
-			componentBlock |= (ulong)(redIndex & 0b111) << shift;
-		}
+		public void SetComponentIndex(int pixelIndex, byte redIndex) => redBlock.SetComponentIndex(pixelIndex, redIndex);
 
-		public readonly byte DecodeSingle(int pixelIndex)
-		{
-			var r0 = Endpoint0;
-			var r1 = Endpoint1;
-
-			var reds = r0 > r1 ? stackalloc byte[] {
-				r0,
-				r1,
-				r0.InterpolateSeventh(r1, 1),
-				r0.InterpolateSeventh(r1, 2),
-				r0.InterpolateSeventh(r1, 3),
-				r0.InterpolateSeventh(r1, 4),
-				r0.InterpolateSeventh(r1, 5),
-				r0.InterpolateSeventh(r1, 6),
-			} : stackalloc byte[] {
-				r0,
-				r1,
-				r0.InterpolateFifth(r1, 1),
-				r0.InterpolateFifth(r1, 2),
-				r0.InterpolateFifth(r1, 3),
-				r0.InterpolateFifth(r1, 4),
-				0,
-				255
-			};
-
-			return reds[GetComponentIndex(pixelIndex)];
-		}
-
-		public readonly RawBlock4X4Rgba32 Decode(bool redAsLuminance, Bc4Component component)
+		public readonly RawBlock4X4Rgba32 Decode(bool redAsLuminance)
 		{
 			var output = new RawBlock4X4Rgba32();
 			var pixels = output.AsSpan;
 
-			var c0 = Endpoint0;
-			var c1 = Endpoint1;
-
-			var components = c0 > c1 ? stackalloc byte[] {
-				c0,
-				c1,
-				c0.InterpolateSeventh(c1, 1),
-				c0.InterpolateSeventh(c1, 2),
-				c0.InterpolateSeventh(c1, 3),
-				c0.InterpolateSeventh(c1, 4),
-				c0.InterpolateSeventh(c1, 5),
-				c0.InterpolateSeventh(c1, 6),
-			} : stackalloc byte[] {
-				c0,
-				c1,
-				c0.InterpolateFifth(c1, 1),
-				c0.InterpolateFifth(c1, 2),
-				c0.InterpolateFifth(c1, 3),
-				c0.InterpolateFifth(c1, 4),
-				0,
-				255
-			};
+			var reds = redBlock.Decode();
 
 			if (redAsLuminance)
 			{
 				for (var i = 0; i < pixels.Length; i++)
 				{
 					var index = GetComponentIndex(i);
-					pixels[i] = new Rgba32(components[index], components[index], components[index], 255);
+					pixels[i] = new Rgba32(reds[index], reds[index], reds[index], 255);
 				}
 			}
 			else
@@ -286,24 +217,7 @@ namespace BCnEncoder.Shared
 				for (var i = 0; i < pixels.Length; i++)
 				{
 					var index = GetComponentIndex(i);
-					switch (component)
-					{
-						case Bc4Component.R:
-							pixels[i] = new Rgba32(components[index], 0, 0, 255);
-							break;
-
-						case Bc4Component.G:
-							pixels[i] = new Rgba32(0, components[index], 0, 255);
-							break;
-
-						case Bc4Component.B:
-							pixels[i] = new Rgba32(0, 0, components[index], 255);
-							break;
-
-						case Bc4Component.A:
-							pixels[i] = new Rgba32(0, 0, 0, components[index]);
-							break;
-					}
+					pixels[i] = new Rgba32(reds[index], 0, 0, 255);
 				}
 			}
 
@@ -312,10 +226,10 @@ namespace BCnEncoder.Shared
 	}
 
 	[StructLayout(LayoutKind.Sequential)]
-	internal unsafe struct Bc5Block
+	internal struct Bc5Block
 	{
-		public Bc4Block redBlock;
-		public Bc4Block greenBlock;
+		public Bc4ComponentBlock redBlock;
+		public Bc4ComponentBlock greenBlock;
 
 		public byte Red0
 		{
@@ -354,55 +268,12 @@ namespace BCnEncoder.Shared
 			var output = new RawBlock4X4Rgba32();
 			var pixels = output.AsSpan;
 
-			var r0 = Red0;
-			var r1 = Red1;
-
-			var reds = r0 > r1 ? stackalloc byte[] {
-				r0,
-				r1,
-				r0.InterpolateSeventh(r1, 1),
-				r0.InterpolateSeventh(r1, 2),
-				r0.InterpolateSeventh(r1, 3),
-				r0.InterpolateSeventh(r1, 4),
-				r0.InterpolateSeventh(r1, 5),
-				r0.InterpolateSeventh(r1, 6),
-			} : stackalloc byte[] {
-				r0,
-				r1,
-				r0.InterpolateFifth(r1, 1),
-				r0.InterpolateFifth(r1, 2),
-				r0.InterpolateFifth(r1, 3),
-				r0.InterpolateFifth(r1, 4),
-				0,
-				255
-			};
-
-			var g0 = Green0;
-			var g1 = Green1;
-
-			var greens = g0 > g1 ? stackalloc byte[] {
-				g0,
-				g1,
-				g0.InterpolateSeventh(g1, 1),
-				g0.InterpolateSeventh(g1, 2),
-				g0.InterpolateSeventh(g1, 3),
-				g0.InterpolateSeventh(g1, 4),
-				g0.InterpolateSeventh(g1, 5),
-				g0.InterpolateSeventh(g1, 6),
-			} : stackalloc byte[] {
-				g0,
-				g1,
-				g0.InterpolateFifth(g1, 1),
-				g0.InterpolateFifth(g1, 2),
-				g0.InterpolateFifth(g1, 3),
-				g0.InterpolateFifth(g1, 4),
-				0,
-				255
-			};
+			var reds = redBlock.Decode();
+			var greens = greenBlock.Decode();
 
 			for (var i = 0; i < pixels.Length; i++)
 			{
-				pixels[i] = new Rgba32(redBlock.DecodeSingle(i), greenBlock.DecodeSingle(i), 0, 255);
+				pixels[i] = new Rgba32(reds[i], greens[i], 0, 255);
 			}
 
 			return output;
@@ -478,6 +349,84 @@ namespace BCnEncoder.Shared
 	}
 
 	[StructLayout(LayoutKind.Sequential)]
+	internal unsafe struct Bc4ComponentBlock
+	{
+		public ulong componentBlock;
+
+		public byte Endpoint0
+		{
+			readonly get => (byte)(componentBlock & 0xFFUL);
+			set
+			{
+				componentBlock &= ~0xFFUL;
+				componentBlock |= value;
+			}
+		}
+
+		public byte Endpoint1
+		{
+			readonly get => (byte)((componentBlock >> 8) & 0xFFUL);
+			set
+			{
+				componentBlock &= ~0xFF00UL;
+				componentBlock |= (ulong)value << 8;
+			}
+		}
+
+		public readonly byte GetComponentIndex(int pixelIndex)
+		{
+			var mask = 0b0111UL << (pixelIndex * 3 + 16);
+			var shift = pixelIndex * 3 + 16;
+			var redIndex = (componentBlock & mask) >> shift;
+			return (byte)redIndex;
+		}
+
+		public void SetComponentIndex(int pixelIndex, byte redIndex)
+		{
+			var mask = 0b0111UL << (pixelIndex * 3 + 16);
+			var shift = pixelIndex * 3 + 16;
+			componentBlock &= ~mask;
+			componentBlock |= (ulong)(redIndex & 0b111) << shift;
+		}
+
+		public readonly byte[] Decode()
+		{
+			var output = new byte[16];
+
+			var c0 = Endpoint0;
+			var c1 = Endpoint1;
+
+			var components = c0 > c1 ? stackalloc byte[] {
+				c0,
+				c1,
+				c0.InterpolateSeventh(c1, 1),
+				c0.InterpolateSeventh(c1, 2),
+				c0.InterpolateSeventh(c1, 3),
+				c0.InterpolateSeventh(c1, 4),
+				c0.InterpolateSeventh(c1, 5),
+				c0.InterpolateSeventh(c1, 6),
+			} : stackalloc byte[] {
+				c0,
+				c1,
+				c0.InterpolateFifth(c1, 1),
+				c0.InterpolateFifth(c1, 2),
+				c0.InterpolateFifth(c1, 3),
+				c0.InterpolateFifth(c1, 4),
+				0,
+				255
+			};
+
+			for (var i = 0; i < output.Length; i++)
+			{
+				var index = GetComponentIndex(i);
+				output[i] = components[index];
+			}
+
+			return output;
+		}
+	}
+
+	[StructLayout(LayoutKind.Sequential)]
 	internal struct AtcExplicitAlphaBlock
 	{
 		public Bc2AlphaBlock alphas;
@@ -499,7 +448,7 @@ namespace BCnEncoder.Shared
 	[StructLayout(LayoutKind.Sequential)]
 	internal struct AtcInterpolatedAlphaBlock
 	{
-		public Bc4Block alphas;
+		public Bc4ComponentBlock alphas;
 		public AtcBlock colors;
 
 		public readonly RawBlock4X4Rgba32 Decode()
@@ -507,9 +456,11 @@ namespace BCnEncoder.Shared
 			var output = colors.Decode();
 			var pixels = output.AsSpan;
 
+			var componentValues = alphas.Decode();
+
 			for (var i = 0; i < pixels.Length; i++)
 			{
-				pixels[i].A = (byte)alphas.DecodeSingle(i);
+				pixels[i].A = componentValues[i];
 			}
 			return output;
 		}

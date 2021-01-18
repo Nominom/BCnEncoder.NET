@@ -4,13 +4,13 @@ namespace BCnEncoder.Encoder
 {
 	internal class Bc5BlockEncoder : BaseBcBlockEncoder<Bc5Block>
 	{
-		private readonly Bc4BlockEncoder redBlockEncoder;
-		private readonly Bc4BlockEncoder greenBlockEncoder;
+		private readonly Bc4ComponentBlockEncoder redBlockEncoder;
+		private readonly Bc4ComponentBlockEncoder greenBlockEncoder;
 
 		public Bc5BlockEncoder()
 		{
-			redBlockEncoder = new Bc4BlockEncoder(false, Bc4Component.R);
-			greenBlockEncoder = new Bc4BlockEncoder(false, Bc4Component.G);
+			redBlockEncoder = new Bc4ComponentBlockEncoder(Bc4Component.R);
+			greenBlockEncoder = new Bc4ComponentBlockEncoder(Bc4Component.G);
 		}
 
 		public override Bc5Block EncodeBlock(RawBlock4X4Rgba32 block, CompressionQuality quality)
@@ -19,7 +19,7 @@ namespace BCnEncoder.Encoder
 			{
 				redBlock = redBlockEncoder.EncodeBlock(block, quality),
 				greenBlock = greenBlockEncoder.EncodeBlock(block, quality)
-			}; ;
+			};
 		}
 
 		public override GlInternalFormat GetInternalFormat()

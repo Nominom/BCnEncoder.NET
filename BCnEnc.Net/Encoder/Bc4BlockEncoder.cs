@@ -9,65 +9,27 @@ namespace BCnEncoder.Encoder
 		R,
 		G,
 		B,
-		A
+		A,
+		Luminance
 	}
 
 	internal class Bc4BlockEncoder : BaseBcBlockEncoder<Bc4Block>
 	{
-		private readonly bool luminanceAsComponent;
-		private readonly Bc4Component component;
+		private readonly Bc4ComponentBlockEncoder bc4Encoder;
 
-		public Bc4BlockEncoder(bool luminanceAsComponent, Bc4Component component = Bc4Component.R)
+		public Bc4BlockEncoder(bool luminanceAsRed)
 		{
-			this.luminanceAsComponent = luminanceAsComponent;
-			this.component = component;
+			bc4Encoder = new Bc4ComponentBlockEncoder(luminanceAsRed ? Bc4Component.Luminance : Bc4Component.R);
 		}
 
 		public override Bc4Block EncodeBlock(RawBlock4X4Rgba32 block, CompressionQuality quality)
 		{
-			var output = new Bc4Block();
-			var colors = new byte[16];
-			var pixels = block.AsSpan;
-			for (var i = 0; i < 16; i++)
+			var output = new Bc4Block
 			{
-				if (luminanceAsComponent)
-				{
-					colors[i] = (byte)(new ColorYCbCr(pixels[i]).y * 255);
-				}
-				else
-				{
-					switch (component)
-					{
-						case Bc4Component.R:
-							colors[i] = pixels[i].R;
-							break;
+				redBlock = bc4Encoder.EncodeBlock(block, quality)
+			};
 
-						case Bc4Component.G:
-							colors[i] = pixels[i].G;
-							break;
-
-						case Bc4Component.B:
-							colors[i] = pixels[i].B;
-							break;
-
-						case Bc4Component.A:
-							colors[i] = pixels[i].A;
-							break;
-					}
-				}
-			}
-			switch (quality)
-			{
-				case CompressionQuality.Fast:
-					return FindComponentValues(output, colors, 3);
-				case CompressionQuality.Balanced:
-					return FindComponentValues(output, colors, 4);
-				case CompressionQuality.BestQuality:
-					return FindComponentValues(output, colors, 8);
-
-				default:
-					throw new ArgumentOutOfRangeException(nameof(quality), quality, null);
-			}
+			return output;
 		}
 
 		public override GlInternalFormat GetInternalFormat()
@@ -84,10 +46,65 @@ namespace BCnEncoder.Encoder
 		{
 			return DxgiFormat.DxgiFormatBc4Unorm;
 		}
+	}
+
+	internal class Bc4ComponentBlockEncoder
+	{
+		private readonly Bc4Component component;
+
+		public Bc4ComponentBlockEncoder(Bc4Component component)
+		{
+			this.component = component;
+		}
+
+		public Bc4ComponentBlock EncodeBlock(RawBlock4X4Rgba32 block, CompressionQuality quality)
+		{
+			var output = new Bc4ComponentBlock();
+
+			var pixels = block.AsSpan;
+			var colors = new byte[pixels.Length];
+
+			for (var i = 0; i < pixels.Length; i++)
+				switch (component)
+				{
+					case Bc4Component.R:
+						colors[i] = pixels[i].R;
+						break;
+
+					case Bc4Component.G:
+						colors[i] = pixels[i].G;
+						break;
+
+					case Bc4Component.B:
+						colors[i] = pixels[i].B;
+						break;
+
+					case Bc4Component.A:
+						colors[i] = pixels[i].A;
+						break;
+
+					case Bc4Component.Luminance:
+						colors[i] = (byte)(new ColorYCbCr(pixels[i]).y * 255);
+						break;
+				}
+
+			switch (quality)
+			{
+				case CompressionQuality.Fast:
+					return FindComponentValues(output, colors, 3);
+				case CompressionQuality.Balanced:
+					return FindComponentValues(output, colors, 4);
+				case CompressionQuality.BestQuality:
+					return FindComponentValues(output, colors, 8);
+
+				default:
+					throw new ArgumentOutOfRangeException(nameof(quality), quality, null);
+			}
+		}
 
 		#region Encoding private stuff
 
-		private static Bc4Block FindComponentValues(Bc4Block colorBlock, byte[] pixels, int variations)
+		private static Bc4ComponentBlock FindComponentValues(Bc4ComponentBlock colorBlock, byte[] pixels, int variations)
 		{
 
 			//Find min and max alpha
@@ -108,7 +125,7 @@ namespace BCnEncoder.Encoder
 			}
 
 
-			int SelectIndices(ref Bc4Block block)
+			int SelectIndices(ref Bc4ComponentBlock block)
 			{
 				var cumulativeError = 0;
 				var c0 = block.Endpoint0;

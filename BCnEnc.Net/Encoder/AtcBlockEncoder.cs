@@ -15,7 +15,7 @@ namespace BCnEncoder.Encoder
 		{
 			var atcBlock = new AtcBlock();
 
-			// Encode with BC1 first
+			// EncodeBlock with BC1 first
 			var bc1Block = bc1BlockEncoder.EncodeBlock(block, quality);
 
 			// Atc specific modifications to BC1
@@ -64,7 +64,7 @@ namespace BCnEncoder.Encoder
 		{
 			var atcBlock = atcBlockEncoder.EncodeBlock(block, quality);
 
-			// Encode alpha
+			// EncodeBlock alpha
 			var bc2AlphaBlock = new Bc2AlphaBlock();
 			for (var i = 0; i < 16; i++)
 			{
@@ -96,12 +96,12 @@ namespace BCnEncoder.Encoder
 
 	internal class AtcInterpolatedAlphaBlockEncoder : BaseBcBlockEncoder<AtcInterpolatedAlphaBlock>
 	{
-		private readonly Bc4BlockEncoder bc4BlockEncoder;
+		private readonly Bc4ComponentBlockEncoder bc4BlockEncoder;
 		private readonly AtcBlockEncoder atcBlockEncoder;
 
 		public AtcInterpolatedAlphaBlockEncoder()
 		{
-			bc4BlockEncoder = new Bc4BlockEncoder(false, Bc4Component.A);
+			bc4BlockEncoder = new Bc4ComponentBlockEncoder(Bc4Component.A);
 			atcBlockEncoder = new AtcBlockEncoder();
 		}
 

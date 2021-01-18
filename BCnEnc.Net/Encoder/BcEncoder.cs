@@ -435,7 +435,7 @@ namespace BCnEncoder.Encoder
 				TaskCount = Options.TaskCount
 			};
 
-			// Encode mipmap levels
+			// EncodeBlock mipmap levels
 			for (var mip = 0; mip < numMipMaps; mip++)
 			{
 				byte[] encoded;
@@ -514,7 +514,7 @@ namespace BCnEncoder.Encoder
 				TaskCount = Options.TaskCount
 			};
 
-			// Encode mipmap levels
+			// EncodeBlock mipmap levels
 			for (var mip = 0; mip < numMipMaps; mip++)
 			{
 				byte[] encoded;
@@ -601,7 +601,7 @@ namespace BCnEncoder.Encoder
 				TaskCount = Options.TaskCount
 			};
 
-			// Encode all mipmap levels
+			// EncodeBlock all mipmap levels
 			for (var mip = 0; mip < numMipMaps; mip++)
 			{
 				byte[] encoded;
@@ -686,7 +686,7 @@ namespace BCnEncoder.Encoder
 				TaskCount = Options.TaskCount
 			};
 
-			// Encode mipmap level
+			// EncodeBlock mipmap level
 			byte[] encoded;
 			if (isCompressedFormat)
 			{
@@ -791,12 +791,12 @@ namespace BCnEncoder.Encoder
 				TaskCount = Options.TaskCount
 			};
 
-			// Encode all faces
+			// EncodeBlock all faces
 			for (var face = 0; face < faces.Length; face++)
 			{
 				var mipChain = MipMapper.GenerateMipChain(faces[face], ref numMipMaps);
 
-				// Encode all mipmap levels per face
+				// EncodeBlock all mipmap levels per face
 				for (var mip = 0; mip < numMipMaps; mip++)
 				{
 					byte[] encoded;
@@ -895,12 +895,12 @@ namespace BCnEncoder.Encoder
 				TaskCount = Options.TaskCount
 			};
 
-			// Encode all faces
+			// EncodeBlock all faces
 			for (var face = 0; face < faces.Length; face++)
 			{
 				var mipChain = MipMapper.GenerateMipChain(faces[face], ref numMipMaps);
 
-				// Encode all mipmap levels per face
+				// EncodeBlock all mipmap levels per face
 				for (var mip = 0; mip < numMipMaps; mip++)
 				{
 					byte[] encoded;

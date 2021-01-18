@@ -3,7 +3,6 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-using BCnEncoder.Encoder;
 using BCnEncoder.Shared;
 
 namespace BCnEncoder.Decoder
@@ -107,7 +106,7 @@ namespace BCnEncoder.Decoder
 
 		protected override RawBlock4X4Rgba32 DecodeBlock(Bc4Block block)
 		{
-			return block.Decode(redAsLuminance, Bc4Component.R);
+			return block.Decode(redAsLuminance);
 		}
 	}
 

@@ -1,13 +1,12 @@
 using System;
-using System.Diagnostics;
-using System.Runtime.InteropServices;
-using System.Threading.Tasks;
 using BCnEncoder.Shared;
 
 namespace BCnEncoder.Encoder
 {
 	internal class Bc3BlockEncoder : BaseBcBlockEncoder<Bc3Block>
 	{
+		private static readonly Bc4ComponentBlockEncoder bc4BlockEncoder = new Bc4ComponentBlockEncoder(Bc4Component.A);
+
 		public override Bc3Block EncodeBlock(RawBlock4X4Rgba32 block, CompressionQuality quality)
 		{
 			switch (quality)
@@ -71,189 +70,12 @@ namespace BCnEncoder.Encoder
 			return output;
 		}
 
-		private static Bc3Block FindAlphaValues(Bc3Block colorBlock, RawBlock4X4Rgba32 rawBlock, int variations)
-		{
-			var pixels = rawBlock.AsSpan;
-
-			//Find min and max alpha
-			byte minAlpha = 255;
-			byte maxAlpha = 0;
-			var hasExtremeValues = false;
-			for (var i = 0; i < pixels.Length; i++)
-			{
-				if (pixels[i].A < 255 && pixels[i].A > 0)
-				{
-					if (pixels[i].A < minAlpha) minAlpha = pixels[i].A;
-					if (pixels[i].A > maxAlpha) maxAlpha = pixels[i].A;
-				}
-				else
-				{
-					hasExtremeValues = true;
-				}
-			}
-
-
-			int SelectAlphaIndices(ref Bc3Block block)
-			{
-				var cumulativeError = 0;
-				var a0 = block.Alpha0;
-				var a1 = block.Alpha1;
-				var alphas = a0 > a1 ? stackalloc byte[] {
-					a0,
-					a1,
-					a0.InterpolateSeventh(a1, 1),
-					a0.InterpolateSeventh(a1, 2),
-					a0.InterpolateSeventh(a1, 3),
-					a0.InterpolateSeventh(a1, 4),
-					a0.InterpolateSeventh(a1, 5),
-					a0.InterpolateSeventh(a1, 6)
-				} : stackalloc byte[] {
-					a0,
-					a1,
-					a0.InterpolateFifth(a1, 1),
-					a0.InterpolateFifth(a1, 2),
-					a0.InterpolateFifth(a1, 3),
-					a0.InterpolateFifth(a1, 4),
-					0,
-					255
-				};
-				var pixels = rawBlock.AsSpan;
-				for (var i = 0; i < pixels.Length; i++)
-				{
-					byte bestIndex = 0;
-					var bestError = Math.Abs(pixels[i].A - alphas[0]);
-					for (byte j = 1; j < alphas.Length; j++)
-					{
-						var error = Math.Abs(pixels[i].A - alphas[j]);
-						if (error < bestError)
-						{
-							bestIndex = j;
-							bestError = error;
-						}
-						if (bestError == 0) break;
-					}
-					block.SetAlphaIndex(i, bestIndex);
-					cumulativeError += bestError * bestError;
-				}
-
-				return cumulativeError;
-			}
-
-			//everything is either fully opaque or fully transparent
-			if (hasExtremeValues && minAlpha == 255 && maxAlpha == 0)
-			{
-				colorBlock.Alpha0 = 0;
-				colorBlock.Alpha1 = 255;
-				var error = SelectAlphaIndices(ref colorBlock);
-				Debug.Assert(0 == error);
-				return colorBlock;
-			}
-
-			var best = colorBlock;
-			best.Alpha0 = maxAlpha;
-			best.Alpha1 = minAlpha;
-			var bestError = SelectAlphaIndices(ref best);
-			if (bestError == 0)
-			{
-				return best;
-			}
-			for (byte i = 1; i < variations; i++)
-			{
-				{
-					var a0 = ByteHelper.ClampToByte(maxAlpha - i * 2);
-					var a1 = ByteHelper.ClampToByte(minAlpha + i * 2);
-					var block = colorBlock;
-					block.Alpha0 = hasExtremeValues ? a1 : a0;
-					block.Alpha1 = hasExtremeValues ? a0 : a1;
-					var error = SelectAlphaIndices(ref block);
-					if (error < bestError)
-					{
-						best = block;
-						bestError = error;
-					}
-				}
-				{
-					var a0 = ByteHelper.ClampToByte(maxAlpha + i * 2);
-					var a1 = ByteHelper.ClampToByte(minAlpha - i * 2);
-					var block = colorBlock;
-					block.Alpha0 = hasExtremeValues ? a1 : a0;
-					block.Alpha1 = hasExtremeValues ? a0 : a1;
-					var error = SelectAlphaIndices(ref block);
-					if (error < bestError)
-					{
-						best = block;
-						bestError = error;
-					}
-				}
-				{
-					var a0 = ByteHelper.ClampToByte(maxAlpha);
-					var a1 = ByteHelper.ClampToByte(minAlpha - i * 2);
-					var block = colorBlock;
-					block.Alpha0 = hasExtremeValues ? a1 : a0;
-					block.Alpha1 = hasExtremeValues ? a0 : a1;
-					var error = SelectAlphaIndices(ref block);
-					if (error < bestError)
-					{
-						best = block;
-						bestError = error;
-					}
-				}
-				{
-					var a0 = ByteHelper.ClampToByte(maxAlpha + i * 2);
-					var a1 = ByteHelper.ClampToByte(minAlpha);
-					var block = colorBlock;
-					block.Alpha0 = hasExtremeValues ? a1 : a0;
-					block.Alpha1 = hasExtremeValues ? a0 : a1;
-					var error = SelectAlphaIndices(ref block);
-					if (error < bestError)
-					{
-						best = block;
-						bestError = error;
-					}
-				}
-				{
-					var a0 = ByteHelper.ClampToByte(maxAlpha);
-					var a1 = ByteHelper.ClampToByte(minAlpha + i * 2);
-					var block = colorBlock;
-					block.Alpha0 = hasExtremeValues ? a1 : a0;
-					block.Alpha1 = hasExtremeValues ? a0 : a1;
-					var error = SelectAlphaIndices(ref block);
-					if (error < bestError)
-					{
-						best = block;
-						bestError = error;
-					}
-				}
-				{
-					var a0 = ByteHelper.ClampToByte(maxAlpha - i * 2);
-					var a1 = ByteHelper.ClampToByte(minAlpha);
-					var block = colorBlock;
-					block.Alpha0 = hasExtremeValues ? a1 : a0;
-					block.Alpha1 = hasExtremeValues ? a0 : a1;
-					var error = SelectAlphaIndices(ref block);
-					if (error < bestError)
-					{
-						best = block;
-						bestError = error;
-					}
-				}
-
-				if (bestError < 10)
-				{
-					break;
-				}
-			}
-
-			return best;
-		}
-
 		#endregion
 
 		#region Encoders
 
 		private static class Bc3BlockEncoderFast
 		{
-
 			internal static Bc3Block EncodeBlock(RawBlock4X4Rgba32 rawBlock)
 			{
 				var pixels = rawBlock.AsSpan;
@@ -271,8 +93,8 @@ namespace BCnEncoder.Encoder
 					c1 = c;
 				}
 
-				var output = TryColors(rawBlock, c0, c1, out var _);
-				output = FindAlphaValues(output, rawBlock, 3);
+				var output = TryColors(rawBlock, c0, c1, out _);
+				output.alphaBlock = bc4BlockEncoder.EncodeBlock(rawBlock, CompressionQuality.Fast);
 
 				return output;
 			}
@@ -314,7 +136,7 @@ namespace BCnEncoder.Encoder
 						break;
 					}
 				}
-				best = FindAlphaValues(best, rawBlock, 5);
+				best.alphaBlock = bc4BlockEncoder.EncodeBlock(rawBlock, CompressionQuality.Balanced);
 				return best;
 			}
 		}
@@ -376,7 +198,7 @@ namespace BCnEncoder.Encoder
 					}
 				}
 
-				best = FindAlphaValues(best, rawBlock, 8);
+				best.alphaBlock = bc4BlockEncoder.EncodeBlock(rawBlock, CompressionQuality.BestQuality);
 				return best;
 			}
 		}
