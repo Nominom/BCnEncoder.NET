@@ -62,27 +62,7 @@ namespace BCnEncoder.Shared
 				for (var face = 0; face < faceCount; face++)
 				{
 					var format = dx10Format ? dx10Header.dxgiFormat : header.ddsPixelFormat.DxgiFormat;
-
-					uint sizeInBytes;
-					if (format.IsCompressedFormat())
-					{
-						sizeInBytes = (uint)Math.Max(1, ((width + 3) & ~3) >> 2) * (uint)Math.Max(1, ((height + 3) & ~3) >> 2);
-						if (format == DxgiFormat.DxgiFormatBc1Unorm ||
-							format == DxgiFormat.DxgiFormatBc1UnormSrgb ||
-							format == DxgiFormat.DxgiFormatBc1Typeless)
-						{
-							sizeInBytes *= 8;
-						}
-						else
-						{
-							sizeInBytes *= 16;
-						}
-					}
-					else
-					{
-						sizeInBytes = width * height;
-						sizeInBytes = (uint)(sizeInBytes * format.GetByteSize());
-					}
+					var sizeInBytes = GetSizeInBytes(format, width, height);
 
 					output.Faces.Add(new DdsFace(width, height, sizeInBytes, (int)mipMapCount));
 
@@ -96,34 +76,9 @@ namespace BCnEncoder.Shared
 
 						if (mip > 0) //Calculate new byteSize
 						{
-							sizeInBytes = Math.Max(1, (mipWidth + 3) / 4) * Math.Max(1, (mipHeight + 3) / 4);
-							if (!dx10Format)
-							{
-								if (header.ddsPixelFormat.IsDxt1To5CompressedFormat)
-								{
-									if (header.ddsPixelFormat.DxgiFormat == DxgiFormat.DxgiFormatBc1Unorm)
-									{
-										sizeInBytes *= 8;
-									}
-									else
-									{
-										sizeInBytes *= 16;
-									}
-								}
-								else
-								{
-									sizeInBytes = header.dwPitchOrLinearSize / (uint)Math.Pow(2, mip) * mipHeight;
-								}
-							}
-							else if (dx10Header.dxgiFormat.IsCompressedFormat())
-							{
-								sizeInBytes = (uint)(sizeInBytes * dx10Header.dxgiFormat.GetByteSize());
-							}
-							else
-							{
-								sizeInBytes = header.dwPitchOrLinearSize / (uint)Math.Pow(2, mip) * mipHeight;
-							}
+							sizeInBytes = GetSizeInBytes(format, mipWidth, mipHeight);
 						}
+
 						var data = new byte[sizeInBytes];
 						br.Read(data);
 						output.Faces[face].MipMaps[mip] = new DdsMipMap(data, mipWidth, mipHeight);
@@ -193,6 +148,32 @@ namespace BCnEncoder.Shared
 					}
 				}
 			}
+		}
+
+		private static uint GetSizeInBytes(DxgiFormat format, uint width, uint height)
+		{
+			uint sizeInBytes;
+			if (format.IsCompressedFormat())
+			{
+				sizeInBytes = (uint)Math.Max(1, ((width + 3) & ~3) >> 2) * (uint)Math.Max(1, ((height + 3) & ~3) >> 2);
+				if (format == DxgiFormat.DxgiFormatBc1Unorm ||
+					format == DxgiFormat.DxgiFormatBc1UnormSrgb ||
+					format == DxgiFormat.DxgiFormatBc1Typeless)
+				{
+					sizeInBytes *= 8;
+				}
+				else
+				{
+					sizeInBytes *= 16;
+				}
+			}
+			else
+			{
+				sizeInBytes = width * height;
+				sizeInBytes = (uint)(sizeInBytes * format.GetByteSize());
+			}
+
+			return sizeInBytes;
 		}
 	}
 
