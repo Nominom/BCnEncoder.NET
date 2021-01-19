@@ -9,11 +9,12 @@ namespace BCnEncoder.Shared
 
 		internal static RawBlock4X4Rgba32[] ImageTo4X4(ImageFrame<Rgba32> image, out int blocksWidth, out int blocksHeight)
 		{
-			blocksWidth = (int)MathF.Ceiling(image.Width / 4.0f);
-			blocksHeight = (int)MathF.Ceiling(image.Height / 4.0f);
+			blocksWidth = ((image.Width + 3) & ~3) >> 2;
+			blocksHeight = ((image.Height + 3) & ~3) >> 2;
 			var output = new RawBlock4X4Rgba32[blocksWidth * blocksHeight];
 
-			if (!image.TryGetSinglePixelSpan(out var pixels)) {
+			if (!image.TryGetSinglePixelSpan(out var pixels))
+			{
 				throw new Exception("Cannot get pixel span.");
 			}
 
@@ -22,19 +23,19 @@ namespace BCnEncoder.Shared
 				for (var x = 0; x < image.Width; x++)
 				{
 					var color = pixels[x + y * image.Width];
-					var blockIndexX = (int)MathF.Floor(x / 4.0f);
-					var blockIndexY = (int)MathF.Floor(y / 4.0f);
-					var blockInternalIndexX = x % 4;
-					var blockInternalIndexY = y % 4;
+					var blockIndexX = x >> 2;
+					var blockIndexY = y >> 2;
+					var blockInternalIndexX = x & 3;
+					var blockInternalIndexY = y & 3;
 
 					output[blockIndexX + blockIndexY * blocksWidth][blockInternalIndexX, blockInternalIndexY] = color;
 				}
 			}
 
 			//Fill in block y with edge color
-			if (image.Height % 4 != 0)
+			if ((image.Height & 3) != 0)
 			{
-				var yPaddingStart = image.Height % 4;
+				var yPaddingStart = image.Height & 3;
 				for (var i = 0; i < blocksWidth; i++)
 				{
 					var lastBlock = output[i + blocksWidth * (blocksHeight - 1)];
@@ -50,9 +51,9 @@ namespace BCnEncoder.Shared
 			}
 
 			//Fill in block x with edge color
-			if (image.Width % 4 != 0)
+			if ((image.Width & 3) != 0)
 			{
-				var xPaddingStart = image.Width % 4;
+				var xPaddingStart = image.Width & 3;
 				for (var i = 0; i < blocksHeight; i++)
 				{
 					var lastBlock = output[blocksWidth - 1 + i * blocksWidth];
@@ -76,8 +77,9 @@ namespace BCnEncoder.Shared
 		internal static Image<Rgba32> ImageFromRawBlocks(RawBlock4X4Rgba32[,] blocks, int blocksWidth, int blocksHeight, int pixelWidth, int pixelHeight)
 		{
 			var output = new Image<Rgba32>(pixelWidth, pixelHeight);
-			
-			if (!output.TryGetSinglePixelSpan(out var pixels)) {
+
+			if (!output.TryGetSinglePixelSpan(out var pixels))
+			{
 				throw new Exception("Cannot get pixel span.");
 			}
 
@@ -85,10 +87,10 @@ namespace BCnEncoder.Shared
 			{
 				for (var x = 0; x < output.Width; x++)
 				{
-					var blockIndexX = (int)MathF.Floor(x / 4.0f);
-					var blockIndexY = (int)MathF.Floor(y / 4.0f);
-					var blockInternalIndexX = x % 4;
-					var blockInternalIndexY = y % 4;
+					var blockIndexX = x >> 2;
+					var blockIndexY = y >> 2;
+					var blockInternalIndexX = x & 3;
+					var blockInternalIndexY = y & 3;
 
 					pixels[x + y * output.Width] =
 						blocks[blockIndexX, blockIndexY]
@@ -105,8 +107,9 @@ namespace BCnEncoder.Shared
 		internal static Image<Rgba32> ImageFromRawBlocks(RawBlock4X4Rgba32[] blocks, int blocksWidth, int blocksHeight, int pixelWidth, int pixelHeight)
 		{
 			var output = new Image<Rgba32>(pixelWidth, pixelHeight);
-			
-			if (!output.TryGetSinglePixelSpan(out var pixels)) {
+
+			if (!output.TryGetSinglePixelSpan(out var pixels))
+			{
 				throw new Exception("Cannot get pixel span.");
 			}
 
@@ -114,10 +117,10 @@ namespace BCnEncoder.Shared
 			{
 				for (var x = 0; x < output.Width; x++)
 				{
-					var blockIndexX = (int)MathF.Floor(x / 4.0f);
-					var blockIndexY = (int)MathF.Floor(y / 4.0f);
-					var blockInternalIndexX = x % 4;
-					var blockInternalIndexY = y % 4;
+					var blockIndexX = x >> 2;
+					var blockIndexY = y >> 2;
+					var blockInternalIndexX = x & 3;
+					var blockInternalIndexY = y & 3;
 
 					pixels[x + y * output.Width] =
 						blocks[blockIndexX + blockIndexY * blocksWidth]
@@ -130,8 +133,8 @@ namespace BCnEncoder.Shared
 
 		public static int CalculateNumOfBlocks(int pixelWidth, int pixelHeight)
 		{
-			int blocksWidth = (int)MathF.Ceiling(pixelWidth / 4.0f);
-			int blocksHeight = (int)MathF.Ceiling(pixelHeight / 4.0f);
+			var blocksWidth = ((pixelWidth + 3) & ~3) >> 2;
+			var blocksHeight = ((pixelHeight + 3) & ~3) >> 2;
 			return blocksWidth * blocksHeight;
 		}
 	}

@@ -55,39 +55,35 @@ namespace BCnEncoder.Shared
 				}
 
 				var mipMapCount = (header.dwCaps & HeaderCaps.DdscapsMipmap) != 0 ? header.dwMipMapCount : 1;
-				var faceCount = (header.dwCaps2 & HeaderCaps2.Ddscaps2Cubemap) != 0 ? (uint)6 : (uint)1;
+				var faceCount = (header.dwCaps2 & HeaderCaps2.Ddscaps2Cubemap) != 0 ? 6u : 1u;
 				var width = header.dwWidth;
 				var height = header.dwHeight;
 
 				for (var face = 0; face < faceCount; face++)
 				{
-					var sizeInBytes = Math.Max(1, (width + 3) / 4) * Math.Max(1, (height + 3) / 4);
-					if (!dx10Format)
+					var format = dx10Format ? dx10Header.dxgiFormat : header.ddsPixelFormat.DxgiFormat;
+
+					uint sizeInBytes;
+					if (format.IsCompressedFormat())
 					{
-						if (header.ddsPixelFormat.IsDxt1To5CompressedFormat)
+						sizeInBytes = (uint)Math.Max(1, ((width + 3) & ~3) >> 2) * (uint)Math.Max(1, ((height + 3) & ~3) >> 2);
+						if (format == DxgiFormat.DxgiFormatBc1Unorm ||
+							format == DxgiFormat.DxgiFormatBc1UnormSrgb ||
+							format == DxgiFormat.DxgiFormatBc1Typeless)
 						{
-							if (header.ddsPixelFormat.DxgiFormat == DxgiFormat.DxgiFormatBc1Unorm)
-							{
-								sizeInBytes *= 8;
-							}
-							else
-							{
-								sizeInBytes *= 16;
-							}
+							sizeInBytes *= 8;
 						}
 						else
 						{
-							sizeInBytes = header.dwPitchOrLinearSize * height;
+							sizeInBytes *= 16;
 						}
-					}
-					else if (dx10Header.dxgiFormat.IsCompressedFormat())
-					{
-						sizeInBytes = (uint)(sizeInBytes * dx10Header.dxgiFormat.GetByteSize());
 					}
 					else
 					{
-						sizeInBytes = header.dwPitchOrLinearSize * height;
+						sizeInBytes = width * height;
+						sizeInBytes = (uint)(sizeInBytes * format.GetByteSize());
 					}
+
 					output.Faces.Add(new DdsFace(width, height, sizeInBytes, (int)mipMapCount));
 
 					for (var mip = 0; mip < mipMapCount; mip++)
@@ -462,7 +458,7 @@ namespace BCnEncoder.Shared
 								}
 
 								if (dwRBitMask == 0xff0000 && dwGBitMask == 0xff00 && dwBBitMask == 0xff &&
-								    dwABitMask == 0xff000000)
+									dwABitMask == 0xff000000)
 								{
 									return DxgiFormat.DxgiFormatB8G8R8A8Unorm;
 								}
@@ -526,7 +522,6 @@ namespace BCnEncoder.Shared
 		public uint arraySize;
 		public uint miscFlags2;
 	}
-
 
 	public class DdsFace
 	{
