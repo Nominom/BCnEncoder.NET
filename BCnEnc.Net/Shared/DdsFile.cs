@@ -68,8 +68,8 @@ namespace BCnEncoder.Shared
 
 					for (var mip = 0; mip < mipMapCount; mip++)
 					{
-						var mipWidth = header.dwWidth / (uint)Math.Pow(2, mip);
-						var mipHeight = header.dwHeight / (uint)Math.Pow(2, mip);
+						var mipWidth = header.dwWidth >> mip;
+						var mipHeight = header.dwHeight >> mip;
 						// Saw this in a 1024x512 dds with 11 mipMapCount. Height became 0 (should be 1)
 						mipWidth = Math.Max(mipWidth, 1);
 						mipHeight = Math.Max(mipHeight, 1);
