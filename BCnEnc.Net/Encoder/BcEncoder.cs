@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using BCnEncoder.Encoder.Bc7;
@@ -436,6 +437,10 @@ namespace BCnEncoder.Encoder
 					TaskCount = Options.TaskCount
 				};
 
+				// Calculate total blocks
+				var totalBlocks = isCompressedFormat ? mipChain.Sum(m => ImageToBlocks.CalculateNumOfBlocks(m.Width, m.Height)) : mipChain.Sum(m => m.Width * m.Height);
+				context.Progress = new OperationProgress(Options.Progress, totalBlocks);
+
 				// Encode mipmap levels
 				for (var mip = 0; mip < numMipMaps; mip++)
 				{
@@ -446,6 +451,8 @@ namespace BCnEncoder.Encoder
 							out var blocksHeight);
 						encoded = compressedEncoder.Encode(blocks, blocksWidth, blocksHeight, OutputOptions.Quality,
 							context);
+
+						context.Progress.SetProcessedBlocks(mipChain.Take(mip + 1).Sum(x => ImageToBlocks.CalculateNumOfBlocks(x.Width, x.Height)));
 					}
 					else
 					{
@@ -453,6 +460,8 @@ namespace BCnEncoder.Encoder
 							throw new Exception("Cannot get pixel span.");
 
 						encoded = uncompressedEncoder.Encode(mipPixels);
+
+						context.Progress.SetProcessedBlocks(mipChain.Take(mip + 1).Sum(x => x.Width * x.Height));
 					}
 
 					output.MipMaps.Add(new KtxMipmap((uint)encoded.Length,
@@ -521,6 +530,10 @@ namespace BCnEncoder.Encoder
 					TaskCount = Options.TaskCount
 				};
 
+				// Calculate total blocks
+				var totalBlocks = isCompressedFormat ? mipChain.Sum(m => ImageToBlocks.CalculateNumOfBlocks(m.Width, m.Height)) : mipChain.Sum(m => m.Width * m.Height);
+				context.Progress = new OperationProgress(Options.Progress, totalBlocks);
+
 				// Encode mipmap levels
 				for (var mip = 0; mip < numMipMaps; mip++)
 				{
@@ -529,6 +542,8 @@ namespace BCnEncoder.Encoder
 					{
 						var blocks = ImageToBlocks.ImageTo4X4(mipChain[mip].Frames[0], out var blocksWidth, out var blocksHeight);
 						encoded = compressedEncoder.Encode(blocks, blocksWidth, blocksHeight, OutputOptions.Quality, context);
+
+						context.Progress.SetProcessedBlocks(mipChain.Take(mip + 1).Sum(x => ImageToBlocks.CalculateNumOfBlocks(x.Width, x.Height)));
 					}
 					else
 					{
@@ -538,6 +553,8 @@ namespace BCnEncoder.Encoder
 						}
 
 						encoded = uncompressedEncoder.Encode(mipPixels);
+
+						context.Progress.SetProcessedBlocks(mipChain.Take(mip + 1).Sum(x => x.Width * x.Height));
 					}
 
 					if (mip == 0)
@@ -612,6 +629,10 @@ namespace BCnEncoder.Encoder
 					TaskCount = Options.TaskCount
 				};
 
+				// Calculate total blocks
+				var totalBlocks = isCompressedFormat ? mipChain.Sum(m => ImageToBlocks.CalculateNumOfBlocks(m.Width, m.Height)) : mipChain.Sum(m => m.Width * m.Height);
+				context.Progress = new OperationProgress(Options.Progress, totalBlocks);
+
 				// Encode all mipmap levels
 				for (var mip = 0; mip < numMipMaps; mip++)
 				{
@@ -620,6 +641,8 @@ namespace BCnEncoder.Encoder
 					{
 						var blocks = ImageToBlocks.ImageTo4X4(mipChain[mip].Frames[0], out var blocksWidth, out var blocksHeight);
 						encoded = compressedEncoder.Encode(blocks, blocksWidth, blocksHeight, OutputOptions.Quality, context);
+
+						context.Progress.SetProcessedBlocks(mipChain.Take(mip + 1).Sum(x => ImageToBlocks.CalculateNumOfBlocks(x.Width, x.Height)));
 					}
 					else
 					{
@@ -629,6 +652,8 @@ namespace BCnEncoder.Encoder
 						}
 
 						encoded = uncompressedEncoder.Encode(mipPixels);
+
+						context.Progress.SetProcessedBlocks(mipChain.Take(mip + 1).Sum(x => x.Width * x.Height));
 					}
 
 					output.Add(encoded);
@@ -651,6 +676,7 @@ namespace BCnEncoder.Encoder
 			{
 				throw new ArgumentException("The input pixels must be provided in 4 bytes per pixel rgba format.");
 			}
+
 			using var image = Image.LoadPixelData<Rgba32>(inputPixelsRgba, inputImageWidth, inputImageHeight);
 			return EncodeToRawBytesInternal(image, mipLevel, out mipWidth, out mipHeight, token);
 		}
@@ -695,6 +721,10 @@ namespace BCnEncoder.Encoder
 					TaskCount = Options.TaskCount
 				};
 
+				// Calculate total blocks
+				var totalBlocks = isCompressedFormat ? ImageToBlocks.CalculateNumOfBlocks(mipChain[mipLevel].Width, mipChain[mipLevel].Height) : mipChain[mipLevel].Width * mipChain[mipLevel].Height;
+				context.Progress = new OperationProgress(Options.Progress, totalBlocks);
+
 				// Encode mipmap level
 				byte[] encoded;
 				if (isCompressedFormat)
@@ -714,7 +744,6 @@ namespace BCnEncoder.Encoder
 
 				mipWidth = mipChain[mipLevel].Width;
 				mipHeight = mipChain[mipLevel].Height;
-
 
 				return encoded;
 			}
@@ -802,7 +831,20 @@ namespace BCnEncoder.Encoder
 				TaskCount = Options.TaskCount
 			};
 
-			// EncodeBlock all faces
+			// Calculate total blocks
+			var totalBlocks = 0;
+			foreach (var face in faces)
+			{
+				for (var mip = 0; mip < numMipMaps; mip++)
+				{
+					MipMapper.CalculateMipLevelSize(face.Width, face.Height, mip, out var mipWidth, out var mipHeight);
+					totalBlocks += isCompressedFormat ? ImageToBlocks.CalculateNumOfBlocks(mipWidth, mipHeight) : mipWidth * mipHeight;
+				}
+			}
+			context.Progress = new OperationProgress(Options.Progress, totalBlocks);
+
+			// Encode all faces
+			var processedBlocks = 0;
 			for (var face = 0; face < faces.Length; face++)
 			{
 				var mipChain = MipMapper.GenerateMipChain(faces[face], ref numMipMaps);
@@ -816,6 +858,9 @@ namespace BCnEncoder.Encoder
 						{
 							var blocks = ImageToBlocks.ImageTo4X4(mipChain[mip].Frames[0], out var blocksWidth, out var blocksHeight);
 							encoded = compressedEncoder.Encode(blocks, blocksWidth, blocksHeight, OutputOptions.Quality, context);
+
+							processedBlocks += blocks.Length;
+							context.Progress.SetProcessedBlocks(processedBlocks);
 						}
 						else
 						{
@@ -825,6 +870,9 @@ namespace BCnEncoder.Encoder
 							}
 
 							encoded = uncompressedEncoder.Encode(mipPixels);
+
+							processedBlocks += mipPixels.Length;
+							context.Progress.SetProcessedBlocks(processedBlocks);
 						}
 
 						if (face == 0)
@@ -908,7 +956,20 @@ namespace BCnEncoder.Encoder
 				TaskCount = Options.TaskCount
 			};
 
+			// Calculate total blocks
+			var totalBlocks = 0;
+			foreach (var face in faces)
+			{
+				for (var mip = 0; mip < numMipMaps; mip++)
+				{
+					MipMapper.CalculateMipLevelSize(face.Width, face.Height, mip, out var mipWidth, out var mipHeight);
+					totalBlocks += isCompressedFormat ? ImageToBlocks.CalculateNumOfBlocks(mipWidth, mipHeight) : mipWidth * mipHeight;
+				}
+			}
+			context.Progress = new OperationProgress(Options.Progress, totalBlocks);
+
 			// EncodeBlock all faces
+			var processedBlocks = 0;
 			for (var face = 0; face < faces.Length; face++)
 			{
 				var mipChain = MipMapper.GenerateMipChain(faces[face], ref numMipMaps);
@@ -922,6 +983,9 @@ namespace BCnEncoder.Encoder
 						{
 							var blocks = ImageToBlocks.ImageTo4X4(mipChain[mip].Frames[0], out var blocksWidth, out var blocksHeight);
 							encoded = compressedEncoder.Encode(blocks, blocksWidth, blocksHeight, OutputOptions.Quality, context);
+
+							processedBlocks += blocks.Length;
+							context.Progress.SetProcessedBlocks(processedBlocks);
 						}
 						else
 						{
@@ -931,6 +995,9 @@ namespace BCnEncoder.Encoder
 							}
 
 							encoded = uncompressedEncoder.Encode(mipPixels);
+
+							processedBlocks += mipPixels.Length;
+							context.Progress.SetProcessedBlocks(processedBlocks);
 						}
 
 						if (mip == 0)
@@ -1028,6 +1095,9 @@ namespace BCnEncoder.Encoder
 
 				case CompressionFormat.Rgba:
 					return new RawRgbaEncoder();
+
+				case CompressionFormat.Bgra:
+					return new RawBgraEncoder();
 
 				default:
 					throw new ArgumentOutOfRangeException(nameof(format), format, null);

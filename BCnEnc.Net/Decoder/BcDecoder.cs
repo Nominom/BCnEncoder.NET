@@ -4,6 +4,7 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using System;
 using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
@@ -297,6 +298,12 @@ namespace BCnEncoder.Decoder
 				TaskCount = Options.TaskCount
 			};
 
+			// Calculate total blocks
+			var blockSize = GetBlockSize(file.header.GlInternalFormat);
+			var totalBlocks = file.MipMaps.Sum(m => m.Faces[0].Data.Length / blockSize);
+
+			context.Progress = new OperationProgress(Options.Progress, totalBlocks);
+
 			if (IsSupportedRawFormat(file.header.GlInternalFormat))
 			{
 				var decoder = GetRawDecoder(file.header.GlInternalFormat);
@@ -317,6 +324,8 @@ namespace BCnEncoder.Decoder
 
 					output.CopyTo(pixels);
 					images[mip] = image;
+
+					context.Progress.SetProcessedBlocks(file.MipMaps.Take(mip + 1).Sum(x => x.Faces[0].Data.Length / blockSize));
 				}
 			}
 			else
@@ -338,6 +347,8 @@ namespace BCnEncoder.Decoder
 						out var blockWidth, out var blockHeight);
 
 					images[mip] = ImageToBlocks.ImageFromRawBlocks(blocks, blockWidth, blockHeight, (int)pixelWidth, (int)pixelHeight);
+
+					context.Progress.SetProcessedBlocks(file.MipMaps.Take(mip + 1).Sum(x => x.Faces[0].Data.Length / blockSize));
 				}
 			}
 
@@ -362,9 +373,15 @@ namespace BCnEncoder.Decoder
 				TaskCount = Options.TaskCount
 			};
 
-			if (IsSupportedRawFormat(file.header.ddsPixelFormat.DxgiFormat))
+			// Calculate total blocks
+			var blockSize = GetBlockSize(file);
+			var totalBlocks = file.Faces[0].MipMaps.Sum(m => m.Data.Length / blockSize);
+
+			context.Progress = new OperationProgress(Options.Progress, totalBlocks);
+
+			if (IsSupportedRawFormat(file))
 			{
-				var decoder = GetRawDecoder(file.header.ddsPixelFormat.DxgiFormat);
+				var decoder = GetRawDecoder(file);
 
 				var mipMaps = allMipMaps ? file.header.dwMipMapCount : 1;
 				for (var mip = 0; mip < mipMaps; mip++)
@@ -382,14 +399,16 @@ namespace BCnEncoder.Decoder
 
 					output.CopyTo(pixels);
 					images[mip] = image;
+
+					context.Progress.SetProcessedBlocks(file.Faces[0].MipMaps.Take(mip + 1).Sum(x => x.Data.Length / blockSize));
 				}
 			}
 			else
 			{
 				var format = file.header.ddsPixelFormat.IsDxt10Format ?
-					file.dxt10Header.dxgiFormat :
+					file.dx10Header.dxgiFormat :
 					file.header.ddsPixelFormat.DxgiFormat;
-				var decoder = GetDecoder(format, file.header);
+				var decoder = GetDecoder(file);
 
 				if (decoder == null)
 				{
@@ -409,6 +428,8 @@ namespace BCnEncoder.Decoder
 						(int)pixelWidth, (int)pixelHeight);
 
 					images[mip] = image;
+
+					context.Progress.SetProcessedBlocks(file.Faces[0].MipMaps.Take(mip + 1).Sum(x => x.Data.Length / blockSize));
 				}
 			}
 
@@ -437,6 +458,12 @@ namespace BCnEncoder.Decoder
 				IsParallel = Options.IsParallel,
 				TaskCount = Options.TaskCount
 			};
+
+			// Calculate total blocks
+			var blockSize = GetBlockSize(format);
+			var totalBlocks = input.Length / blockSize;
+
+			context.Progress = new OperationProgress(Options.Progress, totalBlocks);
 
 			var isCompressedFormat = format.IsCompressedFormat();
 			if (isCompressedFormat)
@@ -479,13 +506,14 @@ namespace BCnEncoder.Decoder
 			}
 		}
 
-		private bool IsSupportedRawFormat(DxgiFormat format)
+		private bool IsSupportedRawFormat(DdsFile file)
 		{
-			switch (format)
+			switch (file.header.ddsPixelFormat.DxgiFormat)
 			{
 				case DxgiFormat.DxgiFormatR8Unorm:
 				case DxgiFormat.DxgiFormatR8G8Unorm:
 				case DxgiFormat.DxgiFormatR8G8B8A8Unorm:
+				case DxgiFormat.DxgiFormatB8G8R8A8Unorm:
 					return true;
 
 				default:
@@ -493,140 +521,16 @@ namespace BCnEncoder.Decoder
 			}
 		}
 
+		#region Get decoder
+
 		private IBcBlockDecoder GetDecoder(GlInternalFormat format)
 		{
-			switch (format)
-			{
-				case GlInternalFormat.GlCompressedRgbS3TcDxt1Ext:
-					return new Bc1NoAlphaDecoder();
-
-				case GlInternalFormat.GlCompressedRgbaS3TcDxt1Ext:
-					return new Bc1ADecoder();
-
-				case GlInternalFormat.GlCompressedRgbaS3TcDxt3Ext:
-					return new Bc2Decoder();
-
-				case GlInternalFormat.GlCompressedRgbaS3TcDxt5Ext:
-					return new Bc3Decoder();
-
-				case GlInternalFormat.GlCompressedRedRgtc1Ext:
-					return new Bc4Decoder(OutputOptions.RedAsLuminance);
-
-				case GlInternalFormat.GlCompressedRedGreenRgtc2Ext:
-					return new Bc5Decoder();
-
-				case GlInternalFormat.GlCompressedRgbaBptcUnormArb:
-					return new Bc7Decoder();
-
-				// TODO: Not sure what to do with SRGB input.
-				case GlInternalFormat.GlCompressedSrgbAlphaBptcUnormArb:
-					return new Bc7Decoder();
-
-				case GlInternalFormat.GlCompressedRgbAtc:
-					return new AtcDecoder();
-
-				case GlInternalFormat.GlCompressedRgbaAtcExplicitAlpha:
-					return new AtcExplicitAlphaDecoder();
-
-				case GlInternalFormat.GlCompressedRgbaAtcInterpolatedAlpha:
-					return new AtcInterpolatedAlphaDecoder();
-
-				default:
-					return null;
-			}
+			return GetDecoder(GetCompressionFormat(format));
 		}
 
-		private IBcBlockDecoder GetDecoder(DxgiFormat format, DdsHeader header)
+		private IBcBlockDecoder GetDecoder(DdsFile file)
 		{
-			switch (format)
-			{
-				case DxgiFormat.DxgiFormatBc1Unorm:
-				case DxgiFormat.DxgiFormatBc1UnormSrgb:
-				case DxgiFormat.DxgiFormatBc1Typeless:
-					if ((header.ddsPixelFormat.dwFlags & PixelFormatFlags.DdpfAlphapixels) != 0)
-						return new Bc1ADecoder();
-
-					if (InputOptions.DdsBc1ExpectAlpha)
-						return new Bc1ADecoder();
-
-					return new Bc1NoAlphaDecoder();
-
-				case DxgiFormat.DxgiFormatBc2Unorm:
-				case DxgiFormat.DxgiFormatBc2UnormSrgb:
-				case DxgiFormat.DxgiFormatBc2Typeless:
-					return new Bc2Decoder();
-
-				case DxgiFormat.DxgiFormatBc3Unorm:
-				case DxgiFormat.DxgiFormatBc3UnormSrgb:
-				case DxgiFormat.DxgiFormatBc3Typeless:
-					return new Bc3Decoder();
-
-				case DxgiFormat.DxgiFormatBc4Unorm:
-				case DxgiFormat.DxgiFormatBc4Snorm:
-				case DxgiFormat.DxgiFormatBc4Typeless:
-					return new Bc4Decoder(OutputOptions.RedAsLuminance);
-
-				case DxgiFormat.DxgiFormatBc5Unorm:
-				case DxgiFormat.DxgiFormatBc5Snorm:
-				case DxgiFormat.DxgiFormatBc5Typeless:
-					return new Bc5Decoder();
-
-				case DxgiFormat.DxgiFormatBc7Unorm:
-				case DxgiFormat.DxgiFormatBc7UnormSrgb:
-				case DxgiFormat.DxgiFormatBc7Typeless:
-					return new Bc7Decoder();
-
-				case DxgiFormat.DxgiFormatAtc:
-					return new AtcDecoder();
-
-				case DxgiFormat.DxgiFormatAtcExplicitAlpha:
-					return new AtcExplicitAlphaDecoder();
-
-				case DxgiFormat.DxgiFormatAtcInterpolatedAlpha:
-					return new AtcInterpolatedAlphaDecoder();
-
-				default:
-					return null;
-			}
-		}
-
-		private IRawDecoder GetRawDecoder(GlInternalFormat format)
-		{
-			switch (format)
-			{
-				case GlInternalFormat.GlR8:
-					return new RawRDecoder(OutputOptions.RedAsLuminance);
-
-				case GlInternalFormat.GlRg8:
-					return new RawRgDecoder();
-
-				case GlInternalFormat.GlRgb8:
-					return new RawRgbDecoder();
-
-				case GlInternalFormat.GlRgba8:
-					return new RawRgbaDecoder();
-
-				default:
-					return null;
-			}
-		}
-
-		private IRawDecoder GetRawDecoder(DxgiFormat format)
-		{
-			switch (format)
-			{
-				case DxgiFormat.DxgiFormatR8Unorm:
-					return new RawRDecoder(OutputOptions.RedAsLuminance);
-
-				case DxgiFormat.DxgiFormatR8G8Unorm:
-					return new RawRgDecoder();
-
-				case DxgiFormat.DxgiFormatR8G8B8A8Unorm:
-					return new RawRgbaDecoder();
-
-				default:
-					return null;
-			}
+			return GetDecoder(GetCompressionFormat(file));
 		}
 
 		private IBcBlockDecoder GetDecoder(CompressionFormat format)
@@ -668,6 +572,20 @@ namespace BCnEncoder.Decoder
 			}
 		}
 
+		#endregion
+
+		#region Get raw decoder
+
+		private IRawDecoder GetRawDecoder(GlInternalFormat format)
+		{
+			return GetRawDecoder(GetCompressionFormat(format));
+		}
+
+		private IRawDecoder GetRawDecoder(DdsFile file)
+		{
+			return GetRawDecoder(GetCompressionFormat(file));
+		}
+
 		private IRawDecoder GetRawDecoder(CompressionFormat format)
 		{
 			switch (format)
@@ -683,6 +601,204 @@ namespace BCnEncoder.Decoder
 
 				case CompressionFormat.Rgba:
 					return new RawRgbaDecoder();
+
+				case CompressionFormat.Bgra:
+					return new RawBgraDecoder();
+
+				default:
+					throw new ArgumentOutOfRangeException(nameof(format), format, null);
+			}
+		}
+
+		#endregion
+
+		#region Get block size
+
+		private int GetBlockSize(GlInternalFormat format)
+		{
+			return GetBlockSize(GetCompressionFormat(format));
+		}
+
+		private int GetBlockSize(DdsFile file)
+		{
+			return GetBlockSize(GetCompressionFormat(file));
+		}
+
+		private int GetBlockSize(CompressionFormat format)
+		{
+			switch (format)
+			{
+				case CompressionFormat.R:
+					return 1;
+
+				case CompressionFormat.Rg:
+					return 2;
+
+				case CompressionFormat.Rgb:
+					return 3;
+
+				case CompressionFormat.Rgba:
+					return 4;
+
+				case CompressionFormat.Bgra:
+					return 4;
+
+				case CompressionFormat.Bc1:
+				case CompressionFormat.Bc1WithAlpha:
+					return Unsafe.SizeOf<Bc1Block>();
+
+				case CompressionFormat.Bc2:
+					return Unsafe.SizeOf<Bc2Block>();
+
+				case CompressionFormat.Bc3:
+					return Unsafe.SizeOf<Bc3Block>();
+
+				case CompressionFormat.Bc4:
+					return Unsafe.SizeOf<Bc4Block>();
+
+				case CompressionFormat.Bc5:
+					return Unsafe.SizeOf<Bc5Block>();
+
+				case CompressionFormat.Bc7:
+					return Unsafe.SizeOf<Bc7Block>();
+
+				case CompressionFormat.Atc:
+					return Unsafe.SizeOf<AtcBlock>();
+
+				case CompressionFormat.AtcExplicitAlpha:
+					return Unsafe.SizeOf<AtcExplicitAlphaBlock>();
+
+				case CompressionFormat.AtcInterpolatedAlpha:
+					return Unsafe.SizeOf<AtcInterpolatedAlphaBlock>();
+
+				default:
+					throw new ArgumentOutOfRangeException(nameof(format), format, null);
+			}
+		}
+
+		#endregion
+
+		private CompressionFormat GetCompressionFormat(GlInternalFormat format)
+		{
+			switch (format)
+			{
+				case GlInternalFormat.GlR8:
+					return CompressionFormat.R;
+
+				case GlInternalFormat.GlRg8:
+					return CompressionFormat.Rg;
+
+				case GlInternalFormat.GlRgb8:
+					return CompressionFormat.Rgb;
+
+				case GlInternalFormat.GlRgba8:
+					return CompressionFormat.Rgba;
+
+				// HINT: Bgra has no internal format to convert from
+
+				case GlInternalFormat.GlCompressedRgbS3TcDxt1Ext:
+					return CompressionFormat.Bc1;
+
+				case GlInternalFormat.GlCompressedRgbaS3TcDxt1Ext:
+					return CompressionFormat.Bc1WithAlpha;
+
+				case GlInternalFormat.GlCompressedRgbaS3TcDxt3Ext:
+					return CompressionFormat.Bc2;
+
+				case GlInternalFormat.GlCompressedRgbaS3TcDxt5Ext:
+					return CompressionFormat.Bc3;
+
+				case GlInternalFormat.GlCompressedRedRgtc1Ext:
+					return CompressionFormat.Bc4;
+
+				case GlInternalFormat.GlCompressedRedGreenRgtc2Ext:
+					return CompressionFormat.Bc5;
+
+				// TODO: Not sure what to do with SRGB input.
+				case GlInternalFormat.GlCompressedRgbaBptcUnormArb:
+				case GlInternalFormat.GlCompressedSrgbAlphaBptcUnormArb:
+					return CompressionFormat.Bc7;
+
+				case GlInternalFormat.GlCompressedRgbAtc:
+					return CompressionFormat.Atc;
+
+				case GlInternalFormat.GlCompressedRgbaAtcExplicitAlpha:
+					return CompressionFormat.AtcExplicitAlpha;
+
+				case GlInternalFormat.GlCompressedRgbaAtcInterpolatedAlpha:
+					return CompressionFormat.AtcInterpolatedAlpha;
+
+				default:
+					throw new ArgumentOutOfRangeException(nameof(format), format, null);
+			}
+		}
+
+		private CompressionFormat GetCompressionFormat(DdsFile file)
+		{
+			var format = file.header.ddsPixelFormat.IsDxt10Format ?
+				file.dx10Header.dxgiFormat :
+				file.header.ddsPixelFormat.DxgiFormat;
+
+			switch (format)
+			{
+				case DxgiFormat.DxgiFormatR8Unorm:
+					return CompressionFormat.R;
+
+				case DxgiFormat.DxgiFormatR8G8Unorm:
+					return CompressionFormat.Rg;
+
+				// HINT: R8G8B8 has no DxgiFormat to convert from
+
+				case DxgiFormat.DxgiFormatR8G8B8A8Unorm:
+					return CompressionFormat.Rgba;
+
+				case DxgiFormat.DxgiFormatB8G8R8A8Unorm:
+					return CompressionFormat.Bgra;
+
+				case DxgiFormat.DxgiFormatBc1Unorm:
+				case DxgiFormat.DxgiFormatBc1UnormSrgb:
+				case DxgiFormat.DxgiFormatBc1Typeless:
+					if (file.header.ddsPixelFormat.dwFlags.HasFlag(PixelFormatFlags.DdpfAlphapixels))
+						return CompressionFormat.Bc1WithAlpha;
+
+					if (InputOptions.DdsBc1ExpectAlpha)
+						return CompressionFormat.Bc1WithAlpha;
+
+					return CompressionFormat.Bc1;
+
+				case DxgiFormat.DxgiFormatBc2Unorm:
+				case DxgiFormat.DxgiFormatBc2UnormSrgb:
+				case DxgiFormat.DxgiFormatBc2Typeless:
+					return CompressionFormat.Bc2;
+
+				case DxgiFormat.DxgiFormatBc3Unorm:
+				case DxgiFormat.DxgiFormatBc3UnormSrgb:
+				case DxgiFormat.DxgiFormatBc3Typeless:
+					return CompressionFormat.Bc3;
+
+				case DxgiFormat.DxgiFormatBc4Unorm:
+				case DxgiFormat.DxgiFormatBc4Snorm:
+				case DxgiFormat.DxgiFormatBc4Typeless:
+					return CompressionFormat.Bc4;
+
+				case DxgiFormat.DxgiFormatBc5Unorm:
+				case DxgiFormat.DxgiFormatBc5Snorm:
+				case DxgiFormat.DxgiFormatBc5Typeless:
+					return CompressionFormat.Bc5;
+
+				case DxgiFormat.DxgiFormatBc7Unorm:
+				case DxgiFormat.DxgiFormatBc7UnormSrgb:
+				case DxgiFormat.DxgiFormatBc7Typeless:
+					return CompressionFormat.Bc7;
+
+				case DxgiFormat.DxgiFormatAtc:
+					return CompressionFormat.Atc;
+
+				case DxgiFormat.DxgiFormatAtcExplicitAlpha:
+					return CompressionFormat.AtcExplicitAlpha;
+
+				case DxgiFormat.DxgiFormatAtcInterpolatedAlpha:
+					return CompressionFormat.AtcInterpolatedAlpha;
 
 				default:
 					throw new ArgumentOutOfRangeException(nameof(format), format, null);
@@ -703,35 +819,20 @@ namespace BCnEncoder.Decoder
 					return 3 * pixelWidth * pixelHeight;
 
 				case CompressionFormat.Rgba:
+				case CompressionFormat.Bgra:
 					return 4 * pixelWidth * pixelHeight;
 
 				case CompressionFormat.Bc1:
 				case CompressionFormat.Bc1WithAlpha:
-					return Unsafe.SizeOf<Bc1Block>() * ImageToBlocks.CalculateNumOfBlocks(pixelWidth, pixelHeight);
-
 				case CompressionFormat.Bc2:
-					return Unsafe.SizeOf<Bc2Block>() * ImageToBlocks.CalculateNumOfBlocks(pixelWidth, pixelHeight);
-
 				case CompressionFormat.Bc3:
-					return Unsafe.SizeOf<Bc3Block>() * ImageToBlocks.CalculateNumOfBlocks(pixelWidth, pixelHeight);
-
 				case CompressionFormat.Bc4:
-					return Unsafe.SizeOf<Bc4Block>() * ImageToBlocks.CalculateNumOfBlocks(pixelWidth, pixelHeight);
-
 				case CompressionFormat.Bc5:
-					return Unsafe.SizeOf<Bc5Block>() * ImageToBlocks.CalculateNumOfBlocks(pixelWidth, pixelHeight);
-
 				case CompressionFormat.Bc7:
-					return Unsafe.SizeOf<Bc7Block>() * ImageToBlocks.CalculateNumOfBlocks(pixelWidth, pixelHeight);
-
 				case CompressionFormat.Atc:
-					return Unsafe.SizeOf<AtcBlock>() * ImageToBlocks.CalculateNumOfBlocks(pixelWidth, pixelHeight);
-
 				case CompressionFormat.AtcExplicitAlpha:
-					return Unsafe.SizeOf<AtcExplicitAlphaBlock>() * ImageToBlocks.CalculateNumOfBlocks(pixelWidth, pixelHeight);
-
 				case CompressionFormat.AtcInterpolatedAlpha:
-					return Unsafe.SizeOf<AtcInterpolatedAlphaBlock>() * ImageToBlocks.CalculateNumOfBlocks(pixelWidth, pixelHeight);
+					return GetBlockSize(format) * ImageToBlocks.CalculateNumOfBlocks(pixelWidth, pixelHeight);
 
 				default:
 					throw new ArgumentOutOfRangeException(nameof(format), format, null);

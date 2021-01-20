@@ -1,4 +1,5 @@
 using System;
+using BCnEncoder.Shared;
 
 namespace BCnEncoder.Decoder.Options
 {
@@ -20,5 +21,10 @@ namespace BCnEncoder.Decoder.Options
 		/// Determines how many tasks should be used for parallel processing.
 		/// </summary>
 		public int TaskCount { get; set; } = Environment.ProcessorCount;
+
+		/// <summary>
+		/// The progress context for the operation.
+		/// </summary>
+		public IProgress<ProgressElement> Progress { get; set; }
 	}
 }

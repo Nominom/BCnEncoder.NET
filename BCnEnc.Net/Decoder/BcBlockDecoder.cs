@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Threading;
 using System.Threading.Tasks;
 using BCnEncoder.Shared;
 
@@ -18,8 +19,9 @@ namespace BCnEncoder.Decoder
 		public RawBlock4X4Rgba32[,] Decode(ReadOnlyMemory<byte> data, int pixelWidth, int pixelHeight, OperationContext context,
 			out int blockWidth, out int blockHeight)
 		{
-			blockWidth = (int)MathF.Ceiling(pixelWidth / 4.0f);
-			blockHeight = (int)MathF.Ceiling(pixelHeight / 4.0f);
+			// calculate number of 4x4 blocks by padding width/height to a multiple of 4 and shift it right by 2
+			blockWidth = ((pixelWidth + 3) & ~3) >> 2;
+			blockHeight = ((pixelHeight + 3) & ~3) >> 2;
 
 			if (data.Length != blockWidth * blockHeight * Unsafe.SizeOf<T>())
 			{
@@ -28,6 +30,7 @@ namespace BCnEncoder.Decoder
 
 			var output = new RawBlock4X4Rgba32[blockWidth, blockHeight];
 
+			var currentBlocks = 0;
 			if (context.IsParallel)
 			{
 				var localBlockWidth = blockWidth;
@@ -41,6 +44,12 @@ namespace BCnEncoder.Decoder
 				{
 					var encodedBlocks = MemoryMarshal.Cast<byte, T>(data.Span);
 					output[i % localBlockWidth, i / localBlockWidth] = DecodeBlock(encodedBlocks[i]);
+
+					if (context.Progress != null)
+					{
+						var progressValue = Interlocked.Add(ref currentBlocks, 1);
+						context.Progress.Report(progressValue);
+					}
 				});
 			}
 			else
@@ -53,6 +62,8 @@ namespace BCnEncoder.Decoder
 						context.CancellationToken.ThrowIfCancellationRequested();
 
 						output[x, y] = DecodeBlock(encodedBlocks[x + y * blockWidth]);
+
+						context.Progress?.Report(currentBlocks++);
 					}
 				}
 			}
