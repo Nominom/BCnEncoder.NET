@@ -162,6 +162,9 @@ namespace BCnEncoder.Shared
 		GlCompressedRgba8Etc2Eac = 0x9278,
 		GlCompressedSrgb8Alpha8Etc2Eac = 0x9279,
 
+		// Apple extension BGRA8
+		GlBgra8Extension = 0x93A1,
+
 		// ASTC
 		GlCompressedRgbaAstc4X4Khr = 0x93B0,
 		GlCompressedRgbaAstc5X4Khr = 0x93B1,
