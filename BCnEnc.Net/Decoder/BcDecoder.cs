@@ -694,7 +694,9 @@ namespace BCnEncoder.Decoder
 				case GlInternalFormat.GlRgba8:
 					return CompressionFormat.Rgba;
 
-				// HINT: Bgra has no internal format to convert from
+				// HINT: Bgra is only an extension by apple to the ktx format
+				case GlInternalFormat.GlBgra8Extension:
+					return CompressionFormat.Bgra;
 
 				case GlInternalFormat.GlCompressedRgbS3TcDxt1Ext:
 					return CompressionFormat.Bc1;

@@ -225,7 +225,7 @@ namespace BCnEncoder.Encoder
 
 		public GlInternalFormat GetInternalFormat()
 		{
-			throw new NotImplementedException();
+			return GlInternalFormat.GlBgra8Extension;
 		}
 
 		public GlFormat GetBaseInternalFormat()
