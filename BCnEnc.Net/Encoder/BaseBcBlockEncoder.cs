@@ -8,9 +8,11 @@ namespace BCnEncoder.Encoder
 {
 	internal abstract class BaseBcBlockEncoder<T> : IBcBlockEncoder where T : unmanaged
 	{
+		public int BlockSize => Unsafe.SizeOf<T>();
+
 		public byte[] Encode(RawBlock4X4Rgba32[] blocks, int blockWidth, int blockHeight, CompressionQuality quality, OperationContext context)
 		{
-			var outputData = new byte[blockWidth * blockHeight * Unsafe.SizeOf<T>()];
+			var outputData = new byte[blockWidth * blockHeight * BlockSize];
 
 			var currentBlocks = 0;
 			if (context.IsParallel)
@@ -23,7 +25,7 @@ namespace BCnEncoder.Encoder
 				Parallel.For(0, blocks.Length, options, i =>
 				 {
 					 var outputBlocks = MemoryMarshal.Cast<byte, T>(outputData);
-					 outputBlocks[i] = EncodeBlock(blocks[i], quality);
+					 outputBlocks[i] = EncodeBlockInternal(blocks[i], quality);
 
 					 if (context.Progress != null)
 					 {
@@ -39,7 +41,7 @@ namespace BCnEncoder.Encoder
 				{
 					context.CancellationToken.ThrowIfCancellationRequested();
 
-					outputBlocks[i] = EncodeBlock(blocks[i], quality);
+					outputBlocks[i] = EncodeBlockInternal(blocks[i], quality);
 
 					context.Progress?.Report(currentBlocks++);
 				}
@@ -48,10 +50,16 @@ namespace BCnEncoder.Encoder
 			return outputData;
 		}
 
+		public byte[] EncodeBlock(RawBlock4X4Rgba32 block, CompressionQuality quality)
+		{
+			var encoded = new[] { EncodeBlockInternal(block, quality) };
+			return MemoryMarshal.Cast<T, byte>(encoded).ToArray();
+		}
+
 		public abstract GlInternalFormat GetInternalFormat();
 		public abstract GlFormat GetBaseInternalFormat();
 		public abstract DxgiFormat GetDxgiFormat();
 
-		public abstract T EncodeBlock(RawBlock4X4Rgba32 block, CompressionQuality quality);
+		public abstract T EncodeBlockInternal(RawBlock4X4Rgba32 block, CompressionQuality quality);
 	}
 }

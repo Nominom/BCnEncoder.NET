@@ -22,7 +22,7 @@ namespace BCnEncoder.Encoder
 			bc4Encoder = new Bc4ComponentBlockEncoder(luminanceAsRed ? Bc4Component.Luminance : Bc4Component.R);
 		}
 
-		public override Bc4Block EncodeBlock(RawBlock4X4Rgba32 block, CompressionQuality quality)
+		public override Bc4Block EncodeBlockInternal(RawBlock4X4Rgba32 block, CompressionQuality quality)
 		{
 			var output = new Bc4Block
 			{

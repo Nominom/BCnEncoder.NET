@@ -9,7 +9,7 @@ namespace BCnEncoder.Encoder.Bc7
 	internal class Bc7Encoder : BaseBcBlockEncoder<Bc7Block>
 	{
 
-		public override Bc7Block EncodeBlock(RawBlock4X4Rgba32 rawBlock, CompressionQuality quality)
+		public override Bc7Block EncodeBlockInternal(RawBlock4X4Rgba32 rawBlock, CompressionQuality quality)
 		{
 			switch (quality)
 			{

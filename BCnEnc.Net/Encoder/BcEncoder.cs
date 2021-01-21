@@ -382,12 +382,12 @@ namespace BCnEncoder.Encoder
 			switch (OutputOptions.FileFormat)
 			{
 				case OutputFileFormat.Dds:
-					var dds = EncodeToDds(inputImage);
+					var dds = EncodeToDdsInternal(inputImage, token);
 					dds.Write(outputStream);
 					break;
 
 				case OutputFileFormat.Ktx:
-					var ktx = EncodeToKtx(inputImage);
+					var ktx = EncodeToKtxInternal(inputImage, token);
 					ktx.Write(outputStream);
 					break;
 			}
@@ -407,7 +407,7 @@ namespace BCnEncoder.Encoder
 				var isCompressedFormat = OutputOptions.Format.IsCompressedFormat();
 				if (isCompressedFormat)
 				{
-					compressedEncoder = GetEncoder(OutputOptions.Format);
+					compressedEncoder = GetEncoder(OutputOptions.Format, InputOptions.LuminanceAsRed);
 					if (compressedEncoder == null)
 					{
 						throw new NotSupportedException($"This Format is not supported: {OutputOptions.Format}");
@@ -499,7 +499,7 @@ namespace BCnEncoder.Encoder
 				var isCompressedFormat = OutputOptions.Format.IsCompressedFormat();
 				if (isCompressedFormat)
 				{
-					compressedEncoder = GetEncoder(OutputOptions.Format);
+					compressedEncoder = GetEncoder(OutputOptions.Format, InputOptions.LuminanceAsRed);
 					if (compressedEncoder == null)
 					{
 						throw new NotSupportedException($"This Format is not supported: {OutputOptions.Format}");
@@ -611,7 +611,7 @@ namespace BCnEncoder.Encoder
 
 				if (isCompressedFormat)
 				{
-					compressedEncoder = GetEncoder(OutputOptions.Format);
+					compressedEncoder = GetEncoder(OutputOptions.Format, InputOptions.LuminanceAsRed);
 					if (compressedEncoder == null)
 					{
 						throw new NotSupportedException($"This Format is not supported: {OutputOptions.Format}");
@@ -697,7 +697,7 @@ namespace BCnEncoder.Encoder
 				var isCompressedFormat = OutputOptions.Format.IsCompressedFormat();
 				if (isCompressedFormat)
 				{
-					compressedEncoder = GetEncoder(OutputOptions.Format);
+					compressedEncoder = GetEncoder(OutputOptions.Format, InputOptions.LuminanceAsRed);
 					if (compressedEncoder == null)
 					{
 						throw new NotSupportedException($"This Format is not supported: {OutputOptions.Format}");
@@ -793,7 +793,7 @@ namespace BCnEncoder.Encoder
 			var isCompressedFormat = OutputOptions.Format.IsCompressedFormat();
 			if (isCompressedFormat)
 			{
-				compressedEncoder = GetEncoder(OutputOptions.Format);
+				compressedEncoder = GetEncoder(OutputOptions.Format, InputOptions.LuminanceAsRed);
 				if (compressedEncoder == null)
 				{
 					throw new NotSupportedException($"This Format is not supported: {OutputOptions.Format}");
@@ -922,7 +922,7 @@ namespace BCnEncoder.Encoder
 			var isCompressedFormat = OutputOptions.Format.IsCompressedFormat();
 			if (isCompressedFormat)
 			{
-				compressedEncoder = GetEncoder(OutputOptions.Format);
+				compressedEncoder = GetEncoder(OutputOptions.Format, InputOptions.LuminanceAsRed);
 				if (compressedEncoder == null)
 				{
 					throw new NotSupportedException($"This Format is not supported: {OutputOptions.Format}");
@@ -968,7 +968,7 @@ namespace BCnEncoder.Encoder
 			}
 			context.Progress = new OperationProgress(Options.Progress, totalBlocks);
 
-			// EncodeBlock all faces
+			// EncodeBlockInternal all faces
 			var processedBlocks = 0;
 			for (var face = 0; face < faces.Length; face++)
 			{
@@ -1041,7 +1041,7 @@ namespace BCnEncoder.Encoder
 
 		#region Support
 
-		private IBcBlockEncoder GetEncoder(CompressionFormat format)
+		internal static IBcBlockEncoder GetEncoder(CompressionFormat format, bool luminanceAsRed)
 		{
 			switch (format)
 			{
@@ -1058,7 +1058,7 @@ namespace BCnEncoder.Encoder
 					return new Bc3BlockEncoder();
 
 				case CompressionFormat.Bc4:
-					return new Bc4BlockEncoder(InputOptions.LuminanceAsRed);
+					return new Bc4BlockEncoder(luminanceAsRed);
 
 				case CompressionFormat.Bc5:
 					return new Bc5BlockEncoder();

@@ -7,7 +7,7 @@ namespace BCnEncoder.Encoder
 	{
 		private static readonly Bc4ComponentBlockEncoder bc4BlockEncoder = new Bc4ComponentBlockEncoder(Bc4Component.A);
 
-		public override Bc3Block EncodeBlock(RawBlock4X4Rgba32 block, CompressionQuality quality)
+		public override Bc3Block EncodeBlockInternal(RawBlock4X4Rgba32 block, CompressionQuality quality)
 		{
 			switch (quality)
 			{

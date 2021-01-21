@@ -469,7 +469,7 @@ namespace BCnEncoder.Decoder
 			if (isCompressedFormat)
 			{
 				// Decode as compressed data
-				var decoder = GetDecoder(format);
+				var decoder = GetDecoder(format, OutputOptions.RedAsLuminance);
 				var blocks = decoder.Decode(input, pixelWidth, pixelHeight, context, out var blockWidth, out var blockHeight);
 
 				return ImageToBlocks.ImageFromRawBlocks(blocks, blockWidth, blockHeight, pixelWidth, pixelHeight);
@@ -525,15 +525,15 @@ namespace BCnEncoder.Decoder
 
 		private IBcBlockDecoder GetDecoder(GlInternalFormat format)
 		{
-			return GetDecoder(GetCompressionFormat(format));
+			return GetDecoder(GetCompressionFormat(format), OutputOptions.RedAsLuminance);
 		}
 
 		private IBcBlockDecoder GetDecoder(DdsFile file)
 		{
-			return GetDecoder(GetCompressionFormat(file));
+			return GetDecoder(GetCompressionFormat(file), OutputOptions.RedAsLuminance);
 		}
 
-		private IBcBlockDecoder GetDecoder(CompressionFormat format)
+		internal static IBcBlockDecoder GetDecoder(CompressionFormat format, bool redAsLuminance)
 		{
 			switch (format)
 			{
@@ -550,7 +550,7 @@ namespace BCnEncoder.Decoder
 					return new Bc3Decoder();
 
 				case CompressionFormat.Bc4:
-					return new Bc4Decoder(OutputOptions.RedAsLuminance);
+					return new Bc4Decoder(redAsLuminance);
 
 				case CompressionFormat.Bc5:
 					return new Bc5Decoder();

@@ -10,12 +10,18 @@ namespace BCnEncoder.Decoder
 {
 	internal interface IBcBlockDecoder
 	{
+		int BlockSize { get; }
+
 		RawBlock4X4Rgba32[,] Decode(ReadOnlyMemory<byte> data, int pixelWidth, int pixelHeight, OperationContext context,
 			out int blockWidth, out int blockHeight);
+
+		RawBlock4X4Rgba32 DecodeBlock(ReadOnlyMemory<byte> blockData);
 	}
 
 	internal abstract class BaseBcBlockDecoder<T> : IBcBlockDecoder where T : unmanaged
 	{
+		public int BlockSize => Unsafe.SizeOf<T>();
+
 		public RawBlock4X4Rgba32[,] Decode(ReadOnlyMemory<byte> data, int pixelWidth, int pixelHeight, OperationContext context,
 			out int blockWidth, out int blockHeight)
 		{
@@ -23,7 +29,7 @@ namespace BCnEncoder.Decoder
 			blockWidth = ((pixelWidth + 3) & ~3) >> 2;
 			blockHeight = ((pixelHeight + 3) & ~3) >> 2;
 
-			if (data.Length != blockWidth * blockHeight * Unsafe.SizeOf<T>())
+			if (data.Length != blockWidth * blockHeight * BlockSize)
 			{
 				throw new InvalidDataException("Given data does not match expected length.");
 			}
@@ -69,6 +75,12 @@ namespace BCnEncoder.Decoder
 			}
 
 			return output;
+		}
+
+		public RawBlock4X4Rgba32 DecodeBlock(ReadOnlyMemory<byte> blockData)
+		{
+			var output = MemoryMarshal.Cast<byte, T>(blockData.Span);
+			return DecodeBlock(output[0]);
 		}
 
 		protected abstract RawBlock4X4Rgba32 DecodeBlock(T block);

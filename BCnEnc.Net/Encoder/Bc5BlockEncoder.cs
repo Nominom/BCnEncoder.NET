@@ -13,7 +13,7 @@ namespace BCnEncoder.Encoder
 			greenBlockEncoder = new Bc4ComponentBlockEncoder(Bc4Component.G);
 		}
 
-		public override Bc5Block EncodeBlock(RawBlock4X4Rgba32 block, CompressionQuality quality)
+		public override Bc5Block EncodeBlockInternal(RawBlock4X4Rgba32 block, CompressionQuality quality)
 		{
 			return new Bc5Block
 			{

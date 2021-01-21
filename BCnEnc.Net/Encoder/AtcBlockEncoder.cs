@@ -11,12 +11,12 @@ namespace BCnEncoder.Encoder
 			bc1BlockEncoder = new Bc1BlockEncoder();
 		}
 
-		public override AtcBlock EncodeBlock(RawBlock4X4Rgba32 block, CompressionQuality quality)
+		public override AtcBlock EncodeBlockInternal(RawBlock4X4Rgba32 block, CompressionQuality quality)
 		{
 			var atcBlock = new AtcBlock();
 
-			// EncodeBlock with BC1 first
-			var bc1Block = bc1BlockEncoder.EncodeBlock(block, quality);
+			// EncodeBlockInternal with BC1 first
+			var bc1Block = bc1BlockEncoder.EncodeBlockInternal(block, quality);
 
 			// Atc specific modifications to BC1
 			// According to http://www.guildsoftware.com/papers/2012.Converting.DXTC.to.Atc.pdf
@@ -60,11 +60,11 @@ namespace BCnEncoder.Encoder
 			atcBlockEncoder = new AtcBlockEncoder();
 		}
 
-		public override AtcExplicitAlphaBlock EncodeBlock(RawBlock4X4Rgba32 block, CompressionQuality quality)
+		public override AtcExplicitAlphaBlock EncodeBlockInternal(RawBlock4X4Rgba32 block, CompressionQuality quality)
 		{
-			var atcBlock = atcBlockEncoder.EncodeBlock(block, quality);
+			var atcBlock = atcBlockEncoder.EncodeBlockInternal(block, quality);
 
-			// EncodeBlock alpha
+			// EncodeBlockInternal alpha
 			var bc2AlphaBlock = new Bc2AlphaBlock();
 			for (var i = 0; i < 16; i++)
 			{
@@ -105,10 +105,10 @@ namespace BCnEncoder.Encoder
 			atcBlockEncoder = new AtcBlockEncoder();
 		}
 
-		public override AtcInterpolatedAlphaBlock EncodeBlock(RawBlock4X4Rgba32 block, CompressionQuality quality)
+		public override AtcInterpolatedAlphaBlock EncodeBlockInternal(RawBlock4X4Rgba32 block, CompressionQuality quality)
 		{
 			var bc4Block = bc4BlockEncoder.EncodeBlock(block, quality);
-			var atcBlock = atcBlockEncoder.EncodeBlock(block, quality);
+			var atcBlock = atcBlockEncoder.EncodeBlockInternal(block, quality);
 
 			return new AtcInterpolatedAlphaBlock
 			{

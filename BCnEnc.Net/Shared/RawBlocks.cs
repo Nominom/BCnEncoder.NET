@@ -1,32 +1,37 @@
-﻿using System;
+using System;
 using System.Runtime.InteropServices;
 using SixLabors.ImageSharp.PixelFormats;
 
 namespace BCnEncoder.Shared
 {
 
-	internal struct RawBlock4X4Rgba32 {
+	public struct RawBlock4X4Rgba32
+	{
 		public Rgba32 p00, p10, p20, p30;
 		public Rgba32 p01, p11, p21, p31;
 		public Rgba32 p02, p12, p22, p32;
 		public Rgba32 p03, p13, p23, p33;
 		public Span<Rgba32> AsSpan => MemoryMarshal.CreateSpan(ref p00, 16);
 
-		public Rgba32 this[int x, int y] {
+		public Rgba32 this[int x, int y]
+		{
 			get => AsSpan[x + y * 4];
 			set => AsSpan[x + y * 4] = value;
 		}
 
-		public Rgba32 this[int index] {
+		public Rgba32 this[int index]
+		{
 			get => AsSpan[index];
 			set => AsSpan[index] = value;
 		}
 
-		public int CalculateError(RawBlock4X4Rgba32 other, bool useAlpha = false) {
+		public int CalculateError(RawBlock4X4Rgba32 other, bool useAlpha = false)
+		{
 			float error = 0;
 			var pix1 = AsSpan;
 			var pix2 = other.AsSpan;
-			for (var i = 0; i < pix1.Length; i++) {
+			for (var i = 0; i < pix1.Length; i++)
+			{
 				var col1 = pix1[i];
 				var col2 = pix2[i];
 
@@ -38,7 +43,8 @@ namespace BCnEncoder.Shared
 				error += ge * ge;
 				error += be * be;
 
-				if (useAlpha) {
+				if (useAlpha)
+				{
 					var ae = col1.A - col2.A;
 					error += ae * ae * 4;
 				}
@@ -50,13 +56,15 @@ namespace BCnEncoder.Shared
 			return (int)error;
 		}
 
-		public float CalculateYCbCrError(RawBlock4X4Rgba32 other) {
+		public float CalculateYCbCrError(RawBlock4X4Rgba32 other)
+		{
 			float yError = 0;
 			float cbError = 0;
 			float crError = 0;
 			var pix1 = AsSpan;
 			var pix2 = other.AsSpan;
-			for (var i = 0; i < pix1.Length; i++) {
+			for (var i = 0; i < pix1.Length; i++)
+			{
 				var col1 = new ColorYCbCr(pix1[i]);
 				var col2 = new ColorYCbCr(pix2[i]);
 
@@ -74,14 +82,16 @@ namespace BCnEncoder.Shared
 			return error;
 		}
 
-		public float CalculateYCbCrAlphaError(RawBlock4X4Rgba32 other, float yMultiplier = 2, float alphaMultiplier = 1) {
+		public float CalculateYCbCrAlphaError(RawBlock4X4Rgba32 other, float yMultiplier = 2, float alphaMultiplier = 1)
+		{
 			float yError = 0;
 			float cbError = 0;
 			float crError = 0;
 			float alphaError = 0;
 			var pix1 = AsSpan;
 			var pix2 = other.AsSpan;
-			for (var i = 0; i < pix1.Length; i++) {
+			for (var i = 0; i < pix1.Length; i++)
+			{
 				var col1 = new ColorYCbCrAlpha(pix1[i]);
 				var col2 = new ColorYCbCrAlpha(pix2[i]);
 
@@ -100,19 +110,23 @@ namespace BCnEncoder.Shared
 			return error;
 		}
 
-		public RawBlock4X4Ycbcr ToRawBlockYcbcr() {
+		public RawBlock4X4Ycbcr ToRawBlockYcbcr()
+		{
 			var rawYcbcr = new RawBlock4X4Ycbcr();
 			var pixels = AsSpan;
 			var ycbcrPs = rawYcbcr.AsSpan;
-			for (var i = 0; i < pixels.Length; i++) {
+			for (var i = 0; i < pixels.Length; i++)
+			{
 				ycbcrPs[i] = new ColorYCbCr(pixels[i]);
 			}
 			return rawYcbcr;
 		}
 
-		public bool HasTransparentPixels() {
+		public bool HasTransparentPixels()
+		{
 			var pixels = AsSpan;
-			for (var i = 0; i < pixels.Length; i++) {
+			for (var i = 0; i < pixels.Length; i++)
+			{
 				if (pixels[i].A < 255) return true;
 			}
 			return false;
@@ -120,25 +134,29 @@ namespace BCnEncoder.Shared
 	}
 
 
-	internal struct RawBlock4X4Ycbcr {
+	internal struct RawBlock4X4Ycbcr
+	{
 		public ColorYCbCr p00, p10, p20, p30;
 		public ColorYCbCr p01, p11, p21, p31;
 		public ColorYCbCr p02, p12, p22, p32;
 		public ColorYCbCr p03, p13, p23, p33;
 		public Span<ColorYCbCr> AsSpan => MemoryMarshal.CreateSpan(ref p00, 16);
 
-		public ColorYCbCr this[int x, int y] {
+		public ColorYCbCr this[int x, int y]
+		{
 			get => AsSpan[x + y * 4];
 			set => AsSpan[x + y * 4] = value;
 		}
 
-		public float CalculateError(RawBlock4X4Rgba32 other) {
+		public float CalculateError(RawBlock4X4Rgba32 other)
+		{
 			float yError = 0;
 			float cbError = 0;
 			float crError = 0;
 			var pix1 = AsSpan;
 			var pix2 = other.AsSpan;
-			for (var i = 0; i < pix1.Length; i++) {
+			for (var i = 0; i < pix1.Length; i++)
+			{
 				var col1 = pix1[i];
 				var col2 = new ColorYCbCr(pix2[i]);
 
