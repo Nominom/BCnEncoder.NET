@@ -177,7 +177,7 @@ namespace BCnEncoder.Shared
 		}
 	}
 
-	internal struct ColorRgb565 : IEquatable<ColorRgb565>
+	public struct ColorRgb565 : IEquatable<ColorRgb565>
 	{
 		public bool Equals(ColorRgb565 other)
 		{
@@ -314,7 +314,7 @@ namespace BCnEncoder.Shared
 		}
 	}
 
-	internal struct ColorRgba32 : IEquatable<ColorRgba32>
+	public struct ColorRgba32 : IEquatable<ColorRgba32>
 	{
 		public byte r, g, b, a;
 		public ColorRgba32(byte r, byte g, byte b, byte a)
@@ -490,7 +490,7 @@ namespace BCnEncoder.Shared
 		}
 	}
 
-	internal struct ColorRgb24 : IEquatable<ColorRgb24>
+	public struct ColorRgb24 : IEquatable<ColorRgb24>
 	{
 		public byte r, g, b;
 		public ColorRgb24(byte r, byte g, byte b)
@@ -588,7 +588,7 @@ namespace BCnEncoder.Shared
 		}
 	}
 
-	internal struct ColorYCbCr
+	public struct ColorYCbCr
 	{
 		public float y;
 		public float cb;

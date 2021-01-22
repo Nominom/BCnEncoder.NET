@@ -134,7 +134,7 @@ namespace BCnEncoder.Shared
 	}
 
 
-	internal struct RawBlock4X4Ycbcr
+	public struct RawBlock4X4Ycbcr
 	{
 		public ColorYCbCr p00, p10, p20, p30;
 		public ColorYCbCr p01, p11, p21, p31;
