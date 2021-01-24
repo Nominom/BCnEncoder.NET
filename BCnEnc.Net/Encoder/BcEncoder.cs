@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using BCnEncoder.Encoder.Bc7;
 using BCnEncoder.Encoder.Options;
 using BCnEncoder.Shared;
+using BCnEncoder.Shared.ImageFiles;
 using Microsoft.Toolkit.HighPerformance.Memory;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
