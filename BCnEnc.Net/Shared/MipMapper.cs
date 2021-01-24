@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using Microsoft.Toolkit.HighPerformance.Memory;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
@@ -67,13 +69,18 @@ namespace BCnEncoder.Shared
 		/// <summary>
 		/// Generate a chain of <paramref name="numMipMaps"/> elements.
 		/// </summary>
-		/// <param name="sourceImage">The image to scale down.</param>
+		/// <param name="pixelsRgba">The original image to scale down.</param>
+		/// <param name="width">The original image width.</param>
+		/// <param name="height">The original image height.</param>
 		/// <param name="numMipMaps">The number of mipmaps to generate.</param>
 		/// <returns></returns>
 		/// <returns>Will generate as many mipmaps as possible until a mipmap of 1x1 is reached for <paramref name="numMipMaps"/> 0 or smaller.</returns>
-		public static List<Image<Rgba32>> GenerateMipChain(Image<Rgba32> sourceImage, ref int numMipMaps)
+		public static List<Memory2D<ColorRgba32>> GenerateMipChain(ReadOnlySpan<byte> pixelsRgba, int width, int height, ref int numMipMaps)
 		{
-			var result = new List<Image<Rgba32>> { sourceImage.Clone() };
+			var span2d = ReadOnlySpan2D<ColorRgba32>.DangerousCreate(
+				MemoryMarshal.Cast<byte, ColorRgba32>(pixelsRgba)[0], height, width, 0);
+			
+			var result = new List<Memory2D<ColorRgba32>> {  span2d.ToArray() };
 
 			// If only one mipmap was requested, return original image only
 			if (numMipMaps == 1)
@@ -90,13 +97,13 @@ namespace BCnEncoder.Shared
 			// Generate mipmaps
 			for (var mipLevel = 1; mipLevel < numMipMaps; mipLevel++)
 			{
-				var mipWidth = Math.Max(1, sourceImage.Width / (int)Math.Pow(2, mipLevel));
-				var mipHeight = Math.Max(1, sourceImage.Height / (int)Math.Pow(2, mipLevel));
+				var mipWidth = Math.Max(1, width / (int)Math.Pow(2, mipLevel));
+				var mipHeight = Math.Max(1, height / (int)Math.Pow(2, mipLevel));
 
-				var newImage = sourceImage.Clone(x => x.Resize(mipWidth, mipHeight));
-				result.Add(newImage);
+				ColorRgba32[,] newMip = Resize(result[mipLevel - 1].Span, mipWidth, mipHeight);
+				result.Add(newMip);
 
-				// Stop generating of last generated mipmap was of size 1x1
+				// Stop generating if last generated mipmap was of size 1x1
 				if (mipWidth == 1 && mipHeight == 1)
 				{
 					numMipMaps = mipLevel + 1;
@@ -104,6 +111,27 @@ namespace BCnEncoder.Shared
 				}
 			}
 
+			return result;
+		}
+
+		private static ColorRgba32[,] Resize(ReadOnlySpan2D<ColorRgba32> pixelsRgba, int newWidth, int newHeight)
+		{
+			//TODO: Make better
+			
+			ColorRgba32[,] result = new ColorRgba32[newHeight, newWidth];
+			var oldWidth = pixelsRgba.Width;
+			var oldHeight = pixelsRgba.Height;
+			
+			for (int x = 0; x < newWidth; x++)
+			{
+				for (int y = 0; y < newHeight; y++)
+				{
+					var xOrig = (int) (x / (double) newWidth * oldWidth);
+					var yOrig = (int) (y / (double) newHeight * oldHeight);
+					result[y, x] = pixelsRgba[yOrig, xOrig];
+				}
+			}
+			
 			return result;
 		}
 	}
