@@ -3,11 +3,14 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using BCnEncoder.Encoder.Bc7;
 using BCnEncoder.Encoder.Options;
 using BCnEncoder.Shared;
+using Microsoft.Toolkit.HighPerformance.Memory;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
@@ -47,140 +50,247 @@ namespace BCnEncoder.Encoder
 		/// <summary>
 		/// Encodes all mipmap levels into a ktx or a dds file and writes it to the output stream asynchronously.
 		/// </summary>
-		/// <param name="inputImage">The image to encode.</param>
+		/// <param name="inputPixelsRgba">The input image rgba data.</param>
+		/// <param name="width">The width of the input image.</param>
+		/// <param name="height">The height of the input image.</param>
 		/// <param name="outputStream">The stream to write the encoded image to.</param>
 		/// <param name="token">The cancellation token for this operation. Can be default, if the operation is not asynchronous.</param>
-		public Task EncodeAsync(Image<Rgba32> inputImage, Stream outputStream, CancellationToken token = default)
+		public Task EncodeToStreamAsync<T>(Memory<T> inputPixelsRgba, int width, int height, Stream outputStream, CancellationToken token = default) where T : unmanaged
 		{
-			return Task.Run(() => EncodeInternal(inputImage, outputStream, token), token);
+			return Task.Run(() =>
+			{
+				if (Unsafe.SizeOf<T>() != 4 || Unsafe.SizeOf<T>() != 1)
+				{
+					throw new ArgumentException(
+						"The input pixels should be given in either byte format or a 4-byte rgba wrapper");
+				}
+				var bytes = MemoryMarshal.AsBytes(inputPixelsRgba.Span);
+				EncodeToStreamInternal(bytes, width, height, outputStream, token);
+			}, token);
 		}
 
 		/// <summary>
 		/// Encodes all mipmap levels into a Ktx file asynchronously.
 		/// </summary>
-		/// <param name="inputImage">The image to encode.</param>
+		/// <param name="inputPixelsRgba">The input image rgba data.</param>
+		/// <param name="width">The width of the input image.</param>
+		/// <param name="height">The height of the input image.</param>
 		/// <param name="token">The cancellation token for this operation. Can be default, if the operation is not asynchronous.</param>
 		/// <returns>The Ktx file containing the encoded image.</returns>
-		public Task<KtxFile> EncodeToKtxAsync(Image<Rgba32> inputImage, CancellationToken token = default)
+		public Task<KtxFile> EncodeToKtxAsync<T>(Memory<T> inputPixelsRgba, int width, int height, CancellationToken token = default) where T : unmanaged
 		{
-			return Task.Run(() => EncodeToKtxInternal(inputImage, token), token);
+			return Task.Run(() =>
+			{
+				if (Unsafe.SizeOf<T>() != 4 || Unsafe.SizeOf<T>() != 1)
+				{
+					throw new ArgumentException(
+						"The input pixels should be given in either byte format or a 4-byte rgba wrapper");
+				}
+				var bytes = MemoryMarshal.AsBytes(inputPixelsRgba.Span);
+				return EncodeToKtxInternal(bytes, width, height, token);
+			}, token);
 		}
 
 		/// <summary>
 		/// Encodes all mipmap levels into a Dds file asynchronously.
 		/// </summary>
-		/// <param name="inputImage">The image to encode.</param>
+		/// <param name="inputPixelsRgba">The input image rgba data.</param>
+		/// <param name="width">The width of the input image.</param>
+		/// <param name="height">The height of the input image.</param>
 		/// <param name="token">The cancellation token for this operation. Can be default, if the operation is not asynchronous.</param>
 		/// <returns>The Dds file containing the encoded image.</returns>
-		public Task<DdsFile> EncodeToDdsAsync(Image<Rgba32> inputImage, CancellationToken token = default)
+		public Task<DdsFile> EncodeToDdsAsync<T>(Memory<T> inputPixelsRgba, int width, int height, CancellationToken token = default) where T : unmanaged
 		{
-			return Task.Run(() => EncodeToDdsInternal(inputImage, token), token);
+			return Task.Run(() =>
+			{
+				if (Unsafe.SizeOf<T>() != 4 || Unsafe.SizeOf<T>() != 1)
+				{
+					throw new ArgumentException(
+						"The input pixels should be given in either byte format or a 4-byte rgba wrapper");
+				}
+				var bytes = MemoryMarshal.AsBytes(inputPixelsRgba.Span);
+				return EncodeToDdsInternal(bytes, width, height, token);
+			}, token);
 		}
 
 		/// <summary>
 		/// Encodes all mipmap levels into a list of byte buffers asynchronously.
 		/// </summary>
-		/// <param name="inputImage">The image to encode.</param>
-		/// <param name="token">The cancellation token for this operation. Can be default, if the operation is not asynchronous.</param>
-		/// <returns>A list of raw encoded data.</returns>
-		public Task<IList<byte[]>> EncodeToRawBytesAsync(Image<Rgba32> inputImage, CancellationToken token = default)
-		{
-			return Task.Run(() => EncodeToRawBytesInternal(inputImage, token), token);
-		}
-
-		/// <summary>
-		/// Encodes a single mip level of the input image to a byte buffer asynchronously.
-		/// </summary>
-		/// <param name="inputImage">The image to encode.</param>
-		/// <param name="mipLevel">The mipmap to encode.</param>
-		/// <param name="token">The cancellation token for this operation. Can be default, if the operation is not asynchronous.</param>
-		/// <returns>The raw encoded data.</returns>
-		/// <remarks>To get the width and height of the encoded mipLevel, see <see cref="CalculateMipMapSize(Image{Rgba32},int,out int,out int)"/>.</remarks>
-		public Task<byte[]> EncodeToRawBytesAsync(Image<Rgba32> inputImage, int mipLevel, CancellationToken token = default)
-		{
-			return Task.Run(() => EncodeToRawBytesInternal(inputImage, mipLevel, out _, out _, token), token);
-		}
-
-		/// <summary>
-		/// Encodes all mipmap levels into a list of byte buffers asynchronously.
-		/// </summary>
-		/// <param name="inputPixelsRgba">The raw pixels of the input image in rgba format.</param>
-		/// <param name="inputImageWidth">The width of the input image.</param>
-		/// <param name="inputImageHeight">The height of the input image.</param>
+		/// <param name="inputPixelsRgba">The input image rgba data.</param>
+		/// <param name="width">The width of the input image.</param>
+		/// <param name="height">The height of the input image.</param>
 		/// <param name="token">The cancellation token for this operation. Can be default, if the operation is not asynchronous.</param>
 		/// <returns>A list of raw encoded mipmap data.</returns>
-		public Task<IList<byte[]>> EncodeToRawBytesAsync(byte[] inputPixelsRgba, int inputImageWidth, int inputImageHeight, CancellationToken token = default)
+		public Task<IList<byte[]>> EncodeToRawBytesAsync<T>(Memory<T> inputPixelsRgba, int width, int height, CancellationToken token = default) where T : unmanaged
 		{
-			return Task.Run(() => EncodeToRawBytesInternal(inputPixelsRgba, inputImageWidth, inputImageHeight, token), token);
+			return Task.Run(() =>
+			{
+				if (Unsafe.SizeOf<T>() != 4 || Unsafe.SizeOf<T>() != 1)
+				{
+					throw new ArgumentException(
+						"The input pixels should be given in either byte format or a 4-byte rgba wrapper");
+				}
+				var bytes = MemoryMarshal.AsBytes(inputPixelsRgba.Span);
+				return EncodeToRawBytesInternal(bytes, width, height, token);
+			}, token);
 		}
 
 		/// <summary>
 		/// Encodes a single mip level of the input image to a byte buffer asynchronously.
 		/// </summary>
-		/// <param name="inputPixelsRgba">The raw pixels of the input image in rgba format.</param>
-		/// <param name="inputImageWidth">The width of the input image.</param>
-		/// <param name="inputImageHeight">The height of the input image.</param>
+		/// <param name="inputPixelsRgba">The input image rgba data.</param>
+		/// <param name="width">The width of the input image.</param>
+		/// <param name="height">The height of the input image.</param>
 		/// <param name="mipLevel">The mipmap to encode.</param>
 		/// <param name="token">The cancellation token for this operation. Can be default, if the operation is not asynchronous.</param>
 		/// <returns>The raw encoded data.</returns>
 		/// <remarks>To get the width and height of the encoded mipLevel, see <see cref="CalculateMipMapSize(Image{Rgba32},int,out int,out int)"/>.</remarks>
-		public Task<byte[]> EncodeToRawBytesAsync(byte[] inputPixelsRgba, int inputImageWidth, int inputImageHeight, int mipLevel, CancellationToken token = default)
+		public Task<byte[]> EncodeToRawBytesAsync<T>(Memory<T> inputPixelsRgba, int width, int height, int mipLevel, CancellationToken token = default) where T : unmanaged
 		{
-			return Task.Run(() => EncodeToRawBytesInternal(inputPixelsRgba, inputImageWidth, inputImageHeight, mipLevel, out _, out _, token), token);
+			return Task.Run(() =>
+			{
+				if (Unsafe.SizeOf<T>() != 4 || Unsafe.SizeOf<T>() != 1)
+				{
+					throw new ArgumentException(
+						"The input pixels should be given in either byte format or a 4-byte rgba wrapper");
+				}
+				var bytes = MemoryMarshal.AsBytes(inputPixelsRgba.Span);
+				return EncodeToRawBytesInternal(bytes, width, height, mipLevel, out _,
+						out _, token);
+			}, token);
 		}
 
 		/// <summary>
-		/// Encodes all cubemap faces and mipmap levels into Ktx file and writes it to the output stream asynchronously.
-		/// Order is +X, -X, +Y, -Y, +Z, -Z
+		/// Encodes all mipmap levels into a ktx or a dds file and writes it to the output stream asynchronously.
 		/// </summary>
-		/// <param name="right">The right face of the cubemap.</param>
-		/// <param name="left">The left face of the cubemap.</param>
-		/// <param name="top">The top face of the cubemap.</param>
-		/// <param name="down">The bottom face of the cubemap.</param>
-		/// <param name="back">The back face of the cubemap.</param>
-		/// <param name="front">The front face of the cubemap.</param>
+		/// <param name="inputPixelsRgba">The input image rgba data.</param>
 		/// <param name="outputStream">The stream to write the encoded image to.</param>
 		/// <param name="token">The cancellation token for this operation. Can be default, if the operation is not asynchronous.</param>
-		public Task EncodeCubeMapAsync(Image<Rgba32> right, Image<Rgba32> left, Image<Rgba32> top, Image<Rgba32> down,
-			Image<Rgba32> back, Image<Rgba32> front, Stream outputStream, CancellationToken token = default)
+		public Task EncodeToStreamAsync<T>(Memory2D<T> inputPixelsRgba, Stream outputStream, CancellationToken token = default) where T : unmanaged
 		{
-			return Task.Run(() => EncodeCubeMapInternal(right, left, top, down, back, front, outputStream, token), token);
+			return Task.Run(() =>
+			{
+				if (Unsafe.SizeOf<T>() != 4 || Unsafe.SizeOf<T>() != 1)
+				{
+					throw new ArgumentException(
+						"The input pixels should be given in either byte format or a 4-byte rgba wrapper");
+				}
+				if (!inputPixelsRgba.Span.TryGetSpan(out var span))
+				{
+					throw new ArgumentException("Unable to get a Span out of Memory2D. Is the underlying buffer contiguous?");
+				}
+				var bytes = MemoryMarshal.AsBytes(span);
+				var width = inputPixelsRgba.Width;
+				var height = inputPixelsRgba.Height;
+				EncodeToStreamInternal(bytes, width, height, outputStream, token);
+			}, token);
 		}
 
 		/// <summary>
-		/// Encodes all cubemap faces and mipmap levels into a Ktx file asynchronously.
-		/// Order is +X, -X, +Y, -Y, +Z, -Z. Back maps to positive Z and front to negative Z.
+		/// Encodes all mipmap levels into a Ktx file asynchronously.
 		/// </summary>
-		/// <param name="right">The right face of the cubemap.</param>
-		/// <param name="left">The left face of the cubemap.</param>
-		/// <param name="top">The top face of the cubemap.</param>
-		/// <param name="down">The bottom face of the cubemap.</param>
-		/// <param name="back">The back face of the cubemap.</param>
-		/// <param name="front">The front face of the cubemap.</param>
+		/// <param name="inputPixelsRgba">The input image rgba data.</param>
 		/// <param name="token">The cancellation token for this operation. Can be default, if the operation is not asynchronous.</param>
 		/// <returns>The Ktx file containing the encoded image.</returns>
-		public Task<KtxFile> EncodeCubeMapToKtxAsync(Image<Rgba32> right, Image<Rgba32> left, Image<Rgba32> top,
-			Image<Rgba32> down, Image<Rgba32> back, Image<Rgba32> front, CancellationToken token = default)
+		public Task<KtxFile> EncodeToKtxAsync<T>(Memory2D<T> inputPixelsRgba, CancellationToken token = default) where T : unmanaged
 		{
-			return Task.Run(() => EncodeCubeMapToKtxInternal(right, left, top, down, back, front, token), token);
+			return Task.Run(() =>
+			{
+				if (Unsafe.SizeOf<T>() != 4 || Unsafe.SizeOf<T>() != 1)
+				{
+					throw new ArgumentException(
+						"The input pixels should be given in either byte format or a 4-byte rgba wrapper");
+				}
+				if (!inputPixelsRgba.Span.TryGetSpan(out var span))
+				{
+					throw new ArgumentException("Unable to get a Span out of Memory2D. Is the underlying buffer contiguous?");
+				}
+				var bytes = MemoryMarshal.AsBytes(span);
+				var width = inputPixelsRgba.Width;
+				var height = inputPixelsRgba.Height;
+				return EncodeToKtxInternal(bytes, width, height, token);
+			}, token);
 		}
 
 		/// <summary>
-		/// Encodes all cubemap faces and mipmap levels into a Dds file asynchronously.
-		/// Order is +X, -X, +Y, -Y, +Z, -Z. Back maps to positive Z and front to negative Z.
+		/// Encodes all mipmap levels into a Dds file asynchronously.
 		/// </summary>
-		/// <param name="right">The right face of the cubemap.</param>
-		/// <param name="left">The left face of the cubemap.</param>
-		/// <param name="top">The top face of the cubemap.</param>
-		/// <param name="down">The bottom face of the cubemap.</param>
-		/// <param name="back">The back face of the cubemap.</param>
-		/// <param name="front">The front face of the cubemap.</param>
+		/// <param name="inputPixelsRgba">The input image rgba data.</param>
 		/// <param name="token">The cancellation token for this operation. Can be default, if the operation is not asynchronous.</param>
 		/// <returns>The Dds file containing the encoded image.</returns>
-		public Task<DdsFile> EncodeCubeMapToDdsAsync(Image<Rgba32> right, Image<Rgba32> left, Image<Rgba32> top,
-			Image<Rgba32> down, Image<Rgba32> back, Image<Rgba32> front, CancellationToken token = default)
+		public Task<DdsFile> EncodeToDdsAsync<T>(Memory2D<T> inputPixelsRgba, CancellationToken token = default) where T : unmanaged
 		{
-			return Task.Run(() => EncodeCubeMapToDdsInternal(right, left, top, down, back, front, token), token);
+			return Task.Run(() =>
+			{
+				if (Unsafe.SizeOf<T>() != 4 || Unsafe.SizeOf<T>() != 1)
+				{
+					throw new ArgumentException(
+						"The input pixels should be given in either byte format or a 4-byte rgba wrapper");
+				}
+				if (!inputPixelsRgba.Span.TryGetSpan(out var span))
+				{
+					throw new ArgumentException("Unable to get a Span out of Memory2D. Is the underlying buffer contiguous?");
+				}
+				var bytes = MemoryMarshal.AsBytes(span);
+				var width = inputPixelsRgba.Width;
+				var height = inputPixelsRgba.Height;
+				return EncodeToDdsInternal(bytes, width, height, token);
+			}, token);
+		}
+
+		/// <summary>
+		/// Encodes all mipmap levels into a list of byte buffers asynchronously.
+		/// </summary>
+		/// <param name="inputPixelsRgba">The input image rgba data.</param>
+		/// <param name="token">The cancellation token for this operation. Can be default, if the operation is not asynchronous.</param>
+		/// <returns>A list of raw encoded mipmap data.</returns>
+		public Task<IList<byte[]>> EncodeToRawBytesAsync<T>(Memory2D<T> inputPixelsRgba, CancellationToken token = default) where T : unmanaged
+		{
+			return Task.Run(() =>
+			{
+				if (Unsafe.SizeOf<T>() != 4 || Unsafe.SizeOf<T>() != 1)
+				{
+					throw new ArgumentException(
+						"The input pixels should be given in either byte format or a 4-byte rgba wrapper");
+				}
+				if (!inputPixelsRgba.Span.TryGetSpan(out var span))
+				{
+					throw new ArgumentException("Unable to get a Span out of Memory2D. Is the underlying buffer contiguous?");
+				}
+				var bytes = MemoryMarshal.AsBytes(span);
+				var width = inputPixelsRgba.Width;
+				var height = inputPixelsRgba.Height;
+				return EncodeToRawBytesInternal(bytes, width, height, token);
+			}, token);
+		}
+
+		/// <summary>
+		/// Encodes a single mip level of the input image to a byte buffer asynchronously.
+		/// </summary>
+		/// <param name="inputPixelsRgba">The input image rgba data.</param>
+		/// <param name="mipLevel">The mipmap to encode.</param>
+		/// <param name="token">The cancellation token for this operation. Can be default, if the operation is not asynchronous.</param>
+		/// <returns>The raw encoded data.</returns>
+		/// <remarks>To get the width and height of the encoded mipLevel, see <see cref="CalculateMipMapSize(Image{Rgba32},int,out int,out int)"/>.</remarks>
+		public Task<byte[]> EncodeToRawBytesAsync<T>(Memory2D<T> inputPixelsRgba, int mipLevel, CancellationToken token = default) where T : unmanaged
+		{
+			return Task.Run(() =>
+			{
+				if (Unsafe.SizeOf<T>() != 4 || Unsafe.SizeOf<T>() != 1)
+				{
+					throw new ArgumentException(
+						"The input pixels should be given in either byte format or a 4-byte rgba wrapper");
+				}
+				if (!inputPixelsRgba.Span.TryGetSpan(out var span))
+				{
+					throw new ArgumentException("Unable to get a Span out of Memory2D. Is the underlying buffer contiguous?");
+				}
+				var bytes = MemoryMarshal.AsBytes(span);
+				var width = inputPixelsRgba.Width;
+				var height = inputPixelsRgba.Height;
+				return EncodeToRawBytesInternal(bytes, width, height, mipLevel, out _,
+						out _, token);
+			}, token);
 		}
 
 		#endregion
@@ -190,149 +300,207 @@ namespace BCnEncoder.Encoder
 		/// <summary>
 		/// Encodes all mipmap levels into a ktx or a dds file and writes it to the output stream.
 		/// </summary>
-		/// <param name="inputImage">The image to encode.</param>
+		/// <param name="inputPixelsRgba">The input image rgba data.</param>
+		/// <param name="width">The width of the input image.</param>
+		/// <param name="height">The height of the input image.</param>
 		/// <param name="outputStream">The stream to write the encoded image to.</param>
-		public void Encode(Image<Rgba32> inputImage, Stream outputStream)
+		public void EncodeToStream<T>(Memory<T> inputPixelsRgba, int width, int height, Stream outputStream) where T : unmanaged
 		{
-			EncodeInternal(inputImage, outputStream, default);
+			if (Unsafe.SizeOf<T>() != 4 || Unsafe.SizeOf<T>() != 1)
+			{
+				throw new ArgumentException(
+					"The input pixels should be given in either byte format or a 4-byte rgba wrapper");
+			}
+			var bytes = MemoryMarshal.AsBytes(inputPixelsRgba.Span);
+			EncodeToStreamInternal(bytes, width, height, outputStream, default);
 		}
 
 		/// <summary>
 		/// Encodes all mipmap levels into a Ktx file.
 		/// </summary>
-		/// <param name="inputImage">The image to encode.</param>
+		/// <param name="inputPixelsRgba">The input image rgba data.</param>
+		/// <param name="width">The width of the input image.</param>
+		/// <param name="height">The height of the input image.</param>
 		/// <returns>The Ktx file containing the encoded image.</returns>
-		public KtxFile EncodeToKtx(Image<Rgba32> inputImage)
+		public KtxFile EncodeToKtx<T>(Memory<T> inputPixelsRgba, int width, int height) where T : unmanaged
 		{
-			return EncodeToKtxInternal(inputImage, default);
+			if (Unsafe.SizeOf<T>() != 4 || Unsafe.SizeOf<T>() != 1)
+			{
+				throw new ArgumentException(
+					"The input pixels should be given in either byte format or a 4-byte rgba wrapper");
+			}
+			var bytes = MemoryMarshal.AsBytes(inputPixelsRgba.Span);
+			return EncodeToKtxInternal(bytes, width, height, default);
 		}
 
 		/// <summary>
 		/// Encodes all mipmap levels into a Dds file.
 		/// </summary>
-		/// <param name="inputImage">The image to encode.</param>
+		/// <param name="inputPixelsRgba">The input image rgba data.</param>
+		/// <param name="width">The width of the input image.</param>
+		/// <param name="height">The height of the input image.</param>
 		/// <returns>The Dds file containing the encoded image.</returns>
-		public DdsFile EncodeToDds(Image<Rgba32> inputImage)
+		public DdsFile EncodeToDds<T>(Memory<T> inputPixelsRgba, int width, int height) where T : unmanaged
 		{
-			return EncodeToDdsInternal(inputImage, default);
+			if (Unsafe.SizeOf<T>() != 4 || Unsafe.SizeOf<T>() != 1)
+			{
+				throw new ArgumentException(
+					"The input pixels should be given in either byte format or a 4-byte rgba wrapper");
+			}
+			var bytes = MemoryMarshal.AsBytes(inputPixelsRgba.Span);
+			return EncodeToDdsInternal(bytes, width, height, default);
 		}
 
 		/// <summary>
 		/// Encodes all mipmap levels into a list of byte buffers.
 		/// </summary>
 		/// <param name="inputPixelsRgba">The raw pixels of the input image in rgba format.</param>
-		/// <param name="inputImageWidth">The width of the input image.</param>
-		/// <param name="inputImageHeight">The height of the input image.</param>
+		/// <param name="width">The width of the input image.</param>
+		/// <param name="height">The height of the input image.</param>
 		/// <returns>A list of raw encoded mipmap data.</returns>
-		public IList<byte[]> EncodeToRawBytes(byte[] inputPixelsRgba, int inputImageWidth, int inputImageHeight)
+		public IList<byte[]> EncodeToRawBytes<T>(Memory<T> inputPixelsRgba, int width, int height) where T : unmanaged
 		{
-			return EncodeToRawBytesInternal(inputPixelsRgba, inputImageWidth, inputImageHeight, default);
-		}
-
-		/// <summary>
-		/// Encodes all mipmap levels into a list of byte buffers.
-		/// </summary>
-		/// <param name="inputImage">The image to encode.</param>
-		/// <returns>A list of raw encoded data.</returns>
-		public IList<byte[]> EncodeToRawBytes(Image<Rgba32> inputImage)
-		{
-			return EncodeToRawBytesInternal(inputImage, default);
-		}
-
-		/// <summary>
-		/// Encodes a single mip level of the input image to a byte buffer.
-		/// </summary>
-		/// <param name="inputImage">The image to encode.</param>
-		/// <param name="mipLevel">The mipmap to encode.</param>
-		/// <param name="mipWidth">The width of the mipmap.</param>
-		/// <param name="mipHeight">The height of the mipmap.</param>
-		/// <returns>The raw encoded data.</returns>
-		public byte[] EncodeToRawBytes(Image<Rgba32> inputImage, int mipLevel, out int mipWidth, out int mipHeight)
-		{
-			return EncodeToRawBytesInternal(inputImage, mipLevel, out mipWidth, out mipHeight, default);
+			if (Unsafe.SizeOf<T>() != 4 || Unsafe.SizeOf<T>() != 1)
+			{
+				throw new ArgumentException(
+					"The input pixels should be given in either byte format or a 4-byte rgba wrapper");
+			}
+			var bytes = MemoryMarshal.AsBytes(inputPixelsRgba.Span);
+			return EncodeToRawBytesInternal(bytes, width, height, default);
 		}
 
 		/// <summary>
 		/// Encodes a single mip level of the input image to a byte buffer.
 		/// </summary>
 		/// <param name="inputPixelsRgba">The raw pixels of the input image in rgba format.</param>
-		/// <param name="inputImageWidth">The width of the input image.</param>
-		/// <param name="inputImageHeight">The height of the input image.</param>
+		/// <param name="width">The width of the input image.</param>
+		/// <param name="height">The height of the input image.</param>
 		/// <param name="mipLevel">The mipmap to encode.</param>
 		/// <param name="mipWidth">The width of the mipmap.</param>
 		/// <param name="mipHeight">The height of the mipmap.</param>
 		/// <returns>The raw encoded data.</returns>
-		public byte[] EncodeToRawBytes(byte[] inputPixelsRgba, int inputImageWidth, int inputImageHeight, int mipLevel, out int mipWidth, out int mipHeight)
+		public byte[] EncodeToRawBytes<T>(Memory<T> inputPixelsRgba, int width, int height, int mipLevel, out int mipWidth, out int mipHeight) where T : unmanaged
 		{
-			return EncodeToRawBytesInternal(inputPixelsRgba, inputImageWidth, inputImageHeight, mipLevel, out mipWidth,
+			if (Unsafe.SizeOf<T>() != 4 || Unsafe.SizeOf<T>() != 1)
+			{
+				throw new ArgumentException(
+					"The input pixels should be given in either byte format or a 4-byte rgba wrapper");
+			}
+			var bytes = MemoryMarshal.AsBytes(inputPixelsRgba.Span);
+			return EncodeToRawBytesInternal(bytes, width, height, mipLevel, out mipWidth,
 				out mipHeight, default);
 		}
 
+
+
 		/// <summary>
-		/// Encodes all cubemap faces and mipmap levels into Ktx file and writes it to the output stream.
-		/// Order is +X, -X, +Y, -Y, +Z, -Z
+		/// Encodes all mipmap levels into a ktx or a dds file and writes it to the output stream.
 		/// </summary>
-		/// <param name="right">The right face of the cubemap.</param>
-		/// <param name="left">The left face of the cubemap.</param>
-		/// <param name="top">The top face of the cubemap.</param>
-		/// <param name="down">The bottom face of the cubemap.</param>
-		/// <param name="back">The back face of the cubemap.</param>
-		/// <param name="front">The front face of the cubemap.</param>
+		/// <param name="inputPixelsRgba">The input image rgba data.</param>
 		/// <param name="outputStream">The stream to write the encoded image to.</param>
-		public void EncodeCubeMap(Image<Rgba32> right, Image<Rgba32> left, Image<Rgba32> top, Image<Rgba32> down,
-			Image<Rgba32> back, Image<Rgba32> front, Stream outputStream)
+		public void EncodeToStream<T>(Memory2D<T> inputPixelsRgba, Stream outputStream) where T : unmanaged
 		{
-			EncodeCubeMapInternal(right, left, top, down, back, front, outputStream, default);
+			if (Unsafe.SizeOf<T>() != 4 || Unsafe.SizeOf<T>() != 1)
+			{
+				throw new ArgumentException(
+					"The input pixels should be given in either byte format or a 4-byte rgba wrapper");
+			}
+			if (!inputPixelsRgba.Span.TryGetSpan(out var span))
+			{
+				throw new ArgumentException("Unable to get a Span out of Memory2D. Is the underlying buffer contiguous?");
+			}
+			var bytes = MemoryMarshal.AsBytes(span);
+			EncodeToStreamInternal(bytes, inputPixelsRgba.Width, inputPixelsRgba.Height, outputStream, default);
 		}
 
 		/// <summary>
-		/// Encodes all cubemap faces and mipmap levels into a Ktx file.
-		/// Order is +X, -X, +Y, -Y, +Z, -Z. Back maps to positive Z and front to negative Z.
+		/// Encodes all mipmap levels into a Ktx file.
 		/// </summary>
-		/// <param name="right">The right face of the cubemap.</param>
-		/// <param name="left">The left face of the cubemap.</param>
-		/// <param name="top">The top face of the cubemap.</param>
-		/// <param name="down">The bottom face of the cubemap.</param>
-		/// <param name="back">The back face of the cubemap.</param>
-		/// <param name="front">The front face of the cubemap.</param>
+		/// <param name="inputPixelsRgba">The input image rgba data.</param>
 		/// <returns>The Ktx file containing the encoded image.</returns>
-		public KtxFile EncodeCubeMapToKtx(Image<Rgba32> right, Image<Rgba32> left, Image<Rgba32> top, Image<Rgba32> down,
-			Image<Rgba32> back, Image<Rgba32> front)
+		public KtxFile EncodeToKtx<T>(Memory2D<T> inputPixelsRgba) where T : unmanaged
 		{
-			return EncodeCubeMapToKtxInternal(right, left, top, down, back, front, default);
+			if (Unsafe.SizeOf<T>() != 4 || Unsafe.SizeOf<T>() != 1)
+			{
+				throw new ArgumentException(
+					"The input pixels should be given in either byte format or a 4-byte rgba wrapper");
+			}
+			if (!inputPixelsRgba.Span.TryGetSpan(out var span))
+			{
+				throw new ArgumentException("Unable to get a Span out of Memory2D. Is the underlying buffer contiguous?");
+			}
+			var bytes = MemoryMarshal.AsBytes(span);
+			return EncodeToKtxInternal(bytes, inputPixelsRgba.Width, inputPixelsRgba.Height, default);
 		}
 
 		/// <summary>
-		/// Encodes all cubemap faces and mipmap levels into a Dds file.
-		/// Order is +X, -X, +Y, -Y, +Z, -Z. Back maps to positive Z and front to negative Z.
+		/// Encodes all mipmap levels into a Dds file.
 		/// </summary>
-		/// <param name="right">The right face of the cubemap.</param>
-		/// <param name="left">The left face of the cubemap.</param>
-		/// <param name="top">The top face of the cubemap.</param>
-		/// <param name="down">The bottom face of the cubemap.</param>
-		/// <param name="back">The back face of the cubemap.</param>
-		/// <param name="front">The front face of the cubemap.</param>
+		/// <param name="inputPixelsRgba">The input image rgba data.</param>
 		/// <returns>The Dds file containing the encoded image.</returns>
-		public DdsFile EncodeCubeMapToDds(Image<Rgba32> right, Image<Rgba32> left, Image<Rgba32> top, Image<Rgba32> down,
-			Image<Rgba32> back, Image<Rgba32> front)
+		public DdsFile EncodeToDds<T>(Memory2D<T> inputPixelsRgba) where T : unmanaged
 		{
-			return EncodeCubeMapToDdsInternal(right, left, top, down, back, front, default);
+			if (Unsafe.SizeOf<T>() != 4 || Unsafe.SizeOf<T>() != 1)
+			{
+				throw new ArgumentException(
+					"The input pixels should be given in either byte format or a 4-byte rgba wrapper");
+			}
+			if (!inputPixelsRgba.Span.TryGetSpan(out var span))
+			{
+				throw new ArgumentException("Unable to get a Span out of Memory2D. Is the underlying buffer contiguous?");
+			}
+			var bytes = MemoryMarshal.AsBytes(span);
+			return EncodeToDdsInternal(bytes, inputPixelsRgba.Width, inputPixelsRgba.Height, default);
+		}
+
+		/// <summary>
+		/// Encodes all mipmap levels into a list of byte buffers.
+		/// </summary>
+		/// <param name="inputPixelsRgba">The raw pixels of the input image in rgba format.</param>
+		/// <returns>A list of raw encoded mipmap data.</returns>
+		public IList<byte[]> EncodeToRawBytes<T>(Memory2D<T> inputPixelsRgba) where T : unmanaged
+		{
+			if (Unsafe.SizeOf<T>() != 4 || Unsafe.SizeOf<T>() != 1)
+			{
+				throw new ArgumentException(
+					"The input pixels should be given in either byte format or a 4-byte rgba wrapper");
+			}
+			if (!inputPixelsRgba.Span.TryGetSpan(out var span))
+			{
+				throw new ArgumentException("Unable to get a Span out of Memory2D. Is the underlying buffer contiguous?");
+			}
+			var bytes = MemoryMarshal.AsBytes(span);
+			return EncodeToRawBytesInternal(bytes, inputPixelsRgba.Width, inputPixelsRgba.Height, default);
+		}
+
+		/// <summary>
+		/// Encodes a single mip level of the input image to a byte buffer.
+		/// </summary>
+		/// <param name="inputPixelsRgba">The raw pixels of the input image in rgba format.</param>
+		/// <param name="mipLevel">The mipmap to encode.</param>
+		/// <param name="mipWidth">The width of the mipmap.</param>
+		/// <param name="mipHeight">The height of the mipmap.</param>
+		/// <returns>The raw encoded data.</returns>
+		public byte[] EncodeToRawBytes<T>(Memory2D<T> inputPixelsRgba, int mipLevel, out int mipWidth, out int mipHeight) where T : unmanaged
+		{
+			if (Unsafe.SizeOf<T>() != 4 || Unsafe.SizeOf<T>() != 1)
+			{
+				throw new ArgumentException(
+					"The input pixels should be given in either byte format or a 4-byte rgba wrapper");
+			}
+			if (!inputPixelsRgba.Span.TryGetSpan(out var span))
+			{
+				throw new ArgumentException("Unable to get a Span out of Memory2D. Is the underlying buffer contiguous?");
+			}
+			var bytes = MemoryMarshal.AsBytes(span);
+			
+			return EncodeToRawBytesInternal(bytes, inputPixelsRgba.Width, inputPixelsRgba.Height, mipLevel, out mipWidth,
+				out mipHeight, default);
 		}
 
 		#endregion
 
 		#region MipMap operations
-
-		/// <summary>
-		/// Calculates the number of mipmap levels that will be generated for the given input image.
-		/// </summary>
-		/// <param name="inputImage">The image to use for the calculation.</param>
-		/// <returns>The number of mipmap levels that will be generated for the input image.</returns>
-		public int CalculateNumberOfMipLevels(Image<Rgba32> inputImage)
-		{
-			return MipMapper.CalculateMipChainLength(inputImage.Width, inputImage.Height,
-				OutputOptions.GenerateMipMaps ? OutputOptions.MaxMipMapLevel : 1);
-		}
 
 		/// <summary>
 		/// Calculates the number of mipmap levels that will be generated for the given input image.
@@ -344,19 +512,6 @@ namespace BCnEncoder.Encoder
 		{
 			return MipMapper.CalculateMipChainLength(imagePixelWidth, imagePixelHeight,
 				OutputOptions.GenerateMipMaps ? OutputOptions.MaxMipMapLevel : 1);
-		}
-
-		/// <summary>
-		/// Calculates the size of a given mipmap level.
-		/// </summary>
-		/// <param name="inputImage">The image to use for the calculation.</param>
-		/// <param name="mipLevel">The mipLevel to calculate (0 is original image)</param>
-		/// <param name="mipWidth">The mipmap width calculated</param>
-		/// <param name="mipHeight">The mipmap height calculated</param>
-		public void CalculateMipMapSize(Image<Rgba32> inputImage, int mipLevel, out int mipWidth, out int mipHeight)
-		{
-			MipMapper.CalculateMipLevelSize(inputImage.Width, inputImage.Height, mipLevel, out mipWidth,
-				out mipHeight);
 		}
 
 		/// <summary>
@@ -377,30 +532,30 @@ namespace BCnEncoder.Encoder
 
 		#region Private
 
-		private void EncodeInternal(Image<Rgba32> inputImage, Stream outputStream, CancellationToken token)
+		private void EncodeToStreamInternal(ReadOnlySpan<byte> inputPixelsRgba, int width, int height, Stream outputStream, CancellationToken token)
 		{
 			switch (OutputOptions.FileFormat)
 			{
 				case OutputFileFormat.Dds:
-					var dds = EncodeToDds(inputImage);
+					var dds = EncodeToDdsInternal(inputPixelsRgba, width, height, token);
 					dds.Write(outputStream);
 					break;
 
 				case OutputFileFormat.Ktx:
-					var ktx = EncodeToKtx(inputImage);
+					var ktx = EncodeToKtxInternal(inputPixelsRgba, width, height, token);
 					ktx.Write(outputStream);
 					break;
 			}
 		}
 
-		private KtxFile EncodeToKtxInternal(Image<Rgba32> inputImage, CancellationToken token)
+		private KtxFile EncodeToKtxInternal(ReadOnlySpan<byte> inputPixelsRgba, int width, int height, CancellationToken token)
 		{
 			KtxFile output;
 			IBcBlockEncoder compressedEncoder = null;
 			IRawEncoder uncompressedEncoder = null;
 
 			var numMipMaps = OutputOptions.GenerateMipMaps ? OutputOptions.MaxMipMapLevel : 1;
-			var mipChain = MipMapper.GenerateMipChain(inputImage, ref numMipMaps);
+			var mipChain = MipMapper.GenerateMipChain(inputPixelsRgba, width, height, ref numMipMaps);
 			try
 			{
 				// Setup encoders
@@ -414,7 +569,7 @@ namespace BCnEncoder.Encoder
 					}
 
 					output = new KtxFile(
-						KtxHeader.InitializeCompressed(inputImage.Width, inputImage.Height,
+						KtxHeader.InitializeCompressed(width, height,
 							compressedEncoder.GetInternalFormat(),
 							compressedEncoder.GetBaseInternalFormat()));
 				}
@@ -422,7 +577,7 @@ namespace BCnEncoder.Encoder
 				{
 					uncompressedEncoder = GetRawEncoder(OutputOptions.Format);
 					output = new KtxFile(
-						KtxHeader.InitializeUncompressed(inputImage.Width, inputImage.Height,
+						KtxHeader.InitializeUncompressed(width, height,
 							uncompressedEncoder.GetGlType(),
 							uncompressedEncoder.GetGlFormat(),
 							uncompressedEncoder.GetGlTypeSize(),
@@ -485,14 +640,14 @@ namespace BCnEncoder.Encoder
 			}
 		}
 
-		private DdsFile EncodeToDdsInternal(Image<Rgba32> inputImage, CancellationToken token)
+		private DdsFile EncodeToDdsInternal(ReadOnlySpan<byte> inputPixelsRgba, int width, int height, CancellationToken token)
 		{
 			DdsFile output;
 			IBcBlockEncoder compressedEncoder = null;
 			IRawEncoder uncompressedEncoder = null;
 
 			var numMipMaps = OutputOptions.GenerateMipMaps ? OutputOptions.MaxMipMapLevel : 1;
-			var mipChain = MipMapper.GenerateMipChain(inputImage, ref numMipMaps);
+			var mipChain = MipMapper.GenerateMipChain(inputPixelsRgba, width, height, ref numMipMaps);
 			try
 			{
 				// Setup encoder
@@ -505,7 +660,7 @@ namespace BCnEncoder.Encoder
 						throw new NotSupportedException($"This Format is not supported: {OutputOptions.Format}");
 					}
 
-					var (ddsHeader, dxt10Header) = DdsHeader.InitializeCompressed(inputImage.Width, inputImage.Height,
+					var (ddsHeader, dxt10Header) = DdsHeader.InitializeCompressed(width, height,
 						compressedEncoder.GetDxgiFormat());
 					output = new DdsFile(ddsHeader, dxt10Header);
 
@@ -518,7 +673,7 @@ namespace BCnEncoder.Encoder
 				else
 				{
 					uncompressedEncoder = GetRawEncoder(OutputOptions.Format);
-					var ddsHeader = DdsHeader.InitializeUncompressed(inputImage.Width, inputImage.Height,
+					var ddsHeader = DdsHeader.InitializeUncompressed(width, height,
 						uncompressedEncoder.GetDxgiFormat());
 					output = new DdsFile(ddsHeader);
 				}
@@ -559,7 +714,7 @@ namespace BCnEncoder.Encoder
 
 					if (mip == 0)
 					{
-						output.Faces.Add(new DdsFace((uint)inputImage.Width, (uint)inputImage.Height,
+						output.Faces.Add(new DdsFace((uint)width, (uint)height,
 							(uint)encoded.Length, (int)numMipMaps));
 					}
 
@@ -585,25 +740,19 @@ namespace BCnEncoder.Encoder
 			}
 		}
 
-		private IList<byte[]> EncodeToRawBytesInternal(byte[] inputPixelsRgba, int inputImageWidth, int inputImageHeight, CancellationToken token)
+		private IList<byte[]> EncodeToRawBytesInternal(ReadOnlySpan<byte> inputPixelsRgba, int width, int height, CancellationToken token)
 		{
-			if (inputPixelsRgba.Length != inputImageWidth * inputImageHeight * 4)
+			if (inputPixelsRgba.Length != width * height * 4)
 			{
 				throw new ArgumentException("The input pixels must be provided in 4 bytes per pixel rgba format.");
 			}
-
-			using var image = Image.LoadPixelData<Rgba32>(inputPixelsRgba, inputImageWidth, inputImageHeight);
-			return EncodeToRawBytesInternal(image, token);
-		}
-
-		private IList<byte[]> EncodeToRawBytesInternal(Image<Rgba32> inputImage, CancellationToken token)
-		{
+			
 			var output = new List<byte[]>();
 			IBcBlockEncoder compressedEncoder = null;
 			IRawEncoder uncompressedEncoder = null;
 
 			var numMipMaps = OutputOptions.GenerateMipMaps ? OutputOptions.MaxMipMapLevel : 1;
-			var mipChain = MipMapper.GenerateMipChain(inputImage, ref numMipMaps);
+			var mipChain = MipMapper.GenerateMipChain(inputPixelsRgba, width, height, ref numMipMaps);
 			try
 			{
 				// Setup encoder
@@ -670,19 +819,13 @@ namespace BCnEncoder.Encoder
 			}
 		}
 
-		private byte[] EncodeToRawBytesInternal(byte[] inputPixelsRgba, int inputImageWidth, int inputImageHeight, int mipLevel, out int mipWidth, out int mipHeight, CancellationToken token)
+		private byte[] EncodeToRawBytesInternal(ReadOnlySpan<byte> inputPixelsRgba, int width, int height, int mipLevel, out int mipWidth, out int mipHeight, CancellationToken token)
 		{
-			if (inputPixelsRgba.Length != inputImageWidth * inputImageHeight * 4)
+			if (inputPixelsRgba.Length != width * height * 4)
 			{
 				throw new ArgumentException("The input pixels must be provided in 4 bytes per pixel rgba format.");
 			}
 
-			using var image = Image.LoadPixelData<Rgba32>(inputPixelsRgba, inputImageWidth, inputImageHeight);
-			return EncodeToRawBytesInternal(image, mipLevel, out mipWidth, out mipHeight, token);
-		}
-
-		private byte[] EncodeToRawBytesInternal(Image<Rgba32> inputImage, int mipLevel, out int mipWidth, out int mipHeight, CancellationToken token)
-		{
 			if (mipLevel < 0)
 				throw new ArgumentException($"{nameof(mipLevel)} cannot be less than zero.");
 
@@ -690,7 +833,7 @@ namespace BCnEncoder.Encoder
 			IRawEncoder uncompressedEncoder = null;
 
 			var numMipMaps = OutputOptions.GenerateMipMaps ? OutputOptions.MaxMipMapLevel : 1;
-			var mipChain = MipMapper.GenerateMipChain(inputImage, ref numMipMaps);
+			var mipChain = MipMapper.GenerateMipChain(inputPixelsRgba, width, height, ref numMipMaps);
 			try
 			{
 				// Setup encoder
@@ -755,39 +898,42 @@ namespace BCnEncoder.Encoder
 			}
 		}
 
-		private void EncodeCubeMapInternal(Image<Rgba32> right, Image<Rgba32> left, Image<Rgba32> top, Image<Rgba32> down,
-			Image<Rgba32> back, Image<Rgba32> front, Stream outputStream, CancellationToken token)
+		private void EncodeCubeMapToStreamInternal(ReadOnlySpan<byte> right, ReadOnlySpan<byte> left, ReadOnlySpan<byte> top, ReadOnlySpan<byte> down,
+			ReadOnlySpan<byte> back, ReadOnlySpan<byte> front, int width, int height, Stream outputStream, CancellationToken token)
 		{
 			switch (OutputOptions.FileFormat)
 			{
 				case OutputFileFormat.Ktx:
-					var ktx = EncodeCubeMapToKtxInternal(right, left, top, down, back, front, token);
+					var ktx = EncodeCubeMapToKtxInternal(right, left, top, down, back, front, width, height, token);
 					ktx.Write(outputStream);
 					break;
 
 				case OutputFileFormat.Dds:
-					var dds = EncodeCubeMapToDdsInternal(right, left, top, down, back, front, token);
+					var dds = EncodeCubeMapToDdsInternal(right, left, top, down, back, front, width, height, token);
 					dds.Write(outputStream);
 					break;
 			}
 		}
 
-		private KtxFile EncodeCubeMapToKtxInternal(Image<Rgba32> right, Image<Rgba32> left, Image<Rgba32> top, Image<Rgba32> down,
-			Image<Rgba32> back, Image<Rgba32> front, CancellationToken token)
+		private KtxFile EncodeCubeMapToKtxInternal(ReadOnlySpan<byte> right, ReadOnlySpan<byte> left, ReadOnlySpan<byte> top, ReadOnlySpan<byte> down,
+			ReadOnlySpan<byte> back, ReadOnlySpan<byte> front, int width, int height, CancellationToken token)
 		{
 			KtxFile output;
 			IBcBlockEncoder compressedEncoder = null;
 			IRawEncoder uncompressedEncoder = null;
 
-			if (right.Width != left.Width || right.Width != top.Width || right.Width != down.Width
-				|| right.Width != back.Width || right.Width != front.Width ||
-				right.Height != left.Height || right.Height != top.Height || right.Height != down.Height
-				|| right.Height != back.Height || right.Height != front.Height)
+			if (right.Length != width * height * 4)
+			{
+				throw new ArgumentException("The input pixels must be provided in 4 bytes per pixel rgba format.");
+			}
+
+			if (right.Length != left.Length || right.Length != top.Length || right.Length != down.Length
+				|| right.Length != back.Length || right.Length != front.Length)
 			{
 				throw new ArgumentException("All input images of a cubemap should be the same size.");
 			}
 
-			var faces = new[] { right, left, top, down, back, front };
+			var faces = new[] { right.ToArray(), left.ToArray(), top.ToArray(), down.ToArray(), back.ToArray(), front.ToArray() };
 
 			// Setup encoder
 			var isCompressedFormat = OutputOptions.Format.IsCompressedFormat();
@@ -800,7 +946,7 @@ namespace BCnEncoder.Encoder
 				}
 
 				output = new KtxFile(
-					KtxHeader.InitializeCompressed(right.Width, right.Height,
+					KtxHeader.InitializeCompressed(width, height,
 						compressedEncoder.GetInternalFormat(),
 						compressedEncoder.GetBaseInternalFormat()));
 			}
@@ -808,7 +954,7 @@ namespace BCnEncoder.Encoder
 			{
 				uncompressedEncoder = GetRawEncoder(OutputOptions.Format);
 				output = new KtxFile(
-					KtxHeader.InitializeUncompressed(right.Width, right.Height,
+					KtxHeader.InitializeUncompressed(width, height,
 						uncompressedEncoder.GetGlType(),
 						uncompressedEncoder.GetGlFormat(),
 						uncompressedEncoder.GetGlTypeSize(),
@@ -818,7 +964,7 @@ namespace BCnEncoder.Encoder
 			}
 
 			var numMipMaps = OutputOptions.GenerateMipMaps ? OutputOptions.MaxMipMapLevel : 1;
-			var mipLength = MipMapper.CalculateMipChainLength(right.Width, right.Height, numMipMaps);
+			var mipLength = MipMapper.CalculateMipChainLength(width, height, numMipMaps);
 			for (uint i = 0; i < mipLength; i++)
 			{
 				output.MipMaps.Add(new KtxMipmap(0, 0, 0, (uint)faces.Length));
@@ -837,7 +983,7 @@ namespace BCnEncoder.Encoder
 			{
 				for (var mip = 0; mip < numMipMaps; mip++)
 				{
-					MipMapper.CalculateMipLevelSize(face.Width, face.Height, mip, out var mipWidth, out var mipHeight);
+					MipMapper.CalculateMipLevelSize(width, height, mip, out var mipWidth, out var mipHeight);
 					totalBlocks += isCompressedFormat ? ImageToBlocks.CalculateNumOfBlocks(mipWidth, mipHeight) : mipWidth * mipHeight;
 				}
 			}
@@ -847,7 +993,7 @@ namespace BCnEncoder.Encoder
 			var processedBlocks = 0;
 			for (var face = 0; face < faces.Length; face++)
 			{
-				var mipChain = MipMapper.GenerateMipChain(faces[face], ref numMipMaps);
+				var mipChain = MipMapper.GenerateMipChain(faces[face], width, height, ref numMipMaps);
 				try
 				{
 					// Encode all mipmap levels per face
@@ -901,22 +1047,25 @@ namespace BCnEncoder.Encoder
 			return output;
 		}
 
-		private DdsFile EncodeCubeMapToDdsInternal(Image<Rgba32> right, Image<Rgba32> left, Image<Rgba32> top, Image<Rgba32> down,
-			Image<Rgba32> back, Image<Rgba32> front, CancellationToken token)
+		private DdsFile EncodeCubeMapToDdsInternal(ReadOnlySpan<byte> right, ReadOnlySpan<byte> left, ReadOnlySpan<byte> top, ReadOnlySpan<byte> down,
+			ReadOnlySpan<byte> back, ReadOnlySpan<byte> front, int width, int height, CancellationToken token)
 		{
 			DdsFile output;
 			IBcBlockEncoder compressedEncoder = null;
 			IRawEncoder uncompressedEncoder = null;
 
-			if (right.Width != left.Width || right.Width != top.Width || right.Width != down.Width
-				|| right.Width != back.Width || right.Width != front.Width ||
-				right.Height != left.Height || right.Height != top.Height || right.Height != down.Height
-				|| right.Height != back.Height || right.Height != front.Height)
+			if (right.Length != width * height * 4)
+			{
+				throw new ArgumentException("The input pixels must be provided in 4 bytes per pixel rgba format.");
+			}
+
+			if (right.Length != left.Length || right.Length != top.Length || right.Length != down.Length
+			    || right.Length != back.Length || right.Length != front.Length)
 			{
 				throw new ArgumentException("All input images of a cubemap should be the same size.");
 			}
 
-			var faces = new[] { right, left, top, down, back, front };
+			var faces = new[] { right.ToArray(), left.ToArray(), top.ToArray(), down.ToArray(), back.ToArray(), front.ToArray() };
 
 			// Setup encoder
 			var isCompressedFormat = OutputOptions.Format.IsCompressedFormat();
@@ -928,7 +1077,7 @@ namespace BCnEncoder.Encoder
 					throw new NotSupportedException($"This Format is not supported: {OutputOptions.Format}");
 				}
 
-				var (ddsHeader, dxt10Header) = DdsHeader.InitializeCompressed(right.Width, right.Height,
+				var (ddsHeader, dxt10Header) = DdsHeader.InitializeCompressed(width, height,
 					compressedEncoder.GetDxgiFormat());
 				output = new DdsFile(ddsHeader, dxt10Header);
 
@@ -941,7 +1090,7 @@ namespace BCnEncoder.Encoder
 			else
 			{
 				uncompressedEncoder = GetRawEncoder(OutputOptions.Format);
-				var ddsHeader = DdsHeader.InitializeUncompressed(right.Width, right.Height,
+				var ddsHeader = DdsHeader.InitializeUncompressed(width, height,
 					uncompressedEncoder.GetDxgiFormat());
 
 				output = new DdsFile(ddsHeader);
@@ -962,7 +1111,7 @@ namespace BCnEncoder.Encoder
 			{
 				for (var mip = 0; mip < numMipMaps; mip++)
 				{
-					MipMapper.CalculateMipLevelSize(face.Width, face.Height, mip, out var mipWidth, out var mipHeight);
+					MipMapper.CalculateMipLevelSize(width, height, mip, out var mipWidth, out var mipHeight);
 					totalBlocks += isCompressedFormat ? ImageToBlocks.CalculateNumOfBlocks(mipWidth, mipHeight) : mipWidth * mipHeight;
 				}
 			}
@@ -972,7 +1121,7 @@ namespace BCnEncoder.Encoder
 			var processedBlocks = 0;
 			for (var face = 0; face < faces.Length; face++)
 			{
-				var mipChain = MipMapper.GenerateMipChain(faces[face], ref numMipMaps);
+				var mipChain = MipMapper.GenerateMipChain(faces[face], width, height, ref numMipMaps);
 				try
 				{
 					// Encode all mipmap levels per face
