@@ -1,5 +1,6 @@
 using System;
 using BCnEncoder.Shared;
+using BCnEncoder.Shared.ImageFiles;
 
 namespace BCnEncoder.Encoder
 {

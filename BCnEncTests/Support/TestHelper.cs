@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using BCnEncoder.Decoder;
 using BCnEncoder.Encoder;
 using BCnEncoder.Shared;
+using BCnEncoder.Shared.ImageFiles;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using Xunit;

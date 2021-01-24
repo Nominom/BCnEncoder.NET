@@ -7,7 +7,7 @@ namespace BCnEncoder.Shared.ImageFiles
 	/// <summary>
 	/// The format identifier of an image file.
 	/// </summary>
-	public enum ImagefileFormat
+	public enum ImageFileFormat
 	{
 		/// <summary>
 		/// Represents the KTX image file format.
@@ -37,19 +37,19 @@ namespace BCnEncoder.Shared.ImageFiles
 		/// </summary>
 		/// <param name="stream">The stream of data to identify.</param>
 		/// <returns>The format this image file may contain.</returns>
-		public static ImagefileFormat DetermineImageFormat(Stream stream)
+		public static ImageFileFormat DetermineImageFormat(Stream stream)
 		{
 			if (IsDds(stream))
 			{
-				return ImagefileFormat.Dds;
+				return ImageFileFormat.Dds;
 			}
 
 			if (IsKtx(stream))
 			{
-				return ImagefileFormat.Ktx;
+				return ImageFileFormat.Ktx;
 			}
 
-			return ImagefileFormat.Unknown;
+			return ImageFileFormat.Unknown;
 		}
 
 		private static bool IsDds(Stream stream)
