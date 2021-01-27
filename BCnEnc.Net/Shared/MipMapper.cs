@@ -1,15 +1,73 @@
 using System;
-using System.Collections.Generic;
-using System.Runtime.InteropServices;
+using Microsoft.Toolkit.HighPerformance.Extensions;
 using Microsoft.Toolkit.HighPerformance.Memory;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
-using SixLabors.ImageSharp.Processing;
 
 namespace BCnEncoder.Shared
 {
 	internal static class MipMapper
 	{
+		/// <summary>
+		/// Generate a chain of <paramref name="numMipMaps"/> elements.
+		/// </summary>
+		/// <param name="input">The original image to scale down.</param>
+		/// <param name="numMipMaps">The number of mipmaps to generate.</param>
+		/// <returns>Will generate as many mipmaps as possible until a mipmap of 1x1 is reached for <paramref name="numMipMaps"/> 0 or smaller.</returns>
+		public static Memory2D<ColorRgba32>[] GenerateMipChain(Memory2D<ColorRgba32> input, ref int numMipMaps)
+		{
+			if (!input.TryGetMemory(out var memory))
+			{
+				throw new InvalidOperationException("Could not get Memory<T> from Memory2D<T>.");
+			}
+
+			return GenerateMipChain(memory, input.Width, input.Height, ref numMipMaps);
+		}
+
+		/// <summary>
+		/// Generate a chain of <paramref name="numMipMaps"/> elements.
+		/// </summary>
+		/// <param name="pixels">The original image to scale down.</param>
+		/// <param name="width">The original image width.</param>
+		/// <param name="height">The original image height.</param>
+		/// <param name="numMipMaps">The number of mipmaps to generate.</param>
+		/// <returns>Will generate as many mipmaps as possible until a mipmap of 1x1 is reached for <paramref name="numMipMaps"/> 0 or smaller.</returns>
+		public static Memory2D<ColorRgba32>[] GenerateMipChain(Memory<ColorRgba32> pixels, int width, int height, ref int numMipMaps)
+		{
+			var mipChainLength = CalculateMipChainLength(width, height, numMipMaps);
+
+			var result = new Memory2D<ColorRgba32>[mipChainLength];
+			result[0] = pixels.AsMemory2D(width, height);
+
+			// If only one mipmap was requested, return original image only
+			if (numMipMaps == 1)
+			{
+				return result;
+			}
+
+			// If number of mipmaps is "marked as boundless", do as many mipmaps as it takes to reach a size of 1x1
+			if (numMipMaps <= 0)
+			{
+				numMipMaps = int.MaxValue;
+			}
+
+			// Generate mipmaps
+			for (var mipLevel = 1; mipLevel < numMipMaps; mipLevel++)
+			{
+				var mipWidth = Math.Max(1, width / (int)Math.Pow(2, mipLevel));
+				var mipHeight = Math.Max(1, height / (int)Math.Pow(2, mipLevel));
+
+				var newMip = Resize(result[mipLevel - 1].Span, mipWidth, mipHeight);
+				result[mipLevel] = newMip;
+
+				// Stop generating if last generated mipmap was of size 1x1
+				if (mipWidth == 1 && mipHeight == 1)
+				{
+					numMipMaps = mipLevel + 1;
+					break;
+				}
+			}
+
+			return result;
+		}
 
 		public static int CalculateMipChainLength(int width, int height, int maxNumMipMaps)
 		{
@@ -66,72 +124,24 @@ namespace BCnEncoder.Shared
 			}
 		}
 
-		/// <summary>
-		/// Generate a chain of <paramref name="numMipMaps"/> elements.
-		/// </summary>
-		/// <param name="pixelsRgba">The original image to scale down.</param>
-		/// <param name="width">The original image width.</param>
-		/// <param name="height">The original image height.</param>
-		/// <param name="numMipMaps">The number of mipmaps to generate.</param>
-		/// <returns></returns>
-		/// <returns>Will generate as many mipmaps as possible until a mipmap of 1x1 is reached for <paramref name="numMipMaps"/> 0 or smaller.</returns>
-		public static List<Memory2D<ColorRgba32>> GenerateMipChain(ReadOnlySpan<byte> pixelsRgba, int width, int height, ref int numMipMaps)
-		{
-			var span2d = ReadOnlySpan2D<ColorRgba32>.DangerousCreate(
-				MemoryMarshal.Cast<byte, ColorRgba32>(pixelsRgba)[0], height, width, 0);
-			
-			var result = new List<Memory2D<ColorRgba32>> {  span2d.ToArray() };
-
-			// If only one mipmap was requested, return original image only
-			if (numMipMaps == 1)
-			{
-				return result;
-			}
-
-			// If number of mipmaps is "marked as boundless", do as many mipmaps as it takes to reach a size of 1x1
-			if (numMipMaps <= 0)
-			{
-				numMipMaps = int.MaxValue;
-			}
-
-			// Generate mipmaps
-			for (var mipLevel = 1; mipLevel < numMipMaps; mipLevel++)
-			{
-				var mipWidth = Math.Max(1, width / (int)Math.Pow(2, mipLevel));
-				var mipHeight = Math.Max(1, height / (int)Math.Pow(2, mipLevel));
-
-				ColorRgba32[,] newMip = Resize(result[mipLevel - 1].Span, mipWidth, mipHeight);
-				result.Add(newMip);
-
-				// Stop generating if last generated mipmap was of size 1x1
-				if (mipWidth == 1 && mipHeight == 1)
-				{
-					numMipMaps = mipLevel + 1;
-					break;
-				}
-			}
-
-			return result;
-		}
-
 		private static ColorRgba32[,] Resize(ReadOnlySpan2D<ColorRgba32> pixelsRgba, int newWidth, int newHeight)
 		{
 			//TODO: Make better
-			
-			ColorRgba32[,] result = new ColorRgba32[newHeight, newWidth];
+
+			var result = new ColorRgba32[newHeight, newWidth];
 			var oldWidth = pixelsRgba.Width;
 			var oldHeight = pixelsRgba.Height;
-			
-			for (int x = 0; x < newWidth; x++)
+
+			for (var x = 0; x < newWidth; x++)
 			{
-				for (int y = 0; y < newHeight; y++)
+				for (var y = 0; y < newHeight; y++)
 				{
-					var xOrig = (int) (x / (double) newWidth * oldWidth);
-					var yOrig = (int) (y / (double) newHeight * oldHeight);
+					var xOrig = (int)(x / (double)newWidth * oldWidth);
+					var yOrig = (int)(y / (double)newHeight * oldHeight);
 					result[y, x] = pixelsRgba[yOrig, xOrig];
 				}
 			}
-			
+
 			return result;
 		}
 	}
