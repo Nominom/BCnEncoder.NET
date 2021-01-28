@@ -1,6 +1,4 @@
-using System;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
+using Microsoft.Toolkit.HighPerformance.Memory;
 
 namespace BCnEncoder.Shared
 {
@@ -52,22 +50,22 @@ namespace BCnEncoder.Shared
 
 		#endregion
 
-		internal static RawBlock4X4Rgba32[] ImageTo4X4(ImageFrame<Rgba32> image, out int blocksWidth, out int blocksHeight)
+		#region Image to blocks
+
+		internal static RawBlock4X4Rgba32[] ImageTo4X4(Memory2D<ColorRgba32> image, out int blocksWidth, out int blocksHeight)
 		{
 			blocksWidth = ((image.Width + 3) & ~3) >> 2;
 			blocksHeight = ((image.Height + 3) & ~3) >> 2;
 			var output = new RawBlock4X4Rgba32[blocksWidth * blocksHeight];
 
-			if (!image.TryGetSinglePixelSpan(out var pixels))
-			{
-				throw new Exception("Cannot get pixel span.");
-			}
+			var span = image.Span;
 
 			for (var y = 0; y < image.Height; y++)
 			{
 				for (var x = 0; x < image.Width; x++)
 				{
-					var color = pixels[x + y * image.Width];
+					var color = span[x, y];
+
 					var blockIndexX = x >> 2;
 					var blockIndexY = y >> 2;
 					var blockInternalIndexX = x & 3;
@@ -77,7 +75,7 @@ namespace BCnEncoder.Shared
 				}
 			}
 
-			//Fill in block y with edge color
+			// Fill in block y with edge color
 			if ((image.Height & 3) != 0)
 			{
 				var yPaddingStart = image.Height & 3;
@@ -95,7 +93,7 @@ namespace BCnEncoder.Shared
 				}
 			}
 
-			//Fill in block x with edge color
+			// Fill in block x with edge color
 			if ((image.Width & 3) != 0)
 			{
 				var xPaddingStart = image.Width & 3;
@@ -116,10 +114,13 @@ namespace BCnEncoder.Shared
 			return output;
 		}
 
+		#endregion
+
 		public static int CalculateNumOfBlocks(int pixelWidth, int pixelHeight)
 		{
 			var blocksWidth = ((pixelWidth + 3) & ~3) >> 2;
 			var blocksHeight = ((pixelHeight + 3) & ~3) >> 2;
+
 			return blocksWidth * blocksHeight;
 		}
 	}
