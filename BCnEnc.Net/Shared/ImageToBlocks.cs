@@ -64,7 +64,7 @@ namespace BCnEncoder.Shared
 			{
 				for (var x = 0; x < image.Width; x++)
 				{
-					var color = span[x, y];
+					var color = span[y, x];
 
 					var blockIndexX = x >> 2;
 					var blockIndexY = y >> 2;
