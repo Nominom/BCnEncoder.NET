@@ -69,7 +69,7 @@ namespace BCnEncoder.Encoder
 			var bc2AlphaBlock = new Bc2AlphaBlock();
 			for (var i = 0; i < 16; i++)
 			{
-				bc2AlphaBlock.SetAlpha(i, block[i].A);
+				bc2AlphaBlock.SetAlpha(i, block[i].a);
 			}
 
 			return new AtcExplicitAlphaBlock

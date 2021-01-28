@@ -1,6 +1,5 @@
-﻿using System;
+using System;
 using System.Numerics;
-using SixLabors.ImageSharp.PixelFormats;
 
 namespace BCnEncoder.Shared
 {
@@ -9,14 +8,14 @@ namespace BCnEncoder.Shared
 		private const int C565_5Mask = 0xF8;
 		private const int C565_6Mask = 0xFC;
 
-		private static void ConvertToVector4(ReadOnlySpan<Rgba32> colors, Span<Vector4> vectors)
+		private static void ConvertToVector4(ReadOnlySpan<ColorRgba32> colors, Span<Vector4> vectors)
 		{
 			for (var i = 0; i < colors.Length; i++)
 			{
-				vectors[i].X += colors[i].R / 255f;
-				vectors[i].Y += colors[i].G / 255f;
-				vectors[i].Z += colors[i].B / 255f;
-				vectors[i].W += colors[i].A / 255f;
+				vectors[i].X += colors[i].r / 255f;
+				vectors[i].Y += colors[i].g / 255f;
+				vectors[i].Z += colors[i].b / 255f;
+				vectors[i].W += colors[i].a / 255f;
 			}
 		}
 
@@ -110,7 +109,7 @@ namespace BCnEncoder.Shared
 			return lastDa;
 		}
 
-		public static void Create(Span<Rgba32> colors, out Vector3 mean, out Vector3 principalAxis)
+		public static void Create(Span<ColorRgba32> colors, out Vector3 mean, out Vector3 principalAxis)
 		{
 			Span<Vector4> vectors = stackalloc Vector4[colors.Length];
 			ConvertToVector4(colors, vectors);
@@ -130,7 +129,7 @@ namespace BCnEncoder.Shared
 
 		}
 
-		public static void CreateWithAlpha(Span<Rgba32> colors, out Vector4 mean, out Vector4 principalAxis)
+		public static void CreateWithAlpha(Span<ColorRgba32> colors, out Vector4 mean, out Vector4 principalAxis)
 		{
 			Span<Vector4> vectors = stackalloc Vector4[colors.Length];
 			ConvertToVector4(colors, vectors);
@@ -140,7 +139,7 @@ namespace BCnEncoder.Shared
 		}
 
 
-		public static void GetExtremePoints(Span<Rgba32> colors, Vector3 mean, Vector3 principalAxis, out ColorRgb24 min,
+		public static void GetExtremePoints(Span<ColorRgba32> colors, Vector3 mean, Vector3 principalAxis, out ColorRgb24 min,
 			out ColorRgb24 max)
 		{
 
@@ -149,7 +148,7 @@ namespace BCnEncoder.Shared
 
 			for (var i = 0; i < colors.Length; i++)
 			{
-				var colorVec = new Vector3(colors[i].R / 255f, colors[i].G / 255f, colors[i].B / 255f);
+				var colorVec = new Vector3(colors[i].r / 255f, colors[i].g / 255f, colors[i].b / 255f);
 
 				var v = colorVec - mean;
 				var d = Vector3.Dot(v, principalAxis);
@@ -180,7 +179,7 @@ namespace BCnEncoder.Shared
 			max = new ColorRgb24((byte)maxR, (byte)maxG, (byte)maxB);
 		}
 
-		public static void GetMinMaxColor565(Span<Rgba32> colors, Vector3 mean, Vector3 principalAxis, 
+		public static void GetMinMaxColor565(Span<ColorRgba32> colors, Vector3 mean, Vector3 principalAxis, 
 			out ColorRgb565 min, out ColorRgb565 max)
 		{
 
@@ -189,7 +188,7 @@ namespace BCnEncoder.Shared
 
 			for (var i = 0; i < colors.Length; i++)
 			{
-				var colorVec = new Vector3(colors[i].R / 255f, colors[i].G / 255f, colors[i].B / 255f);
+				var colorVec = new Vector3(colors[i].r / 255f, colors[i].g / 255f, colors[i].b / 255f);
 
 				var v = colorVec - mean;
 				var d = Vector3.Dot(v, principalAxis);
@@ -234,7 +233,7 @@ namespace BCnEncoder.Shared
 
 		}
 
-		public static void GetExtremePointsWithAlpha(Span<Rgba32> colors, Vector4 mean, Vector4 principalAxis, out Vector4 min,
+		public static void GetExtremePointsWithAlpha(Span<ColorRgba32> colors, Vector4 mean, Vector4 principalAxis, out Vector4 min,
 			out Vector4 max)
 		{
 
@@ -243,7 +242,7 @@ namespace BCnEncoder.Shared
 
 			for (var i = 0; i < colors.Length; i++)
 			{
-				var colorVec = new Vector4(colors[i].R / 255f, colors[i].G / 255f, colors[i].B / 255f, colors[i].A / 255f);
+				var colorVec = new Vector4(colors[i].r / 255f, colors[i].g / 255f, colors[i].b / 255f, colors[i].a / 255f);
 
 				var v = colorVec - mean;
 				var d = Vector4.Dot(v, principalAxis);
@@ -255,14 +254,14 @@ namespace BCnEncoder.Shared
 			max = mean + principalAxis * maxD;
 		}
 
-		public static void GetOptimizedEndpoints565(Span<Rgba32> colors, Vector3 mean, Vector3 principalAxis, out ColorRgb565 min, out ColorRgb565 max,
+		public static void GetOptimizedEndpoints565(Span<ColorRgba32> colors, Vector3 mean, Vector3 principalAxis, out ColorRgb565 min, out ColorRgb565 max,
 			float rWeight = 0.3f, float gWeight = 0.6f, float bWeight = 0.1f)
 		{
 			var length = colors.Length;
 			var vectorColors = new Vector3[length];
 			for (var i = 0; i < colors.Length; i++)
 			{
-				vectorColors[i] = new Vector3(colors[i].R / 255f, colors[i].G / 255f, colors[i].B / 255f);
+				vectorColors[i] = new Vector3(colors[i].r / 255f, colors[i].g / 255f, colors[i].b / 255f);
 			}
 
 			float minD = 0;

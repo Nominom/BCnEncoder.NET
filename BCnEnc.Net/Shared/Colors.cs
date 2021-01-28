@@ -163,7 +163,7 @@ namespace BCnEncoder.Shared
 			);
 		}
 
-		public static implicit operator ColorRgba32(ColorRgb24 d) => new ColorRgba32(d.r, d.g, d.b, 255);
+		//public static implicit operator ColorRgba32(ColorRgb24 d) => new ColorRgba32(d.r, d.g, d.b, 255);
 
 		public override string ToString()
 		{
@@ -184,7 +184,7 @@ namespace BCnEncoder.Shared
 			this.cr = cr;
 		}
 
-		public ColorYCbCr(ColorRgb24 rgb)
+		internal ColorYCbCr(ColorRgb24 rgb)
 		{
 			var fr = (float)rgb.r / 255;
 			var fg = (float)rgb.g / 255;
@@ -195,7 +195,7 @@ namespace BCnEncoder.Shared
 			cr = 0.5000f * fr - 0.4184f * fg - 0.0816f * fb;
 		}
 
-		public ColorYCbCr(ColorRgb565 rgb)
+		internal ColorYCbCr(ColorRgb565 rgb)
 		{
 			var fr = (float)rgb.R / 255;
 			var fg = (float)rgb.G / 255;
@@ -228,7 +228,7 @@ namespace BCnEncoder.Shared
 			cr = 0.5000f * fr - 0.4184f * fg - 0.0816f * fb;
 		}
 
-		public ColorRgb565 ToColorRgb565()
+		internal ColorRgb565 ToColorRgb565()
 		{
 			var r = Math.Max(0.0f, Math.Min(1.0f, (float)(y + 0.0000 * cb + 1.4022 * cr)));
 			var g = Math.Max(0.0f, Math.Min(1.0f, (float)(y - 0.3456 * cb - 0.7145 * cr)));
@@ -445,7 +445,7 @@ namespace BCnEncoder.Shared
 		}
 	}
 
-	public struct ColorRgb565 : IEquatable<ColorRgb565>
+	internal struct ColorRgb565 : IEquatable<ColorRgb565>
 	{
 		public bool Equals(ColorRgb565 other)
 		{
@@ -601,7 +601,7 @@ namespace BCnEncoder.Shared
 		}
 	}
 
-	public struct ColorRgb24 : IEquatable<ColorRgb24>
+	internal struct ColorRgb24 : IEquatable<ColorRgb24>
 	{
 		public byte r, g, b;
 

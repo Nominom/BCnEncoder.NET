@@ -37,7 +37,7 @@ namespace BCnEncoder.Encoder
 				}
 				else
 				{
-					output[i] = span[i].R;
+					output[i] = span[i].r;
 				}
 
 			}
@@ -84,8 +84,8 @@ namespace BCnEncoder.Encoder
 			var output = new byte[pixels.Length * 2];
 			for (var i = 0; i < pixels.Length; i++)
 			{
-				output[i * 2] = span[i].R;
-				output[i * 2 + 1] = span[i].G;
+				output[i * 2] = span[i].r;
+				output[i * 2 + 1] = span[i].g;
 			}
 			return output;
 		}
@@ -130,9 +130,9 @@ namespace BCnEncoder.Encoder
 			var output = new byte[pixels.Length * 3];
 			for (var i = 0; i < pixels.Length; i++)
 			{
-				output[i * 3] = span[i].R;
-				output[i * 3 + 1] = span[i].G;
-				output[i * 3 + 2] = span[i].B;
+				output[i * 3] = span[i].r;
+				output[i * 3 + 1] = span[i].g;
+				output[i * 3 + 2] = span[i].b;
 			}
 			return output;
 		}
@@ -177,10 +177,10 @@ namespace BCnEncoder.Encoder
 			var output = new byte[pixels.Length * 4];
 			for (var i = 0; i < pixels.Length; i++)
 			{
-				output[i * 4] = span[i].R;
-				output[i * 4 + 1] = span[i].G;
-				output[i * 4 + 2] = span[i].B;
-				output[i * 4 + 3] = span[i].A;
+				output[i * 4] = span[i].r;
+				output[i * 4 + 1] = span[i].g;
+				output[i * 4 + 2] = span[i].b;
+				output[i * 4 + 3] = span[i].a;
 			}
 			return output;
 		}
@@ -225,10 +225,10 @@ namespace BCnEncoder.Encoder
 			var output = new byte[pixels.Length * 4];
 			for (var i = 0; i < pixels.Length; i++)
 			{
-				output[i * 4] = span[i].B;
-				output[i * 4 + 1] = span[i].G;
-				output[i * 4 + 2] = span[i].R;
-				output[i * 4 + 3] = span[i].A;
+				output[i * 4] = span[i].b;
+				output[i * 4 + 1] = span[i].g;
+				output[i * 4 + 2] = span[i].r;
+				output[i * 4 + 3] = span[i].a;
 			}
 			return output;
 		}

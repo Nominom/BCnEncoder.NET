@@ -69,19 +69,19 @@ namespace BCnEncoder.Encoder
 				switch (component)
 				{
 					case Bc4Component.R:
-						colors[i] = pixels[i].R;
+						colors[i] = pixels[i].r;
 						break;
 
 					case Bc4Component.G:
-						colors[i] = pixels[i].G;
+						colors[i] = pixels[i].g;
 						break;
 
 					case Bc4Component.B:
-						colors[i] = pixels[i].B;
+						colors[i] = pixels[i].b;
 						break;
 
 					case Bc4Component.A:
-						colors[i] = pixels[i].A;
+						colors[i] = pixels[i].a;
 						break;
 
 					case Bc4Component.Luminance:
