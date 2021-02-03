@@ -6,7 +6,7 @@ namespace BCnEncoder.Encoder
 {
 	internal interface IRawEncoder
 	{
-		byte[] Encode(Memory<ColorRgba32> pixels);
+		byte[] Encode(ReadOnlyMemory<ColorRgba32> pixels);
 		GlInternalFormat GetInternalFormat();
 		GlFormat GetBaseInternalFormat();
 		GlFormat GetGlFormat();
@@ -24,7 +24,7 @@ namespace BCnEncoder.Encoder
 			this.useLuminance = useLuminance;
 		}
 
-		public byte[] Encode(Memory<ColorRgba32> pixels)
+		public byte[] Encode(ReadOnlyMemory<ColorRgba32> pixels)
 		{
 			var span = pixels.Span;
 
@@ -77,7 +77,7 @@ namespace BCnEncoder.Encoder
 
 	internal class RawRgEncoder : IRawEncoder
 	{
-		public byte[] Encode(Memory<ColorRgba32> pixels)
+		public byte[] Encode(ReadOnlyMemory<ColorRgba32> pixels)
 		{
 			var span = pixels.Span;
 
@@ -123,7 +123,7 @@ namespace BCnEncoder.Encoder
 
 	internal class RawRgbEncoder : IRawEncoder
 	{
-		public byte[] Encode(Memory<ColorRgba32> pixels)
+		public byte[] Encode(ReadOnlyMemory<ColorRgba32> pixels)
 		{
 			var span = pixels.Span;
 
@@ -170,7 +170,7 @@ namespace BCnEncoder.Encoder
 
 	internal class RawRgbaEncoder : IRawEncoder
 	{
-		public byte[] Encode(Memory<ColorRgba32> pixels)
+		public byte[] Encode(ReadOnlyMemory<ColorRgba32> pixels)
 		{
 			var span = pixels.Span;
 
@@ -218,7 +218,7 @@ namespace BCnEncoder.Encoder
 
 	internal class RawBgraEncoder : IRawEncoder
 	{
-		public byte[] Encode(Memory<ColorRgba32> pixels)
+		public byte[] Encode(ReadOnlyMemory<ColorRgba32> pixels)
 		{
 			var span = pixels.Span;
 

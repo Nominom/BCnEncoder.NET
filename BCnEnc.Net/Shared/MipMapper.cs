@@ -12,7 +12,7 @@ namespace BCnEncoder.Shared
 		/// <param name="input">The original image to scale down.</param>
 		/// <param name="numMipMaps">The number of mipmaps to generate.</param>
 		/// <returns>Will generate as many mipmaps as possible until a mipmap of 1x1 is reached for <paramref name="numMipMaps"/> 0 or smaller.</returns>
-		public static Memory2D<ColorRgba32>[] GenerateMipChain(Memory2D<ColorRgba32> input, ref int numMipMaps)
+		public static ReadOnlyMemory2D<ColorRgba32>[] GenerateMipChain(ReadOnlyMemory2D<ColorRgba32> input, ref int numMipMaps)
 		{
 			if (!input.TryGetMemory(out var memory))
 			{
@@ -30,11 +30,11 @@ namespace BCnEncoder.Shared
 		/// <param name="height">The original image height.</param>
 		/// <param name="numMipMaps">The number of mipmaps to generate.</param>
 		/// <returns>Will generate as many mipmaps as possible until a mipmap of 1x1 is reached for <paramref name="numMipMaps"/> 0 or smaller.</returns>
-		public static Memory2D<ColorRgba32>[] GenerateMipChain(Memory<ColorRgba32> pixels, int width, int height, ref int numMipMaps)
+		public static ReadOnlyMemory2D<ColorRgba32>[] GenerateMipChain(ReadOnlyMemory<ColorRgba32> pixels, int width, int height, ref int numMipMaps)
 		{
 			var mipChainLength = CalculateMipChainLength(width, height, numMipMaps);
 
-			var result = new Memory2D<ColorRgba32>[mipChainLength];
+			var result = new ReadOnlyMemory2D<ColorRgba32>[mipChainLength];
 			result[0] = pixels.AsMemory2D(width, height);
 
 			// If only one mipmap was requested, return original image only

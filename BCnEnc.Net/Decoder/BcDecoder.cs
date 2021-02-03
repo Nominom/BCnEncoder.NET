@@ -33,7 +33,7 @@ namespace BCnEncoder.Decoder
 		#region Async Api
 
 		/// <summary>
-		/// DecodeInternal raw encoded image asynchronously.
+		/// Decode raw encoded image asynchronously.
 		/// </summary>
 		/// <param name="inputStream">The stream containing the encoded data.</param>
 		/// <param name="format">The Format the encoded data is in.</param>
@@ -41,7 +41,7 @@ namespace BCnEncoder.Decoder
 		/// <param name="pixelHeight">The pixelHeight of the image.</param>
 		/// <param name="token">The cancellation token for this asynchronous operation.</param>
 		/// <returns>The awaitable operation to retrieve the decoded Rgba32 image.</returns>
-		public Task<ColorRgba32[]> DecodeRawAsync(Stream inputStream, CompressionFormat format, int pixelWidth, int pixelHeight, CancellationToken token = default)
+		public Task<ReadOnlyMemory<ColorRgba32>> DecodeRawAsync(Stream inputStream, CompressionFormat format, int pixelWidth, int pixelHeight, CancellationToken token = default)
 		{
 			var dataArray = new byte[GetBufferSize(format, pixelWidth, pixelHeight)];
 			inputStream.Read(dataArray, 0, dataArray.Length);
@@ -50,7 +50,7 @@ namespace BCnEncoder.Decoder
 		}
 
 		/// <summary>
-		/// DecodeInternal raw encoded image data asynchronously.
+		/// Decode raw encoded image data asynchronously.
 		/// </summary>
 		/// <param name="input">The <see cref="ReadOnlyMemory{T}"/> containing the encoded data.</param>
 		/// <param name="format">The Format the encoded data is in.</param>
@@ -58,7 +58,7 @@ namespace BCnEncoder.Decoder
 		/// <param name="pixelHeight">The pixelHeight of the image.</param>
 		/// <param name="token">The cancellation token for this asynchronous operation.</param>
 		/// <returns>The awaitable operation to retrieve the decoded Rgba32 image.</returns>
-		public Task<ColorRgba32[]> DecodeRawAsync(ReadOnlyMemory<byte> input, CompressionFormat format, int pixelWidth, int pixelHeight, CancellationToken token = default)
+		public Task<ReadOnlyMemory<ColorRgba32>> DecodeRawAsync(ReadOnlyMemory<byte> input, CompressionFormat format, int pixelWidth, int pixelHeight, CancellationToken token = default)
 		{
 			return Task.Run(() => DecodeRawInternal(input, pixelWidth, pixelHeight, format, token), token);
 		}
@@ -69,7 +69,7 @@ namespace BCnEncoder.Decoder
 		/// <param name="inputStream">The stream containing a Ktx or Dds file.</param>
 		/// <param name="token">The cancellation token for this asynchronous operation.</param>
 		/// <returns>The awaitable operation to retrieve the decoded Rgba32 image.</returns>
-		public Task<ColorRgba32[]> DecodeAsync(Stream inputStream, CancellationToken token = default)
+		public Task<ReadOnlyMemory<ColorRgba32>> DecodeAsync(Stream inputStream, CancellationToken token = default)
 		{
 			return Task.Run(() => DecodeInternal(inputStream, false, token)[0], token);
 		}
@@ -80,7 +80,7 @@ namespace BCnEncoder.Decoder
 		/// <param name="inputStream">The stream containing a Ktx or Dds file.</param>
 		/// <param name="token">The cancellation token for this asynchronous operation.</param>
 		/// <returns>The awaitable operation to retrieve the decoded Rgba32 image.</returns>
-		public Task<ColorRgba32[][]> DecodeAllMipMapsAsync(Stream inputStream, CancellationToken token = default)
+		public Task<ReadOnlyMemory<ColorRgba32>[]> DecodeAllMipMapsAsync(Stream inputStream, CancellationToken token = default)
 		{
 			return Task.Run(() => DecodeInternal(inputStream, true, token), token);
 		}
@@ -91,7 +91,7 @@ namespace BCnEncoder.Decoder
 		/// <param name="file">The loaded Ktx file.</param>
 		/// <param name="token">The cancellation token for this asynchronous operation.</param>
 		/// <returns>The awaitable operation to retrieve the decoded Rgba32 image.</returns>
-		public Task<ColorRgba32[]> DecodeAsync(KtxFile file, CancellationToken token = default)
+		public Task<ReadOnlyMemory<ColorRgba32>> DecodeAsync(KtxFile file, CancellationToken token = default)
 		{
 			return Task.Run(() => DecodeInternal(file, false, token)[0], token);
 		}
@@ -102,7 +102,7 @@ namespace BCnEncoder.Decoder
 		/// <param name="file">The loaded Ktx file.</param>
 		/// <param name="token">The cancellation token for this asynchronous operation.</param>
 		/// <returns>The awaitable operation to retrieve the decoded Rgba32 image.</returns>
-		public Task<ColorRgba32[][]> DecodeAllMipMapsAsync(KtxFile file, CancellationToken token = default)
+		public Task<ReadOnlyMemory<ColorRgba32>[]> DecodeAllMipMapsAsync(KtxFile file, CancellationToken token = default)
 		{
 			return Task.Run(() => DecodeInternal(file, true, token), token);
 		}
@@ -113,7 +113,7 @@ namespace BCnEncoder.Decoder
 		/// <param name="file">The loaded Dds file.</param>
 		/// <param name="token">The cancellation token for this asynchronous operation.</param>
 		/// <returns>The awaitable operation to retrieve the decoded Rgba32 image.</returns>
-		public Task<ColorRgba32[]> DecodeAsync(DdsFile file, CancellationToken token = default)
+		public Task<ReadOnlyMemory<ColorRgba32>> DecodeAsync(DdsFile file, CancellationToken token = default)
 		{
 			return Task.Run(() => DecodeInternal(file, false, token)[0], token);
 		}
@@ -124,7 +124,7 @@ namespace BCnEncoder.Decoder
 		/// <param name="file">The loaded Dds file.</param>
 		/// <param name="token">The cancellation token for this asynchronous operation.</param>
 		/// <returns>The awaitable operation to retrieve the decoded Rgba32 image.</returns>
-		public Task<ColorRgba32[][]> DecodeAllMipMapsAsync(DdsFile file, CancellationToken token = default)
+		public Task<ReadOnlyMemory<ColorRgba32>[]> DecodeAllMipMapsAsync(DdsFile file, CancellationToken token = default)
 		{
 			return Task.Run(() => DecodeInternal(file, true, token), token);
 		}
@@ -134,14 +134,14 @@ namespace BCnEncoder.Decoder
 		#region Sync API
 
 		/// <summary>
-		/// DecodeInternal raw encoded image data.
+		/// Decode raw encoded image data.
 		/// </summary>
 		/// <param name="inputStream">The stream containing the encoded data.</param>
 		/// <param name="pixelWidth">The pixelWidth of the image.</param>
 		/// <param name="pixelHeight">The pixelHeight of the image.</param>
 		/// <param name="format">The Format the encoded data is in.</param>
 		/// <returns>The decoded Rgba32 image.</returns>
-		public ColorRgba32[] DecodeRaw(Stream inputStream, int pixelWidth, int pixelHeight, CompressionFormat format)
+		public ReadOnlyMemory<ColorRgba32> DecodeRaw(Stream inputStream, int pixelWidth, int pixelHeight, CompressionFormat format)
 		{
 			var dataArray = new byte[GetBufferSize(format, pixelWidth, pixelHeight)];
 			inputStream.Read(dataArray, 0, dataArray.Length);
@@ -150,14 +150,14 @@ namespace BCnEncoder.Decoder
 		}
 
 		/// <summary>
-		/// DecodeInternal raw encoded image data.
+		/// Decode raw encoded image data.
 		/// </summary>
 		/// <param name="input">The array containing the encoded data.</param>
 		/// <param name="pixelWidth">The pixelWidth of the image.</param>
 		/// <param name="pixelHeight">The pixelHeight of the image.</param>
 		/// <param name="format">The Format the encoded data is in.</param>
 		/// <returns>The decoded Rgba32 image.</returns>
-		public ColorRgba32[] DecodeRaw(byte[] input, int pixelWidth, int pixelHeight, CompressionFormat format)
+		public ReadOnlyMemory<ColorRgba32> DecodeRaw(byte[] input, int pixelWidth, int pixelHeight, CompressionFormat format)
 		{
 			return DecodeRawInternal(input, pixelWidth, pixelHeight, format, default);
 		}
@@ -167,7 +167,7 @@ namespace BCnEncoder.Decoder
 		/// </summary>
 		/// <param name="inputStream">The stream containing a Ktx or Dds file.</param>
 		/// <returns>The decoded Rgba32 image.</returns>
-		public ColorRgba32[] Decode(Stream inputStream)
+		public ReadOnlyMemory<ColorRgba32> Decode(Stream inputStream)
 		{
 			return DecodeInternal(inputStream, false, default)[0];
 		}
@@ -177,7 +177,7 @@ namespace BCnEncoder.Decoder
 		/// </summary>
 		/// <param name="inputStream">The stream containing a Ktx or Dds file.</param>
 		/// <returns>An array of decoded Rgba32 images.</returns>
-		public ColorRgba32[][] DecodeAllMipMaps(Stream inputStream)
+		public ReadOnlyMemory<ColorRgba32>[] DecodeAllMipMaps(Stream inputStream)
 		{
 			return DecodeInternal(inputStream, true, default);
 		}
@@ -187,7 +187,7 @@ namespace BCnEncoder.Decoder
 		/// </summary>
 		/// <param name="file">The loaded Ktx file.</param>
 		/// <returns>The decoded Rgba32 image.</returns>
-		public ColorRgba32[] Decode(KtxFile file)
+		public ReadOnlyMemory<ColorRgba32> Decode(KtxFile file)
 		{
 			return DecodeInternal(file, false, default)[0];
 		}
@@ -197,7 +197,7 @@ namespace BCnEncoder.Decoder
 		/// </summary>
 		/// <param name="file">The loaded Ktx file.</param>
 		/// <returns>An array of decoded Rgba32 images.</returns>
-		public ColorRgba32[][] DecodeAllMipMaps(KtxFile file)
+		public ReadOnlyMemory<ColorRgba32>[] DecodeAllMipMaps(KtxFile file)
 		{
 			return DecodeInternal(file, true, default);
 		}
@@ -207,7 +207,7 @@ namespace BCnEncoder.Decoder
 		/// </summary>
 		/// <param name="file">The loaded Dds file.</param>
 		/// <returns>The decoded Rgba32 image.</returns>
-		public ColorRgba32[] Decode(DdsFile file)
+		public ReadOnlyMemory<ColorRgba32> Decode(DdsFile file)
 		{
 			return DecodeInternal(file, false, default)[0];
 		}
@@ -217,7 +217,7 @@ namespace BCnEncoder.Decoder
 		/// </summary>
 		/// <param name="file">The loaded Dds file.</param>
 		/// <returns>An array of decoded Rgba32 images.</returns>
-		public ColorRgba32[][] DecodeAllMipMaps(DdsFile file)
+		public ReadOnlyMemory<ColorRgba32>[] DecodeAllMipMaps(DdsFile file)
 		{
 			return DecodeInternal(file, true, default);
 		}
@@ -231,7 +231,7 @@ namespace BCnEncoder.Decoder
 		/// <param name="allMipMaps">If all mip maps or only the main image should be decoded.</param>
 		/// <param name="token">The cancellation token for this operation. Can be default, if the operation is not asynchronous.</param>
 		/// <returns>An array of decoded Rgba32 images.</returns>
-		private ColorRgba32[][] DecodeInternal(Stream stream, bool allMipMaps, CancellationToken token)
+		private ReadOnlyMemory<ColorRgba32>[] DecodeInternal(Stream stream, bool allMipMaps, CancellationToken token)
 		{
 			var format = ImageFile.DetermineImageFormat(stream);
 
@@ -255,9 +255,9 @@ namespace BCnEncoder.Decoder
 		/// <param name="allMipMaps">If all mip maps or only the main image should be decoded.</param>
 		/// <param name="token">The cancellation token for this operation. Can be default, if the operation is not asynchronous.</param>
 		/// <returns>An array of decoded Rgba32 images.</returns>
-		private ColorRgba32[][] DecodeInternal(KtxFile file, bool allMipMaps, CancellationToken token)
+		private ReadOnlyMemory<ColorRgba32>[] DecodeInternal(KtxFile file, bool allMipMaps, CancellationToken token)
 		{
-			var colors = new ColorRgba32[file.MipMaps.Count][];
+			var colors = new ReadOnlyMemory<ColorRgba32>[file.MipMaps.Count];
 
 			var context = new OperationContext
 			{
@@ -319,9 +319,9 @@ namespace BCnEncoder.Decoder
 		/// <param name="allMipMaps">If all mip maps or only the main image should be decoded.</param>
 		/// <param name="token">The cancellation token for this operation. Can be default, if the operation is not asynchronous.</param>
 		/// <returns>An array of decoded Rgba32 images.</returns>
-		private ColorRgba32[][] DecodeInternal(DdsFile file, bool allMipMaps, CancellationToken token)
+		private ReadOnlyMemory<ColorRgba32>[] DecodeInternal(DdsFile file, bool allMipMaps, CancellationToken token)
 		{
-			var colors = new ColorRgba32[file.header.dwMipMapCount][];
+			var colors = new ReadOnlyMemory<ColorRgba32>[file.header.dwMipMapCount];
 
 			var context = new OperationContext
 			{
@@ -382,7 +382,7 @@ namespace BCnEncoder.Decoder
 		}
 
 		/// <summary>
-		/// DecodeInternal raw encoded image asynchronously.
+		/// Decode raw encoded image asynchronously.
 		/// </summary>
 		/// <param name="input">The <see cref="ReadOnlyMemory{T}"/> containing the encoded data.</param>
 		/// <param name="pixelWidth">The width of the image.</param>
@@ -390,7 +390,7 @@ namespace BCnEncoder.Decoder
 		/// <param name="format">The Format the encoded data is in.</param>
 		/// <param name="token">The cancellation token for this operation. May be default, if the operation is not asynchronous.</param>
 		/// <returns>The decoded Rgba32 image.</returns>
-		private ColorRgba32[] DecodeRawInternal(ReadOnlyMemory<byte> input, int pixelWidth, int pixelHeight, CompressionFormat format, CancellationToken token)
+		private ReadOnlyMemory<ColorRgba32> DecodeRawInternal(ReadOnlyMemory<byte> input, int pixelWidth, int pixelHeight, CompressionFormat format, CancellationToken token)
 		{
 			if (input.Length % GetBlockSize(format) != 0)
 			{

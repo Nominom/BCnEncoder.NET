@@ -28,6 +28,11 @@ namespace BCnEncoder.Encoder
 		Bgra32,
 
 		/// <summary>
+		/// Specifies the ARGB32 layout.
+		/// </summary>
+		Argb32,
+
+		/// <summary>
 		/// Specifies the RGB24 layout.
 		/// </summary>
 		Rgb24,
@@ -211,12 +216,12 @@ namespace BCnEncoder.Encoder
 		/// <summary>
 		/// Encodes all mipmap levels into a ktx or a dds file and writes it to the output stream.
 		/// </summary>
-		/// <param name="input">The input to encode represented by a <see cref="Memory{T}"/>.</param>
+		/// <param name="input">The input to encode represented by a <see cref="ReadOnlyMemory{T}"/>.</param>
 		/// <param name="width">The width of the image.</param>
 		/// <param name="height">The height of the image.</param>
 		/// <param name="format">The pixel format the given data is in.</param>
 		/// <param name="outputStream">The stream to write the encoded image to.</param>
-		public void EncodeToStream(Memory<byte> input, int width, int height, PixelFormat format, Stream outputStream)
+		public void EncodeToStream(ReadOnlyMemory<byte> input, int width, int height, PixelFormat format, Stream outputStream)
 		{
 			EncodeToStream(ByteToColorMemory(input.Span, width, height, format), outputStream);
 		}
@@ -226,7 +231,7 @@ namespace BCnEncoder.Encoder
 		/// </summary>
 		/// <param name="input">The input to encode represented by a <see cref="Memory2D{T}"/>.</param>
 		/// <param name="outputStream">The stream to write the encoded image to.</param>
-		public void EncodeToStream(Memory2D<ColorRgba32> input, Stream outputStream)
+		public void EncodeToStream(ReadOnlyMemory2D<ColorRgba32> input, Stream outputStream)
 		{
 			EncodeToStreamInternal(input, outputStream, default);
 		}
@@ -239,7 +244,7 @@ namespace BCnEncoder.Encoder
 		/// <param name="height">The height of the image.</param>
 		/// <param name="format">The pixel format the given data is in.</param>
 		/// <returns>The Ktx file containing the encoded image.</returns>
-		public KtxFile EncodeToKtx(Memory<byte> input, int width, int height, PixelFormat format)
+		public KtxFile EncodeToKtx(ReadOnlyMemory<byte> input, int width, int height, PixelFormat format)
 		{
 			return EncodeToKtx(ByteToColorMemory(input.Span, width, height, format));
 		}
@@ -249,7 +254,7 @@ namespace BCnEncoder.Encoder
 		/// </summary>
 		/// <param name="input">The input to encode represented by a <see cref="Memory2D{T}"/>.</param>
 		/// <returns>The Ktx file containing the encoded image.</returns>
-		public KtxFile EncodeToKtx(Memory2D<ColorRgba32> input)
+		public KtxFile EncodeToKtx(ReadOnlyMemory2D<ColorRgba32> input)
 		{
 			return EncodeToKtxInternal(input, default);
 		}
@@ -262,7 +267,7 @@ namespace BCnEncoder.Encoder
 		/// <param name="height">The height of the image.</param>
 		/// <param name="format">The pixel format the given data is in.</param>
 		/// <returns>The Dds file containing the encoded image.</returns>
-		public DdsFile EncodeToDds(Memory<byte> input, int width, int height, PixelFormat format)
+		public DdsFile EncodeToDds(ReadOnlyMemory<byte> input, int width, int height, PixelFormat format)
 		{
 			return EncodeToDds(ByteToColorMemory(input.Span, width, height, format));
 		}
@@ -272,7 +277,7 @@ namespace BCnEncoder.Encoder
 		/// </summary>
 		/// <param name="input">The input to encode represented by a <see cref="Memory2D{T}"/>.</param>
 		/// <returns>The Dds file containing the encoded image.</returns>
-		public DdsFile EncodeToDds(Memory2D<ColorRgba32> input)
+		public DdsFile EncodeToDds(ReadOnlyMemory2D<ColorRgba32> input)
 		{
 			return EncodeToDdsInternal(input, default);
 		}
@@ -285,7 +290,7 @@ namespace BCnEncoder.Encoder
 		/// <param name="height">The height of the image.</param>
 		/// <param name="format">The pixel format the given data is in.</param>
 		/// <returns>A list of raw encoded mipmap input.</returns>
-		public byte[][] EncodeToRawBytes(Memory<byte> input, int width, int height, PixelFormat format)
+		public byte[][] EncodeToRawBytes(ReadOnlyMemory<byte> input, int width, int height, PixelFormat format)
 		{
 			return EncodeToRawBytes(ByteToColorMemory(input.Span, width, height, format));
 		}
@@ -295,7 +300,7 @@ namespace BCnEncoder.Encoder
 		/// </summary>
 		/// <param name="input">The input to encode represented by a <see cref="Memory2D{T}"/>.</param>
 		/// <returns>A list of raw encoded mipmap input.</returns>
-		public byte[][] EncodeToRawBytes(Memory2D<ColorRgba32> input)
+		public byte[][] EncodeToRawBytes(ReadOnlyMemory2D<ColorRgba32> input)
 		{
 			return EncodeToRawInternal(input, default);
 		}
@@ -311,7 +316,7 @@ namespace BCnEncoder.Encoder
 		/// <param name="mipWidth">The width of the mipmap.</param>
 		/// <param name="mipHeight">The height of the mipmap.</param>
 		/// <returns>The raw encoded input.</returns>
-		public byte[] EncodeToRawBytes(Memory<byte> input, int width, int height, PixelFormat format, int mipLevel, out int mipWidth, out int mipHeight)
+		public byte[] EncodeToRawBytes(ReadOnlyMemory<byte> input, int width, int height, PixelFormat format, int mipLevel, out int mipWidth, out int mipHeight)
 		{
 			return EncodeToRawInternal(ByteToColorMemory(input.Span, width, height, format), mipLevel, out mipWidth, out mipHeight, default);
 		}
@@ -324,7 +329,7 @@ namespace BCnEncoder.Encoder
 		/// <param name="mipWidth">The width of the mipmap.</param>
 		/// <param name="mipHeight">The height of the mipmap.</param>
 		/// <returns>The raw encoded input.</returns>
-		public byte[] EncodeToRawBytes(Memory2D<ColorRgba32> input, int mipLevel, out int mipWidth, out int mipHeight)
+		public byte[] EncodeToRawBytes(ReadOnlyMemory2D<ColorRgba32> input, int mipLevel, out int mipWidth, out int mipHeight)
 		{
 			return EncodeToRawInternal(input, mipLevel, out mipWidth, out mipHeight, default);
 		}
@@ -363,7 +368,7 @@ namespace BCnEncoder.Encoder
 
 		#region Private
 
-		private void EncodeToStreamInternal(Memory2D<ColorRgba32> input, Stream outputStream, CancellationToken token)
+		private void EncodeToStreamInternal(ReadOnlyMemory2D<ColorRgba32> input, Stream outputStream, CancellationToken token)
 		{
 			switch (OutputOptions.FileFormat)
 			{
@@ -379,7 +384,7 @@ namespace BCnEncoder.Encoder
 			}
 		}
 
-		private KtxFile EncodeToKtxInternal(Memory2D<ColorRgba32> input, CancellationToken token)
+		private KtxFile EncodeToKtxInternal(ReadOnlyMemory2D<ColorRgba32> input, CancellationToken token)
 		{
 			KtxFile output;
 			IBcBlockEncoder compressedEncoder = null;
@@ -465,7 +470,7 @@ namespace BCnEncoder.Encoder
 			return output;
 		}
 
-		private DdsFile EncodeToDdsInternal(Memory2D<ColorRgba32> input, CancellationToken token)
+		private DdsFile EncodeToDdsInternal(ReadOnlyMemory2D<ColorRgba32> input, CancellationToken token)
 		{
 			DdsFile output;
 			IBcBlockEncoder compressedEncoder = null;
@@ -557,7 +562,7 @@ namespace BCnEncoder.Encoder
 			return output;
 		}
 
-		private byte[][] EncodeToRawInternal(Memory2D<ColorRgba32> input, CancellationToken token)
+		private byte[][] EncodeToRawInternal(ReadOnlyMemory2D<ColorRgba32> input, CancellationToken token)
 		{
 			var numMipMaps = OutputOptions.GenerateMipMaps ? OutputOptions.MaxMipMapLevel : 1;
 			var mipChain = MipMapper.GenerateMipChain(input, ref numMipMaps);
@@ -622,7 +627,7 @@ namespace BCnEncoder.Encoder
 			return output;
 		}
 
-		private byte[] EncodeToRawInternal(Memory2D<ColorRgba32> input, int mipLevel, out int mipWidth, out int mipHeight, CancellationToken token)
+		private byte[] EncodeToRawInternal(ReadOnlyMemory2D<ColorRgba32> input, int mipLevel, out int mipWidth, out int mipHeight, CancellationToken token)
 		{
 			mipLevel = Math.Max(0, mipLevel);
 
@@ -687,10 +692,8 @@ namespace BCnEncoder.Encoder
 			return encoded;
 		}
 
-		// TODO: Do we still need cubemap methods? If yes, expose them in both Sync and Async API
-
-		private void EncodeCubeMapToStreamInternal(Memory2D<ColorRgba32> right, Memory2D<ColorRgba32> left, Memory2D<ColorRgba32> top, Memory2D<ColorRgba32> down,
-			Memory2D<ColorRgba32> back, Memory2D<ColorRgba32> front, Stream outputStream, CancellationToken token)
+		private void EncodeCubeMapToStreamInternal(ReadOnlyMemory2D<ColorRgba32> right, ReadOnlyMemory2D<ColorRgba32> left, ReadOnlyMemory2D<ColorRgba32> top, ReadOnlyMemory2D<ColorRgba32> down,
+			ReadOnlyMemory2D<ColorRgba32> back, ReadOnlyMemory2D<ColorRgba32> front, Stream outputStream, CancellationToken token)
 		{
 			switch (OutputOptions.FileFormat)
 			{
@@ -706,8 +709,8 @@ namespace BCnEncoder.Encoder
 			}
 		}
 
-		private KtxFile EncodeCubeMapToKtxInternal(Memory2D<ColorRgba32> right, Memory2D<ColorRgba32> left, Memory2D<ColorRgba32> top, Memory2D<ColorRgba32> down,
-			Memory2D<ColorRgba32> back, Memory2D<ColorRgba32> front, CancellationToken token)
+		private KtxFile EncodeCubeMapToKtxInternal(ReadOnlyMemory2D<ColorRgba32> right, ReadOnlyMemory2D<ColorRgba32> left, ReadOnlyMemory2D<ColorRgba32> top, ReadOnlyMemory2D<ColorRgba32> down,
+			ReadOnlyMemory2D<ColorRgba32> back, ReadOnlyMemory2D<ColorRgba32> front, CancellationToken token)
 		{
 			KtxFile output;
 			IBcBlockEncoder compressedEncoder = null;
@@ -822,8 +825,8 @@ namespace BCnEncoder.Encoder
 			return output;
 		}
 
-		private DdsFile EncodeCubeMapToDdsInternal(Memory2D<ColorRgba32> right, Memory2D<ColorRgba32> left, Memory2D<ColorRgba32> top, Memory2D<ColorRgba32> down,
-			Memory2D<ColorRgba32> back, Memory2D<ColorRgba32> front, CancellationToken token)
+		private DdsFile EncodeCubeMapToDdsInternal(ReadOnlyMemory2D<ColorRgba32> right, ReadOnlyMemory2D<ColorRgba32> left, ReadOnlyMemory2D<ColorRgba32> top, ReadOnlyMemory2D<ColorRgba32> down,
+			ReadOnlyMemory2D<ColorRgba32> back, ReadOnlyMemory2D<ColorRgba32> front, CancellationToken token)
 		{
 			DdsFile output;
 			IBcBlockEncoder compressedEncoder = null;
@@ -1012,7 +1015,7 @@ namespace BCnEncoder.Encoder
 			}
 		}
 
-		private Memory2D<ColorRgba32> ByteToColorMemory(Span<byte> span, int width, int height, PixelFormat format)
+		private ReadOnlyMemory2D<ColorRgba32> ByteToColorMemory(ReadOnlySpan<byte> span, int width, int height, PixelFormat format)
 		{
 			var pixels = new ColorRgba32[width * height];
 
@@ -1037,9 +1040,14 @@ namespace BCnEncoder.Encoder
 					for (var i = 0; i < width * height * 3; i += 3)
 						pixels[i / 3] = new ColorRgba32(span[i + 2], span[i + 1], span[i], 255);
 					break;
+
+				case PixelFormat.Argb32:
+					for (var i = 0; i < width * height * 4; i += 4)
+						pixels[i / 4] = new ColorRgba32(span[i + 1], span[i + 2], span[i + 3], span[i]);
+					break;
 			}
 
-			return new Memory2D<ColorRgba32>(pixels, width, height);
+			return new ReadOnlyMemory2D<ColorRgba32>(pixels, width, height);
 		}
 
 		#endregion

@@ -52,7 +52,7 @@ namespace BCnEncoder.Shared
 
 		#region Image to blocks
 
-		internal static RawBlock4X4Rgba32[] ImageTo4X4(Memory2D<ColorRgba32> image, out int blocksWidth, out int blocksHeight)
+		internal static RawBlock4X4Rgba32[] ImageTo4X4(ReadOnlyMemory2D<ColorRgba32> image, out int blocksWidth, out int blocksHeight)
 		{
 			blocksWidth = ((image.Width + 3) & ~3) >> 2;
 			blocksHeight = ((image.Height + 3) & ~3) >> 2;
