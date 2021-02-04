@@ -15,6 +15,14 @@ namespace BCnEncoder.Shared
 			this.a = a;
 		}
 
+		public ColorRgba32(byte r, byte g, byte b)
+		{
+			this.r = r;
+			this.g = g;
+			this.b = b;
+			this.a = 255;
+		}
+
 		public bool Equals(ColorRgba32 other)
 		{
 			return r == other.r && g == other.g && b == other.b && a == other.a;
@@ -163,15 +171,143 @@ namespace BCnEncoder.Shared
 			);
 		}
 
-		//public static implicit operator ColorRgba32(ColorRgb24 d) => new ColorRgba32(d.r, d.g, d.b, 255);
-
 		public override string ToString()
 		{
 			return $"r : {r} g : {g} b : {b} a : {a}";
 		}
+
+		internal readonly ColorRgbaFloat ToFloat()
+		{
+			return new ColorRgbaFloat(this);
+		}
 	}
 
-	public struct ColorYCbCr
+	internal struct ColorRgbaFloat : IEquatable<ColorRgbaFloat>
+	{
+		public float r, g, b, a;
+
+		public ColorRgbaFloat(float r, float g, float b, float a)
+		{
+			this.r = r;
+			this.g = g;
+			this.b = b;
+			this.a = a;
+		}
+
+		public ColorRgbaFloat(ColorRgba32 other)
+		{
+			this.r = other.r / 255f;
+			this.g = other.g / 255f;
+			this.b = other.b / 255f;
+			this.a = other.a / 255f;
+		}
+
+		public ColorRgbaFloat(float r, float g, float b)
+		{
+			this.r = r;
+			this.g = g;
+			this.b = b;
+			this.a = 1;
+		}
+
+		public bool Equals(ColorRgbaFloat other)
+		{
+			return r == other.r && g == other.g && b == other.b && a == other.a;
+		}
+
+		public override bool Equals(object obj)
+		{
+			return obj is ColorRgbaFloat other && Equals(other);
+		}
+
+		public override int GetHashCode()
+		{
+			unchecked
+			{
+				var hashCode = r.GetHashCode();
+				hashCode = (hashCode * 397) ^ g.GetHashCode();
+				hashCode = (hashCode * 397) ^ b.GetHashCode();
+				hashCode = (hashCode * 397) ^ a.GetHashCode();
+				return hashCode;
+			}
+		}
+
+		public static bool operator ==(ColorRgbaFloat left, ColorRgbaFloat right)
+		{
+			return left.Equals(right);
+		}
+
+		public static bool operator !=(ColorRgbaFloat left, ColorRgbaFloat right)
+		{
+			return !left.Equals(right);
+		}
+
+		public static ColorRgbaFloat operator +(ColorRgbaFloat left, ColorRgbaFloat right)
+		{
+			return new ColorRgbaFloat(
+				left.r + right.r,
+				left.g + right.g,
+				left.b + right.b,
+				left.a + right.a);
+		}
+
+		public static ColorRgbaFloat operator -(ColorRgbaFloat left, ColorRgbaFloat right)
+		{
+			return new ColorRgbaFloat(
+				left.r - right.r,
+				left.g - right.g,
+				left.b - right.b,
+				left.a - right.a);
+		}
+
+		public static ColorRgbaFloat operator /(ColorRgbaFloat left, float right)
+		{
+			return new ColorRgbaFloat(
+				left.r / right,
+				left.g / right,
+				left.b / right,
+				left.a / right
+			);
+		}
+
+		public static ColorRgbaFloat operator *(ColorRgbaFloat left, float right)
+		{
+			return new ColorRgbaFloat(
+				left.r * right,
+				left.g * right,
+				left.b * right,
+				left.a * right
+			);
+		}
+
+		public static ColorRgbaFloat operator *(float left, ColorRgbaFloat right)
+		{
+			return new ColorRgbaFloat(
+				right.r * left,
+				right.g * left,
+				right.b * left,
+				right.a * left
+			);
+		}
+
+		public override string ToString()
+		{
+			return $"r : {r:0.00} g : {g:0.00} b : {b:0.00} a : {a:0.00}";
+		}
+
+		public ColorRgba32 ToRgba32()
+		{
+			return new ColorRgba32(
+				(byte)(ByteHelper.ClampToByte(r * 255)),
+				(byte)(ByteHelper.ClampToByte(g * 255)),
+				(byte)(ByteHelper.ClampToByte(b * 255)),
+				(byte)(ByteHelper.ClampToByte(a * 255))
+				);
+		}
+
+	}
+
+	internal struct ColorYCbCr
 	{
 		public float y;
 		public float cb;
@@ -228,13 +364,22 @@ namespace BCnEncoder.Shared
 			cr = 0.5000f * fr - 0.4184f * fg - 0.0816f * fb;
 		}
 
-		internal ColorRgb565 ToColorRgb565()
+		public ColorRgb565 ToColorRgb565()
 		{
 			var r = Math.Max(0.0f, Math.Min(1.0f, (float)(y + 0.0000 * cb + 1.4022 * cr)));
 			var g = Math.Max(0.0f, Math.Min(1.0f, (float)(y - 0.3456 * cb - 0.7145 * cr)));
 			var b = Math.Max(0.0f, Math.Min(1.0f, (float)(y + 1.7710 * cb + 0.0000 * cr)));
 
 			return new ColorRgb565((byte)(r * 255), (byte)(g * 255), (byte)(b * 255));
+		}
+
+		public ColorRgba32 ToColorRgba32()
+		{
+			var r = Math.Max(0.0f, Math.Min(1.0f, (float)(y + 0.0000 * cb + 1.4022 * cr)));
+			var g = Math.Max(0.0f, Math.Min(1.0f, (float)(y - 0.3456 * cb - 0.7145 * cr)));
+			var b = Math.Max(0.0f, Math.Min(1.0f, (float)(y + 1.7710 * cb + 0.0000 * cr)));
+
+			return new ColorRgba32((byte)(r * 255), (byte)(g * 255), (byte)(b * 255), 255);
 		}
 
 		public override string ToString()

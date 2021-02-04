@@ -24,7 +24,7 @@ namespace BCnEncoder.Shared
 			set => AsSpan[index] = value;
 		}
 
-		public int CalculateError(RawBlock4X4Rgba32 other, bool useAlpha = false)
+		internal int CalculateError(RawBlock4X4Rgba32 other, bool useAlpha = false)
 		{
 			float error = 0;
 			var pix1 = AsSpan;
@@ -55,7 +55,7 @@ namespace BCnEncoder.Shared
 			return (int)error;
 		}
 
-		public float CalculateYCbCrError(RawBlock4X4Rgba32 other)
+		internal float CalculateYCbCrError(RawBlock4X4Rgba32 other)
 		{
 			float yError = 0;
 			float cbError = 0;
@@ -81,7 +81,7 @@ namespace BCnEncoder.Shared
 			return error;
 		}
 
-		public float CalculateYCbCrAlphaError(RawBlock4X4Rgba32 other, float yMultiplier = 2, float alphaMultiplier = 1)
+		internal float CalculateYCbCrAlphaError(RawBlock4X4Rgba32 other, float yMultiplier = 2, float alphaMultiplier = 1)
 		{
 			float yError = 0;
 			float cbError = 0;
@@ -109,7 +109,7 @@ namespace BCnEncoder.Shared
 			return error;
 		}
 
-		public RawBlock4X4Ycbcr ToRawBlockYcbcr()
+		internal RawBlock4X4Ycbcr ToRawBlockYcbcr()
 		{
 			var rawYcbcr = new RawBlock4X4Ycbcr();
 			var pixels = AsSpan;
@@ -133,7 +133,7 @@ namespace BCnEncoder.Shared
 	}
 
 
-	public struct RawBlock4X4Ycbcr
+	internal struct RawBlock4X4Ycbcr
 	{
 		public ColorYCbCr p00, p10, p20, p30;
 		public ColorYCbCr p01, p11, p21, p31;

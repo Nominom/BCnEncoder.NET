@@ -1,8 +1,10 @@
 using System;
 using System.IO;
+using System.Runtime.InteropServices;
 using BCnEncoder.Shared;
 using BCnEncTests.Support;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
 using Xunit;
 
 namespace BCnEncTests
@@ -14,10 +16,12 @@ namespace BCnEncTests
 		{
 			var testImage = ImageLoader.TestBlur1;
 
-			if (!testImage.TryGetSinglePixelSpan(out var pixels))
+			if (!testImage.TryGetSinglePixelSpan(out var pix))
 			{
 				throw new Exception("Cannot get pixel span.");
 			}
+
+			var pixels = MemoryMarshal.Cast<Rgba32, ColorRgba32>(pix).ToArray();
 
 			var numClusters = (testImage.Width / 32) * (testImage.Height / 32);
 			var clusters = LinearClustering.ClusterPixels(pixels, testImage.Width, testImage.Height, numClusters, 10, 10);
@@ -38,7 +42,7 @@ namespace BCnEncTests
 
 			for (var i = 0; i < pixels.Length; i++)
 			{
-				pixels[i] = pixC[clusters[i]].ToRgba32();
+				pixels[i] = pixC[clusters[i]].ToColorRgba32();
 			}
 
 			using var fs = File.OpenWrite("test_cluster.png");

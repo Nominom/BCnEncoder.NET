@@ -28,6 +28,7 @@ namespace BCnEncoder.Shared
 
 		internal static ColorRgba32[] ColorsFromRawBlocks(RawBlock4X4Rgba32[] blocks, int pixelWidth, int pixelHeight)
 		{
+			var blocksWidth = ((pixelWidth + 3) & ~3) >> 2;
 			var output = new ColorRgba32[pixelWidth * pixelHeight];
 
 			for (var y = 0; y < pixelHeight; y++)
@@ -39,7 +40,7 @@ namespace BCnEncoder.Shared
 					var blockInternalIndexX = x & 3;
 					var blockInternalIndexY = y & 3;
 
-					var blockIndex = blockIndexX + blockIndexY * 4;
+					var blockIndex = blockIndexX + blockIndexY * blocksWidth;
 
 					output[x + y * pixelWidth] = blocks[blockIndex][blockInternalIndexX, blockInternalIndexY];
 				}
@@ -56,6 +57,7 @@ namespace BCnEncoder.Shared
 		{
 			blocksWidth = ((image.Width + 3) & ~3) >> 2;
 			blocksHeight = ((image.Height + 3) & ~3) >> 2;
+			
 			var output = new RawBlock4X4Rgba32[blocksWidth * blocksHeight];
 
 			var span = image.Span;

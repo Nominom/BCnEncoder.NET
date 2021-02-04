@@ -209,6 +209,27 @@ namespace BCnEncoder.Encoder
 			return Task.Run(() => EncodeToRawInternal(input, mipLevel, out _, out _, token), token);
 		}
 
+		public Task EncodeCubeMapToStreamAsync(ReadOnlyMemory2D<ColorRgba32> right, ReadOnlyMemory2D<ColorRgba32> left,
+			ReadOnlyMemory2D<ColorRgba32> top, ReadOnlyMemory2D<ColorRgba32> down,
+			ReadOnlyMemory2D<ColorRgba32> back, ReadOnlyMemory2D<ColorRgba32> front, Stream outputStream, CancellationToken token = default)
+		{
+			return Task.Run(() => EncodeCubeMapToStreamInternal(right, left, top, down, back, front, outputStream, token), token);
+		}
+
+		public Task<KtxFile> EncodeCubeMapToKtxAsync(ReadOnlyMemory2D<ColorRgba32> right, ReadOnlyMemory2D<ColorRgba32> left,
+			ReadOnlyMemory2D<ColorRgba32> top, ReadOnlyMemory2D<ColorRgba32> down,
+			ReadOnlyMemory2D<ColorRgba32> back, ReadOnlyMemory2D<ColorRgba32> front, CancellationToken token = default)
+		{
+			return Task.Run(() => EncodeCubeMapToKtxInternal(right, left, top, down, back, front, token), token);
+		}
+
+		public Task<DdsFile> EncodeCubeMapToDdsAsync(ReadOnlyMemory2D<ColorRgba32> right, ReadOnlyMemory2D<ColorRgba32> left,
+			ReadOnlyMemory2D<ColorRgba32> top, ReadOnlyMemory2D<ColorRgba32> down,
+			ReadOnlyMemory2D<ColorRgba32> back, ReadOnlyMemory2D<ColorRgba32> front, CancellationToken token = default)
+		{
+			return Task.Run(() => EncodeCubeMapToDdsInternal(right, left, top, down, back, front, token), token);
+		}
+
 		#endregion
 
 		#region Sync Api
@@ -332,6 +353,27 @@ namespace BCnEncoder.Encoder
 		public byte[] EncodeToRawBytes(ReadOnlyMemory2D<ColorRgba32> input, int mipLevel, out int mipWidth, out int mipHeight)
 		{
 			return EncodeToRawInternal(input, mipLevel, out mipWidth, out mipHeight, default);
+		}
+
+		public void EncodeCubeMapToStream(ReadOnlyMemory2D<ColorRgba32> right, ReadOnlyMemory2D<ColorRgba32> left,
+			ReadOnlyMemory2D<ColorRgba32> top, ReadOnlyMemory2D<ColorRgba32> down,
+			ReadOnlyMemory2D<ColorRgba32> back, ReadOnlyMemory2D<ColorRgba32> front, Stream outputStream)
+		{
+			EncodeCubeMapToStreamInternal(right, left, top, down, back, front, outputStream, default);
+		}
+
+		public KtxFile EncodeCubeMapToKtx(ReadOnlyMemory2D<ColorRgba32> right, ReadOnlyMemory2D<ColorRgba32> left,
+			ReadOnlyMemory2D<ColorRgba32> top, ReadOnlyMemory2D<ColorRgba32> down,
+			ReadOnlyMemory2D<ColorRgba32> back, ReadOnlyMemory2D<ColorRgba32> front)
+		{
+			return EncodeCubeMapToKtxInternal(right, left, top, down, back, front, default);
+		}
+
+		public DdsFile EncodeCubeMapToDds(ReadOnlyMemory2D<ColorRgba32> right, ReadOnlyMemory2D<ColorRgba32> left,
+			ReadOnlyMemory2D<ColorRgba32> top, ReadOnlyMemory2D<ColorRgba32> down,
+			ReadOnlyMemory2D<ColorRgba32> back, ReadOnlyMemory2D<ColorRgba32> front)
+		{
+			return EncodeCubeMapToDdsInternal(right, left, top, down, back, front, default);
 		}
 
 		#endregion

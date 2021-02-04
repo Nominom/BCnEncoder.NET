@@ -1,9 +1,11 @@
 using System;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using BCnEncoder.Decoder;
 using BCnEncoder.Encoder;
+using BCnEncoder.NET.ImageSharp;
 using BCnEncoder.Shared;
 using BCnEncoder.Shared.ImageFiles;
 using SixLabors.ImageSharp;
@@ -19,7 +21,9 @@ namespace BCnEncTests.Support
 
 		public static void AssertPixelsEqual(Span<Rgba32> originalPixels, Span<Rgba32> pixels, CompressionQuality quality)
 		{
-			var psnr = ImageQuality.PeakSignalToNoiseRatio(originalPixels, pixels);
+			var psnr = ImageQuality.PeakSignalToNoiseRatio(
+				MemoryMarshal.Cast<Rgba32, ColorRgba32>(originalPixels),
+				MemoryMarshal.Cast<Rgba32, ColorRgba32>(pixels));
 			AssertPSNR(psnr, quality);
 		}
 
@@ -39,7 +43,7 @@ namespace BCnEncTests.Support
 			Assert.Equal((uint)1, file.header.NumberOfFaces);
 
 			var decoder = new BcDecoder();
-			using var image = decoder.Decode(file);
+			using var image = decoder.DecodeToImageRgba32(file);
 
 			Assert.Equal((uint)image.Width, file.header.PixelWidth);
 			Assert.Equal((uint)image.Height, file.header.PixelHeight);
@@ -67,11 +71,11 @@ namespace BCnEncTests.Support
 
 			if (images.Length == 1)
 			{
-				encoder.Encode(images[0], fs);
+				encoder.EncodeToStream(images[0], fs);
 			}
 			else
 			{
-				encoder.EncodeCubeMap(images[0], images[1], images[2], images[3], images[4], images[5], fs);
+				encoder.EncodeCubeMapToStream(images[0], images[1], images[2], images[3], images[4], images[5], fs);
 			}
 		}
 
@@ -82,7 +86,7 @@ namespace BCnEncTests.Support
 
 			var decoder = new BcDecoder();
 			decoder.InputOptions.DdsBc1ExpectAlpha = assertAlpha;
-			var images = decoder.DecodeAllMipMaps(file);
+			var images = decoder.DecodeAllMipMapsToImageRgba32(file);
 
 			Assert.Equal((uint)images[0].Width, file.header.dwWidth);
 			Assert.Equal((uint)images[0].Height, file.header.dwHeight);
@@ -128,7 +132,7 @@ namespace BCnEncTests.Support
 			using var fs = File.OpenRead(filename);
 			var ktx = KtxFile.Load(fs);
 			var decoder = new BcDecoder();
-			using var img = decoder.Decode(ktx);
+			using var img = decoder.DecodeToImageRgba32(ktx);
 
 			return CalculatePSNR(original, img);
 		}
@@ -141,7 +145,7 @@ namespace BCnEncTests.Support
 			encoder.OutputOptions.Format = format;
 
 			var fs = File.OpenWrite(filename);
-			encoder.Encode(image, fs);
+			encoder.EncodeToStream(image, fs);
 			fs.Close();
 
 			var psnr = DecodeCheckPSNR(filename, image);
@@ -159,8 +163,10 @@ namespace BCnEncTests.Support
 			{
 				throw new Exception("Cannot get pixel span.");
 			}
-
-			return ImageQuality.PeakSignalToNoiseRatio(pixels, pixels2);
+			
+			return ImageQuality.PeakSignalToNoiseRatio(
+				MemoryMarshal.Cast<Rgba32, ColorRgba32>(pixels),
+				MemoryMarshal.Cast<Rgba32, ColorRgba32>(pixels2));
 		}
 
 		private static void AssertPSNR(float psnr, CompressionQuality quality)
