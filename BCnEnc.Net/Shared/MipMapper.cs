@@ -113,19 +113,19 @@ namespace BCnEncoder.Shared
 			
 			var result = new ColorRgba32[newHeight, newWidth];
 			
-			int clampW(int x) => Math.Max(0, Math.Min(oldWidth - 1, x));
-			int clampH(int y) => Math.Max(0, Math.Min(oldHeight - 1, y));
+			int ClampW(int x) => Math.Max(0, Math.Min(oldWidth - 1, x));
+			int ClampH(int y) => Math.Max(0, Math.Min(oldHeight - 1, y));
 			
-			for (int y2 = 0; y2 < newHeight; y2++)
+			for (var y2 = 0; y2 < newHeight; y2++)
 			{
-				for (int x2 = 0; x2 < newWidth; x2++)
+				for (var x2 = 0; x2 < newWidth; x2++)
 				{
-					var xUL = pixelsRgba[clampH(y2 * 2), clampW(x2 * 2)].ToFloat();
-					var xUR = pixelsRgba[clampH(y2 * 2), clampW(x2 * 2 + 1)].ToFloat();
-					var xLL = pixelsRgba[clampH(y2 * 2 + 1), clampW(x2 * 2)].ToFloat();
-					var xLR = pixelsRgba[clampH(y2 * 2 + 1), clampW(x2 * 2 + 1)].ToFloat();
+					var ul = pixelsRgba[ClampH(y2 * 2), ClampW(x2 * 2)].ToFloat();
+					var ur = pixelsRgba[ClampH(y2 * 2), ClampW(x2 * 2 + 1)].ToFloat();
+					var ll = pixelsRgba[ClampH(y2 * 2 + 1), ClampW(x2 * 2)].ToFloat();
+					var lr = pixelsRgba[ClampH(y2 * 2 + 1), ClampW(x2 * 2 + 1)].ToFloat();
 
-					result[y2, x2] = ((xUL + xUR + xLL + xLR) / 4).ToRgba32();
+					result[y2, x2] = ((ul + ur + ll + lr) / 4).ToRgba32();
 				}
 			}
 

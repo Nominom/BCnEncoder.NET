@@ -247,7 +247,7 @@ namespace BCnEncoder.NET.ImageSharp
 			output.TryGetSinglePixelSpan(out var pixels);
 			colors.Span.TryGetSpan(out var decodedPixels);
 
-			for (int i = 0; i < pixels.Length; i++)
+			for (var i = 0; i < pixels.Length; i++)
 			{
 				var c = decodedPixels[i];
 				pixels[i] = new Rgba32(c.r, c.g, c.b, c.a);

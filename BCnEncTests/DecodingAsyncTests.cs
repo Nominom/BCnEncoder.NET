@@ -49,7 +49,7 @@ namespace BCnEncTests
 
 			var file = encoder.EncodeToKtx(original);
 			
-			MemoryStream ms = new MemoryStream(file.MipMaps[0].Faces[0].Data);
+			var ms = new MemoryStream(file.MipMaps[0].Faces[0].Data);
 			
 			var image = await decoder.DecodeRawToImageRgba32Async(ms,
 				(int) file.MipMaps[0].Width, (int) file.MipMaps[0].Height, CompressionFormat.Bc1);
