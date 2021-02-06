@@ -8,6 +8,7 @@ using BCnEncoder.Encoder.Bc7;
 using BCnEncoder.Encoder.Options;
 using BCnEncoder.Shared;
 using BCnEncoder.Shared.ImageFiles;
+using Microsoft.Toolkit.HighPerformance.Extensions;
 using Microsoft.Toolkit.HighPerformance.Memory;
 
 namespace BCnEncoder.Encoder
@@ -18,27 +19,27 @@ namespace BCnEncoder.Encoder
 	public enum PixelFormat
 	{
 		/// <summary>
-		/// Specifies the RGBA32 layout.
+		/// 8 bits per channel RGBA.
 		/// </summary>
 		Rgba32,
 
 		/// <summary>
-		/// Specifies the BGRA32 layout.
+		/// 8 bits per channel BGRA.
 		/// </summary>
 		Bgra32,
 
 		/// <summary>
-		/// Specifies the ARGB32 layout.
+		/// 8 bits per channel ARGB.
 		/// </summary>
 		Argb32,
 
 		/// <summary>
-		/// Specifies the RGB24 layout.
+		/// 8 bits per channel RGB.
 		/// </summary>
 		Rgb24,
 
 		/// <summary>
-		/// Specifies the BGR24 layout.
+		/// 8 bits per channel BGR.
 		/// </summary>
 		Bgr24
 	}
@@ -77,13 +78,13 @@ namespace BCnEncoder.Encoder
 		/// <summary>
 		/// Encodes all mipmap levels into a ktx or a dds file and writes it to the output stream asynchronously.
 		/// </summary>
-		/// <param name="input">The input to encode represented by a <see cref="Memory{T}"/>.</param>
+		/// <param name="input">The input to encode represented by a <see cref="ReadOnlyMemory{T}"/>.</param>
 		/// <param name="width">The width of the image.</param>
 		/// <param name="height">The height of the image.</param>
 		/// <param name="format">The pixel format the given data is in.</param>
 		/// <param name="outputStream">The stream to write the encoded image to.</param>
-		/// <param name="token">The cancellation token for this operation. Can be default, if the operation is not asynchronous.</param>
-		public Task EncodeToStreamAsync(Memory<byte> input, int width, int height, PixelFormat format, Stream outputStream, CancellationToken token = default)
+		/// <param name="token">The cancellation token for this operation. Can be default if cancellation is not needed.</param>
+		public Task EncodeToStreamAsync(ReadOnlyMemory<byte> input, int width, int height, PixelFormat format, Stream outputStream, CancellationToken token = default)
 		{
 			return Task.Run(() =>
 			{
@@ -94,10 +95,10 @@ namespace BCnEncoder.Encoder
 		/// <summary>
 		/// Encodes all mipmap levels into a ktx or a dds file and writes it to the output stream asynchronously.
 		/// </summary>
-		/// <param name="input">The input to encode represented by a <see cref="Memory2D{T}"/>.</param>
+		/// <param name="input">The input to encode represented by a <see cref="ReadOnlyMemory2D{T}"/>.</param>
 		/// <param name="outputStream">The stream to write the encoded image to.</param>
-		/// <param name="token">The cancellation token for this operation. Can be default, if the operation is not asynchronous.</param>
-		public Task EncodeToStreamAsync(Memory2D<ColorRgba32> input, Stream outputStream, CancellationToken token = default)
+		/// <param name="token">The cancellation token for this operation. Can be default if cancellation is not needed.</param>
+		public Task EncodeToStreamAsync(ReadOnlyMemory2D<ColorRgba32> input, Stream outputStream, CancellationToken token = default)
 		{
 			return Task.Run(() =>
 			{
@@ -108,13 +109,13 @@ namespace BCnEncoder.Encoder
 		/// <summary>
 		/// Encodes all mipmap levels into a Ktx file asynchronously.
 		/// </summary>
-		/// <param name="input">The input to encode represented by a <see cref="Memory{T}"/>.</param>
+		/// <param name="input">The input to encode represented by a <see cref="ReadOnlyMemory{T}"/>.</param>
 		/// <param name="width">The width of the image.</param>
 		/// <param name="height">The height of the image.</param>
 		/// <param name="format">The pixel format the given data is in.</param>
-		/// <param name="token">The cancellation token for this operation. Can be default, if the operation is not asynchronous.</param>
+		/// <param name="token">The cancellation token for this operation. Can be default if cancellation is not needed.</param>
 		/// <returns>The Ktx file containing the encoded image.</returns>
-		public Task<KtxFile> EncodeToKtxAsync(Memory<byte> input, int width, int height, PixelFormat format, CancellationToken token = default)
+		public Task<KtxFile> EncodeToKtxAsync(ReadOnlyMemory<byte> input, int width, int height, PixelFormat format, CancellationToken token = default)
 		{
 			return Task.Run(() => EncodeToKtxInternal(ByteToColorMemory(input.Span, width, height, format), token), token);
 		}
@@ -122,10 +123,10 @@ namespace BCnEncoder.Encoder
 		/// <summary>
 		/// Encodes all mipmap levels into a Ktx file asynchronously.
 		/// </summary>
-		/// <param name="input">The input to encode represented by a <see cref="Memory2D{T}"/>.</param>
-		/// <param name="token">The cancellation token for this operation. Can be default, if the operation is not asynchronous.</param>
+		/// <param name="input">The input to encode represented by a <see cref="ReadOnlyMemory2D{T}"/>.</param>
+		/// <param name="token">The cancellation token for this operation. Can be default if cancellation is not needed.</param>
 		/// <returns>The Ktx file containing the encoded image.</returns>
-		public Task<KtxFile> EncodeToKtxAsync(Memory2D<ColorRgba32> input, CancellationToken token = default)
+		public Task<KtxFile> EncodeToKtxAsync(ReadOnlyMemory2D<ColorRgba32> input, CancellationToken token = default)
 		{
 			return Task.Run(() => EncodeToKtxInternal(input, token), token);
 		}
@@ -133,13 +134,13 @@ namespace BCnEncoder.Encoder
 		/// <summary>
 		/// Encodes all mipmap levels into a Dds file asynchronously.
 		/// </summary>
-		/// <param name="input">The input to encode represented by a <see cref="Memory{T}"/>.</param>
+		/// <param name="input">The input to encode represented by a <see cref="ReadOnlyMemory{T}"/>.</param>
 		/// <param name="width">The width of the image.</param>
 		/// <param name="height">The height of the image.</param>
 		/// <param name="format">The pixel format the given data is in.</param>
-		/// <param name="token">The cancellation token for this operation. Can be default, if the operation is not asynchronous.</param>
+		/// <param name="token">The cancellation token for this operation. Can be default if cancellation is not needed.</param>
 		/// <returns>The Dds file containing the encoded image.</returns>
-		public Task<DdsFile> EncodeToDdsAsync(Memory<byte> input, int width, int height, PixelFormat format, CancellationToken token = default)
+		public Task<DdsFile> EncodeToDdsAsync(ReadOnlyMemory<byte> input, int width, int height, PixelFormat format, CancellationToken token = default)
 		{
 			return Task.Run(() => EncodeToDdsInternal(ByteToColorMemory(input.Span, width, height, format), token), token);
 		}
@@ -147,10 +148,10 @@ namespace BCnEncoder.Encoder
 		/// <summary>
 		/// Encodes all mipmap levels into a Dds file asynchronously.
 		/// </summary>
-		/// <param name="input">The input to encode represented by a <see cref="Memory2D{T}"/>.</param>
-		/// <param name="token">The cancellation token for this operation. Can be default, if the operation is not asynchronous.</param>
+		/// <param name="input">The input to encode represented by a <see cref="ReadOnlyMemory2D{T}"/>.</param>
+		/// <param name="token">The cancellation token for this operation. Can be default if cancellation is not needed.</param>
 		/// <returns>The Dds file containing the encoded image.</returns>
-		public Task<DdsFile> EncodeToDdsAsync(Memory2D<ColorRgba32> input, CancellationToken token = default)
+		public Task<DdsFile> EncodeToDdsAsync(ReadOnlyMemory2D<ColorRgba32> input, CancellationToken token = default)
 		{
 			return Task.Run(() => EncodeToDdsInternal(input, token), token);
 		}
@@ -158,13 +159,13 @@ namespace BCnEncoder.Encoder
 		/// <summary>
 		/// Encodes all mipmap levels into a list of byte buffers asynchronously.
 		/// </summary>
-		/// <param name="input">The input to encode represented by a <see cref="Memory{T}"/>.</param>
+		/// <param name="input">The input to encode represented by a <see cref="ReadOnlyMemory{T}"/>.</param>
 		/// <param name="width">The width of the image.</param>
 		/// <param name="height">The height of the image.</param>
 		/// <param name="format">The pixel format the given data is in.</param>
-		/// <param name="token">The cancellation token for this operation. Can be default, if the operation is not asynchronous.</param>
+		/// <param name="token">The cancellation token for this operation. Can be default if cancellation is not needed.</param>
 		/// <returns>A list of raw encoded mipmap input.</returns>
-		public Task<byte[][]> EncodeToRawBytesAsync(Memory<byte> input, int width, int height, PixelFormat format, CancellationToken token = default)
+		public Task<byte[][]> EncodeToRawBytesAsync(ReadOnlyMemory<byte> input, int width, int height, PixelFormat format, CancellationToken token = default)
 		{
 			return Task.Run(() => EncodeToRawInternal(ByteToColorMemory(input.Span, width, height, format), token), token);
 		}
@@ -172,10 +173,11 @@ namespace BCnEncoder.Encoder
 		/// <summary>
 		/// Encodes all mipmap levels into a list of byte buffers asynchronously.
 		/// </summary>
-		/// <param name="input">The input to encode represented by a <see cref="Memory2D{T}"/>.</param>
-		/// <param name="token">The cancellation token for this operation. Can be default, if the operation is not asynchronous.</param>
+		/// <param name="input">The input to encode represented by a <see cref="ReadOnlyMemory2D{T}"/>.</param>
+		/// <param name="token">The cancellation token for this operation. Can be default if cancellation is not needed.</param>
 		/// <returns>A list of raw encoded mipmap input.</returns>
-		public Task<byte[][]> EncodeToRawBytesAsync(Memory2D<ColorRgba32> input, CancellationToken token = default)
+		/// <remarks>To get the width and height of the encoded mip levels, see <see cref="CalculateMipMapSize"/>.</remarks>
+		public Task<byte[][]> EncodeToRawBytesAsync(ReadOnlyMemory2D<ColorRgba32> input, CancellationToken token = default)
 		{
 			return Task.Run(() => EncodeToRawInternal(input, token), token);
 		}
@@ -183,7 +185,7 @@ namespace BCnEncoder.Encoder
 		/// <summary>
 		/// Encodes a single mip level of the input image to a byte buffer asynchronously.
 		/// </summary>
-		/// <param name="input">The input to encode represented by a <see cref="Memory{T}"/>.</param>
+		/// <param name="input">The input to encode represented by a <see cref="ReadOnlyMemory{T}"/>.</param>
 		/// <param name="width">The width of the image.</param>
 		/// <param name="height">The height of the image.</param>
 		/// <param name="format">The pixel format the given data is in.</param>
@@ -191,7 +193,7 @@ namespace BCnEncoder.Encoder
 		/// <param name="token">The cancellation token for this operation. Can be default, if the operation is not asynchronous.</param>
 		/// <returns>The raw encoded input.</returns>
 		/// <remarks>To get the width and height of the encoded mip level, see <see cref="CalculateMipMapSize"/>.</remarks>
-		public Task<byte[]> EncodeToRawBytesAsync(Memory<byte> input, int width, int height, PixelFormat format, int mipLevel, CancellationToken token = default)
+		public Task<byte[]> EncodeToRawBytesAsync(ReadOnlyMemory<byte> input, int width, int height, PixelFormat format, int mipLevel, CancellationToken token = default)
 		{
 			return Task.Run(() => EncodeToRawInternal(ByteToColorMemory(input.Span, width, height, format), mipLevel, out _, out _, token), token);
 		}
@@ -199,16 +201,30 @@ namespace BCnEncoder.Encoder
 		/// <summary>
 		/// Encodes a single mip level of the input image to a byte buffer asynchronously.
 		/// </summary>
-		/// <param name="input">The input to encode represented by a <see cref="Memory2D{T}"/>.</param>
+		/// <param name="input">The input to encode represented by a <see cref="ReadOnlyMemory2D{T}"/>.</param>
 		/// <param name="mipLevel">The mipmap to encode.</param>
-		/// <param name="token">The cancellation token for this operation. Can be default, if the operation is not asynchronous.</param>
+		/// <param name="token">The cancellation token for this operation. Can be default if cancellation is not needed.</param>
 		/// <returns>The raw encoded input.</returns>
 		/// <remarks>To get the width and height of the encoded mip level, see <see cref="CalculateMipMapSize"/>.</remarks>
-		public Task<byte[]> EncodeToRawBytesAsync(Memory2D<ColorRgba32> input, int mipLevel, CancellationToken token = default)
+		public Task<byte[]> EncodeToRawBytesAsync(ReadOnlyMemory2D<ColorRgba32> input, int mipLevel, CancellationToken token = default)
 		{
 			return Task.Run(() => EncodeToRawInternal(input, mipLevel, out _, out _, token), token);
 		}
 
+		/// <summary>
+		/// Encodes all mipMaps of a cubeMap image to a stream asynchronously either in ktx or dds format.
+		/// The format can be set in <see cref="EncoderOutputOptions.FileFormat"/>.
+		/// Order of faces is +X, -X, +Y, -Y, +Z, -Z
+		/// </summary>
+		/// <param name="right">The positive X-axis face of the cubeMap</param>
+		/// <param name="left">The negative X-axis face of the cubeMap</param>
+		/// <param name="top">The positive Y-axis face of the cubeMap</param>
+		/// <param name="down">The negative Y-axis face of the cubeMap</param>
+		/// <param name="back">The positive Z-axis face of the cubeMap</param>
+		/// <param name="front">The negative Z-axis face of the cubeMap</param>
+		/// <param name="outputStream">The stream to write the encoded image to.</param>
+		/// <param name="token">The cancellation token for this operation. Can be default if cancellation is not needed.</param>
+		/// <returns>A <see cref="Task"/>.</returns>
 		public Task EncodeCubeMapToStreamAsync(ReadOnlyMemory2D<ColorRgba32> right, ReadOnlyMemory2D<ColorRgba32> left,
 			ReadOnlyMemory2D<ColorRgba32> top, ReadOnlyMemory2D<ColorRgba32> down,
 			ReadOnlyMemory2D<ColorRgba32> back, ReadOnlyMemory2D<ColorRgba32> front, Stream outputStream, CancellationToken token = default)
@@ -216,6 +232,19 @@ namespace BCnEncoder.Encoder
 			return Task.Run(() => EncodeCubeMapToStreamInternal(right, left, top, down, back, front, outputStream, token), token);
 		}
 
+		/// <summary>
+		/// Encodes all mipMaps of a cubeMap image to a <see cref="KtxFile"/> asynchronously.
+		/// The format can be set in <see cref="EncoderOutputOptions.FileFormat"/>.
+		/// Order of faces is +X, -X, +Y, -Y, +Z, -Z
+		/// </summary>
+		/// <param name="right">The positive X-axis face of the cubeMap</param>
+		/// <param name="left">The negative X-axis face of the cubeMap</param>
+		/// <param name="top">The positive Y-axis face of the cubeMap</param>
+		/// <param name="down">The negative Y-axis face of the cubeMap</param>
+		/// <param name="back">The positive Z-axis face of the cubeMap</param>
+		/// <param name="front">The negative Z-axis face of the cubeMap</param>
+		/// <param name="token">The cancellation token for this operation. Can be default if cancellation is not needed.</param>
+		/// <returns>A <see cref="Task{KtxFile}"/> of type <see cref="KtxFile"/>.</returns>
 		public Task<KtxFile> EncodeCubeMapToKtxAsync(ReadOnlyMemory2D<ColorRgba32> right, ReadOnlyMemory2D<ColorRgba32> left,
 			ReadOnlyMemory2D<ColorRgba32> top, ReadOnlyMemory2D<ColorRgba32> down,
 			ReadOnlyMemory2D<ColorRgba32> back, ReadOnlyMemory2D<ColorRgba32> front, CancellationToken token = default)
@@ -223,6 +252,19 @@ namespace BCnEncoder.Encoder
 			return Task.Run(() => EncodeCubeMapToKtxInternal(right, left, top, down, back, front, token), token);
 		}
 
+		/// <summary>
+		/// Encodes all mipMaps of a cubeMap image to a <see cref="DdsFile"/> asynchronously.
+		/// The format can be set in <see cref="EncoderOutputOptions.FileFormat"/>.
+		/// Order of faces is +X, -X, +Y, -Y, +Z, -Z
+		/// </summary>
+		/// <param name="right">The positive X-axis face of the cubeMap</param>
+		/// <param name="left">The negative X-axis face of the cubeMap</param>
+		/// <param name="top">The positive Y-axis face of the cubeMap</param>
+		/// <param name="down">The negative Y-axis face of the cubeMap</param>
+		/// <param name="back">The positive Z-axis face of the cubeMap</param>
+		/// <param name="front">The negative Z-axis face of the cubeMap</param>
+		/// <param name="token">The cancellation token for this operation. Can be default if cancellation is not needed.</param>
+		/// <returns>A <see cref="Task{DdsFile}"/> of type <see cref="DdsFile"/>.</returns>
 		public Task<DdsFile> EncodeCubeMapToDdsAsync(ReadOnlyMemory2D<ColorRgba32> right, ReadOnlyMemory2D<ColorRgba32> left,
 			ReadOnlyMemory2D<ColorRgba32> top, ReadOnlyMemory2D<ColorRgba32> down,
 			ReadOnlyMemory2D<ColorRgba32> back, ReadOnlyMemory2D<ColorRgba32> front, CancellationToken token = default)
@@ -237,20 +279,20 @@ namespace BCnEncoder.Encoder
 		/// <summary>
 		/// Encodes all mipmap levels into a ktx or a dds file and writes it to the output stream.
 		/// </summary>
-		/// <param name="input">The input to encode represented by a <see cref="ReadOnlyMemory{T}"/>.</param>
+		/// <param name="input">The input to encode represented by a <see cref="ReadOnlySpan{T}"/>.</param>
 		/// <param name="width">The width of the image.</param>
 		/// <param name="height">The height of the image.</param>
-		/// <param name="format">The pixel format the given data is in.</param>
+		/// <param name="format">The pixel format the input data is in.</param>
 		/// <param name="outputStream">The stream to write the encoded image to.</param>
-		public void EncodeToStream(ReadOnlyMemory<byte> input, int width, int height, PixelFormat format, Stream outputStream)
+		public void EncodeToStream(ReadOnlySpan<byte> input, int width, int height, PixelFormat format, Stream outputStream)
 		{
-			EncodeToStream(ByteToColorMemory(input.Span, width, height, format), outputStream);
+			EncodeToStream(ByteToColorMemory(input, width, height, format), outputStream);
 		}
 
 		/// <summary>
 		/// Encodes all mipmap levels into a ktx or a dds file and writes it to the output stream.
 		/// </summary>
-		/// <param name="input">The input to encode represented by a <see cref="Memory2D{T}"/>.</param>
+		/// <param name="input">The input to encode represented by a <see cref="ReadOnlyMemory2D{T}"/>.</param>
 		/// <param name="outputStream">The stream to write the encoded image to.</param>
 		public void EncodeToStream(ReadOnlyMemory2D<ColorRgba32> input, Stream outputStream)
 		{
@@ -260,21 +302,21 @@ namespace BCnEncoder.Encoder
 		/// <summary>
 		/// Encodes all mipmap levels into a Ktx file.
 		/// </summary>
-		/// <param name="input">The input to encode represented by a <see cref="Memory{T}"/>.</param>
+		/// <param name="input">The input to encode represented by a <see cref="ReadOnlySpan{T}"/>.</param>
 		/// <param name="width">The width of the image.</param>
 		/// <param name="height">The height of the image.</param>
-		/// <param name="format">The pixel format the given data is in.</param>
-		/// <returns>The Ktx file containing the encoded image.</returns>
-		public KtxFile EncodeToKtx(ReadOnlyMemory<byte> input, int width, int height, PixelFormat format)
+		/// <param name="format">The pixel format the input data is in.</param>
+		/// <returns>The <see cref="KtxFile"/> containing the encoded image.</returns>
+		public KtxFile EncodeToKtx(ReadOnlySpan<byte> input, int width, int height, PixelFormat format)
 		{
-			return EncodeToKtx(ByteToColorMemory(input.Span, width, height, format));
+			return EncodeToKtx(ByteToColorMemory(input, width, height, format));
 		}
 
 		/// <summary>
 		/// Encodes all mipmap levels into a Ktx file.
 		/// </summary>
-		/// <param name="input">The input to encode represented by a <see cref="Memory2D{T}"/>.</param>
-		/// <returns>The Ktx file containing the encoded image.</returns>
+		/// <param name="input">The input to encode represented by a <see cref="ReadOnlyMemory2D{T}"/>.</param>
+		/// <returns>The <see cref="KtxFile"/> containing the encoded image.</returns>
 		public KtxFile EncodeToKtx(ReadOnlyMemory2D<ColorRgba32> input)
 		{
 			return EncodeToKtxInternal(input, default);
@@ -283,21 +325,21 @@ namespace BCnEncoder.Encoder
 		/// <summary>
 		/// Encodes all mipmap levels into a Dds file.
 		/// </summary>
-		/// <param name="input">The input to encode represented by a <see cref="Memory{T}"/>.</param>
+		/// <param name="input">The input to encode represented by a <see cref="ReadOnlySpan{T}"/>.</param>
 		/// <param name="width">The width of the image.</param>
 		/// <param name="height">The height of the image.</param>
-		/// <param name="format">The pixel format the given data is in.</param>
-		/// <returns>The Dds file containing the encoded image.</returns>
-		public DdsFile EncodeToDds(ReadOnlyMemory<byte> input, int width, int height, PixelFormat format)
+		/// <param name="format">The pixel format the input data is in.</param>
+		/// <returns>The <see cref="DdsFile"/> containing the encoded image.</returns>
+		public DdsFile EncodeToDds(ReadOnlySpan<byte> input, int width, int height, PixelFormat format)
 		{
-			return EncodeToDds(ByteToColorMemory(input.Span, width, height, format));
+			return EncodeToDds(ByteToColorMemory(input, width, height, format));
 		}
 
 		/// <summary>
 		/// Encodes all mipmap levels into a Dds file.
 		/// </summary>
-		/// <param name="input">The input to encode represented by a <see cref="Memory2D{T}"/>.</param>
-		/// <returns>The Dds file containing the encoded image.</returns>
+		/// <param name="input">The input to encode represented by a <see cref="ReadOnlyMemory2D{T}"/>.</param>
+		/// <returns>The <see cref="DdsFile"/> containing the encoded image.</returns>
 		public DdsFile EncodeToDds(ReadOnlyMemory2D<ColorRgba32> input)
 		{
 			return EncodeToDdsInternal(input, default);
@@ -306,21 +348,23 @@ namespace BCnEncoder.Encoder
 		/// <summary>
 		/// Encodes all mipmap levels into a list of byte buffers.
 		/// </summary>
-		/// <param name="input">The input to encode represented by a <see cref="Memory{T}"/>.</param>
+		/// <param name="input">The input to encode represented by a <see cref="ReadOnlySpan{T}"/>.</param>
 		/// <param name="width">The width of the image.</param>
 		/// <param name="height">The height of the image.</param>
-		/// <param name="format">The pixel format the given data is in.</param>
-		/// <returns>A list of raw encoded mipmap input.</returns>
-		public byte[][] EncodeToRawBytes(ReadOnlyMemory<byte> input, int width, int height, PixelFormat format)
+		/// <param name="format">The pixel format the input data is in.</param>
+		/// <returns>An array of byte buffers containing all mipmap levels.</returns>
+		/// <remarks>To get the width and height of the encoded mip levels, see <see cref="CalculateMipMapSize"/>.</remarks>
+		public byte[][] EncodeToRawBytes(ReadOnlySpan<byte> input, int width, int height, PixelFormat format)
 		{
-			return EncodeToRawBytes(ByteToColorMemory(input.Span, width, height, format));
+			return EncodeToRawBytes(ByteToColorMemory(input, width, height, format));
 		}
 
 		/// <summary>
 		/// Encodes all mipmap levels into a list of byte buffers.
 		/// </summary>
-		/// <param name="input">The input to encode represented by a <see cref="Memory2D{T}"/>.</param>
-		/// <returns>A list of raw encoded mipmap input.</returns>
+		/// <param name="input">The input to encode represented by a <see cref="ReadOnlyMemory2D{T}"/>.</param>
+		/// <returns>An array of byte buffers containing all mipmap levels.</returns>
+		/// <remarks>To get the width and height of the encoded mip levels, see <see cref="CalculateMipMapSize"/>.</remarks>
 		public byte[][] EncodeToRawBytes(ReadOnlyMemory2D<ColorRgba32> input)
 		{
 			return EncodeToRawInternal(input, default);
@@ -329,32 +373,74 @@ namespace BCnEncoder.Encoder
 		/// <summary>
 		/// Encodes a single mip level of the input image to a byte buffer.
 		/// </summary>
-		/// <param name="input">The input to encode represented by a <see cref="Memory{T}"/>.</param>
+		/// <param name="input">The input to encode represented by a <see cref="ReadOnlySpan{T}"/>.</param>
 		/// <param name="width">The width of the image.</param>
 		/// <param name="height">The height of the image.</param>
-		/// <param name="format">The pixel format the given data is in.</param>
+		/// <param name="format">The pixel format the input data is in.</param>
 		/// <param name="mipLevel">The mipmap to encode.</param>
 		/// <param name="mipWidth">The width of the mipmap.</param>
 		/// <param name="mipHeight">The height of the mipmap.</param>
-		/// <returns>The raw encoded input.</returns>
-		public byte[] EncodeToRawBytes(ReadOnlyMemory<byte> input, int width, int height, PixelFormat format, int mipLevel, out int mipWidth, out int mipHeight)
+		/// <returns>A byte buffer containing the encoded data of the requested mip-level.</returns>
+		public byte[] EncodeToRawBytes(ReadOnlySpan<byte> input, int width, int height, PixelFormat format, int mipLevel, out int mipWidth, out int mipHeight)
 		{
-			return EncodeToRawInternal(ByteToColorMemory(input.Span, width, height, format), mipLevel, out mipWidth, out mipHeight, default);
+			return EncodeToRawInternal(ByteToColorMemory(input, width, height, format), mipLevel, out mipWidth, out mipHeight, default);
 		}
 
 		/// <summary>
 		/// Encodes a single mip level of the input image to a byte buffer.
 		/// </summary>
-		/// <param name="input">The input to encode represented by a <see cref="Memory2D{T}"/>.</param>
+		/// <param name="input">The input to encode represented by a <see cref="ReadOnlyMemory2D{T}"/>.</param>
 		/// <param name="mipLevel">The mipmap to encode.</param>
 		/// <param name="mipWidth">The width of the mipmap.</param>
 		/// <param name="mipHeight">The height of the mipmap.</param>
-		/// <returns>The raw encoded input.</returns>
+		/// <returns>A byte buffer containing the encoded data of the requested mip-level.</returns>
 		public byte[] EncodeToRawBytes(ReadOnlyMemory2D<ColorRgba32> input, int mipLevel, out int mipWidth, out int mipHeight)
 		{
 			return EncodeToRawInternal(input, mipLevel, out mipWidth, out mipHeight, default);
 		}
 
+		/// <summary>
+		/// Encodes all mipMaps of a cubeMap image to a stream either in ktx or dds format.
+		/// The format can be set in <see cref="EncoderOutputOptions.FileFormat"/>.
+		/// Order of faces is +X, -X, +Y, -Y, +Z, -Z
+		/// </summary>
+		/// <param name="right">The positive X-axis face of the cubeMap</param>
+		/// <param name="left">The negative X-axis face of the cubeMap</param>
+		/// <param name="top">The positive Y-axis face of the cubeMap</param>
+		/// <param name="down">The negative Y-axis face of the cubeMap</param>
+		/// <param name="back">The positive Z-axis face of the cubeMap</param>
+		/// <param name="front">The negative Z-axis face of the cubeMap</param>
+		/// <param name="width">The width of the faces.</param>
+		/// <param name="height">The height of the faces.</param>
+		/// <param name="format">The pixel format the input data is in.</param>
+		/// <param name="outputStream">The stream to write the encoded image to.</param>
+		public void EncodeCubeMapToStream(ReadOnlySpan<byte> right, ReadOnlySpan<byte> left,
+			ReadOnlySpan<byte> top, ReadOnlySpan<byte> down,
+			ReadOnlySpan<byte> back, ReadOnlySpan<byte> front,
+			int width, int height, PixelFormat format, Stream outputStream)
+		{
+			EncodeCubeMapToStreamInternal(
+				ByteToColorMemory(right, width, height, format),
+				ByteToColorMemory(left, width, height, format),
+				ByteToColorMemory(top, width, height, format),
+				ByteToColorMemory(down, width, height, format),
+				ByteToColorMemory(back, width, height, format),
+				ByteToColorMemory(front, width, height, format),
+				outputStream, default);
+		}
+
+		/// <summary>
+		/// Encodes all mipMaps of a cubeMap image to a stream either in ktx or dds format.
+		/// The format can be set in <see cref="EncoderOutputOptions.FileFormat"/>.
+		/// Order of faces is +X, -X, +Y, -Y, +Z, -Z
+		/// </summary>
+		/// <param name="right">The positive X-axis face of the cubeMap</param>
+		/// <param name="left">The negative X-axis face of the cubeMap</param>
+		/// <param name="top">The positive Y-axis face of the cubeMap</param>
+		/// <param name="down">The negative Y-axis face of the cubeMap</param>
+		/// <param name="back">The positive Z-axis face of the cubeMap</param>
+		/// <param name="front">The negative Z-axis face of the cubeMap</param>
+		/// <param name="outputStream">The stream to write the encoded image to.</param>
 		public void EncodeCubeMapToStream(ReadOnlyMemory2D<ColorRgba32> right, ReadOnlyMemory2D<ColorRgba32> left,
 			ReadOnlyMemory2D<ColorRgba32> top, ReadOnlyMemory2D<ColorRgba32> down,
 			ReadOnlyMemory2D<ColorRgba32> back, ReadOnlyMemory2D<ColorRgba32> front, Stream outputStream)
@@ -362,6 +448,47 @@ namespace BCnEncoder.Encoder
 			EncodeCubeMapToStreamInternal(right, left, top, down, back, front, outputStream, default);
 		}
 
+		/// <summary>
+		/// Encodes all mipMaps of a cubeMap image to a <see cref="KtxFile"/>.
+		/// The format can be set in <see cref="EncoderOutputOptions.FileFormat"/>.
+		/// Order of faces is +X, -X, +Y, -Y, +Z, -Z
+		/// </summary>
+		/// <param name="right">The positive X-axis face of the cubeMap</param>
+		/// <param name="left">The negative X-axis face of the cubeMap</param>
+		/// <param name="top">The positive Y-axis face of the cubeMap</param>
+		/// <param name="down">The negative Y-axis face of the cubeMap</param>
+		/// <param name="back">The positive Z-axis face of the cubeMap</param>
+		/// <param name="front">The negative Z-axis face of the cubeMap</param>
+		/// <param name="width">The width of the faces.</param>
+		/// <param name="height">The height of the faces.</param>
+		/// <param name="format">The pixel format the input data is in.</param>
+		/// <returns>The encoded image as a <see cref="KtxFile"/>.</returns>
+		public KtxFile EncodeCubeMapToKtx(ReadOnlySpan<byte> right, ReadOnlySpan<byte> left,
+			ReadOnlySpan<byte> top, ReadOnlySpan<byte> down,
+			ReadOnlySpan<byte> back, ReadOnlySpan<byte> front,
+			int width, int height, PixelFormat format)
+		{
+			return EncodeCubeMapToKtxInternal(
+				ByteToColorMemory(right, width, height, format),
+				ByteToColorMemory(left, width, height, format),
+				ByteToColorMemory(top, width, height, format),
+				ByteToColorMemory(down, width, height, format),
+				ByteToColorMemory(back, width, height, format),
+				ByteToColorMemory(front, width, height, format), default);
+		}
+
+		/// <summary>
+		/// Encodes all mipMaps of a cubeMap image to a <see cref="KtxFile"/>.
+		/// The format can be set in <see cref="EncoderOutputOptions.FileFormat"/>.
+		/// Order of faces is +X, -X, +Y, -Y, +Z, -Z
+		/// </summary>
+		/// <param name="right">The positive X-axis face of the cubeMap</param>
+		/// <param name="left">The negative X-axis face of the cubeMap</param>
+		/// <param name="top">The positive Y-axis face of the cubeMap</param>
+		/// <param name="down">The negative Y-axis face of the cubeMap</param>
+		/// <param name="back">The positive Z-axis face of the cubeMap</param>
+		/// <param name="front">The negative Z-axis face of the cubeMap</param>
+		/// <returns>The encoded image as a <see cref="KtxFile"/>.</returns>
 		public KtxFile EncodeCubeMapToKtx(ReadOnlyMemory2D<ColorRgba32> right, ReadOnlyMemory2D<ColorRgba32> left,
 			ReadOnlyMemory2D<ColorRgba32> top, ReadOnlyMemory2D<ColorRgba32> down,
 			ReadOnlyMemory2D<ColorRgba32> back, ReadOnlyMemory2D<ColorRgba32> front)
@@ -369,11 +496,145 @@ namespace BCnEncoder.Encoder
 			return EncodeCubeMapToKtxInternal(right, left, top, down, back, front, default);
 		}
 
+		/// <summary>
+		/// Encodes all mipMaps of a cubeMap image to a <see cref="DdsFile"/>.
+		/// The format can be set in <see cref="EncoderOutputOptions.FileFormat"/>.
+		/// Order of faces is +X, -X, +Y, -Y, +Z, -Z
+		/// </summary>
+		/// <param name="right">The positive X-axis face of the cubeMap</param>
+		/// <param name="left">The negative X-axis face of the cubeMap</param>
+		/// <param name="top">The positive Y-axis face of the cubeMap</param>
+		/// <param name="down">The negative Y-axis face of the cubeMap</param>
+		/// <param name="back">The positive Z-axis face of the cubeMap</param>
+		/// <param name="front">The negative Z-axis face of the cubeMap</param>
+		/// <param name="width">The width of the faces.</param>
+		/// <param name="height">The height of the faces.</param>
+		/// <param name="format">The pixel format the input data is in.</param>
+		/// <returns>The encoded image as a <see cref="DdsFile"/>.</returns>
+		public DdsFile EncodeCubeMapToDds(ReadOnlySpan<byte> right, ReadOnlySpan<byte> left,
+			ReadOnlySpan<byte> top, ReadOnlySpan<byte> down,
+			ReadOnlySpan<byte> back, ReadOnlySpan<byte> front,
+			int width, int height, PixelFormat format)
+		{
+			return EncodeCubeMapToDdsInternal(
+				ByteToColorMemory(right, width, height, format),
+				ByteToColorMemory(left, width, height, format),
+				ByteToColorMemory(top, width, height, format),
+				ByteToColorMemory(down, width, height, format),
+				ByteToColorMemory(back, width, height, format),
+				ByteToColorMemory(front, width, height, format), default);
+		}
+
+		/// <summary>
+		/// Encodes all mipMaps of a cubeMap image to a <see cref="DdsFile"/>.
+		/// The format can be set in <see cref="EncoderOutputOptions.FileFormat"/>.
+		/// Order of faces is +X, -X, +Y, -Y, +Z, -Z
+		/// </summary>
+		/// <param name="right">The positive X-axis face of the cubeMap</param>
+		/// <param name="left">The negative X-axis face of the cubeMap</param>
+		/// <param name="top">The positive Y-axis face of the cubeMap</param>
+		/// <param name="down">The negative Y-axis face of the cubeMap</param>
+		/// <param name="back">The positive Z-axis face of the cubeMap</param>
+		/// <param name="front">The negative Z-axis face of the cubeMap</param>
+		/// <returns>The encoded image as a <see cref="DdsFile"/>.</returns>
 		public DdsFile EncodeCubeMapToDds(ReadOnlyMemory2D<ColorRgba32> right, ReadOnlyMemory2D<ColorRgba32> left,
 			ReadOnlyMemory2D<ColorRgba32> top, ReadOnlyMemory2D<ColorRgba32> down,
 			ReadOnlyMemory2D<ColorRgba32> back, ReadOnlyMemory2D<ColorRgba32> front)
 		{
 			return EncodeCubeMapToDdsInternal(right, left, top, down, back, front, default);
+		}
+
+		/// <summary>
+		/// Encodes a single 4x4 block to raw encoded bytes. Input Span length must be exactly 16.
+		/// </summary>
+		/// <param name="inputBlock">Input 4x4 color block</param>
+		/// <returns>Raw encoded data</returns>
+		public byte[] EncodeBlock(ReadOnlySpan<ColorRgba32> inputBlock)
+		{
+			if (inputBlock.Length != 16)
+			{
+				throw new ArgumentException($"Single block encoding can only encode blocks of 4x4");
+			}
+			return EncodeBlockInternal(inputBlock.AsSpan2D(4, 4));
+		}
+
+		/// <summary>
+		/// Encodes a single 4x4 block to raw encoded bytes. Input Span width and height must be exactly 4.
+		/// </summary>
+		/// <param name="inputBlock">Input 4x4 color block</param>
+		/// <returns>Raw encoded data</returns>
+		public byte[] EncodeBlock(ReadOnlySpan2D<ColorRgba32> inputBlock)
+		{
+			if (inputBlock.Width != 4 || inputBlock.Height != 4)
+			{
+				throw new ArgumentException($"Single block encoding can only encode blocks of 4x4");
+			}
+			return EncodeBlockInternal(inputBlock);
+		}
+
+		/// <summary>
+		/// Encodes a single 4x4 block and writes the encoded block to a stream. Input Span length must be exactly 16.
+		/// </summary>
+		/// <param name="inputBlock">Input 4x4 color block</param>
+		/// <param name="outputStream">Output stream where the encoded block will be written to.</param>
+		public void EncodeBlock(ReadOnlySpan<ColorRgba32> inputBlock, Stream outputStream)
+		{
+			if (inputBlock.Length != 16)
+			{
+				throw new ArgumentException($"Single block encoding can only encode blocks of 4x4");
+			}
+			EncodeBlockInternal(inputBlock.AsSpan2D(4, 4), outputStream);
+		}
+
+		/// <summary>
+		/// Encodes a single 4x4 block and writes the encoded block to a stream. Input Span width and height must be exactly 4.
+		/// </summary>
+		/// <param name="inputBlock">Input 4x4 color block</param>
+		/// <param name="outputStream">Output stream where the encoded block will be written to.</param>
+		public void EncodeBlock(ReadOnlySpan2D<ColorRgba32> inputBlock, Stream outputStream)
+		{
+			if (inputBlock.Width != 4 || inputBlock.Height != 4)
+			{
+				throw new ArgumentException($"Single block encoding can only encode blocks of 4x4");
+			}
+			EncodeBlockInternal(inputBlock, outputStream);
+		}
+
+		/// <summary>
+		/// Gets the block size of the currently selected compression format in bytes.
+		/// </summary>
+		/// <returns>The size of a single 4x4 block in bytes</returns>
+		public int GetBlockSize()
+		{
+			var compressedEncoder = GetEncoder(OutputOptions.Format);
+			if (compressedEncoder == null)
+			{
+				throw new NotSupportedException($"This format is either not supported or does not use block compression: {OutputOptions.Format}");
+			}
+			return compressedEncoder.GetBlockSize();
+		}
+
+		/// <summary>
+		/// Gets the number of total blocks in an image with the given pixel width and height.
+		/// </summary>
+		/// <param name="pixelWidth">The pixel width of the image</param>
+		/// <param name="pixelHeight">The pixel height of the image</param>
+		/// <returns>The total number of blocks.</returns>
+		public int GetBlockCount(int pixelWidth, int pixelHeight)
+		{
+			return ImageToBlocks.CalculateNumOfBlocks(pixelWidth, pixelHeight);
+		}
+
+		/// <summary>
+		/// Gets the number of blocks in an image with the given pixel width and height.
+		/// </summary>
+		/// <param name="pixelWidth">The pixel width of the image</param>
+		/// <param name="pixelHeight">The pixel height of the image</param>
+		/// <param name="blocksWidth">The amount of blocks in the x-axis</param>
+		/// <param name="blocksHeight">The amount of blocks in the y-axis</param>
+		public void GetBlockCount(int pixelWidth, int pixelHeight, out int blocksWidth, out int blocksHeight)
+		{
+			ImageToBlocks.CalculateNumOfBlocks(pixelWidth, pixelHeight, out blocksWidth, out blocksHeight);
 		}
 
 		#endregion
@@ -532,13 +793,13 @@ namespace BCnEncoder.Encoder
 				}
 
 				var (ddsHeader, dxt10Header) = DdsHeader.InitializeCompressed(input.Width, input.Height,
-					compressedEncoder.GetDxgiFormat());
+					compressedEncoder.GetDxgiFormat(), OutputOptions.DdsPreferDxt10Header);
 				output = new DdsFile(ddsHeader, dxt10Header);
 
 				if (OutputOptions.DdsBc1WriteAlphaFlag &&
 					OutputOptions.Format == CompressionFormat.Bc1WithAlpha)
 				{
-					output.header.ddsPixelFormat.dwFlags |= PixelFormatFlags.DdpfAlphapixels;
+					output.header.ddsPixelFormat.dwFlags |= PixelFormatFlags.DdpfAlphaPixels;
 				}
 			}
 			else
@@ -890,13 +1151,13 @@ namespace BCnEncoder.Encoder
 				}
 
 				var (ddsHeader, dxt10Header) = DdsHeader.InitializeCompressed(width, height,
-					compressedEncoder.GetDxgiFormat());
+					compressedEncoder.GetDxgiFormat(), OutputOptions.DdsPreferDxt10Header);
 				output = new DdsFile(ddsHeader, dxt10Header);
 
 				if (OutputOptions.DdsBc1WriteAlphaFlag &&
 					OutputOptions.Format == CompressionFormat.Bc1WithAlpha)
 				{
-					output.header.ddsPixelFormat.dwFlags |= PixelFormatFlags.DdpfAlphapixels;
+					output.header.ddsPixelFormat.dwFlags |= PixelFormatFlags.DdpfAlphaPixels;
 				}
 			}
 			else
@@ -988,6 +1249,59 @@ namespace BCnEncoder.Encoder
 							  HeaderCaps2.Ddscaps2CubemapNegativez;
 
 			return output;
+		}
+
+		private byte[] EncodeBlockInternal(ReadOnlySpan2D<ColorRgba32> input)
+		{
+			var compressedEncoder = GetEncoder(OutputOptions.Format);
+			if (compressedEncoder == null)
+			{
+				throw new NotSupportedException($"This Format is not supported for single block encoding: {OutputOptions.Format}");
+			}
+
+			var output = new byte[compressedEncoder.GetBlockSize()];
+
+			var rawBlock = new RawBlock4X4Rgba32();
+
+			var pixels = rawBlock.AsSpan;
+
+			input.GetRowSpan(0).CopyTo(pixels);
+			input.GetRowSpan(1).CopyTo(pixels.Slice(4));
+			input.GetRowSpan(2).CopyTo(pixels.Slice(8));
+			input.GetRowSpan(3).CopyTo(pixels.Slice(12));
+
+			compressedEncoder.EncodeBlock(rawBlock, OutputOptions.Quality, output);
+
+			return output;
+		}
+
+		private void EncodeBlockInternal(ReadOnlySpan2D<ColorRgba32> input, Stream outputStream)
+		{
+			var compressedEncoder = GetEncoder(OutputOptions.Format);
+			if (compressedEncoder == null)
+			{
+				throw new NotSupportedException($"This Format is not supported for single block encoding: {OutputOptions.Format}");
+			}
+			if (input.Width != 4 || input.Height != 4)
+			{
+				throw new ArgumentException($"Single block encoding can only encode blocks of 4x4");
+			}
+
+			Span<byte> output = stackalloc byte[16];
+			output = output.Slice(0, compressedEncoder.GetBlockSize());
+
+			var rawBlock = new RawBlock4X4Rgba32();
+
+			var pixels = rawBlock.AsSpan;
+
+			input.GetRowSpan(0).CopyTo(pixels);
+			input.GetRowSpan(1).CopyTo(pixels.Slice(4));
+			input.GetRowSpan(2).CopyTo(pixels.Slice(8));
+			input.GetRowSpan(3).CopyTo(pixels.Slice(12));
+
+			compressedEncoder.EncodeBlock(rawBlock, OutputOptions.Quality, output);
+
+			outputStream.Write(output);
 		}
 
 		#endregion
@@ -1089,7 +1403,7 @@ namespace BCnEncoder.Encoder
 					break;
 			}
 
-			return new ReadOnlyMemory2D<ColorRgba32>(pixels, width, height);
+			return new ReadOnlyMemory2D<ColorRgba32>(pixels, height, width);
 		}
 
 		#endregion

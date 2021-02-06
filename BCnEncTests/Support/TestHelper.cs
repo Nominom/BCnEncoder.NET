@@ -169,7 +169,7 @@ namespace BCnEncTests.Support
 				MemoryMarshal.Cast<Rgba32, ColorRgba32>(pixels2));
 		}
 
-		private static void AssertPSNR(float psnr, CompressionQuality quality)
+		public static void AssertPSNR(float psnr, CompressionQuality quality)
 		{
 			if (quality == CompressionQuality.Fast)
 			{

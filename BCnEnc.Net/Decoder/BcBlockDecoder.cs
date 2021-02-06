@@ -11,6 +11,7 @@ namespace BCnEncoder.Decoder
 	internal interface IBcBlockDecoder
 	{
 		RawBlock4X4Rgba32[] Decode(ReadOnlyMemory<byte> data, OperationContext context);
+		RawBlock4X4Rgba32 DecodeBlock(ReadOnlySpan<byte> data);
 	}
 
 	internal abstract class BaseBcBlockDecoder<T> : IBcBlockDecoder where T : unmanaged
@@ -63,6 +64,12 @@ namespace BCnEncoder.Decoder
 			}
 
 			return output;
+		}
+
+		public RawBlock4X4Rgba32 DecodeBlock(ReadOnlySpan<byte> data)
+		{
+			var encodedBlock = MemoryMarshal.Cast<byte, T>(data)[0];
+			return DecodeBlock(encodedBlock);
 		}
 
 		protected abstract RawBlock4X4Rgba32 DecodeBlock(T block);

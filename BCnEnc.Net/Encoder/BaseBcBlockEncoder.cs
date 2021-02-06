@@ -1,3 +1,4 @@
+using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -49,9 +50,23 @@ namespace BCnEncoder.Encoder
 			return outputData;
 		}
 
+		public void EncodeBlock(RawBlock4X4Rgba32 block, CompressionQuality quality, Span<byte> output)
+		{
+			if (output.Length != Unsafe.SizeOf<T>())
+			{
+				throw new Exception("Cannot encode block! Output buffer is not the correct size.");
+			}
+			T encoded = EncodeBlock(block, quality);
+			MemoryMarshal.Cast<byte, T>(output)[0] = encoded;
+		}
+
 		public abstract GlInternalFormat GetInternalFormat();
 		public abstract GlFormat GetBaseInternalFormat();
 		public abstract DxgiFormat GetDxgiFormat();
+		public int GetBlockSize()
+		{
+			return Unsafe.SizeOf<T>();
+		}
 
 		public abstract T EncodeBlock(RawBlock4X4Rgba32 block, CompressionQuality quality);
 	}

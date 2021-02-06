@@ -48,7 +48,7 @@ namespace BCnEncoder.Encoder
 
 		public override DxgiFormat GetDxgiFormat()
 		{
-			return DxgiFormat.DxgiFormatAtc;
+			return DxgiFormat.DxgiFormatAtcExt;
 		}
 	}
 
@@ -91,7 +91,7 @@ namespace BCnEncoder.Encoder
 
 		public override DxgiFormat GetDxgiFormat()
 		{
-			return DxgiFormat.DxgiFormatAtcExplicitAlpha;
+			return DxgiFormat.DxgiFormatAtcExplicitAlphaExt;
 		}
 	}
 
@@ -130,7 +130,7 @@ namespace BCnEncoder.Encoder
 
 		public override DxgiFormat GetDxgiFormat()
 		{
-			return DxgiFormat.DxgiFormatAtcInterpolatedAlpha;
+			return DxgiFormat.DxgiFormatAtcInterpolatedAlphaExt;
 		}
 	}
 }

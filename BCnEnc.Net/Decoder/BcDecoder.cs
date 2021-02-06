@@ -43,7 +43,7 @@ namespace BCnEncoder.Decoder
 		/// <param name="pixelHeight">The pixelHeight of the image.</param>
 		/// <param name="token">The cancellation token for this asynchronous operation.</param>
 		/// <returns>The awaitable operation to retrieve the decoded Rgba32 image.</returns>
-		public Task<Memory<ColorRgba32>> DecodeRawAsync(Stream inputStream, CompressionFormat format, int pixelWidth, int pixelHeight, CancellationToken token = default)
+		public Task<ColorRgba32[]> DecodeRawAsync(Stream inputStream, CompressionFormat format, int pixelWidth, int pixelHeight, CancellationToken token = default)
 		{
 			var dataArray = new byte[GetBufferSize(format, pixelWidth, pixelHeight)];
 			inputStream.Read(dataArray, 0, dataArray.Length);
@@ -60,7 +60,7 @@ namespace BCnEncoder.Decoder
 		/// <param name="pixelHeight">The pixelHeight of the image.</param>
 		/// <param name="token">The cancellation token for this asynchronous operation.</param>
 		/// <returns>The awaitable operation to retrieve the decoded Rgba32 image.</returns>
-		public Task<Memory<ColorRgba32>> DecodeRawAsync(ReadOnlyMemory<byte> input, CompressionFormat format, int pixelWidth, int pixelHeight, CancellationToken token = default)
+		public Task<ColorRgba32[]> DecodeRawAsync(ReadOnlyMemory<byte> input, CompressionFormat format, int pixelWidth, int pixelHeight, CancellationToken token = default)
 		{
 			return Task.Run(() => DecodeRawInternal(input, pixelWidth, pixelHeight, format, token), token);
 		}
@@ -71,7 +71,7 @@ namespace BCnEncoder.Decoder
 		/// <param name="file">The loaded Ktx file.</param>
 		/// <param name="token">The cancellation token for this asynchronous operation.</param>
 		/// <returns>The awaitable operation to retrieve the decoded Rgba32 image.</returns>
-		public Task<Memory<ColorRgba32>> DecodeAsync(KtxFile file, CancellationToken token = default)
+		public Task<ColorRgba32[]> DecodeAsync(KtxFile file, CancellationToken token = default)
 		{
 			return Task.Run(() => DecodeInternal(file, false, token)[0], token);
 		}
@@ -82,7 +82,7 @@ namespace BCnEncoder.Decoder
 		/// <param name="file">The loaded Ktx file.</param>
 		/// <param name="token">The cancellation token for this asynchronous operation.</param>
 		/// <returns>The awaitable operation to retrieve the decoded Rgba32 image.</returns>
-		public Task<Memory<ColorRgba32>[]> DecodeAllMipMapsAsync(KtxFile file, CancellationToken token = default)
+		public Task<ColorRgba32[][]> DecodeAllMipMapsAsync(KtxFile file, CancellationToken token = default)
 		{
 			return Task.Run(() => DecodeInternal(file, true, token), token);
 		}
@@ -93,7 +93,7 @@ namespace BCnEncoder.Decoder
 		/// <param name="file">The loaded Dds file.</param>
 		/// <param name="token">The cancellation token for this asynchronous operation.</param>
 		/// <returns>The awaitable operation to retrieve the decoded Rgba32 image.</returns>
-		public Task<Memory<ColorRgba32>> DecodeAsync(DdsFile file, CancellationToken token = default)
+		public Task<ColorRgba32[]> DecodeAsync(DdsFile file, CancellationToken token = default)
 		{
 			return Task.Run(() => DecodeInternal(file, false, token)[0], token);
 		}
@@ -104,7 +104,7 @@ namespace BCnEncoder.Decoder
 		/// <param name="file">The loaded Dds file.</param>
 		/// <param name="token">The cancellation token for this asynchronous operation.</param>
 		/// <returns>The awaitable operation to retrieve the decoded Rgba32 image.</returns>
-		public Task<Memory<ColorRgba32>[]> DecodeAllMipMapsAsync(DdsFile file, CancellationToken token = default)
+		public Task<ColorRgba32[][]> DecodeAllMipMapsAsync(DdsFile file, CancellationToken token = default)
 		{
 			return Task.Run(() => DecodeInternal(file, true, token), token);
 		}
@@ -112,7 +112,7 @@ namespace BCnEncoder.Decoder
 		/// <summary>
 		/// Decode raw encoded image asynchronously.
 		/// </summary>
-		/// <param name="inputStream">The stream containing the encoded data.</param>
+		/// <param name="inputStream">The stream containing the raw encoded data.</param>
 		/// <param name="format">The Format the encoded data is in.</param>
 		/// <param name="pixelWidth">The pixelWidth of the image.</param>
 		/// <param name="pixelHeight">The pixelHeight of the image.</param>
@@ -124,7 +124,7 @@ namespace BCnEncoder.Decoder
 			inputStream.Read(dataArray, 0, dataArray.Length);
 
 			return Task.Run(() => DecodeRawInternal(dataArray, pixelWidth, pixelHeight, format, token)
-				.AsMemory2D(pixelHeight, pixelWidth), token);
+				.AsMemory().AsMemory2D(pixelHeight, pixelWidth), token);
 		}
 
 		/// <summary>
@@ -139,7 +139,7 @@ namespace BCnEncoder.Decoder
 		public Task<Memory2D<ColorRgba32>> DecodeRaw2DAsync(ReadOnlyMemory<byte> input, int pixelWidth, int pixelHeight, CompressionFormat format, CancellationToken token = default)
 		{
 			return Task.Run(() => DecodeRawInternal(input, pixelWidth, pixelHeight, format, token)
-				.AsMemory2D(pixelHeight, pixelWidth), token);
+				.AsMemory().AsMemory2D(pixelHeight, pixelWidth), token);
 		}
 
 		/// <summary>
@@ -173,7 +173,7 @@ namespace BCnEncoder.Decoder
 		public Task<Memory2D<ColorRgba32>> Decode2DAsync(KtxFile file, CancellationToken token = default)
 		{
 			return Task.Run(() => DecodeInternal(file, false, token)[0]
-				.AsMemory2D((int)file.header.PixelHeight, (int)file.header.PixelWidth), token);
+				.AsMemory().AsMemory2D((int)file.header.PixelHeight, (int)file.header.PixelWidth), token);
 		}
 
 		/// <summary>
@@ -191,7 +191,7 @@ namespace BCnEncoder.Decoder
 				for (var i = 0; i < decoded.Length; i++)
 				{
 					var mip = file.MipMaps[i];
-					mem2Ds[i] = decoded[i].AsMemory2D((int)mip.Height, (int)mip.Width);
+					mem2Ds[i] = decoded[i].AsMemory().AsMemory2D((int)mip.Height, (int)mip.Width);
 				}
 				return mem2Ds;
 			}, token);
@@ -206,7 +206,7 @@ namespace BCnEncoder.Decoder
 		public Task<Memory2D<ColorRgba32>> Decode2DAsync(DdsFile file, CancellationToken token = default)
 		{
 			return Task.Run(() => DecodeInternal(file, false, token)[0]
-				.AsMemory2D((int)file.header.dwHeight, (int)file.header.dwWidth), token);
+				.AsMemory().AsMemory2D((int)file.header.dwHeight, (int)file.header.dwWidth), token);
 		}
 
 		/// <summary>
@@ -224,7 +224,7 @@ namespace BCnEncoder.Decoder
 				for (var i = 0; i < decoded.Length; i++)
 				{
 					var mip = file.Faces[0].MipMaps[i];
-					mem2Ds[i] = decoded[i].AsMemory2D((int)mip.Height, (int)mip.Width);
+					mem2Ds[i] = decoded[i].AsMemory().AsMemory2D((int)mip.Height, (int)mip.Width);
 				}
 				return mem2Ds;
 			}, token);
@@ -237,12 +237,12 @@ namespace BCnEncoder.Decoder
 		/// <summary>
 		/// Decode raw encoded image data.
 		/// </summary>
-		/// <param name="inputStream">The stream containing the encoded data.</param>
+		/// <param name="inputStream">The stream containing the raw encoded data.</param>
 		/// <param name="pixelWidth">The pixelWidth of the image.</param>
 		/// <param name="pixelHeight">The pixelHeight of the image.</param>
 		/// <param name="format">The Format the encoded data is in.</param>
 		/// <returns>The decoded Rgba32 image.</returns>
-		public Memory<ColorRgba32> DecodeRaw(Stream inputStream, int pixelWidth, int pixelHeight, CompressionFormat format)
+		public ColorRgba32[] DecodeRaw(Stream inputStream, int pixelWidth, int pixelHeight, CompressionFormat format)
 		{
 			var dataArray = new byte[GetBufferSize(format, pixelWidth, pixelHeight)];
 			inputStream.Read(dataArray, 0, dataArray.Length);
@@ -253,12 +253,12 @@ namespace BCnEncoder.Decoder
 		/// <summary>
 		/// Decode raw encoded image data.
 		/// </summary>
-		/// <param name="input">The array containing the encoded data.</param>
+		/// <param name="input">The byte array containing the raw encoded data.</param>
 		/// <param name="pixelWidth">The pixelWidth of the image.</param>
 		/// <param name="pixelHeight">The pixelHeight of the image.</param>
 		/// <param name="format">The Format the encoded data is in.</param>
 		/// <returns>The decoded Rgba32 image.</returns>
-		public Memory<ColorRgba32> DecodeRaw(byte[] input, int pixelWidth, int pixelHeight, CompressionFormat format)
+		public ColorRgba32[] DecodeRaw(byte[] input, int pixelWidth, int pixelHeight, CompressionFormat format)
 		{
 			return DecodeRawInternal(input, pixelWidth, pixelHeight, format, default);
 		}
@@ -268,7 +268,7 @@ namespace BCnEncoder.Decoder
 		/// </summary>
 		/// <param name="file">The loaded Ktx file.</param>
 		/// <returns>The decoded Rgba32 image.</returns>
-		public Memory<ColorRgba32> Decode(KtxFile file)
+		public ColorRgba32[] Decode(KtxFile file)
 		{
 			return DecodeInternal(file, false, default)[0];
 		}
@@ -278,7 +278,7 @@ namespace BCnEncoder.Decoder
 		/// </summary>
 		/// <param name="file">The loaded Ktx file.</param>
 		/// <returns>An array of decoded Rgba32 images.</returns>
-		public Memory<ColorRgba32>[] DecodeAllMipMaps(KtxFile file)
+		public ColorRgba32[][] DecodeAllMipMaps(KtxFile file)
 		{
 			return DecodeInternal(file, true, default);
 		}
@@ -288,7 +288,7 @@ namespace BCnEncoder.Decoder
 		/// </summary>
 		/// <param name="file">The loaded Dds file.</param>
 		/// <returns>The decoded Rgba32 image.</returns>
-		public Memory<ColorRgba32> Decode(DdsFile file)
+		public ColorRgba32[] Decode(DdsFile file)
 		{
 			return DecodeInternal(file, false, default)[0];
 		}
@@ -298,7 +298,7 @@ namespace BCnEncoder.Decoder
 		/// </summary>
 		/// <param name="file">The loaded Dds file.</param>
 		/// <returns>An array of decoded Rgba32 images.</returns>
-		public Memory<ColorRgba32>[] DecodeAllMipMaps(DdsFile file)
+		public ColorRgba32[][] DecodeAllMipMaps(DdsFile file)
 		{
 			return DecodeInternal(file, true, default);
 		}
@@ -317,13 +317,13 @@ namespace BCnEncoder.Decoder
 			inputStream.Read(dataArray, 0, dataArray.Length);
 
 			var decoded = DecodeRaw(dataArray, pixelWidth, pixelHeight, format);
-			return decoded.AsMemory2D(pixelHeight, pixelWidth);
+			return decoded.AsMemory().AsMemory2D(pixelHeight, pixelWidth);
 		}
 
 		/// <summary>
 		/// Decode raw encoded image data.
 		/// </summary>
-		/// <param name="input">The array containing the encoded data.</param>
+		/// <param name="input">The byte array containing the raw encoded data.</param>
 		/// <param name="pixelWidth">The pixelWidth of the image.</param>
 		/// <param name="pixelHeight">The pixelHeight of the image.</param>
 		/// <param name="format">The Format the encoded data is in.</param>
@@ -331,11 +331,11 @@ namespace BCnEncoder.Decoder
 		public Memory2D<ColorRgba32> DecodeRaw2D(byte[] input, int pixelWidth, int pixelHeight, CompressionFormat format)
 		{
 			var decoded = DecodeRawInternal(input, pixelWidth, pixelHeight, format, default);
-			return decoded.AsMemory2D(pixelHeight, pixelWidth);
+			return decoded.AsMemory().AsMemory2D(pixelHeight, pixelWidth);
 		}
 
 		/// <summary>
-		/// Read a Ktx or a Dds file from a stream and decode it.
+		/// Read a Ktx or a Dds file from a stream and decode the largest mipmap from it.
 		/// </summary>
 		/// <param name="inputStream">The stream containing a Ktx or Dds file.</param>
 		/// <returns>The decoded Rgba32 image.</returns>
@@ -355,13 +355,13 @@ namespace BCnEncoder.Decoder
 		}
 
 		/// <summary>
-		/// Read a Ktx file and decode it.
+		/// Read a Ktx file and decode the largest mipmap from it.
 		/// </summary>
 		/// <param name="file">The loaded Ktx file.</param>
 		/// <returns>The decoded Rgba32 image.</returns>
 		public Memory2D<ColorRgba32> Decode2D(KtxFile file)
 		{
-			return DecodeInternal(file, false, default)[0].AsMemory2D((int)file.header.PixelHeight, (int)file.header.PixelWidth);
+			return DecodeInternal(file, false, default)[0].AsMemory().AsMemory2D((int)file.header.PixelHeight, (int)file.header.PixelWidth);
 		}
 
 		/// <summary>
@@ -376,19 +376,19 @@ namespace BCnEncoder.Decoder
 			for (var i = 0; i < decoded.Length; i++)
 			{
 				var mip = file.MipMaps[i];
-				mem2Ds[i] = decoded[i].AsMemory2D((int)mip.Height, (int)mip.Width);
+				mem2Ds[i] = decoded[i].AsMemory().AsMemory2D((int)mip.Height, (int)mip.Width);
 			}
 			return mem2Ds;
 		}
 
 		/// <summary>
-		/// Read a Dds file and decode it.
+		/// Read a Dds file and decode the largest mipmap from it.
 		/// </summary>
 		/// <param name="file">The loaded Dds file.</param>
 		/// <returns>The decoded Rgba32 image.</returns>
 		public Memory2D<ColorRgba32> Decode2D(DdsFile file)
 		{
-			return DecodeInternal(file, false, default)[0].AsMemory2D((int)file.header.dwHeight, (int)file.header.dwWidth);
+			return DecodeInternal(file, false, default)[0].AsMemory().AsMemory2D((int)file.header.dwHeight, (int)file.header.dwWidth);
 		}
 
 		/// <summary>
@@ -403,9 +403,75 @@ namespace BCnEncoder.Decoder
 			for (var i = 0; i < decoded.Length; i++)
 			{
 				var mip = file.Faces[0].MipMaps[i];
-				mem2Ds[i] = decoded[i].AsMemory2D((int)mip.Height, (int)mip.Width);
+				mem2Ds[i] = decoded[i].AsMemory().AsMemory2D((int)mip.Height, (int)mip.Width);
 			}
 			return mem2Ds;
+		}
+
+		/// <summary>
+		/// Decode a single block from raw bytes and return it as a <see cref="Memory2D{T}"/>.
+		/// Input Span size needs to equal the block size.
+		/// To get the block size of the compression format used, see <see cref="GetBlockSize(BCnEncoder.Shared.CompressionFormat)"/>.
+		/// </summary>
+		/// <param name="blockData">The encoded block in bytes.</param>
+		/// <param name="format">The compression format used.</param>
+		/// <returns>The decoded 4x4 block.</returns>
+		public Memory2D<ColorRgba32> DecodeBlock(ReadOnlySpan<byte> blockData, CompressionFormat format)
+		{
+			var output = new ColorRgba32[4, 4];
+			DecodeBlockInternal(blockData, format, output);
+			return output;
+		}
+
+		/// <summary>
+		/// Decode a single block from raw bytes and write it to the given output span.
+		/// Output span size must be exactly 4x4 and input Span size needs to equal the block size.
+		/// To get the block size of the compression format used, see <see cref="GetBlockSize(BCnEncoder.Shared.CompressionFormat)"/>.
+		/// </summary>
+		/// <param name="blockData">The encoded block in bytes.</param>
+		/// <param name="format">The compression format used.</param>
+		/// <param name="outputSpan">The destination span of the decoded data.</param>
+		public void DecodeBlock(ReadOnlySpan<byte> blockData, CompressionFormat format, Span2D<ColorRgba32> outputSpan)
+		{
+			if (outputSpan.Width != 4 || outputSpan.Height != 4)
+			{
+				throw new ArgumentException($"Single block decoding needs an output span of exactly 4x4");
+			}
+			DecodeBlockInternal(blockData, format, outputSpan);
+		}
+
+		/// <summary>
+		/// Decode a single block from a stream and write it to the given output span.
+		/// Output span size must be exactly 4x4.
+		/// </summary>
+		/// <param name="inputStream">The stream to read encoded blocks from.</param>
+		/// <param name="format">The compression format used.</param>
+		/// <param name="outputSpan">The destination span of the decoded data.</param>
+		/// <returns>The number of bytes read from the stream. Zero (0) if reached the end of stream.</returns>
+		public int DecodeBlock(Stream inputStream, CompressionFormat format, Span2D<ColorRgba32> outputSpan)
+		{
+			if (outputSpan.Width != 4 || outputSpan.Height != 4)
+			{
+				throw new ArgumentException($"Single block decoding needs an output span of exactly 4x4");
+			}
+
+			Span<byte> input = stackalloc byte[16];
+			input = input.Slice(0, GetBlockSize(format));
+			
+			var bytesRead = inputStream.Read(input);
+
+			if (bytesRead == 0)
+			{
+				return 0; //End of stream
+			}
+			
+			if (bytesRead != input.Length)
+			{
+				throw new Exception("Input stream does not have enough data available for a full block.");
+			}
+
+			DecodeBlockInternal(input, format, outputSpan);
+			return bytesRead;
 		}
 
 		#endregion
@@ -431,7 +497,7 @@ namespace BCnEncoder.Decoder
 					for (var i = 0; i < decoded.Length; i++)
 					{
 						var mip = file.Faces[0].MipMaps[i];
-						mem2Ds[i] = decoded[i].AsMemory2D((int) mip.Height, (int) mip.Width);
+						mem2Ds[i] = decoded[i].AsMemory().AsMemory2D((int) mip.Height, (int) mip.Width);
 					}
 
 					return mem2Ds;
@@ -445,7 +511,7 @@ namespace BCnEncoder.Decoder
 					for (var i = 0; i < decoded.Length; i++)
 					{
 						var mip = file.MipMaps[i];
-						mem2Ds[i] = decoded[i].AsMemory2D((int) mip.Height, (int) mip.Width);
+						mem2Ds[i] = decoded[i].AsMemory().AsMemory2D((int) mip.Height, (int) mip.Width);
 					}
 
 					return mem2Ds;
@@ -463,9 +529,10 @@ namespace BCnEncoder.Decoder
 		/// <param name="allMipMaps">If all mip maps or only the main image should be decoded.</param>
 		/// <param name="token">The cancellation token for this operation. Can be default, if the operation is not asynchronous.</param>
 		/// <returns>An array of decoded Rgba32 images.</returns>
-		private Memory<ColorRgba32>[] DecodeInternal(KtxFile file, bool allMipMaps, CancellationToken token)
+		private ColorRgba32[][] DecodeInternal(KtxFile file, bool allMipMaps, CancellationToken token)
 		{
-			var colors = new Memory<ColorRgba32>[allMipMaps ? file.MipMaps.Count : 1];
+			var mipMaps = allMipMaps ? file.MipMaps.Count : 1;
+			var colors = new ColorRgba32[mipMaps][];
 
 			var context = new OperationContext
 			{
@@ -483,8 +550,7 @@ namespace BCnEncoder.Decoder
 			if (IsSupportedRawFormat(file.header.GlInternalFormat))
 			{
 				var decoder = GetRawDecoder(file.header.GlInternalFormat);
-
-				var mipMaps = allMipMaps ? file.MipMaps.Count : 1;
+				
 				for (var mip = 0; mip < mipMaps; mip++)
 				{
 					var data = file.MipMaps[mip].Faces[0].Data;
@@ -501,8 +567,7 @@ namespace BCnEncoder.Decoder
 				{
 					throw new NotSupportedException($"This Format is not supported: {file.header.GlInternalFormat}");
 				}
-
-				var mipMaps = allMipMaps ? file.MipMaps.Count : 1;
+				
 				for (var mip = 0; mip < mipMaps; mip++)
 				{
 					var data = file.MipMaps[mip].Faces[0].Data;
@@ -527,9 +592,10 @@ namespace BCnEncoder.Decoder
 		/// <param name="allMipMaps">If all mip maps or only the main image should be decoded.</param>
 		/// <param name="token">The cancellation token for this operation. Can be default, if the operation is not asynchronous.</param>
 		/// <returns>An array of decoded Rgba32 images.</returns>
-		private Memory<ColorRgba32>[] DecodeInternal(DdsFile file, bool allMipMaps, CancellationToken token)
+		private ColorRgba32[][] DecodeInternal(DdsFile file, bool allMipMaps, CancellationToken token)
 		{
-			var colors = new Memory<ColorRgba32>[file.header.dwMipMapCount];
+			var mipMaps = allMipMaps ? file.header.dwMipMapCount : 1;
+			var colors = new ColorRgba32[mipMaps][];
 
 			var context = new OperationContext
 			{
@@ -547,8 +613,7 @@ namespace BCnEncoder.Decoder
 			if (IsSupportedRawFormat(file))
 			{
 				var decoder = GetRawDecoder(file);
-
-				var mipMaps = allMipMaps ? file.header.dwMipMapCount : 1;
+				
 				for (var mip = 0; mip < mipMaps; mip++)
 				{
 					var data = file.Faces[0].MipMaps[mip].Data;
@@ -569,8 +634,8 @@ namespace BCnEncoder.Decoder
 				{
 					throw new NotSupportedException($"This Format is not supported: {format}");
 				}
-
-				for (var mip = 0; mip < file.header.dwMipMapCount; mip++)
+				
+				for (var mip = 0; mip < mipMaps; mip++)
 				{
 					var data = file.Faces[0].MipMaps[mip].Data;
 					var pixelWidth = file.Faces[0].MipMaps[mip].Width;
@@ -598,7 +663,7 @@ namespace BCnEncoder.Decoder
 		/// <param name="format">The Format the encoded data is in.</param>
 		/// <param name="token">The cancellation token for this operation. May be default, if the operation is not asynchronous.</param>
 		/// <returns>The decoded Rgba32 image.</returns>
-		private Memory<ColorRgba32> DecodeRawInternal(ReadOnlyMemory<byte> input, int pixelWidth, int pixelHeight, CompressionFormat format, CancellationToken token)
+		private ColorRgba32[] DecodeRawInternal(ReadOnlyMemory<byte> input, int pixelWidth, int pixelHeight, CompressionFormat format, CancellationToken token)
 		{
 			if (input.Length % GetBlockSize(format) != 0)
 			{
@@ -623,6 +688,12 @@ namespace BCnEncoder.Decoder
 			{
 				// DecodeInternal as compressed data
 				var decoder = GetDecoder(format);
+
+				if (decoder == null)
+				{
+					throw new NotSupportedException($"This Format is not supported: {format}");
+				}
+
 				var blocks = decoder.Decode(input, context);
 
 				return ImageToBlocks.ColorsFromRawBlocks(blocks, pixelWidth, pixelHeight); ;
@@ -632,6 +703,27 @@ namespace BCnEncoder.Decoder
 			var rawDecoder = GetRawDecoder(format);
 
 			return rawDecoder.Decode(input, context);
+		}
+
+		private void DecodeBlockInternal(ReadOnlySpan<byte> blockData, CompressionFormat format, Span2D<ColorRgba32> outputSpan)
+		{
+			var decoder = GetDecoder(format);
+			if (decoder == null)
+			{
+				throw new NotSupportedException($"This Format is not supported: {format}");
+			}
+			if (blockData.Length != GetBlockSize(format))
+			{
+				throw new ArgumentException("The size of the input buffer does not align with the compression format.");
+			}
+
+			var rawBlock = decoder.DecodeBlock(blockData);
+			var pixels = rawBlock.AsSpan;
+
+			pixels.Slice(0, 4).CopyTo(outputSpan.GetRowSpan(0));
+			pixels.Slice(4, 4).CopyTo(outputSpan.GetRowSpan(1));
+			pixels.Slice(8, 4).CopyTo(outputSpan.GetRowSpan(2));
+			pixels.Slice(12, 4).CopyTo(outputSpan.GetRowSpan(3));
 		}
 
 		#region Support
@@ -759,6 +851,29 @@ namespace BCnEncoder.Decoder
 
 		#region Get block size
 
+		/// <summary>
+		/// Gets the number of total blocks in an image with the given pixel width and height.
+		/// </summary>
+		/// <param name="pixelWidth">The pixel width of the image</param>
+		/// <param name="pixelHeight">The pixel height of the image</param>
+		/// <returns>The total number of blocks.</returns>
+		public int GetBlockCount(int pixelWidth, int pixelHeight)
+		{
+			return ImageToBlocks.CalculateNumOfBlocks(pixelWidth, pixelHeight);
+		}
+
+		/// <summary>
+		/// Gets the number of blocks in an image with the given pixel width and height.
+		/// </summary>
+		/// <param name="pixelWidth">The pixel width of the image</param>
+		/// <param name="pixelHeight">The pixel height of the image</param>
+		/// <param name="blocksWidth">The amount of blocks in the x-axis</param>
+		/// <param name="blocksHeight">The amount of blocks in the y-axis</param>
+		public void GetBlockCount(int pixelWidth, int pixelHeight, out int blocksWidth, out int blocksHeight)
+		{
+			ImageToBlocks.CalculateNumOfBlocks(pixelWidth, pixelHeight, out blocksWidth, out blocksHeight);
+		}
+
 		private int GetBlockSize(GlInternalFormat format)
 		{
 			return GetBlockSize(GetCompressionFormat(format));
@@ -769,7 +884,12 @@ namespace BCnEncoder.Decoder
 			return GetBlockSize(GetCompressionFormat(file));
 		}
 
-		private int GetBlockSize(CompressionFormat format)
+		/// <summary>
+		/// Get the size of blocks for the given compression format in bytes.
+		/// </summary>
+		/// <param name="format">The compression format used.</param>
+		/// <returns>The size of a single block in bytes.</returns>
+		public int GetBlockSize(CompressionFormat format)
 		{
 			switch (format)
 			{
@@ -839,7 +959,7 @@ namespace BCnEncoder.Decoder
 				case GlInternalFormat.GlRgba8:
 					return CompressionFormat.Rgba;
 
-				// HINT: Bgra is only an extension by apple to the ktx format
+				// HINT: Bgra is not supported by default. The format enum is added by an extension by Apple.
 				case GlInternalFormat.GlBgra8Extension:
 					return CompressionFormat.Bgra;
 
@@ -905,7 +1025,7 @@ namespace BCnEncoder.Decoder
 				case DxgiFormat.DxgiFormatBc1Unorm:
 				case DxgiFormat.DxgiFormatBc1UnormSrgb:
 				case DxgiFormat.DxgiFormatBc1Typeless:
-					if (file.header.ddsPixelFormat.dwFlags.HasFlag(PixelFormatFlags.DdpfAlphapixels))
+					if (file.header.ddsPixelFormat.dwFlags.HasFlag(PixelFormatFlags.DdpfAlphaPixels))
 						return CompressionFormat.Bc1WithAlpha;
 
 					if (InputOptions.DdsBc1ExpectAlpha)
@@ -938,13 +1058,13 @@ namespace BCnEncoder.Decoder
 				case DxgiFormat.DxgiFormatBc7Typeless:
 					return CompressionFormat.Bc7;
 
-				case DxgiFormat.DxgiFormatAtc:
+				case DxgiFormat.DxgiFormatAtcExt:
 					return CompressionFormat.Atc;
 
-				case DxgiFormat.DxgiFormatAtcExplicitAlpha:
+				case DxgiFormat.DxgiFormatAtcExplicitAlphaExt:
 					return CompressionFormat.AtcExplicitAlpha;
 
-				case DxgiFormat.DxgiFormatAtcInterpolatedAlpha:
+				case DxgiFormat.DxgiFormatAtcInterpolatedAlphaExt:
 					return CompressionFormat.AtcInterpolatedAlpha;
 
 				default:

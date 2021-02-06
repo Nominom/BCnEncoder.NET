@@ -125,5 +125,10 @@ namespace BCnEncoder.Shared
 
 			return blocksWidth * blocksHeight;
 		}
+		public static void CalculateNumOfBlocks(int pixelWidth, int pixelHeight, out int blocksWidth, out int blocksHeight)
+		{
+			blocksWidth = ((pixelWidth + 3) & ~3) >> 2;
+			blocksHeight = ((pixelHeight + 3) & ~3) >> 2;
+		}
 	}
 }
