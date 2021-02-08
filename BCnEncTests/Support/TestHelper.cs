@@ -27,9 +27,9 @@ namespace BCnEncTests.Support
 			AssertPSNR(psnr, quality);
 		}
 
-		public static void AssertImagesEqual(Image<Rgba32> original, Image<Rgba32> image, CompressionQuality quality)
+		public static void AssertImagesEqual(Image<Rgba32> original, Image<Rgba32> image, CompressionQuality quality, bool countAlpha = true)
 		{
-			var psnr = CalculatePSNR(original, image);
+			var psnr = CalculatePSNR(original, image, countAlpha);
 			AssertPSNR(psnr, quality);
 		}
 
@@ -153,7 +153,7 @@ namespace BCnEncTests.Support
 			AssertPSNR(psnr, encoder.OutputOptions.Quality);
 		}
 
-		private static float CalculatePSNR(Image<Rgba32> original, Image<Rgba32> decoded)
+		private static float CalculatePSNR(Image<Rgba32> original, Image<Rgba32> decoded, bool countAlpha = true)
 		{
 			if (!original.TryGetSinglePixelSpan(out var pixels))
 			{
@@ -166,7 +166,7 @@ namespace BCnEncTests.Support
 			
 			return ImageQuality.PeakSignalToNoiseRatio(
 				MemoryMarshal.Cast<Rgba32, ColorRgba32>(pixels),
-				MemoryMarshal.Cast<Rgba32, ColorRgba32>(pixels2));
+				MemoryMarshal.Cast<Rgba32, ColorRgba32>(pixels2), countAlpha);
 		}
 
 		public static void AssertPSNR(float psnr, CompressionQuality quality)

@@ -56,7 +56,7 @@ namespace BCnEncoder.Encoder
 			{
 				throw new Exception("Cannot encode block! Output buffer is not the correct size.");
 			}
-			T encoded = EncodeBlock(block, quality);
+			var encoded = EncodeBlock(block, quality);
 			MemoryMarshal.Cast<byte, T>(output)[0] = encoded;
 		}
 
