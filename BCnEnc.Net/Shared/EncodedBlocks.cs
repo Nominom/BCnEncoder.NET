@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
+using BCnEncoder.Encoder;
 
 namespace BCnEncoder.Shared
 {
@@ -178,46 +179,34 @@ namespace BCnEncoder.Shared
 	[StructLayout(LayoutKind.Sequential)]
 	internal struct Bc4Block
 	{
-		public Bc4ComponentBlock redBlock;
+		public Bc4ComponentBlock componentBlock;
 
 		public byte Endpoint0
 		{
-			readonly get => redBlock.Endpoint0;
-			set => redBlock.Endpoint0 = value;
+			readonly get => componentBlock.Endpoint0;
+			set => componentBlock.Endpoint0 = value;
 		}
 
 		public byte Endpoint1
 		{
-			readonly get => redBlock.Endpoint1;
-			set => redBlock.Endpoint1 = value;
+			readonly get => componentBlock.Endpoint1;
+			set => componentBlock.Endpoint1 = value;
 		}
 
-		public readonly byte GetComponentIndex(int pixelIndex) => redBlock.GetComponentIndex(pixelIndex);
+		public readonly byte GetComponentIndex(int pixelIndex) => componentBlock.GetComponentIndex(pixelIndex);
 
-		public void SetComponentIndex(int pixelIndex, byte redIndex) => redBlock.SetComponentIndex(pixelIndex, redIndex);
+		public void SetComponentIndex(int pixelIndex, byte redIndex) => componentBlock.SetComponentIndex(pixelIndex, redIndex);
 
-		public readonly RawBlock4X4Rgba32 Decode(bool redAsLuminance)
+		public readonly RawBlock4X4Rgba32 Decode(Bc4Component component = Bc4Component.R)
 		{
 			var output = new RawBlock4X4Rgba32();
 			var pixels = output.AsSpan;
 
-			var reds = redBlock.Decode();
+			var components = componentBlock.Decode();
 
-			if (redAsLuminance)
+			for (var i = 0; i < pixels.Length; i++)
 			{
-				for (var i = 0; i < pixels.Length; i++)
-				{
-					var index = GetComponentIndex(i);
-					pixels[i] = new ColorRgba32(reds[index], reds[index], reds[index], 255);
-				}
-			}
-			else
-			{
-				for (var i = 0; i < pixels.Length; i++)
-				{
-					var index = GetComponentIndex(i);
-					pixels[i] = new ColorRgba32(reds[index], 0, 0, 255);
-				}
+				pixels[i] = ComponentHelper.ComponentToColor(component, components[i]);
 			}
 
 			return output;
@@ -262,7 +251,7 @@ namespace BCnEncoder.Shared
 
 		public void SetGreenIndex(int pixelIndex, byte greenIndex) => greenBlock.SetComponentIndex(pixelIndex, greenIndex);
 
-		public readonly RawBlock4X4Rgba32 Decode()
+		public readonly RawBlock4X4Rgba32 Decode(Bc4Component component1 = Bc4Component.R, Bc4Component component2 = Bc4Component.G)
 		{
 			var output = new RawBlock4X4Rgba32();
 			var pixels = output.AsSpan;
@@ -272,7 +261,8 @@ namespace BCnEncoder.Shared
 
 			for (var i = 0; i < pixels.Length; i++)
 			{
-				pixels[i] = new ColorRgba32(reds[i], greens[i], 0, 255);
+				pixels[i] = ComponentHelper.ComponentToColor(component1, reds[i]);
+				pixels[i] = ComponentHelper.ComponentToColor(pixels[i], component2, greens[i]);
 			}
 
 			return output;

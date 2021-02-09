@@ -457,14 +457,14 @@ namespace BCnEncoder.Decoder
 
 			Span<byte> input = stackalloc byte[16];
 			input = input.Slice(0, GetBlockSize(format));
-			
+
 			var bytesRead = inputStream.Read(input);
 
 			if (bytesRead == 0)
 			{
 				return 0; //End of stream
 			}
-			
+
 			if (bytesRead != input.Length)
 			{
 				throw new Exception("Input stream does not have enough data available for a full block.");
@@ -490,32 +490,32 @@ namespace BCnEncoder.Decoder
 			switch (format)
 			{
 				case ImageFileFormat.Dds:
-				{
-					var file = DdsFile.Load(stream);
-					var decoded = DecodeInternal(file, allMipMaps, token);
-					var mem2Ds = new Memory2D<ColorRgba32>[decoded.Length];
-					for (var i = 0; i < decoded.Length; i++)
 					{
-						var mip = file.Faces[0].MipMaps[i];
-						mem2Ds[i] = decoded[i].AsMemory().AsMemory2D((int) mip.Height, (int) mip.Width);
-					}
+						var file = DdsFile.Load(stream);
+						var decoded = DecodeInternal(file, allMipMaps, token);
+						var mem2Ds = new Memory2D<ColorRgba32>[decoded.Length];
+						for (var i = 0; i < decoded.Length; i++)
+						{
+							var mip = file.Faces[0].MipMaps[i];
+							mem2Ds[i] = decoded[i].AsMemory().AsMemory2D((int)mip.Height, (int)mip.Width);
+						}
 
-					return mem2Ds;
-				}
+						return mem2Ds;
+					}
 
 				case ImageFileFormat.Ktx:
-				{
-					var file = KtxFile.Load(stream);
-					var decoded = DecodeInternal(file, allMipMaps, token);
-					var mem2Ds = new Memory2D<ColorRgba32>[decoded.Length];
-					for (var i = 0; i < decoded.Length; i++)
 					{
-						var mip = file.MipMaps[i];
-						mem2Ds[i] = decoded[i].AsMemory().AsMemory2D((int) mip.Height, (int) mip.Width);
-					}
+						var file = KtxFile.Load(stream);
+						var decoded = DecodeInternal(file, allMipMaps, token);
+						var mem2Ds = new Memory2D<ColorRgba32>[decoded.Length];
+						for (var i = 0; i < decoded.Length; i++)
+						{
+							var mip = file.MipMaps[i];
+							mem2Ds[i] = decoded[i].AsMemory().AsMemory2D((int)mip.Height, (int)mip.Width);
+						}
 
-					return mem2Ds;
-				}
+						return mem2Ds;
+					}
 
 				default:
 					throw new InvalidOperationException("Unknown image format.");
@@ -550,7 +550,7 @@ namespace BCnEncoder.Decoder
 			if (IsSupportedRawFormat(file.header.GlInternalFormat))
 			{
 				var decoder = GetRawDecoder(file.header.GlInternalFormat);
-				
+
 				for (var mip = 0; mip < mipMaps; mip++)
 				{
 					var data = file.MipMaps[mip].Faces[0].Data;
@@ -567,7 +567,7 @@ namespace BCnEncoder.Decoder
 				{
 					throw new NotSupportedException($"This Format is not supported: {file.header.GlInternalFormat}");
 				}
-				
+
 				for (var mip = 0; mip < mipMaps; mip++)
 				{
 					var data = file.MipMaps[mip].Faces[0].Data;
@@ -613,7 +613,7 @@ namespace BCnEncoder.Decoder
 			if (IsSupportedRawFormat(file))
 			{
 				var decoder = GetRawDecoder(file);
-				
+
 				for (var mip = 0; mip < mipMaps; mip++)
 				{
 					var data = file.Faces[0].MipMaps[mip].Data;
@@ -634,7 +634,7 @@ namespace BCnEncoder.Decoder
 				{
 					throw new NotSupportedException($"This Format is not supported: {format}");
 				}
-				
+
 				for (var mip = 0; mip < mipMaps; mip++)
 				{
 					var data = file.Faces[0].MipMaps[mip].Data;
@@ -787,10 +787,10 @@ namespace BCnEncoder.Decoder
 					return new Bc3Decoder();
 
 				case CompressionFormat.Bc4:
-					return new Bc4Decoder(OutputOptions.RedAsLuminance);
+					return new Bc4Decoder(OutputOptions.Bc4Component);
 
 				case CompressionFormat.Bc5:
-					return new Bc5Decoder();
+					return new Bc5Decoder(OutputOptions.Bc5Component1, OutputOptions.Bc5Component2);
 
 				case CompressionFormat.Bc7:
 					return new Bc7Decoder();

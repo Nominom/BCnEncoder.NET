@@ -1325,10 +1325,10 @@ namespace BCnEncoder.Encoder
 					return new Bc3BlockEncoder();
 
 				case CompressionFormat.Bc4:
-					return new Bc4BlockEncoder(InputOptions.LuminanceAsRed);
+					return new Bc4BlockEncoder(InputOptions.Bc4Component);
 
 				case CompressionFormat.Bc5:
-					return new Bc5BlockEncoder();
+					return new Bc5BlockEncoder(InputOptions.Bc5Component1, InputOptions.Bc5Component2);
 
 				case CompressionFormat.Bc7:
 					return new Bc7Encoder();

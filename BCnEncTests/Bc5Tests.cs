@@ -1,13 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
 using BCnEncoder.Decoder;
 using BCnEncoder.NET.ImageSharp;
 using BCnEncoder.Shared;
 using BCnEncTests.Support;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
 using Xunit;
 
 namespace BCnEncTests
@@ -57,10 +51,10 @@ namespace BCnEncTests
 		{
 			var block = new Bc5Block()
 			{
-				greenBlock = new Bc4ComponentBlock(){componentBlock = 0x91824260008935ee},
+				greenBlock = new Bc4ComponentBlock() { componentBlock = 0x91824260008935ee },
 				redBlock = new Bc4ComponentBlock() { componentBlock = 0x6d900f66d3c0a70d }
 			};
-			
+
 			var referenceBlock = new RawBlock4X4Rgba32
 			{
 				p00 = new ColorRgba32(13, 53, 0, 255),

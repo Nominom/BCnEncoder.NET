@@ -109,24 +109,33 @@ namespace BCnEncoder.Decoder
 
 	internal class Bc4Decoder : BaseBcBlockDecoder<Bc4Block>
 	{
-		private readonly bool redAsLuminance;
+		private readonly Bc4Component component;
 
-		public Bc4Decoder(bool redAsLuminance)
+		public Bc4Decoder(Bc4Component component)
 		{
-			this.redAsLuminance = redAsLuminance;
+			this.component = component;
 		}
 
 		protected override RawBlock4X4Rgba32 DecodeBlock(Bc4Block block)
 		{
-			return block.Decode(redAsLuminance);
+			return block.Decode(component);
 		}
 	}
 
 	internal class Bc5Decoder : BaseBcBlockDecoder<Bc5Block>
 	{
+		private readonly Bc4Component component1;
+		private readonly Bc4Component component2;
+
+		public Bc5Decoder(Bc4Component component1, Bc4Component component2)
+		{
+			this.component1 = component1;
+			this.component2 = component2;
+		}
+
 		protected override RawBlock4X4Rgba32 DecodeBlock(Bc5Block block)
 		{
-			return block.Decode();
+			return block.Decode(component1, component2);
 		}
 	}
 
