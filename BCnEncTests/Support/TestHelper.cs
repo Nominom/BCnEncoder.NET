@@ -131,7 +131,10 @@ namespace BCnEncTests.Support
 		{
 			using var fs = File.OpenRead(filename);
 			var ktx = KtxFile.Load(fs);
-			var decoder = new BcDecoder();
+			var decoder = new BcDecoder()
+			{
+				OutputOptions = { Bc4Component = Bc4Component.Luminance }
+			};
 			using var img = decoder.DecodeToImageRgba32(ktx);
 
 			return CalculatePSNR(original, img);

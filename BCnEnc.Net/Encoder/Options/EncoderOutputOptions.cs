@@ -50,20 +50,5 @@ namespace BCnEncoder.Encoder.Options
 		/// to write the compression format instead of DwFourCC.
 		/// </summary>
 		public bool DdsPreferDxt10Header { get; set; } = false;
-
-		/// <summary>
-		/// The color channel to take for the values of a BC4 block.
-		/// </summary>
-		public Bc4Component Bc4Component { get; } = Bc4Component.R;
-
-		/// <summary>
-		/// The color channel to take for the values of the first BC5 block.
-		/// </summary>
-		public Bc4Component Bc5Component1 { get; } = Bc4Component.R;
-
-		/// <summary>
-		/// The color channel to take for the values of the second BC5 block.
-		/// </summary>
-		public Bc4Component Bc5Component2 { get; } = Bc4Component.G;
-	}
+    }
 }

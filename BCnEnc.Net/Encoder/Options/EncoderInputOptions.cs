@@ -8,24 +8,24 @@ namespace BCnEncoder.Encoder.Options
 	public class EncoderInputOptions
     {
 	    /// <summary>
-	    /// If true, when encoding to a Format that only includes a red channel,
-	    /// use the pixel luminance instead of just the red channel. Default is false.
+	    /// If true, when encoding to R8 raw format,
+	    /// use the pixel luminance instead of just the red channel. Default is false. (Does not apply to BC4 format)
 	    /// </summary>
 	    public bool LuminanceAsRed { get; set; } = false;
 
+	    /// <summary>
+	    /// The color channel to take for the values of a BC4 block.
+	    /// </summary>
+		public Bc4Component Bc4Component { get; set; } = Bc4Component.R;
+
 		/// <summary>
-		/// The color channel to populate with the values of a BC4 block.
+		/// The color channel to take for the values of the first BC5 block.
 		/// </summary>
-		public Bc4Component Bc4Component { get; } = Bc4Component.R;
+		public Bc4Component Bc5Component1 { get; set; } = Bc4Component.R;
 
-        /// <summary>
-        /// The color channel to populate with the values of the first BC5 block.
-        /// </summary>
-        public Bc4Component Bc5Component1 { get; } = Bc4Component.R;
-
-        /// <summary>
-        /// The color channel to populate with the values of the second BC5 block.
-        /// </summary>
-        public Bc4Component Bc5Component2 { get; } = Bc4Component.G;
+		/// <summary>
+		/// The color channel to take for the values of the second BC5 block.
+		/// </summary>
+		public Bc4Component Bc5Component2 { get; set; } = Bc4Component.G;
 	}
 }
