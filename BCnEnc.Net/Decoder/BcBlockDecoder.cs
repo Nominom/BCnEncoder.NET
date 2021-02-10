@@ -10,40 +10,38 @@ namespace BCnEncoder.Decoder
 {
 	internal interface IBcBlockDecoder
 	{
-		RawBlock4X4Rgba32[,] Decode(ReadOnlyMemory<byte> data, int pixelWidth, int pixelHeight, OperationContext context,
-			out int blockWidth, out int blockHeight);
+		RawBlock4X4Rgba32[] Decode(ReadOnlyMemory<byte> data, OperationContext context);
+		RawBlock4X4Rgba32 DecodeBlock(ReadOnlySpan<byte> data);
 	}
 
 	internal abstract class BaseBcBlockDecoder<T> : IBcBlockDecoder where T : unmanaged
 	{
-		public RawBlock4X4Rgba32[,] Decode(ReadOnlyMemory<byte> data, int pixelWidth, int pixelHeight, OperationContext context,
-			out int blockWidth, out int blockHeight)
+		public RawBlock4X4Rgba32[] Decode(ReadOnlyMemory<byte> data, OperationContext context)
 		{
 			// calculate number of 4x4 blocks by padding width/height to a multiple of 4 and shift it right by 2
-			blockWidth = ((pixelWidth + 3) & ~3) >> 2;
-			blockHeight = ((pixelHeight + 3) & ~3) >> 2;
+			//blockWidth = ((pixelWidth + 3) & ~3) >> 2;
+			//blockHeight = ((pixelHeight + 3) & ~3) >> 2;
 
-			if (data.Length != blockWidth * blockHeight * Unsafe.SizeOf<T>())
+			if (data.Length % Unsafe.SizeOf<T>() != 0)
 			{
-				throw new InvalidDataException("Given data does not match expected length.");
+				throw new InvalidDataException("Given data does not align with the block length.");
 			}
 
-			var output = new RawBlock4X4Rgba32[blockWidth, blockHeight];
+			var blockCount = data.Length / Unsafe.SizeOf<T>();
+			var output = new RawBlock4X4Rgba32[blockCount];
 
 			var currentBlocks = 0;
 			if (context.IsParallel)
 			{
-				var localBlockWidth = blockWidth;
-
 				var options = new ParallelOptions
 				{
 					CancellationToken = context.CancellationToken,
 					MaxDegreeOfParallelism = context.TaskCount
 				};
-				Parallel.For(0, blockWidth * blockHeight, options, i =>
+				Parallel.For(0, blockCount, options, i =>
 				{
 					var encodedBlocks = MemoryMarshal.Cast<byte, T>(data.Span);
-					output[i % localBlockWidth, i / localBlockWidth] = DecodeBlock(encodedBlocks[i]);
+					output[i] = DecodeBlock(encodedBlocks[i]);
 
 					if (context.Progress != null)
 					{
@@ -55,20 +53,23 @@ namespace BCnEncoder.Decoder
 			else
 			{
 				var encodedBlocks = MemoryMarshal.Cast<byte, T>(data.Span);
-				for (var x = 0; x < blockWidth; x++)
+				for (var i = 0; i < blockCount; i++)
 				{
-					for (var y = 0; y < blockHeight; y++)
-					{
-						context.CancellationToken.ThrowIfCancellationRequested();
+					context.CancellationToken.ThrowIfCancellationRequested();
 
-						output[x, y] = DecodeBlock(encodedBlocks[x + y * blockWidth]);
+					output[i] = DecodeBlock(encodedBlocks[i]);
 
-						context.Progress?.Report(currentBlocks++);
-					}
+					context.Progress?.Report(currentBlocks++);
 				}
 			}
 
 			return output;
+		}
+
+		public RawBlock4X4Rgba32 DecodeBlock(ReadOnlySpan<byte> data)
+		{
+			var encodedBlock = MemoryMarshal.Cast<byte, T>(data)[0];
+			return DecodeBlock(encodedBlock);
 		}
 
 		protected abstract RawBlock4X4Rgba32 DecodeBlock(T block);
@@ -108,24 +109,33 @@ namespace BCnEncoder.Decoder
 
 	internal class Bc4Decoder : BaseBcBlockDecoder<Bc4Block>
 	{
-		private readonly bool redAsLuminance;
+		private readonly Bc4Component component;
 
-		public Bc4Decoder(bool redAsLuminance)
+		public Bc4Decoder(Bc4Component component)
 		{
-			this.redAsLuminance = redAsLuminance;
+			this.component = component;
 		}
 
 		protected override RawBlock4X4Rgba32 DecodeBlock(Bc4Block block)
 		{
-			return block.Decode(redAsLuminance);
+			return block.Decode(component);
 		}
 	}
 
 	internal class Bc5Decoder : BaseBcBlockDecoder<Bc5Block>
 	{
+		private readonly Bc4Component component1;
+		private readonly Bc4Component component2;
+
+		public Bc5Decoder(Bc4Component component1, Bc4Component component2)
+		{
+			this.component1 = component1;
+			this.component2 = component2;
+		}
+
 		protected override RawBlock4X4Rgba32 DecodeBlock(Bc5Block block)
 		{
-			return block.Decode();
+			return block.Decode(component1, component2);
 		}
 	}
 

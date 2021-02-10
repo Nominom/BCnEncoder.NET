@@ -1,8 +1,7 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Runtime.InteropServices;
 using BCnEncoder.Shared;
-using SixLabors.ImageSharp.PixelFormats;
 
 namespace BCnEncoder.Encoder.Bc7
 {
@@ -636,7 +635,7 @@ namespace BCnEncoder.Encoder.Bc7
 				}
 			}
 
-			Span<Rgba32> subsetColors = stackalloc Rgba32[count];
+			Span<ColorRgba32> subsetColors = stackalloc ColorRgba32[count];
 			var next = 0;
 			for (var i = 0; i < 16; i++)
 			{
@@ -827,7 +826,7 @@ namespace BCnEncoder.Encoder.Bc7
 					var pixelColor = new ColorYCbCr(pixels[i]);
 
 					FindClosestColorIndex(pixelColor, colors, out var ce);
-					FindClosestAlphaIndex(pixels[i].A, alphas, out var ae);
+					FindClosestAlphaIndex(pixels[i].a, alphas, out var ae);
 
 					error += ce + ae;
 				}
@@ -931,10 +930,10 @@ namespace BCnEncoder.Encoder.Bc7
 				{
 					var pixelColor = new ColorYCbCr(pixels[i]);
 
-					var index = FindClosestColorIndex(pixelColor, colors, out var e);
+					var index = FindClosestColorIndex(pixelColor, colors, out _);
 					colorIndicesToFill[i] = (byte)index;
 
-					index = FindClosestAlphaIndex(pixels[i].A, alphas, out var _);
+					index = FindClosestAlphaIndex(pixels[i].a, alphas, out _);
 					alphaIndicesToFill[i] = (byte)index;
 				}
 			}
@@ -1101,13 +1100,13 @@ namespace BCnEncoder.Encoder.Bc7
 				switch (rotation)
 				{
 					case 1:
-						output[i] = new Rgba32(c.A, c.G, c.B, c.R);
+						output[i] = new ColorRgba32(c.a, c.g, c.b, c.r);
 						break;
 					case 2:
-						output[i] = new Rgba32(c.R, c.A, c.B, c.G);
+						output[i] = new ColorRgba32(c.r, c.a, c.b, c.g);
 						break;
 					case 3:
-						output[i] = new Rgba32(c.R, c.G, c.A, c.B);
+						output[i] = new ColorRgba32(c.r, c.g, c.a, c.b);
 						break;
 				}
 			}

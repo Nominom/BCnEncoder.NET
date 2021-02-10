@@ -59,11 +59,11 @@ namespace BCnEncoder.Shared
 		/// </summary>
 		Atc,
 		/// <summary>
-		/// ATC / Adreno Texture Compression encoding. Derivative of BC1. Good for sharp alpha transitions.
+		/// ATC / Adreno Texture Compression encoding. Derivative of BC2. Good for sharp alpha transitions.
 		/// </summary>
 		AtcExplicitAlpha,
 		/// <summary>
-		/// ATC / Adreno Texture Compression encoding. Derivative of BC1. Good for smooth alpha transitions.
+		/// ATC / Adreno Texture Compression encoding. Derivative of BC3. Good for smooth alpha transitions.
 		/// </summary>
 		AtcInterpolatedAlpha
 	}

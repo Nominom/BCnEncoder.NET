@@ -1,5 +1,6 @@
 using System;
 using BCnEncoder.Shared;
+using BCnEncoder.Shared.ImageFiles;
 
 namespace BCnEncoder.Encoder
 {
@@ -61,7 +62,7 @@ namespace BCnEncoder.Encoder
 			for (var i = 0; i < 16; i++)
 			{
 				var color = pixels[i];
-				output.SetAlpha(i, color.A);
+				output.SetAlpha(i, color.a);
 				output[i] = ColorChooser.ChooseClosestColor4(colors, color, rWeight, gWeight, bWeight, out var e);
 				error += e;
 			}

@@ -1,4 +1,3 @@
-using SixLabors.ImageSharp.PixelFormats;
 using System;
 using BCnEncoder.Shared;
 
@@ -6,7 +5,7 @@ namespace BCnEncoder.Decoder
 {
 	internal interface IRawDecoder
 	{
-		Rgba32[] Decode(ReadOnlyMemory<byte> data, int pixelWidth, int pixelHeight, OperationContext context);
+		ColorRgba32[] Decode(ReadOnlyMemory<byte> data, OperationContext context);
 	}
 
 	/// <summary>
@@ -29,13 +28,11 @@ namespace BCnEncoder.Decoder
 		/// Decode the data to color components.
 		/// </summary>
 		/// <param name="data">The data to decode.</param>
-		/// <param name="pixelWidth">The width of the image in pixels.</param>
-		/// <param name="pixelHeight">The height of the image in pixels.</param>
 		/// <param name="context">The context of the current operation.</param>
 		/// <returns>The decoded color components.</returns>
-		public Rgba32[] Decode(ReadOnlyMemory<byte> data, int pixelWidth, int pixelHeight, OperationContext context)
+		public ColorRgba32[] Decode(ReadOnlyMemory<byte> data, OperationContext context)
 		{
-			var output = new Rgba32[pixelWidth * pixelHeight];
+			var output = new ColorRgba32[data.Length];
 
 			// HINT: Ignoring parallel execution since we wouldn't gain performance from it.
 
@@ -46,18 +43,18 @@ namespace BCnEncoder.Decoder
 
 				if (redAsLuminance)
 				{
-					output[i].R = span[i];
-					output[i].G = span[i];
-					output[i].B = span[i];
+					output[i].r = span[i];
+					output[i].g = span[i];
+					output[i].b = span[i];
 				}
 				else
 				{
-					output[i].R = span[i];
-					output[i].G = 0;
-					output[i].B = 0;
+					output[i].r = span[i];
+					output[i].g = 0;
+					output[i].b = 0;
 				}
 
-				output[i].A = 255;
+				output[i].a = 255;
 			}
 
 			return output;
@@ -73,13 +70,11 @@ namespace BCnEncoder.Decoder
 		/// Decode the data to color components.
 		/// </summary>
 		/// <param name="data">The data to decode.</param>
-		/// <param name="pixelWidth">The width of the image in pixels.</param>
-		/// <param name="pixelHeight">The height of the image in pixels.</param>
 		/// <param name="context">The context of the current operation.</param>
 		/// <returns>The decoded color components.</returns>
-		public Rgba32[] Decode(ReadOnlyMemory<byte> data, int pixelWidth, int pixelHeight, OperationContext context)
+		public ColorRgba32[] Decode(ReadOnlyMemory<byte> data, OperationContext context)
 		{
-			var output = new Rgba32[pixelWidth * pixelHeight];
+			var output = new ColorRgba32[data.Length / 2];
 
 			// HINT: Ignoring parallel execution since we wouldn't gain performance from it.
 
@@ -88,10 +83,10 @@ namespace BCnEncoder.Decoder
 			{
 				context.CancellationToken.ThrowIfCancellationRequested();
 
-				output[i].R = span[i * 2];
-				output[i].G = span[i * 2 + 1];
-				output[i].B = 0;
-				output[i].A = 255;
+				output[i].r = span[i * 2];
+				output[i].g = span[i * 2 + 1];
+				output[i].b = 0;
+				output[i].a = 255;
 			}
 
 			return output;
@@ -107,13 +102,11 @@ namespace BCnEncoder.Decoder
 		/// Decode the data to color components.
 		/// </summary>
 		/// <param name="data">The data to decode.</param>
-		/// <param name="pixelWidth">The width of the image in pixels.</param>
-		/// <param name="pixelHeight">The height of the image in pixels.</param>
 		/// <param name="context">The context of the current operation.</param>
 		/// <returns>The decoded color components.</returns>
-		public Rgba32[] Decode(ReadOnlyMemory<byte> data, int pixelWidth, int pixelHeight, OperationContext context)
+		public ColorRgba32[] Decode(ReadOnlyMemory<byte> data, OperationContext context)
 		{
-			var output = new Rgba32[pixelWidth * pixelHeight];
+			var output = new ColorRgba32[data.Length / 3];
 
 			// HINT: Ignoring parallel execution since we wouldn't gain performance from it.
 
@@ -122,10 +115,10 @@ namespace BCnEncoder.Decoder
 			{
 				context.CancellationToken.ThrowIfCancellationRequested();
 
-				output[i].R = span[i * 3];
-				output[i].G = span[i * 3 + 1];
-				output[i].B = span[i * 3 + 2];
-				output[i].A = 255;
+				output[i].r = span[i * 3];
+				output[i].g = span[i * 3 + 1];
+				output[i].b = span[i * 3 + 2];
+				output[i].a = 255;
 			}
 
 			return output;
@@ -141,13 +134,11 @@ namespace BCnEncoder.Decoder
 		/// Decode the data to color components.
 		/// </summary>
 		/// <param name="data">The data to decode.</param>
-		/// <param name="pixelWidth">The width of the image in pixels.</param>
-		/// <param name="pixelHeight">The height of the image in pixels.</param>
 		/// <param name="context">The context of the current operation.</param>
 		/// <returns>The decoded color components.</returns>
-		public Rgba32[] Decode(ReadOnlyMemory<byte> data, int pixelWidth, int pixelHeight, OperationContext context)
+		public ColorRgba32[] Decode(ReadOnlyMemory<byte> data, OperationContext context)
 		{
-			var output = new Rgba32[pixelWidth * pixelHeight];
+			var output = new ColorRgba32[data.Length / 4];
 
 			// HINT: Ignoring parallel execution since we wouldn't gain performance from it.
 
@@ -156,10 +147,10 @@ namespace BCnEncoder.Decoder
 			{
 				context.CancellationToken.ThrowIfCancellationRequested();
 
-				output[i].R = span[i * 4];
-				output[i].G = span[i * 4 + 1];
-				output[i].B = span[i * 4 + 2];
-				output[i].A = span[i * 4 + 3];
+				output[i].r = span[i * 4];
+				output[i].g = span[i * 4 + 1];
+				output[i].b = span[i * 4 + 2];
+				output[i].a = span[i * 4 + 3];
 			}
 
 			return output;
@@ -175,13 +166,11 @@ namespace BCnEncoder.Decoder
 		/// Decode the data to color components.
 		/// </summary>
 		/// <param name="data">The data to decode.</param>
-		/// <param name="pixelWidth">The width of the image in pixels.</param>
-		/// <param name="pixelHeight">The height of the image in pixels.</param>
 		/// <param name="context">The context of the current operation.</param>
 		/// <returns>The decoded color components.</returns>
-		public Rgba32[] Decode(ReadOnlyMemory<byte> data, int pixelWidth, int pixelHeight, OperationContext context)
+		public ColorRgba32[] Decode(ReadOnlyMemory<byte> data, OperationContext context)
 		{
-			var output = new Rgba32[pixelWidth * pixelHeight];
+			var output = new ColorRgba32[data.Length / 4];
 
 			// HINT: Ignoring parallel execution since we wouldn't gain performance from it.
 
@@ -190,10 +179,10 @@ namespace BCnEncoder.Decoder
 			{
 				context.CancellationToken.ThrowIfCancellationRequested();
 
-				output[i].B = span[i * 4];
-				output[i].G = span[i * 4 + 1];
-				output[i].R = span[i * 4 + 2];
-				output[i].A = span[i * 4 + 3];
+				output[i].b = span[i * 4];
+				output[i].g = span[i * 4 + 1];
+				output[i].r = span[i * 4 + 2];
+				output[i].a = span[i * 4 + 3];
 			}
 
 			return output;
