@@ -3,6 +3,7 @@ using BCnEncoder.Encoder;
 using BCnEncoder.Shared;
 using BCnEncTests.Support;
 using Xunit;
+using BCnEncoder.NET.ImageSharp;
 
 namespace BCnEncTests
 {
@@ -18,7 +19,7 @@ namespace BCnEncTests
 
 			// Act
 			var ktx = encoder.EncodeToKtx(original);
-			var image = decoder.Decode(ktx);
+			var image = decoder.DecodeToImageRgba32(ktx);
 
 			// Assert
 			TestHelper.AssertImagesEqual(original, image, encoder.OutputOptions.Quality);
@@ -34,7 +35,7 @@ namespace BCnEncTests
 
 			// Act
 			var dds = encoder.EncodeToDds(original);
-			var image = decoder.Decode(dds);
+			var image = decoder.DecodeToImageRgba32(dds);
 
 			// Assert
 			TestHelper.AssertImagesEqual(original, image, encoder.OutputOptions.Quality);
@@ -50,7 +51,7 @@ namespace BCnEncTests
 
 			// Act
 			var ktx = encoder.EncodeToKtx(original);
-			var image = decoder.Decode(ktx);
+			var image = decoder.DecodeToImageRgba32(ktx);
 
 			// Assert
 			TestHelper.AssertImagesEqual(original, image, encoder.OutputOptions.Quality);
@@ -66,7 +67,7 @@ namespace BCnEncTests
 
 			// Act
 			var dds = encoder.EncodeToDds(original);
-			var image = decoder.Decode(dds);
+			var image = decoder.DecodeToImageRgba32(dds);
 
 			// Assert
 			TestHelper.AssertImagesEqual(original, image, encoder.OutputOptions.Quality);
@@ -82,7 +83,7 @@ namespace BCnEncTests
 
 			// Act
 			var ktx = encoder.EncodeToKtx(original);
-			var image = decoder.Decode(ktx);
+			var image = decoder.DecodeToImageRgba32(ktx);
 
 			// Assert
 			TestHelper.AssertImagesEqual(original, image, encoder.OutputOptions.Quality);
@@ -98,7 +99,7 @@ namespace BCnEncTests
 
 			// Act
 			var dds = encoder.EncodeToDds(original);
-			var image = decoder.Decode(dds);
+			var image = decoder.DecodeToImageRgba32(dds);
 
 			// Assert
 			TestHelper.AssertImagesEqual(original, image, encoder.OutputOptions.Quality);

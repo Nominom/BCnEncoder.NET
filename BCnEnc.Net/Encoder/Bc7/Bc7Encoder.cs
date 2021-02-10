@@ -1,8 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
-using System.Threading.Tasks;
 using BCnEncoder.Shared;
+using BCnEncoder.Shared.ImageFiles;
 
 namespace BCnEncoder.Encoder.Bc7
 {

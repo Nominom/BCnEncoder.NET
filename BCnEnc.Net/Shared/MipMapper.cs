@@ -1,86 +1,41 @@
 using System;
-using System.Collections.Generic;
-using System.Runtime.InteropServices;
+using Microsoft.Toolkit.HighPerformance.Extensions;
 using Microsoft.Toolkit.HighPerformance.Memory;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
-using SixLabors.ImageSharp.Processing;
 
 namespace BCnEncoder.Shared
 {
 	internal static class MipMapper
 	{
-
-		public static int CalculateMipChainLength(int width, int height, int maxNumMipMaps)
+		/// <summary>
+		/// Generate a chain of <paramref name="numMipMaps"/> elements.
+		/// </summary>
+		/// <param name="input">The original image to scale down.</param>
+		/// <param name="numMipMaps">The number of mipmaps to generate.</param>
+		/// <returns>Will generate as many mipmaps as possible until a mipmap of 1x1 is reached for <paramref name="numMipMaps"/> 0 or smaller.</returns>
+		public static ReadOnlyMemory2D<ColorRgba32>[] GenerateMipChain(ReadOnlyMemory2D<ColorRgba32> input, ref int numMipMaps)
 		{
-			if (maxNumMipMaps == 1)
+			if (!input.TryGetMemory(out var memory))
 			{
-				return 1;
+				throw new InvalidOperationException("Could not get Memory<T> from Memory2D<T>.");
 			}
 
-			if (maxNumMipMaps <= 0)
-			{
-				maxNumMipMaps = int.MaxValue;
-			}
-
-			var output = 0;
-			for (var mipLevel = 1; mipLevel < maxNumMipMaps; mipLevel++)
-			{
-				var mipWidth = Math.Max(1, width / (int)Math.Pow(2, mipLevel));
-				var mipHeight = Math.Max(1, height / (int)Math.Pow(2, mipLevel));
-
-				if (mipWidth == 1 && mipHeight == 1)
-				{
-					output = mipLevel + 1;
-					break;
-				}
-			}
-
-			return output;
-		}
-
-		public static void CalculateMipLevelSize(int width, int height, int mipIdx, out int mipWidth, out int mipHeight)
-		{
-			mipWidth = width;
-			mipHeight = height;
-
-			if (mipIdx == 0)
-			{
-				return;
-			}
-
-			for (var mipLevel = 1; mipLevel < int.MaxValue; mipLevel++)
-			{
-				mipWidth = Math.Max(1, width / (int)Math.Pow(2, mipLevel));
-				mipHeight = Math.Max(1, height / (int)Math.Pow(2, mipLevel));
-
-				if (mipLevel == mipIdx)
-				{
-					return;
-				}
-
-				if (mipWidth == 1 && mipHeight == 1)
-				{
-					return;
-				}
-			}
+			return GenerateMipChain(memory, input.Width, input.Height, ref numMipMaps);
 		}
 
 		/// <summary>
 		/// Generate a chain of <paramref name="numMipMaps"/> elements.
 		/// </summary>
-		/// <param name="pixelsRgba">The original image to scale down.</param>
+		/// <param name="pixels">The original image to scale down.</param>
 		/// <param name="width">The original image width.</param>
 		/// <param name="height">The original image height.</param>
 		/// <param name="numMipMaps">The number of mipmaps to generate.</param>
-		/// <returns></returns>
 		/// <returns>Will generate as many mipmaps as possible until a mipmap of 1x1 is reached for <paramref name="numMipMaps"/> 0 or smaller.</returns>
-		public static List<Memory2D<ColorRgba32>> GenerateMipChain(ReadOnlySpan<byte> pixelsRgba, int width, int height, ref int numMipMaps)
+		public static ReadOnlyMemory2D<ColorRgba32>[] GenerateMipChain(ReadOnlyMemory<ColorRgba32> pixels, int width, int height, ref int numMipMaps)
 		{
-			var span2d = ReadOnlySpan2D<ColorRgba32>.DangerousCreate(
-				MemoryMarshal.Cast<byte, ColorRgba32>(pixelsRgba)[0], height, width, 0);
-			
-			var result = new List<Memory2D<ColorRgba32>> {  span2d.ToArray() };
+			var mipChainLength = CalculateMipChainLength(width, height, numMipMaps);
+
+			var result = new ReadOnlyMemory2D<ColorRgba32>[mipChainLength];
+			result[0] = pixels.AsMemory2D(height, width);
 
 			// If only one mipmap was requested, return original image only
 			if (numMipMaps == 1)
@@ -97,11 +52,11 @@ namespace BCnEncoder.Shared
 			// Generate mipmaps
 			for (var mipLevel = 1; mipLevel < numMipMaps; mipLevel++)
 			{
-				var mipWidth = Math.Max(1, width / (int)Math.Pow(2, mipLevel));
-				var mipHeight = Math.Max(1, height / (int)Math.Pow(2, mipLevel));
-
-				ColorRgba32[,] newMip = Resize(result[mipLevel - 1].Span, mipWidth, mipHeight);
-				result.Add(newMip);
+				var mipWidth = Math.Max(1, width >> mipLevel);
+				var mipHeight = Math.Max(1, height >> mipLevel);
+				
+				var newMip = ResizeToHalf(result[mipLevel - 1].Span);
+				result[mipLevel] = newMip;
 
 				// Stop generating if last generated mipmap was of size 1x1
 				if (mipWidth == 1 && mipHeight == 1)
@@ -114,24 +69,66 @@ namespace BCnEncoder.Shared
 			return result;
 		}
 
-		private static ColorRgba32[,] Resize(ReadOnlySpan2D<ColorRgba32> pixelsRgba, int newWidth, int newHeight)
+		public static int CalculateMipChainLength(int width, int height, int maxNumMipMaps)
 		{
-			//TODO: Make better
-			
-			ColorRgba32[,] result = new ColorRgba32[newHeight, newWidth];
-			var oldWidth = pixelsRgba.Width;
-			var oldHeight = pixelsRgba.Height;
-			
-			for (int x = 0; x < newWidth; x++)
+			if (maxNumMipMaps == 1)
 			{
-				for (int y = 0; y < newHeight; y++)
+				return 1;
+			}
+
+			if (maxNumMipMaps <= 0)
+			{
+				maxNumMipMaps = int.MaxValue;
+			}
+
+			var output = 0;
+			for (var mipLevel = 1; mipLevel < maxNumMipMaps; mipLevel++)
+			{
+				var mipWidth = Math.Max(1, width >> mipLevel);
+				var mipHeight = Math.Max(1, height >> mipLevel);
+
+				if (mipWidth == 1 && mipHeight == 1)
 				{
-					var xOrig = (int) (x / (double) newWidth * oldWidth);
-					var yOrig = (int) (y / (double) newHeight * oldHeight);
-					result[y, x] = pixelsRgba[yOrig, xOrig];
+					output = mipLevel + 1;
+					break;
 				}
 			}
+
+			return output;
+		}
+
+		public static void CalculateMipLevelSize(int width, int height, int mipIdx, out int mipWidth, out int mipHeight)
+		{
+			mipWidth = Math.Max(1, width >> mipIdx);
+			mipHeight = Math.Max(1, height >> mipIdx);
+		}
+
+		private static ColorRgba32[,] ResizeToHalf(ReadOnlySpan2D<ColorRgba32> pixelsRgba)
+		{
+
+			var oldWidth = pixelsRgba.Width;
+			var oldHeight = pixelsRgba.Height;
+			var newWidth = Math.Max(1, oldWidth >> 1);
+			var newHeight = Math.Max(1, oldHeight >> 1);
 			
+			var result = new ColorRgba32[newHeight, newWidth];
+			
+			int ClampW(int x) => Math.Max(0, Math.Min(oldWidth - 1, x));
+			int ClampH(int y) => Math.Max(0, Math.Min(oldHeight - 1, y));
+			
+			for (var y2 = 0; y2 < newHeight; y2++)
+			{
+				for (var x2 = 0; x2 < newWidth; x2++)
+				{
+					var ul = pixelsRgba[ClampH(y2 * 2), ClampW(x2 * 2)].ToFloat();
+					var ur = pixelsRgba[ClampH(y2 * 2), ClampW(x2 * 2 + 1)].ToFloat();
+					var ll = pixelsRgba[ClampH(y2 * 2 + 1), ClampW(x2 * 2)].ToFloat();
+					var lr = pixelsRgba[ClampH(y2 * 2 + 1), ClampW(x2 * 2 + 1)].ToFloat();
+
+					result[y2, x2] = ((ul + ur + ll + lr) / 4).ToRgba32();
+				}
+			}
+
 			return result;
 		}
 	}

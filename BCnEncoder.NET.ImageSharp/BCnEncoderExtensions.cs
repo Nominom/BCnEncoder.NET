@@ -1,10 +1,15 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using BCnEncoder.Encoder;
 using BCnEncoder.Shared;
+using BCnEncoder.Shared.ImageFiles;
+using Microsoft.Toolkit.HighPerformance.Extensions;
+using Microsoft.Toolkit.HighPerformance.Memory;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Advanced;
 using SixLabors.ImageSharp.PixelFormats;
@@ -21,8 +26,7 @@ namespace BCnEncoder.NET.ImageSharp
 		/// <param name="outputStream">The stream to write the encoded image to.</param>
 		public static void EncodeToStream(this BcEncoder encoder, Image<Rgba32> inputImage, Stream outputStream)
 		{
-			var pixels = inputImage.GetPixelMemoryGroup()[0];
-			encoder.EncodeToStream(pixels, inputImage.Width, inputImage.Height, outputStream);
+			encoder.EncodeToStream(ImageToMemory2D(inputImage), outputStream);
 		}
 
 		/// <summary>
@@ -33,7 +37,7 @@ namespace BCnEncoder.NET.ImageSharp
 		/// <returns>The Ktx file containing the encoded image.</returns>
 		public static KtxFile EncodeToKtx(this BcEncoder encoder, Image<Rgba32> inputImage)
 		{
-			return EncodeToKtxInternal(inputImage, default);
+			return encoder.EncodeToKtx(ImageToMemory2D(inputImage));
 		}
 
 		/// <summary>
@@ -44,7 +48,7 @@ namespace BCnEncoder.NET.ImageSharp
 		/// <returns>The Dds file containing the encoded image.</returns>
 		public static DdsFile EncodeToDds(this BcEncoder encoder, Image<Rgba32> inputImage)
 		{
-			return EncodeToDdsInternal(inputImage, default);
+			return encoder.EncodeToDds(ImageToMemory2D(inputImage));
 		}
 
 		/// <summary>
@@ -52,9 +56,9 @@ namespace BCnEncoder.NET.ImageSharp
 		/// </summary>
 		/// <param name="inputImage">The image to encode.</param>
 		/// <returns>A list of raw encoded data.</returns>
-		public IList<byte[]> EncodeToRawBytes(Image<Rgba32> inputImage)
+		public static IList<byte[]> EncodeToRawBytes(this BcEncoder encoder, Image<Rgba32> inputImage)
 		{
-			return EncodeToRawBytesInternal(this BcEncoder encoder, inputImage, default);
+			return encoder.EncodeToRawBytes(ImageToMemory2D(inputImage));
 		}
 
 		/// <summary>
@@ -65,9 +69,9 @@ namespace BCnEncoder.NET.ImageSharp
 		/// <param name="mipWidth">The width of the mipmap.</param>
 		/// <param name="mipHeight">The height of the mipmap.</param>
 		/// <returns>The raw encoded data.</returns>
-		public byte[] EncodeToRawBytes(Image<Rgba32> inputImage, int mipLevel, out int mipWidth, out int mipHeight)
+		public static byte[] EncodeToRawBytes(this BcEncoder encoder, Image<Rgba32> inputImage, int mipLevel, out int mipWidth, out int mipHeight)
 		{
-			return EncodeToRawBytesInternal(this BcEncoder encoder, inputImage, mipLevel, out mipWidth, out mipHeight, default);
+			return encoder.EncodeToRawBytes(ImageToMemory2D(inputImage), mipLevel, out mipWidth, out mipHeight);
 		}
 
 		/// <summary>
@@ -81,10 +85,18 @@ namespace BCnEncoder.NET.ImageSharp
 		/// <param name="back">The back face of the cubemap.</param>
 		/// <param name="front">The front face of the cubemap.</param>
 		/// <param name="outputStream">The stream to write the encoded image to.</param>
-		public void EncodeCubeMapToStream(Image<Rgba32> right, Image<Rgba32> left, Image<Rgba32> top, Image<Rgba32> down,
+		public static void EncodeCubeMapToStream(this BcEncoder encoder, Image<Rgba32> right, Image<Rgba32> left, Image<Rgba32> top, Image<Rgba32> down,
 			Image<Rgba32> back, Image<Rgba32> front, Stream outputStream)
 		{
-			EncodeCubeMapInternal(this BcEncoder encoder, right, left, top, down, back, front, outputStream, default);
+			encoder.EncodeCubeMapToStream(
+				ImageToMemory2D(right),
+				ImageToMemory2D(left),
+				ImageToMemory2D(top),
+				ImageToMemory2D(down),
+				ImageToMemory2D(back),
+				ImageToMemory2D(front),
+				outputStream
+			);
 		}
 
 		/// <summary>
@@ -98,10 +110,17 @@ namespace BCnEncoder.NET.ImageSharp
 		/// <param name="back">The back face of the cubemap.</param>
 		/// <param name="front">The front face of the cubemap.</param>
 		/// <returns>The Ktx file containing the encoded image.</returns>
-		public KtxFile EncodeCubeMapToKtx(Image<Rgba32> right, Image<Rgba32> left, Image<Rgba32> top, Image<Rgba32> down,
+		public static KtxFile EncodeCubeMapToKtx(this BcEncoder encoder, Image<Rgba32> right, Image<Rgba32> left, Image<Rgba32> top, Image<Rgba32> down,
 			Image<Rgba32> back, Image<Rgba32> front)
 		{
-			return EncodeCubeMapToKtxInternal(this BcEncoder encoder, right, left, top, down, back, front, default);
+			return encoder.EncodeCubeMapToKtx(
+				ImageToMemory2D(right),
+				ImageToMemory2D(left),
+				ImageToMemory2D(top),
+				ImageToMemory2D(down),
+				ImageToMemory2D(back),
+				ImageToMemory2D(front)
+			);
 		}
 
 		/// <summary>
@@ -115,10 +134,17 @@ namespace BCnEncoder.NET.ImageSharp
 		/// <param name="back">The back face of the cubemap.</param>
 		/// <param name="front">The front face of the cubemap.</param>
 		/// <returns>The Dds file containing the encoded image.</returns>
-		public DdsFile EncodeCubeMapToDds(Image<Rgba32> right, Image<Rgba32> left, Image<Rgba32> top, Image<Rgba32> down,
+		public static DdsFile EncodeCubeMapToDds(this BcEncoder encoder, Image<Rgba32> right, Image<Rgba32> left, Image<Rgba32> top, Image<Rgba32> down,
 			Image<Rgba32> back, Image<Rgba32> front)
 		{
-			return EncodeCubeMapToDdsInternal(this BcEncoder encoder, right, left, top, down, back, front, default);
+			return encoder.EncodeCubeMapToDds(
+				ImageToMemory2D(right),
+				ImageToMemory2D(left),
+				ImageToMemory2D(top),
+				ImageToMemory2D(down),
+				ImageToMemory2D(back),
+				ImageToMemory2D(front)
+			);
 		}
 
 		/// <summary>
@@ -127,9 +153,9 @@ namespace BCnEncoder.NET.ImageSharp
 		/// <param name="inputImage">The image to encode.</param>
 		/// <param name="outputStream">The stream to write the encoded image to.</param>
 		/// <param name="token">The cancellation token for this operation. Can be default, if the operation is not asynchronous.</param>
-		public Task EncodeToStreamAsync(Image<Rgba32> inputImage, Stream outputStream, CancellationToken token = default)
+		public static Task EncodeToStreamAsync(this BcEncoder encoder, Image<Rgba32> inputImage, Stream outputStream, CancellationToken token = default)
 		{
-			
+			return encoder.EncodeToStreamAsync(ImageToMemory2D(inputImage), outputStream, token);
 		}
 
 		/// <summary>
@@ -138,9 +164,9 @@ namespace BCnEncoder.NET.ImageSharp
 		/// <param name="inputImage">The image to encode.</param>
 		/// <param name="token">The cancellation token for this operation. Can be default, if the operation is not asynchronous.</param>
 		/// <returns>The Ktx file containing the encoded image.</returns>
-		public Task<KtxFile> EncodeToKtxAsync(Image<Rgba32> inputImage, CancellationToken token = default)
+		public static Task<KtxFile> EncodeToKtxAsync(this BcEncoder encoder, Image<Rgba32> inputImage, CancellationToken token = default)
 		{
-			
+			return encoder.EncodeToKtxAsync(ImageToMemory2D(inputImage), token);
 		}
 
 		/// <summary>
@@ -149,9 +175,9 @@ namespace BCnEncoder.NET.ImageSharp
 		/// <param name="inputImage">The image to encode.</param>
 		/// <param name="token">The cancellation token for this operation. Can be default, if the operation is not asynchronous.</param>
 		/// <returns>The Dds file containing the encoded image.</returns>
-		public Task<DdsFile> EncodeToDdsAsync(Image<Rgba32> inputImage, CancellationToken token = default)
+		public static Task<DdsFile> EncodeToDdsAsync(this BcEncoder encoder, Image<Rgba32> inputImage, CancellationToken token = default)
 		{
-			
+			return encoder.EncodeToDdsAsync(ImageToMemory2D(inputImage), token);
 		}
 
 		/// <summary>
@@ -160,9 +186,9 @@ namespace BCnEncoder.NET.ImageSharp
 		/// <param name="inputImage">The image to encode.</param>
 		/// <param name="token">The cancellation token for this operation. Can be default, if the operation is not asynchronous.</param>
 		/// <returns>A list of raw encoded data.</returns>
-		public Task<IList<byte[]>> EncodeToRawBytesAsync(Image<Rgba32> inputImage, CancellationToken token = default)
+		public static Task<byte[][]> EncodeToRawBytesAsync(this BcEncoder encoder, Image<Rgba32> inputImage, CancellationToken token = default)
 		{
-			
+			return encoder.EncodeToRawBytesAsync(ImageToMemory2D(inputImage), token);
 		}
 
 		/// <summary>
@@ -173,8 +199,9 @@ namespace BCnEncoder.NET.ImageSharp
 		/// <param name="token">The cancellation token for this operation. Can be default, if the operation is not asynchronous.</param>
 		/// <returns>The raw encoded data.</returns>
 		/// <remarks>To get the width and height of the encoded mipLevel, see <see cref="CalculateMipMapSize(Image{Rgba32},int,out int,out int)"/>.</remarks>
-		public Task<byte[]> EncodeToRawBytesAsync(Image<Rgba32> inputImage, int mipLevel, CancellationToken token = default)
+		public static Task<byte[]> EncodeToRawBytesAsync(this BcEncoder encoder, Image<Rgba32> inputImage, int mipLevel, CancellationToken token = default)
 		{
+			return encoder.EncodeToRawBytesAsync(ImageToMemory2D(inputImage), mipLevel, token);
 		}
 
 		/// <summary>
@@ -189,9 +216,19 @@ namespace BCnEncoder.NET.ImageSharp
 		/// <param name="front">The front face of the cubemap.</param>
 		/// <param name="outputStream">The stream to write the encoded image to.</param>
 		/// <param name="token">The cancellation token for this operation. Can be default, if the operation is not asynchronous.</param>
-		public Task EncodeCubeMapToStreamAsync(Image<Rgba32> right, Image<Rgba32> left, Image<Rgba32> top, Image<Rgba32> down,
+		public static Task EncodeCubeMapToStreamAsync(this BcEncoder encoder, Image<Rgba32> right, Image<Rgba32> left, Image<Rgba32> top, Image<Rgba32> down,
 			Image<Rgba32> back, Image<Rgba32> front, Stream outputStream, CancellationToken token = default)
 		{
+			return encoder.EncodeCubeMapToStreamAsync(
+				ImageToMemory2D(right),
+				ImageToMemory2D(left),
+				ImageToMemory2D(top),
+				ImageToMemory2D(down),
+				ImageToMemory2D(back),
+				ImageToMemory2D(front),
+				outputStream,
+				token
+			);
 		}
 
 		/// <summary>
@@ -206,9 +243,18 @@ namespace BCnEncoder.NET.ImageSharp
 		/// <param name="front">The front face of the cubemap.</param>
 		/// <param name="token">The cancellation token for this operation. Can be default, if the operation is not asynchronous.</param>
 		/// <returns>The Ktx file containing the encoded image.</returns>
-		public Task<KtxFile> EncodeCubeMapToKtxAsync(Image<Rgba32> right, Image<Rgba32> left, Image<Rgba32> top,
+		public static Task<KtxFile> EncodeCubeMapToKtxAsync(this BcEncoder encoder, Image<Rgba32> right, Image<Rgba32> left, Image<Rgba32> top,
 			Image<Rgba32> down, Image<Rgba32> back, Image<Rgba32> front, CancellationToken token = default)
 		{
+			return encoder.EncodeCubeMapToKtxAsync(
+				ImageToMemory2D(right),
+				ImageToMemory2D(left),
+				ImageToMemory2D(top),
+				ImageToMemory2D(down),
+				ImageToMemory2D(back),
+				ImageToMemory2D(front),
+				token
+			);
 		}
 
 		/// <summary>
@@ -223,9 +269,18 @@ namespace BCnEncoder.NET.ImageSharp
 		/// <param name="front">The front face of the cubemap.</param>
 		/// <param name="token">The cancellation token for this operation. Can be default, if the operation is not asynchronous.</param>
 		/// <returns>The Dds file containing the encoded image.</returns>
-		public Task<DdsFile> EncodeCubeMapToDdsAsync(Image<Rgba32> right, Image<Rgba32> left, Image<Rgba32> top,
+		public static Task<DdsFile> EncodeCubeMapToDdsAsync(this BcEncoder encoder, Image<Rgba32> right, Image<Rgba32> left, Image<Rgba32> top,
 			Image<Rgba32> down, Image<Rgba32> back, Image<Rgba32> front, CancellationToken token = default)
 		{
+			return encoder.EncodeCubeMapToDdsAsync(
+				ImageToMemory2D(right),
+				ImageToMemory2D(left),
+				ImageToMemory2D(top),
+				ImageToMemory2D(down),
+				ImageToMemory2D(back),
+				ImageToMemory2D(front),
+				token
+			);
 		}
 
 		/// <summary>
@@ -233,9 +288,9 @@ namespace BCnEncoder.NET.ImageSharp
 		/// </summary>
 		/// <param name="inputImage">The image to use for the calculation.</param>
 		/// <returns>The number of mipmap levels that will be generated for the input image.</returns>
-		public int CalculateNumberOfMipLevels(Image<Rgba32> inputImage)
+		public static int CalculateNumberOfMipLevels(this BcEncoder encoder, Image<Rgba32> inputImage)
 		{
-			
+			return encoder.CalculateNumberOfMipLevels(inputImage.Width, inputImage.Height);
 		}
 
 		/// <summary>
@@ -245,9 +300,20 @@ namespace BCnEncoder.NET.ImageSharp
 		/// <param name="mipLevel">The mipLevel to calculate (0 is original image)</param>
 		/// <param name="mipWidth">The mipmap width calculated</param>
 		/// <param name="mipHeight">The mipmap height calculated</param>
-		public void CalculateMipMapSize(Image<Rgba32> inputImage, int mipLevel, out int mipWidth, out int mipHeight)
+		public static void CalculateMipMapSize(this BcEncoder encoder, Image<Rgba32> inputImage, int mipLevel, out int mipWidth, out int mipHeight)
 		{
-			
+			encoder.CalculateMipMapSize(inputImage.Width, inputImage.Height,
+				mipLevel, out mipWidth, out mipHeight);
+		}
+
+		
+		private static Memory2D<ColorRgba32> ImageToMemory2D(Image<Rgba32> inputImage)
+		{
+			var pixels = inputImage.GetPixelMemoryGroup()[0];
+			var colors = new ColorRgba32[pixels.Length];
+			MemoryMarshal.Cast<Rgba32, ColorRgba32>(pixels.Span).CopyTo(colors);
+			var memory = colors.AsMemory().AsMemory2D(inputImage.Height, inputImage.Width);
+			return memory;
 		}
 	}
 }

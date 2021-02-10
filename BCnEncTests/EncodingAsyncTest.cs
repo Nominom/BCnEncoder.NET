@@ -1,5 +1,6 @@
 using BCnEncoder.Decoder;
 using BCnEncoder.Encoder;
+using BCnEncoder.NET.ImageSharp;
 using BCnEncoder.Shared;
 using BCnEncTests.Support;
 using SixLabors.ImageSharp;
@@ -27,7 +28,7 @@ namespace BCnEncTests
 		public async void EncodeToDdsAsync()
 		{
 			var file = await encoder.EncodeToDdsAsync(originalImage);
-			var image = decoder.Decode(file);
+			var image = decoder.DecodeToImageRgba32(file);
 
 			TestHelper.AssertImagesEqual(originalImage, image, encoder.OutputOptions.Quality);
 			image.Dispose();
@@ -37,7 +38,7 @@ namespace BCnEncTests
 		public async void EncodeToKtxAsync()
 		{
 			var file = await encoder.EncodeToKtxAsync(originalImage);
-			var image = decoder.Decode(file);
+			var image = decoder.DecodeToImageRgba32(file);
 
 			TestHelper.AssertImagesEqual(originalImage, image, encoder.OutputOptions.Quality);
 			image.Dispose();
@@ -51,7 +52,7 @@ namespace BCnEncTests
 
 			for (var i = 0; i < 6; i++)
 			{
-				var image = decoder.DecodeRaw(file.Faces[i].MipMaps[0].Data, CompressionFormat.Bc1, (int)file.Faces[i].Width, (int)file.Faces[i].Height);
+				var image = decoder.DecodeRawToImageRgba32(file.Faces[i].MipMaps[0].Data, (int)file.Faces[i].Width, (int)file.Faces[i].Height, CompressionFormat.Bc1);
 
 				TestHelper.AssertImagesEqual(originalCubeMap[i], image, encoder.OutputOptions.Quality);
 				image.Dispose();
@@ -66,7 +67,7 @@ namespace BCnEncTests
 
 			for (var i = 0; i < 6; i++)
 			{
-				var image = decoder.DecodeRaw(file.MipMaps[0].Faces[i].Data, CompressionFormat.Bc1, (int)file.MipMaps[0].Faces[i].Width, (int)file.MipMaps[0].Faces[i].Height);
+				var image = decoder.DecodeRawToImageRgba32(file.MipMaps[0].Faces[i].Data, (int)file.MipMaps[0].Faces[i].Width, (int)file.MipMaps[0].Faces[i].Height, CompressionFormat.Bc1);
 
 				TestHelper.AssertImagesEqual(originalCubeMap[i], image, encoder.OutputOptions.Quality);
 				image.Dispose();
@@ -77,7 +78,7 @@ namespace BCnEncTests
 		public async void EncodeToRawBytesAsync()
 		{
 			var data = await encoder.EncodeToRawBytesAsync(originalImage);
-			var image = decoder.DecodeRaw(data[0], CompressionFormat.Bc1, originalImage.Width, originalImage.Height);
+			var image = decoder.DecodeRawToImageRgba32(data[0], originalImage.Width, originalImage.Height, CompressionFormat.Bc1);
 
 			TestHelper.AssertImagesEqual(originalImage, image, encoder.OutputOptions.Quality);
 			image.Dispose();

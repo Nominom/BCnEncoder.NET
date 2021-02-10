@@ -1,6 +1,5 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
-using SixLabors.ImageSharp.PixelFormats;
 
 namespace BCnEncoder.Shared
 {
@@ -121,7 +120,7 @@ namespace BCnEncoder.Shared
 		/// the more spatial proximity is emphasized and the more compact the cluster,
 		/// M should be in range of 1 to 20.
 		/// </summary>
-		public static int[] ClusterPixels(ReadOnlySpan<Rgba32> pixels, int width, int height,
+		public static int[] ClusterPixels(ReadOnlySpan<ColorRgba32> pixels, int width, int height,
 			int clusters, float m = 10, int maxIterations = 10, bool enforceConnectivity = true)
 		{
 
@@ -292,7 +291,7 @@ namespace BCnEncoder.Shared
 			return clusterCenters;
 		}
 
-		private static LabXy[] ConvertToLabXy(ReadOnlySpan<Rgba32> pixels, int width, int height)
+		private static LabXy[] ConvertToLabXy(ReadOnlySpan<ColorRgba32> pixels, int width, int height)
 		{
 			var labXys = new LabXy[pixels.Length];
 			//Convert pixels to LabXy
@@ -302,7 +301,7 @@ namespace BCnEncoder.Shared
 				{
 					var i = x + y * width;
 					var lab = new ColorLab(pixels[i]);
-					labXys[i] = new LabXy()
+					labXys[i] = new LabXy
 					{
 						l = lab.l,
 						a = lab.a,

@@ -3,6 +3,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using BCnEncoder.Shared;
+using BCnEncoder.Shared.ImageFiles;
 using Xunit;
 
 namespace BCnEncTests
