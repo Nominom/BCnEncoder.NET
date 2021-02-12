@@ -1,6 +1,6 @@
 using System.IO;
 using BCnEncoder.Decoder;
-using BCnEncoder.NET.ImageSharp;
+using BCnEncoder.ImageSharp;
 using BCnEncoder.Shared;
 using BCnEncoder.Shared.ImageFiles;
 using BCnEncTests.Support;

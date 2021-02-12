@@ -6,7 +6,7 @@ namespace BCnEncoder.Shared
 	/// <summary>
 	/// Simple Linear Iterative Clustering.
 	/// </summary>
-	public static class LinearClustering
+	internal static class LinearClustering
 	{
 
 		private struct LabXy

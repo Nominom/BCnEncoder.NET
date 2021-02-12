@@ -3,7 +3,7 @@ using BCnEncoder.Encoder;
 using BCnEncoder.Shared;
 using BCnEncTests.Support;
 using Xunit;
-using BCnEncoder.NET.ImageSharp;
+using BCnEncoder.ImageSharp;
 
 namespace BCnEncTests
 {

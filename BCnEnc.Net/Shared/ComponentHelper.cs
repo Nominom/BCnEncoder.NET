@@ -5,23 +5,23 @@ namespace BCnEncoder.Shared
 {
 	internal static class ComponentHelper
 	{
-		public static ColorRgba32 ComponentToColor(Bc4Component component, byte componentValue)
+		public static ColorRgba32 ComponentToColor(ColorComponent component, byte componentValue)
 		{
 			switch (component)
 			{
-				case Bc4Component.R:
+				case ColorComponent.R:
 					return new ColorRgba32(componentValue, 0, 0, 255);
 
-				case Bc4Component.G:
+				case ColorComponent.G:
 					return new ColorRgba32(0, componentValue, 0, 255);
 
-				case Bc4Component.B:
+				case ColorComponent.B:
 					return new ColorRgba32(0, 0, componentValue, 255);
 
-				case Bc4Component.A:
+				case ColorComponent.A:
 					return new ColorRgba32(0, 0, 0, componentValue);
 
-				case Bc4Component.Luminance:
+				case ColorComponent.Luminance:
 					return new ColorRgba32(componentValue, componentValue, componentValue, 255);
 
 				default:
@@ -29,27 +29,27 @@ namespace BCnEncoder.Shared
 			}
 		}
 
-		public static ColorRgba32 ComponentToColor(ColorRgba32 existingColor, Bc4Component component, byte componentValue)
+		public static ColorRgba32 ComponentToColor(ColorRgba32 existingColor, ColorComponent component, byte componentValue)
 		{
 			switch (component)
 			{
-				case Bc4Component.R:
+				case ColorComponent.R:
 					existingColor.r = componentValue;
 					break;
 
-				case Bc4Component.G:
+				case ColorComponent.G:
 					existingColor.g = componentValue;
 					break;
 
-				case Bc4Component.B:
+				case ColorComponent.B:
 					existingColor.b = componentValue;
 					break;
 
-				case Bc4Component.A:
+				case ColorComponent.A:
 					existingColor.a = componentValue;
 					break;
 
-				case Bc4Component.Luminance:
+				case ColorComponent.Luminance:
 					existingColor.r = existingColor.g = existingColor.b = componentValue;
 					break;
 
@@ -60,23 +60,23 @@ namespace BCnEncoder.Shared
 			return existingColor;
 		}
 
-		public static byte ColorToComponent(ColorRgba32 color, Bc4Component component)
+		public static byte ColorToComponent(ColorRgba32 color, ColorComponent component)
 		{
 			switch (component)
 			{
-				case Bc4Component.R:
+				case ColorComponent.R:
 					return color.r;
 
-				case Bc4Component.G:
+				case ColorComponent.G:
 					return color.g;
 
-				case Bc4Component.B:
+				case ColorComponent.B:
 					return color.b;
 
-				case Bc4Component.A:
+				case ColorComponent.A:
 					return color.a;
 
-				case Bc4Component.Luminance:
+				case ColorComponent.Luminance:
 					return (byte)(new ColorYCbCr(color).y * 255);
 
 				default:

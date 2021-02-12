@@ -18,16 +18,16 @@ namespace BCnEncoder.Decoder.Options
 		/// <summary>
 		/// The color channel to populate with the values of a BC4 block.
 		/// </summary>
-		public Bc4Component Bc4Component { get; set; } = Bc4Component.R;
+		public ColorComponent Bc4Component { get; set; } = ColorComponent.R;
 
 		/// <summary>
 		/// The color channel to populate with the values of the first BC5 block.
 		/// </summary>
-		public Bc4Component Bc5Component1 { get; set; } = Bc4Component.R;
+		public ColorComponent Bc5Component1 { get; set; } = ColorComponent.R;
 
 		/// <summary>
 		/// The color channel to populate with the values of the second BC5 block.
 		/// </summary>
-		public Bc4Component Bc5Component2 { get; set; } = Bc4Component.G;
+		public ColorComponent Bc5Component2 { get; set; } = ColorComponent.G;
 	}
 }

@@ -14,14 +14,13 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Advanced;
 using SixLabors.ImageSharp.PixelFormats;
 
-namespace BCnEncoder.NET.ImageSharp
+namespace BCnEncoder.ImageSharp
 {
 	public static class BCnEncoderExtensions
 	{
 		/// <summary>
 		/// Encodes all mipmap levels into a ktx or a dds file and writes it to the output stream.
 		/// </summary>
-		/// <param name="encoder">The BcEncoder instance.</param>
 		/// <param name="inputImage">The image to encode.</param>
 		/// <param name="outputStream">The stream to write the encoded image to.</param>
 		public static void EncodeToStream(this BcEncoder encoder, Image<Rgba32> inputImage, Stream outputStream)
@@ -32,7 +31,6 @@ namespace BCnEncoder.NET.ImageSharp
 		/// <summary>
 		/// Encodes all mipmap levels into a Ktx file.
 		/// </summary>
-		/// <param name="encoder">The BcEncoder instance.</param>
 		/// <param name="inputImage">The image to encode.</param>
 		/// <returns>The Ktx file containing the encoded image.</returns>
 		public static KtxFile EncodeToKtx(this BcEncoder encoder, Image<Rgba32> inputImage)
@@ -43,7 +41,6 @@ namespace BCnEncoder.NET.ImageSharp
 		/// <summary>
 		/// Encodes all mipmap levels into a Dds file.
 		/// </summary>
-		/// <param name="encoder">The BcEncoder instance.</param>
 		/// <param name="inputImage">The image to encode.</param>
 		/// <returns>The Dds file containing the encoded image.</returns>
 		public static DdsFile EncodeToDds(this BcEncoder encoder, Image<Rgba32> inputImage)

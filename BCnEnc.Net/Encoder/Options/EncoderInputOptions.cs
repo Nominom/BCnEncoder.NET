@@ -14,18 +14,18 @@ namespace BCnEncoder.Encoder.Options
 	    public bool LuminanceAsRed { get; set; } = false;
 
 	    /// <summary>
-	    /// The color channel to take for the values of a BC4 block.
+	    /// The color channel to take for the values of a BC4 block. Default is red.
 	    /// </summary>
-		public Bc4Component Bc4Component { get; set; } = Bc4Component.R;
+		public ColorComponent Bc4Component { get; set; } = ColorComponent.R;
 
 		/// <summary>
-		/// The color channel to take for the values of the first BC5 block.
+		/// The color channel to take for the values of the first BC5 block. Default is red.
 		/// </summary>
-		public Bc4Component Bc5Component1 { get; set; } = Bc4Component.R;
+		public ColorComponent Bc5Component1 { get; set; } = ColorComponent.R;
 
 		/// <summary>
-		/// The color channel to take for the values of the second BC5 block.
+		/// The color channel to take for the values of the second BC5 block. Default is green.
 		/// </summary>
-		public Bc4Component Bc5Component2 { get; set; } = Bc4Component.G;
+		public ColorComponent Bc5Component2 { get; set; } = ColorComponent.G;
 	}
 }

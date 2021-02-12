@@ -197,7 +197,7 @@ namespace BCnEncoder.Shared
 
 		public void SetComponentIndex(int pixelIndex, byte redIndex) => componentBlock.SetComponentIndex(pixelIndex, redIndex);
 
-		public readonly RawBlock4X4Rgba32 Decode(Bc4Component component = Bc4Component.R)
+		public readonly RawBlock4X4Rgba32 Decode(ColorComponent component = ColorComponent.R)
 		{
 			var output = new RawBlock4X4Rgba32();
 			var pixels = output.AsSpan;
@@ -251,7 +251,7 @@ namespace BCnEncoder.Shared
 
 		public void SetGreenIndex(int pixelIndex, byte greenIndex) => greenBlock.SetComponentIndex(pixelIndex, greenIndex);
 
-		public readonly RawBlock4X4Rgba32 Decode(Bc4Component component1 = Bc4Component.R, Bc4Component component2 = Bc4Component.G)
+		public readonly RawBlock4X4Rgba32 Decode(ColorComponent component1 = ColorComponent.R, ColorComponent component2 = ColorComponent.G)
 		{
 			var output = new RawBlock4X4Rgba32();
 			var pixels = output.AsSpan;

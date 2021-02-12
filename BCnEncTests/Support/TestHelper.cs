@@ -5,7 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using BCnEncoder.Decoder;
 using BCnEncoder.Encoder;
-using BCnEncoder.NET.ImageSharp;
+using BCnEncoder.ImageSharp;
 using BCnEncoder.Shared;
 using BCnEncoder.Shared.ImageFiles;
 using SixLabors.ImageSharp;
@@ -133,7 +133,7 @@ namespace BCnEncTests.Support
 			var ktx = KtxFile.Load(fs);
 			var decoder = new BcDecoder()
 			{
-				OutputOptions = { Bc4Component = Bc4Component.Luminance }
+				OutputOptions = { Bc4Component = ColorComponent.Luminance }
 			};
 			using var img = decoder.DecodeToImageRgba32(ktx);
 

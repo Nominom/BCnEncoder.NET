@@ -6,7 +6,7 @@ namespace BCnEncoder.Encoder
 {
 	internal class Bc3BlockEncoder : BaseBcBlockEncoder<Bc3Block>
 	{
-		private static readonly Bc4ComponentBlockEncoder bc4BlockEncoder = new Bc4ComponentBlockEncoder(Bc4Component.A);
+		private static readonly Bc4ComponentBlockEncoder bc4BlockEncoder = new Bc4ComponentBlockEncoder(ColorComponent.A);
 
 		public override Bc3Block EncodeBlock(RawBlock4X4Rgba32 block, CompressionQuality quality)
 		{

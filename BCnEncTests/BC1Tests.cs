@@ -1,7 +1,7 @@
 using BCnEncoder.Shared;
 using SixLabors.ImageSharp.PixelFormats;
 using Xunit;
-using BCnEncoder.NET.ImageSharp;
+using BCnEncoder.ImageSharp;
 
 namespace BCnEncTests
 {

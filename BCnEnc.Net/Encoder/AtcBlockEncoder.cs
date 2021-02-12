@@ -102,7 +102,7 @@ namespace BCnEncoder.Encoder
 
 		public AtcInterpolatedAlphaBlockEncoder()
 		{
-			bc4BlockEncoder = new Bc4ComponentBlockEncoder(Bc4Component.A);
+			bc4BlockEncoder = new Bc4ComponentBlockEncoder(ColorComponent.A);
 			atcBlockEncoder = new AtcBlockEncoder();
 		}
 

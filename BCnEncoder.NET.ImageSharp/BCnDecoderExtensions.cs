@@ -14,18 +14,20 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Advanced;
 using SixLabors.ImageSharp.PixelFormats;
 
-namespace BCnEncoder.NET.ImageSharp
+namespace BCnEncoder.ImageSharp
 {
 	public static class BCnDecoderExtensions
 	{
 
 		/// <summary>
-		/// Decode raw encoded image data.
+		/// Decode a single encoded image from raw bytes.
+		/// This method will read the expected amount of bytes from the given input stream and decode it.
+		/// Make sure there is no file header information left in the stream before the encoded data.
 		/// </summary>
-		/// <param name="inputStream">The stream containing the encoded data.</param>
+		/// <param name="inputStream">The stream containing the encoded image.</param>
 		/// <param name="pixelWidth">The pixelWidth of the image.</param>
 		/// <param name="pixelHeight">The pixelHeight of the image.</param>
-		/// <param name="format">The Format the encoded data is in.</param>
+		/// <param name="format">The format the encoded data is in.</param>
 		/// <returns>The decoded Rgba32 image.</returns>
 		public static Image<Rgba32> DecodeRawToImageRgba32(this BcDecoder decoder, Stream inputStream, int pixelWidth, int pixelHeight, CompressionFormat format)
 		{
@@ -33,12 +35,12 @@ namespace BCnEncoder.NET.ImageSharp
 		}
 
 		/// <summary>
-		/// Decode raw encoded image data.
+		/// Decode a single encoded image from raw bytes.
 		/// </summary>
 		/// <param name="input">The array containing the encoded data.</param>
 		/// <param name="pixelWidth">The pixelWidth of the image.</param>
 		/// <param name="pixelHeight">The pixelHeight of the image.</param>
-		/// <param name="format">The Format the encoded data is in.</param>
+		/// <param name="format">The format the encoded data is in.</param>
 		/// <returns>The decoded Rgba32 image.</returns>
 		public static Image<Rgba32> DecodeRawToImageRgba32(this BcDecoder decoder, byte[] input, int pixelWidth, int pixelHeight, CompressionFormat format)
 		{
@@ -46,7 +48,8 @@ namespace BCnEncoder.NET.ImageSharp
 		}
 
 		/// <summary>
-		/// Read a Ktx file and decode it.
+		/// Read a Ktx or Dds file from a stream and decode the main image from it.
+		/// The type of file will be detected automatically.
 		/// </summary>
 		/// <param name="inputStream">The stream that contains either ktx or dds file.</param>
 		/// <returns>The decoded Rgba32 image.</returns>
@@ -56,7 +59,8 @@ namespace BCnEncoder.NET.ImageSharp
 		}
 
 		/// <summary>
-		/// Read a Ktx file and decode it.
+		/// Read a Ktx or Dds file from a stream and decode all available mipmaps from it.
+		/// The type of file will be detected automatically.
 		/// </summary>
 		/// <param name="inputStream">The stream that contains either ktx or dds file.</param>
 		/// <returns>An array of decoded Rgba32 images.</returns>
@@ -73,7 +77,7 @@ namespace BCnEncoder.NET.ImageSharp
 
 
 		/// <summary>
-		/// Read a Ktx file and decode it.
+		/// Decode the main image from a Ktx file.
 		/// </summary>
 		/// <param name="file">The loaded Ktx file.</param>
 		/// <returns>The decoded Rgba32 image.</returns>
@@ -83,7 +87,7 @@ namespace BCnEncoder.NET.ImageSharp
 		}
 
 		/// <summary>
-		/// Read a Ktx file and decode it.
+		/// Decode all available mipmaps from a Ktx file.
 		/// </summary>
 		/// <param name="file">The loaded Ktx file.</param>
 		/// <returns>An array of decoded Rgba32 images.</returns>
@@ -99,7 +103,7 @@ namespace BCnEncoder.NET.ImageSharp
 		}
 
 		/// <summary>
-		/// Read a Dds file and decode it.
+		/// Decode the main image from a Dds file.
 		/// </summary>
 		/// <param name="file">The loaded Dds file.</param>
 		/// <returns>The decoded Rgba32 image.</returns>
@@ -109,7 +113,7 @@ namespace BCnEncoder.NET.ImageSharp
 		}
 
 		/// <summary>
-		/// Read a Dds file and decode it.
+		/// Decode all available mipmaps from a Dds file.
 		/// </summary>
 		/// <param name="file">The loaded Dds file.</param>
 		/// <returns>An array of decoded Rgba32 images.</returns>
@@ -127,7 +131,9 @@ namespace BCnEncoder.NET.ImageSharp
 
 
 		/// <summary>
-		/// Decode raw encoded image data.
+		/// Decode a single encoded image from raw bytes.
+		/// This method will read the expected amount of bytes from the given input stream and decode it.
+		/// Make sure there is no file header information left in the stream before the encoded data.
 		/// </summary>
 		/// <param name="inputStream">The stream containing the encoded data.</param>
 		/// <param name="pixelWidth">The pixelWidth of the image.</param>
@@ -141,7 +147,7 @@ namespace BCnEncoder.NET.ImageSharp
 		}
 
 		/// <summary>
-		/// Decode raw encoded image data.
+		/// Decode a single encoded image from raw bytes.
 		/// </summary>
 		/// <param name="input">The array containing the encoded data.</param>
 		/// <param name="pixelWidth">The pixelWidth of the image.</param>
@@ -155,7 +161,8 @@ namespace BCnEncoder.NET.ImageSharp
 		}
 
 		/// <summary>
-		/// Read a Ktx file and decode it.
+		/// Read a Ktx or Dds file from a stream and decode the main image from it.
+		/// The type of file will be detected automatically.
 		/// </summary>
 		/// <param name="inputStream">The stream that contains either ktx or dds file.</param>
 		/// <param name="token">The cancellation token for this asynchronous operation.</param>
@@ -166,7 +173,8 @@ namespace BCnEncoder.NET.ImageSharp
 		}
 
 		/// <summary>
-		/// Read a Ktx file and decode it.
+		/// Read a Ktx or Dds file from a stream and decode all available mipmaps from it.
+		/// The type of file will be detected automatically.
 		/// </summary>
 		/// <param name="inputStream">The stream that contains either ktx or dds file.</param>
 		/// <param name="token">The cancellation token for this asynchronous operation.</param>
@@ -184,7 +192,7 @@ namespace BCnEncoder.NET.ImageSharp
 
 
 		/// <summary>
-		/// Read a Ktx file and decode it.
+		/// Decode the main image from a Ktx file.
 		/// </summary>
 		/// <param name="file">The loaded Ktx file.</param>
 		/// <param name="token">The cancellation token for this asynchronous operation.</param>
@@ -195,7 +203,7 @@ namespace BCnEncoder.NET.ImageSharp
 		}
 
 		/// <summary>
-		/// Read a Ktx file and decode it.
+		/// Decode all available mipmaps from a Ktx file.
 		/// </summary>
 		/// <param name="file">The loaded Ktx file.</param>
 		/// <param name="token">The cancellation token for this asynchronous operation.</param>
@@ -212,7 +220,7 @@ namespace BCnEncoder.NET.ImageSharp
 		}
 
 		/// <summary>
-		/// Read a Dds file and decode it.
+		/// Decode the main image from a Dds file.
 		/// </summary>
 		/// <param name="file">The loaded Dds file.</param>
 		/// <param name="token">The cancellation token for this asynchronous operation.</param>
@@ -223,7 +231,7 @@ namespace BCnEncoder.NET.ImageSharp
 		}
 
 		/// <summary>
-		/// Read a Dds file and decode it.
+		/// Decode all available mipmaps from a Dds file.
 		/// </summary>
 		/// <param name="file">The loaded Dds file.</param>
 		/// <param name="token">The cancellation token for this asynchronous operation.</param>

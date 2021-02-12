@@ -109,9 +109,9 @@ namespace BCnEncoder.Decoder
 
 	internal class Bc4Decoder : BaseBcBlockDecoder<Bc4Block>
 	{
-		private readonly Bc4Component component;
+		private readonly ColorComponent component;
 
-		public Bc4Decoder(Bc4Component component)
+		public Bc4Decoder(ColorComponent component)
 		{
 			this.component = component;
 		}
@@ -124,10 +124,10 @@ namespace BCnEncoder.Decoder
 
 	internal class Bc5Decoder : BaseBcBlockDecoder<Bc5Block>
 	{
-		private readonly Bc4Component component1;
-		private readonly Bc4Component component2;
+		private readonly ColorComponent component1;
+		private readonly ColorComponent component2;
 
-		public Bc5Decoder(Bc4Component component1, Bc4Component component2)
+		public Bc5Decoder(ColorComponent component1, ColorComponent component2)
 		{
 			this.component1 = component1;
 			this.component2 = component2;

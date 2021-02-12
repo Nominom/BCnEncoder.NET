@@ -8,7 +8,7 @@ namespace BCnEncoder.Encoder
 		private readonly Bc4ComponentBlockEncoder redBlockEncoder;
 		private readonly Bc4ComponentBlockEncoder greenBlockEncoder;
 
-		public Bc5BlockEncoder(Bc4Component component1, Bc4Component component2)
+		public Bc5BlockEncoder(ColorComponent component1, ColorComponent component2)
 		{
 			redBlockEncoder = new Bc4ComponentBlockEncoder(component1);
 			greenBlockEncoder = new Bc4ComponentBlockEncoder(component2);

@@ -9,7 +9,7 @@ namespace BCnEncoder.Encoder
 	{
 		private readonly Bc4ComponentBlockEncoder bc4Encoder;
 
-		public Bc4BlockEncoder(Bc4Component component)
+		public Bc4BlockEncoder(ColorComponent component)
 		{
 			bc4Encoder = new Bc4ComponentBlockEncoder(component);
 		}
@@ -42,9 +42,9 @@ namespace BCnEncoder.Encoder
 
 	internal class Bc4ComponentBlockEncoder
 	{
-		private readonly Bc4Component component;
+		private readonly ColorComponent component;
 
-		public Bc4ComponentBlockEncoder(Bc4Component component)
+		public Bc4ComponentBlockEncoder(ColorComponent component)
 		{
 			this.component = component;
 		}

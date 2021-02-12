@@ -1,5 +1,5 @@
 using BCnEncoder.Decoder;
-using BCnEncoder.NET.ImageSharp;
+using BCnEncoder.ImageSharp;
 using BCnEncoder.Shared;
 using BCnEncTests.Support;
 using Xunit;

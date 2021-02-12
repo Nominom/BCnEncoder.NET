@@ -214,7 +214,7 @@ namespace BCnEncoder.Encoder
 		/// <summary>
 		/// Encodes all mipMaps of a cubeMap image to a stream asynchronously either in ktx or dds format.
 		/// The format can be set in <see cref="EncoderOutputOptions.FileFormat"/>.
-		/// Order of faces is +X, -X, +Y, -Y, +Z, -Z
+		/// Order of faces is +X, -X, +Y, -Y, +Z, -Z. Back maps to positive Z and front to negative Z.
 		/// </summary>
 		/// <param name="right">The positive X-axis face of the cubeMap</param>
 		/// <param name="left">The negative X-axis face of the cubeMap</param>
@@ -235,7 +235,7 @@ namespace BCnEncoder.Encoder
 		/// <summary>
 		/// Encodes all mipMaps of a cubeMap image to a <see cref="KtxFile"/> asynchronously.
 		/// The format can be set in <see cref="EncoderOutputOptions.FileFormat"/>.
-		/// Order of faces is +X, -X, +Y, -Y, +Z, -Z
+		/// Order of faces is +X, -X, +Y, -Y, +Z, -Z. Back maps to positive Z and front to negative Z.
 		/// </summary>
 		/// <param name="right">The positive X-axis face of the cubeMap</param>
 		/// <param name="left">The negative X-axis face of the cubeMap</param>
@@ -255,7 +255,7 @@ namespace BCnEncoder.Encoder
 		/// <summary>
 		/// Encodes all mipMaps of a cubeMap image to a <see cref="DdsFile"/> asynchronously.
 		/// The format can be set in <see cref="EncoderOutputOptions.FileFormat"/>.
-		/// Order of faces is +X, -X, +Y, -Y, +Z, -Z
+		/// Order of faces is +X, -X, +Y, -Y, +Z, -Z. Back maps to positive Z and front to negative Z.
 		/// </summary>
 		/// <param name="right">The positive X-axis face of the cubeMap</param>
 		/// <param name="left">The negative X-axis face of the cubeMap</param>
@@ -402,7 +402,7 @@ namespace BCnEncoder.Encoder
 		/// <summary>
 		/// Encodes all mipMaps of a cubeMap image to a stream either in ktx or dds format.
 		/// The format can be set in <see cref="EncoderOutputOptions.FileFormat"/>.
-		/// Order of faces is +X, -X, +Y, -Y, +Z, -Z
+		/// Order of faces is +X, -X, +Y, -Y, +Z, -Z. Back maps to positive Z and front to negative Z.
 		/// </summary>
 		/// <param name="right">The positive X-axis face of the cubeMap</param>
 		/// <param name="left">The negative X-axis face of the cubeMap</param>
@@ -432,7 +432,7 @@ namespace BCnEncoder.Encoder
 		/// <summary>
 		/// Encodes all mipMaps of a cubeMap image to a stream either in ktx or dds format.
 		/// The format can be set in <see cref="EncoderOutputOptions.FileFormat"/>.
-		/// Order of faces is +X, -X, +Y, -Y, +Z, -Z
+		/// Order of faces is +X, -X, +Y, -Y, +Z, -Z. Back maps to positive Z and front to negative Z.
 		/// </summary>
 		/// <param name="right">The positive X-axis face of the cubeMap</param>
 		/// <param name="left">The negative X-axis face of the cubeMap</param>
@@ -451,7 +451,7 @@ namespace BCnEncoder.Encoder
 		/// <summary>
 		/// Encodes all mipMaps of a cubeMap image to a <see cref="KtxFile"/>.
 		/// The format can be set in <see cref="EncoderOutputOptions.FileFormat"/>.
-		/// Order of faces is +X, -X, +Y, -Y, +Z, -Z
+		/// Order of faces is +X, -X, +Y, -Y, +Z, -Z. Back maps to positive Z and front to negative Z.
 		/// </summary>
 		/// <param name="right">The positive X-axis face of the cubeMap</param>
 		/// <param name="left">The negative X-axis face of the cubeMap</param>
@@ -480,7 +480,7 @@ namespace BCnEncoder.Encoder
 		/// <summary>
 		/// Encodes all mipMaps of a cubeMap image to a <see cref="KtxFile"/>.
 		/// The format can be set in <see cref="EncoderOutputOptions.FileFormat"/>.
-		/// Order of faces is +X, -X, +Y, -Y, +Z, -Z
+		/// Order of faces is +X, -X, +Y, -Y, +Z, -Z. Back maps to positive Z and front to negative Z.
 		/// </summary>
 		/// <param name="right">The positive X-axis face of the cubeMap</param>
 		/// <param name="left">The negative X-axis face of the cubeMap</param>
@@ -499,7 +499,7 @@ namespace BCnEncoder.Encoder
 		/// <summary>
 		/// Encodes all mipMaps of a cubeMap image to a <see cref="DdsFile"/>.
 		/// The format can be set in <see cref="EncoderOutputOptions.FileFormat"/>.
-		/// Order of faces is +X, -X, +Y, -Y, +Z, -Z
+		/// Order of faces is +X, -X, +Y, -Y, +Z, -Z. Back maps to positive Z and front to negative Z.
 		/// </summary>
 		/// <param name="right">The positive X-axis face of the cubeMap</param>
 		/// <param name="left">The negative X-axis face of the cubeMap</param>
@@ -528,7 +528,7 @@ namespace BCnEncoder.Encoder
 		/// <summary>
 		/// Encodes all mipMaps of a cubeMap image to a <see cref="DdsFile"/>.
 		/// The format can be set in <see cref="EncoderOutputOptions.FileFormat"/>.
-		/// Order of faces is +X, -X, +Y, -Y, +Z, -Z
+		/// Order of faces is +X, -X, +Y, -Y, +Z, -Z. Back maps to positive Z and front to negative Z.
 		/// </summary>
 		/// <param name="right">The positive X-axis face of the cubeMap</param>
 		/// <param name="left">The negative X-axis face of the cubeMap</param>

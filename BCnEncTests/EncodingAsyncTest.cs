@@ -1,6 +1,6 @@
 using BCnEncoder.Decoder;
 using BCnEncoder.Encoder;
-using BCnEncoder.NET.ImageSharp;
+using BCnEncoder.ImageSharp;
 using BCnEncoder.Shared;
 using BCnEncTests.Support;
 using SixLabors.ImageSharp;
