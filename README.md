@@ -20,10 +20,19 @@ Supported formats are:
 The current state of this library is in development but quite usable. I'm planning on implementing support for more codecs and 
 different algorithms. The current version is capable of encoding and decoding BC1-BC5 and BC7 images in both KTX or DDS formats.
 
-Please note, that the API might change between versions. I'm still trying to figure it out as I go.
+Please note, that the API might change between versions.
 # Dependencies
 Current dependencies are:
-* [SixLabors.ImageSharp](https://github.com/SixLabors/ImageSharp) licenced under the [Apache 2.0](https://www.apache.org/licenses/LICENSE-2.0) licence for image loading and saving
+* [Microsoft.Toolkit.HighPerformance](https://github.com/windows-toolkit/WindowsCommunityToolkit) licenced under the [MIT](https://opensource.org/licenses/MIT) licence for Span2D and Memory2D types.
+
+# Image library integrations
+This library has integration packages available for the following image libraries:
+
+[ImageSharp](https://www.nuget.org/packages/BCnEncoder.Net.ImageSharp/)
+
+# Upgrading to 2.0
+
+If you're upgrading from 1.X.X to version 2, expect some of your exsting code to be broken. ImageSharp was removed as a core dependency in version 2.0, so the code will no longer work with ImageSharp's Image types by default. You can install the integration package for ImageSharp to continue using this library easily with ImageSharp-based apis.
 
 # API
 For more detailed usage examples, you can go look at the unit tests. 
@@ -67,7 +76,6 @@ image.SaveAsPng(outFs);
 - [x] Implement PCA to remove Accord.Statistics dependency
 - [ ] BC6H HDR Encoding
 - [ ] ETC / ETC2 Encoding?
-- [ ] Implement saving and loading basic image formats to remove ImageSharp dependency
 
 # Contributing
 All contributions are welcome. I'll try to respond to bug reports and feature requests as fast as possible, but you can also fix things yourself and submit a pull request. Please note, that by submitting a pull request you accept that your code will be dual licensed under MIT and public domain Unlicense.
