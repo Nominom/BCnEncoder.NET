@@ -30,7 +30,10 @@ namespace BCnEncoder.Encoder
 					 if (context.Progress != null)
 					 {
 						 var progressValue = Interlocked.Add(ref currentBlocks, 1);
-						 context.Progress.Report(progressValue);
+						 if ((progressValue % 100) == 0)
+						 {
+							 context.Progress.Report(progressValue);
+						 }
 					 }
 				 });
 			}
@@ -43,9 +46,14 @@ namespace BCnEncoder.Encoder
 
 					outputBlocks[i] = EncodeBlock(blocks[i], quality);
 
-					context.Progress?.Report(currentBlocks++);
+					if ((++currentBlocks % 100) == 0)
+					{
+						context.Progress?.Report(currentBlocks);
+					}
 				}
 			}
+
+			context.Progress?.Report(currentBlocks);
 
 			return outputData;
 		}

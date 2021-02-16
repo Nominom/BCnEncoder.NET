@@ -555,7 +555,7 @@ namespace BCnEncoder.Decoder
 
 			// Calculate total blocks
 			var blockSize = GetBlockSize(file.header.GlInternalFormat);
-			var totalBlocks = file.MipMaps.Sum(m => m.Faces[0].Data.Length / blockSize);
+			var totalBlocks = file.MipMaps.Take(mipMaps).Sum(m => m.Faces[0].Data.Length / blockSize);
 
 			context.Progress = new OperationProgress(Options.Progress, totalBlocks);
 
@@ -618,7 +618,7 @@ namespace BCnEncoder.Decoder
 
 			// Calculate total blocks
 			var blockSize = GetBlockSize(file);
-			var totalBlocks = file.Faces[0].MipMaps.Sum(m => m.Data.Length / blockSize);
+			var totalBlocks = file.Faces[0].MipMaps.Take((int)mipMaps).Sum(m => m.Data.Length / blockSize);
 
 			context.Progress = new OperationProgress(Options.Progress, totalBlocks);
 
