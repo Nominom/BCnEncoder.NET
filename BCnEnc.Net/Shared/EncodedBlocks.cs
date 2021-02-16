@@ -1,6 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
-using SixLabors.ImageSharp.PixelFormats;
+using BCnEncoder.Encoder;
 
 namespace BCnEncoder.Shared
 {
@@ -53,11 +53,11 @@ namespace BCnEncoder.Shared
 				var color = colors[colorIndex];
 				if (useAlpha && colorIndex == 3)
 				{
-					pixels[i] = new Rgba32(0, 0, 0, 0);
+					pixels[i] = new ColorRgba32(0, 0, 0, 0);
 				}
 				else
 				{
-					pixels[i] = new Rgba32(color.r, color.g, color.b, 255);
+					pixels[i] = new ColorRgba32(color.r, color.g, color.b, 255);
 				}
 			}
 			return output;
@@ -107,7 +107,7 @@ namespace BCnEncoder.Shared
 				var colorIndex = (int)((colorIndices >> (i * 2)) & 0b11);
 				var color = colors[colorIndex];
 
-				pixels[i] = new Rgba32(color.r, color.g, color.b, GetAlpha(i));
+				pixels[i] = new ColorRgba32(color.r, color.g, color.b, GetAlpha(i));
 			}
 			return output;
 		}
@@ -170,7 +170,7 @@ namespace BCnEncoder.Shared
 				var colorIndex = (int)((colorIndices >> (i * 2)) & 0b11);
 				var color = colors[colorIndex];
 
-				pixels[i] = new Rgba32(color.r, color.g, color.b, alphas[i]);
+				pixels[i] = new ColorRgba32(color.r, color.g, color.b, alphas[i]);
 			}
 			return output;
 		}
@@ -179,46 +179,34 @@ namespace BCnEncoder.Shared
 	[StructLayout(LayoutKind.Sequential)]
 	internal struct Bc4Block
 	{
-		public Bc4ComponentBlock redBlock;
+		public Bc4ComponentBlock componentBlock;
 
 		public byte Endpoint0
 		{
-			readonly get => redBlock.Endpoint0;
-			set => redBlock.Endpoint0 = value;
+			readonly get => componentBlock.Endpoint0;
+			set => componentBlock.Endpoint0 = value;
 		}
 
 		public byte Endpoint1
 		{
-			readonly get => redBlock.Endpoint1;
-			set => redBlock.Endpoint1 = value;
+			readonly get => componentBlock.Endpoint1;
+			set => componentBlock.Endpoint1 = value;
 		}
 
-		public readonly byte GetComponentIndex(int pixelIndex) => redBlock.GetComponentIndex(pixelIndex);
+		public readonly byte GetComponentIndex(int pixelIndex) => componentBlock.GetComponentIndex(pixelIndex);
 
-		public void SetComponentIndex(int pixelIndex, byte redIndex) => redBlock.SetComponentIndex(pixelIndex, redIndex);
+		public void SetComponentIndex(int pixelIndex, byte redIndex) => componentBlock.SetComponentIndex(pixelIndex, redIndex);
 
-		public readonly RawBlock4X4Rgba32 Decode(bool redAsLuminance)
+		public readonly RawBlock4X4Rgba32 Decode(ColorComponent component = ColorComponent.R)
 		{
 			var output = new RawBlock4X4Rgba32();
 			var pixels = output.AsSpan;
 
-			var reds = redBlock.Decode();
+			var components = componentBlock.Decode();
 
-			if (redAsLuminance)
+			for (var i = 0; i < pixels.Length; i++)
 			{
-				for (var i = 0; i < pixels.Length; i++)
-				{
-					var index = GetComponentIndex(i);
-					pixels[i] = new Rgba32(reds[index], reds[index], reds[index], 255);
-				}
-			}
-			else
-			{
-				for (var i = 0; i < pixels.Length; i++)
-				{
-					var index = GetComponentIndex(i);
-					pixels[i] = new Rgba32(reds[index], 0, 0, 255);
-				}
+				pixels[i] = ComponentHelper.ComponentToColor(component, components[i]);
 			}
 
 			return output;
@@ -263,7 +251,7 @@ namespace BCnEncoder.Shared
 
 		public void SetGreenIndex(int pixelIndex, byte greenIndex) => greenBlock.SetComponentIndex(pixelIndex, greenIndex);
 
-		public readonly RawBlock4X4Rgba32 Decode()
+		public readonly RawBlock4X4Rgba32 Decode(ColorComponent component1 = ColorComponent.R, ColorComponent component2 = ColorComponent.G)
 		{
 			var output = new RawBlock4X4Rgba32();
 			var pixels = output.AsSpan;
@@ -273,7 +261,8 @@ namespace BCnEncoder.Shared
 
 			for (var i = 0; i < pixels.Length; i++)
 			{
-				pixels[i] = new Rgba32(reds[i], greens[i], 0, 255);
+				pixels[i] = ComponentHelper.ComponentToColor(component1, reds[i]);
+				pixels[i] = ComponentHelper.ComponentToColor(pixels[i], component2, greens[i]);
 			}
 
 			return output;
@@ -319,7 +308,7 @@ namespace BCnEncoder.Shared
 
 				var color = this.color0.Mode == 0 ? color0.InterpolateThird(color1, colorIndex) : colors[colorIndex];
 
-				pixels[i] = new Rgba32(color.r, color.g, color.b, 255);
+				pixels[i] = new ColorRgba32(color.r, color.g, color.b, 255);
 			}
 			return output;
 		}
@@ -439,7 +428,7 @@ namespace BCnEncoder.Shared
 
 			for (var i = 0; i < pixels.Length; i++)
 			{
-				pixels[i].A = alphas.GetAlpha(i);
+				pixels[i].a = alphas.GetAlpha(i);
 			}
 			return output;
 		}
@@ -460,7 +449,7 @@ namespace BCnEncoder.Shared
 
 			for (var i = 0; i < pixels.Length; i++)
 			{
-				pixels[i].A = componentValues[i];
+				pixels[i].a = componentValues[i];
 			}
 			return output;
 		}

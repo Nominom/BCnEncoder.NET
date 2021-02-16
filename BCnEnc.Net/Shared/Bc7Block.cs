@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -826,7 +826,7 @@ namespace BCnEncoder.Shared
 					outputColor = SwapChannels(outputColor, rotation);
 				}
 
-				pixels[i] = outputColor.ToRgba32();
+				pixels[i] = outputColor;
 			}
 
 			return output;

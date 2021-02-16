@@ -4,7 +4,7 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace BCnEncoder.Shared
+namespace BCnEncoder.Shared.ImageFiles
 {
 	public class DdsFile
 	{
@@ -68,20 +68,21 @@ namespace BCnEncoder.Shared
 
 					for (var mip = 0; mip < mipMapCount; mip++)
 					{
-						var mipWidth = header.dwWidth >> mip;
-						var mipHeight = header.dwHeight >> mip;
-						// Saw this in a 1024x512 dds with 11 mipMapCount. Height became 0 (should be 1)
-						mipWidth = Math.Max(mipWidth, 1);
-						mipHeight = Math.Max(mipHeight, 1);
+						MipMapper.CalculateMipLevelSize(
+							(int)header.dwWidth,
+							(int)header.dwHeight,
+							mip,
+							out var mipWidth,
+							out var mipHeight);
 
 						if (mip > 0) //Calculate new byteSize
 						{
-							sizeInBytes = GetSizeInBytes(format, mipWidth, mipHeight);
+							sizeInBytes = GetSizeInBytes(format, (uint)mipWidth, (uint)mipHeight);
 						}
 
 						var data = new byte[sizeInBytes];
 						br.Read(data);
-						output.Faces[face].MipMaps[mip] = new DdsMipMap(data, mipWidth, mipHeight);
+						output.Faces[face].MipMaps[mip] = new DdsMipMap(data, (uint)mipWidth, (uint)mipHeight);
 					}
 				}
 
@@ -155,17 +156,8 @@ namespace BCnEncoder.Shared
 			uint sizeInBytes;
 			if (format.IsCompressedFormat())
 			{
-				sizeInBytes = (uint)Math.Max(1, ((width + 3) & ~3) >> 2) * (uint)Math.Max(1, ((height + 3) & ~3) >> 2);
-				if (format == DxgiFormat.DxgiFormatBc1Unorm ||
-					format == DxgiFormat.DxgiFormatBc1UnormSrgb ||
-					format == DxgiFormat.DxgiFormatBc1Typeless)
-				{
-					sizeInBytes *= 8;
-				}
-				else
-				{
-					sizeInBytes *= 16;
-				}
+				sizeInBytes = (uint)ImageToBlocks.CalculateNumOfBlocks((int)width, (int)height);
+				sizeInBytes *= (uint)format.GetByteSize();
 			}
 			else
 			{
@@ -198,7 +190,7 @@ namespace BCnEncoder.Shared
 		public uint dwCaps4;
 		public uint dwReserved2;
 
-		public static (DdsHeader, DdsHeaderDx10) InitializeCompressed(int width, int height, DxgiFormat format)
+		public static (DdsHeader, DdsHeaderDx10) InitializeCompressed(int width, int height, DxgiFormat format, bool preferDxt10Header)
 		{
 			var header = new DdsHeader();
 			var dxt10Header = new DdsHeaderDx10();
@@ -211,91 +203,139 @@ namespace BCnEncoder.Shared
 			header.dwMipMapCount = 1;
 			header.dwCaps = HeaderCaps.DdscapsTexture;
 
-			switch (format)
+			if (preferDxt10Header)
 			{
-				case DxgiFormat.DxgiFormatBc1Unorm:
-					header.ddsPixelFormat = new DdsPixelFormat
-					{
-						dwSize = 32,
-						dwFlags = PixelFormatFlags.DdpfFourcc,
-						dwFourCc = DdsPixelFormat.Dxt1
-					};
-					break;
+				// ATC formats cannot be written to DXT10 header due to lack of a DxgiFormat enum
+				switch (format)
+				{
+					case DxgiFormat.DxgiFormatAtcExt:
+						header.ddsPixelFormat = new DdsPixelFormat
+						{
+							dwSize = 32,
+							dwFlags = PixelFormatFlags.DdpfFourcc,
+							dwFourCc = DdsPixelFormat.Atc
+						};
+						break;
 
-				case DxgiFormat.DxgiFormatBc2Unorm:
-					header.ddsPixelFormat = new DdsPixelFormat
-					{
-						dwSize = 32,
-						dwFlags = PixelFormatFlags.DdpfFourcc,
-						dwFourCc = DdsPixelFormat.Dxt3
-					};
-					break;
+					case DxgiFormat.DxgiFormatAtcExplicitAlphaExt:
+						header.ddsPixelFormat = new DdsPixelFormat
+						{
+							dwSize = 32,
+							dwFlags = PixelFormatFlags.DdpfFourcc,
+							dwFourCc = DdsPixelFormat.Atci
+						};
+						break;
 
-				case DxgiFormat.DxgiFormatBc3Unorm:
-					header.ddsPixelFormat = new DdsPixelFormat
-					{
-						dwSize = 32,
-						dwFlags = PixelFormatFlags.DdpfFourcc,
-						dwFourCc = DdsPixelFormat.Dxt5
-					};
-					break;
+					case DxgiFormat.DxgiFormatAtcInterpolatedAlphaExt:
+						header.ddsPixelFormat = new DdsPixelFormat
+						{
+							dwSize = 32,
+							dwFlags = PixelFormatFlags.DdpfFourcc,
+							dwFourCc = DdsPixelFormat.Atca
+						};
+						break;
 
-				case DxgiFormat.DxgiFormatBc4Unorm:
-					header.ddsPixelFormat = new DdsPixelFormat
-					{
-						dwSize = 32,
-						dwFlags = PixelFormatFlags.DdpfFourcc,
-						dwFourCc = DdsPixelFormat.Ati1
-					};
-					break;
+					default:
+						header.ddsPixelFormat = new DdsPixelFormat
+						{
+							dwSize = 32,
+							dwFlags = PixelFormatFlags.DdpfFourcc,
+							dwFourCc = DdsPixelFormat.Dx10
+						};
+						dxt10Header.arraySize = 1;
+						dxt10Header.dxgiFormat = format;
+						dxt10Header.resourceDimension = D3D10ResourceDimension.D3D10ResourceDimensionTexture2D;
+						break;
+				}
+			}
+			else
+			{
+				switch (format)
+				{
+					case DxgiFormat.DxgiFormatBc1Unorm:
+						header.ddsPixelFormat = new DdsPixelFormat
+						{
+							dwSize = 32,
+							dwFlags = PixelFormatFlags.DdpfFourcc,
+							dwFourCc = DdsPixelFormat.Dxt1
+						};
+						break;
 
-				case DxgiFormat.DxgiFormatBc5Unorm:
-					header.ddsPixelFormat = new DdsPixelFormat
-					{
-						dwSize = 32,
-						dwFlags = PixelFormatFlags.DdpfFourcc,
-						dwFourCc = DdsPixelFormat.Ati2
-					};
-					break;
+					case DxgiFormat.DxgiFormatBc2Unorm:
+						header.ddsPixelFormat = new DdsPixelFormat
+						{
+							dwSize = 32,
+							dwFlags = PixelFormatFlags.DdpfFourcc,
+							dwFourCc = DdsPixelFormat.Dxt3
+						};
+						break;
 
-				case DxgiFormat.DxgiFormatAtc:
-					header.ddsPixelFormat = new DdsPixelFormat
-					{
-						dwSize = 32,
-						dwFlags = PixelFormatFlags.DdpfFourcc,
-						dwFourCc = DdsPixelFormat.Atc
-					};
-					break;
+					case DxgiFormat.DxgiFormatBc3Unorm:
+						header.ddsPixelFormat = new DdsPixelFormat
+						{
+							dwSize = 32,
+							dwFlags = PixelFormatFlags.DdpfFourcc,
+							dwFourCc = DdsPixelFormat.Dxt5
+						};
+						break;
 
-				case DxgiFormat.DxgiFormatAtcExplicitAlpha:
-					header.ddsPixelFormat = new DdsPixelFormat
-					{
-						dwSize = 32,
-						dwFlags = PixelFormatFlags.DdpfFourcc,
-						dwFourCc = DdsPixelFormat.Atci
-					};
-					break;
+					case DxgiFormat.DxgiFormatBc4Unorm:
+						header.ddsPixelFormat = new DdsPixelFormat
+						{
+							dwSize = 32,
+							dwFlags = PixelFormatFlags.DdpfFourcc,
+							dwFourCc = DdsPixelFormat.Bc4U
+						};
+						break;
 
-				case DxgiFormat.DxgiFormatAtcInterpolatedAlpha:
-					header.ddsPixelFormat = new DdsPixelFormat
-					{
-						dwSize = 32,
-						dwFlags = PixelFormatFlags.DdpfFourcc,
-						dwFourCc = DdsPixelFormat.Atca
-					};
-					break;
+					case DxgiFormat.DxgiFormatBc5Unorm:
+						header.ddsPixelFormat = new DdsPixelFormat
+						{
+							dwSize = 32,
+							dwFlags = PixelFormatFlags.DdpfFourcc,
+							dwFourCc = DdsPixelFormat.Ati2
+						};
+						break;
 
-				default:
-					header.ddsPixelFormat = new DdsPixelFormat
-					{
-						dwSize = 32,
-						dwFlags = PixelFormatFlags.DdpfFourcc,
-						dwFourCc = DdsPixelFormat.Dx10
-					};
-					dxt10Header.arraySize = 1;
-					dxt10Header.dxgiFormat = format;
-					dxt10Header.resourceDimension = D3D10ResourceDimension.D3D10ResourceDimensionTexture2D;
-					break;
+					case DxgiFormat.DxgiFormatAtcExt:
+						header.ddsPixelFormat = new DdsPixelFormat
+						{
+							dwSize = 32,
+							dwFlags = PixelFormatFlags.DdpfFourcc,
+							dwFourCc = DdsPixelFormat.Atc
+						};
+						break;
+
+					case DxgiFormat.DxgiFormatAtcExplicitAlphaExt:
+						header.ddsPixelFormat = new DdsPixelFormat
+						{
+							dwSize = 32,
+							dwFlags = PixelFormatFlags.DdpfFourcc,
+							dwFourCc = DdsPixelFormat.Atci
+						};
+						break;
+
+					case DxgiFormat.DxgiFormatAtcInterpolatedAlphaExt:
+						header.ddsPixelFormat = new DdsPixelFormat
+						{
+							dwSize = 32,
+							dwFlags = PixelFormatFlags.DdpfFourcc,
+							dwFourCc = DdsPixelFormat.Atca
+						};
+						break;
+
+					default:
+						header.ddsPixelFormat = new DdsPixelFormat
+						{
+							dwSize = 32,
+							dwFlags = PixelFormatFlags.DdpfFourcc,
+							dwFourCc = DdsPixelFormat.Dx10
+						};
+						dxt10Header.arraySize = 1;
+						dxt10Header.dxgiFormat = format;
+						dxt10Header.resourceDimension = D3D10ResourceDimension.D3D10ResourceDimensionTexture2D;
+						break;
+				}
 			}
 
 			return (header, dxt10Header);
@@ -329,7 +369,7 @@ namespace BCnEncoder.Shared
 				header.ddsPixelFormat = new DdsPixelFormat()
 				{
 					dwSize = 32,
-					dwFlags = PixelFormatFlags.DdpfLuminance | PixelFormatFlags.DdpfAlphapixels,
+					dwFlags = PixelFormatFlags.DdpfLuminance | PixelFormatFlags.DdpfAlphaPixels,
 					dwRgbBitCount = 16,
 					dwRBitMask = 0xFF,
 					dwGBitMask = 0xFF00
@@ -341,7 +381,7 @@ namespace BCnEncoder.Shared
 				header.ddsPixelFormat = new DdsPixelFormat()
 				{
 					dwSize = 32,
-					dwFlags = PixelFormatFlags.DdpfRgb | PixelFormatFlags.DdpfAlphapixels,
+					dwFlags = PixelFormatFlags.DdpfRgb | PixelFormatFlags.DdpfAlphaPixels,
 					dwRgbBitCount = 32,
 					dwRBitMask = 0xFF,
 					dwGBitMask = 0xFF00,
@@ -355,7 +395,7 @@ namespace BCnEncoder.Shared
 				header.ddsPixelFormat = new DdsPixelFormat()
 				{
 					dwSize = 32,
-					dwFlags = PixelFormatFlags.DdpfRgb | PixelFormatFlags.DdpfAlphapixels,
+					dwFlags = PixelFormatFlags.DdpfRgb | PixelFormatFlags.DdpfAlphaPixels,
 					dwRgbBitCount = 32,
 					dwRBitMask = 0xFF0000,
 					dwGBitMask = 0xFF00,
@@ -375,17 +415,32 @@ namespace BCnEncoder.Shared
 
 	public struct DdsPixelFormat
 	{
-		public const uint Dxt1 = 0x31545844U;
-		public const uint Dxt2 = 0x32545844U;
-		public const uint Dxt3 = 0x33545844U;
-		public const uint Dxt4 = 0x34545844U;
-		public const uint Dxt5 = 0x35545844U;
-		public const uint Ati1 = 0x41544931U;
-		public const uint Ati2 = 0x41544932U;
-		public const uint Atc = 0x42544320U;
-		public const uint Atci = 0x42544349U;
-		public const uint Atca = 0x42544341U;
-		public const uint Dx10 = 0x30315844U;
+		public static readonly uint Dx10 = MakeFourCc('D', 'X', '1', '0');
+		
+		public static readonly uint Dxt1 = MakeFourCc('D', 'X', 'T', '1');
+		public static readonly uint Dxt2 = MakeFourCc('D', 'X', 'T', '2');
+		public static readonly uint Dxt3 = MakeFourCc('D', 'X', 'T', '3');
+		public static readonly uint Dxt4 = MakeFourCc('D', 'X', 'T', '4');
+		public static readonly uint Dxt5 = MakeFourCc('D', 'X', 'T', '5');
+		public static readonly uint Ati1 = MakeFourCc('A', 'T', 'I', '1');
+		public static readonly uint Ati2 = MakeFourCc('A', 'T', 'I', '2');
+		public static readonly uint Atc  = MakeFourCc('A', 'T', 'C', ' ');
+		public static readonly uint Atci = MakeFourCc('A', 'T', 'C', 'I');
+		public static readonly uint Atca = MakeFourCc('A', 'T', 'C', 'A');
+
+		public static readonly uint Bc4S = MakeFourCc('B', 'C', '4', 'S');
+		public static readonly uint Bc4U = MakeFourCc('B', 'C', '4', 'U');
+		public static readonly uint Bc5S = MakeFourCc('B', 'C', '5', 'S');
+		public static readonly uint Bc5U = MakeFourCc('B', 'C', '5', 'U');
+
+		private static uint MakeFourCc(char c0, char c1, char c2, char c3)
+		{
+			uint result = c0;
+			result |= (uint)c1 << 8;
+			result |= (uint)c2 << 16;
+			result |= (uint)c3 << 24;
+			return result;
+		}
 
 		public uint dwSize;
 		public PixelFormatFlags dwFlags;
@@ -402,33 +457,20 @@ namespace BCnEncoder.Shared
 			{
 				if (dwFlags.HasFlag(PixelFormatFlags.DdpfFourcc))
 				{
-					switch (dwFourCc)
-					{
-						case Dxt1:
-							return DxgiFormat.DxgiFormatBc1Unorm;
-						case Dxt2:
-						case Dxt3:
-							return DxgiFormat.DxgiFormatBc2Unorm;
-						case Dxt4:
-						case Dxt5:
-							return DxgiFormat.DxgiFormatBc3Unorm;
-						case Ati1:
-							return DxgiFormat.DxgiFormatBc4Unorm;
-						case Ati2:
-							return DxgiFormat.DxgiFormatBc5Unorm;
-						case Atc:
-							return DxgiFormat.DxgiFormatAtc;
-						case Atci:
-							return DxgiFormat.DxgiFormatAtcExplicitAlpha;
-						case Atca:
-							return DxgiFormat.DxgiFormatAtcInterpolatedAlpha;
-					}
+					if (dwFourCc == Dxt1) return DxgiFormat.DxgiFormatBc1Unorm;
+					if (dwFourCc == Dxt2 || dwFourCc == Dxt3) return DxgiFormat.DxgiFormatBc2Unorm;
+					if (dwFourCc == Dxt4 || dwFourCc == Dxt5) return DxgiFormat.DxgiFormatBc3Unorm;
+					if (dwFourCc == Ati1 || dwFourCc == Bc4S || dwFourCc == Bc4U) return DxgiFormat.DxgiFormatBc4Unorm;
+					if (dwFourCc == Ati2 || dwFourCc == Bc5S || dwFourCc == Bc5U) return DxgiFormat.DxgiFormatBc5Unorm;
+					if (dwFourCc == Atc) return DxgiFormat.DxgiFormatAtcExt;
+					if (dwFourCc == Atci) return DxgiFormat.DxgiFormatAtcExplicitAlphaExt;
+					if (dwFourCc == Atca) return DxgiFormat.DxgiFormatAtcInterpolatedAlphaExt;
 				}
 				else
 				{
 					if (dwFlags.HasFlag(PixelFormatFlags.DdpfRgb)) // RGB/A
 					{
-						if (dwFlags.HasFlag(PixelFormatFlags.DdpfAlphapixels)) //RGBA
+						if (dwFlags.HasFlag(PixelFormatFlags.DdpfAlphaPixels)) //RGBA
 						{
 							if (dwRgbBitCount == 32)
 							{
@@ -458,7 +500,7 @@ namespace BCnEncoder.Shared
 					}
 					else if (dwFlags.HasFlag(PixelFormatFlags.DdpfLuminance)) // R/RG
 					{
-						if (dwFlags.HasFlag(PixelFormatFlags.DdpfAlphapixels)) // RG
+						if (dwFlags.HasFlag(PixelFormatFlags.DdpfAlphaPixels)) // RG
 						{
 							if (dwRgbBitCount == 16)
 							{
@@ -486,13 +528,6 @@ namespace BCnEncoder.Shared
 
 		public bool IsDxt10Format => (dwFlags & PixelFormatFlags.DdpfFourcc) == PixelFormatFlags.DdpfFourcc
 									 && dwFourCc == Dx10;
-
-		public bool IsDxt1To5CompressedFormat => (dwFlags & PixelFormatFlags.DdpfFourcc) == PixelFormatFlags.DdpfFourcc
-									 && (dwFourCc == Dxt1
-										 || dwFourCc == Dxt2
-										 || dwFourCc == Dxt3
-										 || dwFourCc == Dxt4
-										 || dwFourCc == Dxt5);
 	}
 
 	public struct DdsHeaderDx10
@@ -643,7 +678,7 @@ namespace BCnEncoder.Shared
 		/// <summary>
 		/// Texture contains alpha data; dwRGBAlphaBitMask contains valid data.
 		/// </summary>
-		DdpfAlphapixels = 0x1,
+		DdpfAlphaPixels = 0x1,
 		/// <summary>
 		/// Used in some older DDS files for alpha channel only uncompressed data (dwRGBBitCount contains the alpha channel bitcount; dwABitMask contains valid data)
 		/// </summary>
@@ -798,10 +833,10 @@ namespace BCnEncoder.Shared
 		DxgiFormatV408,
 		DxgiFormatForceUint,
 
-		// Added here due to missing documentation of an official value
-		DxgiFormatAtc = 300,
-		DxgiFormatAtcExplicitAlpha,
-		DxgiFormatAtcInterpolatedAlpha
+		// Added here due to lack of an official value
+		DxgiFormatAtcExt = 300,
+		DxgiFormatAtcExplicitAlphaExt,
+		DxgiFormatAtcInterpolatedAlphaExt
 	};
 
 	public static class DxgiFormatExtensions
@@ -1016,6 +1051,12 @@ namespace BCnEncoder.Shared
 					return 2;
 				case DxgiFormat.DxgiFormatB4G4R4A4Unorm:
 					return 2;
+				case DxgiFormat.DxgiFormatAtcExt:
+					return 8;
+				case DxgiFormat.DxgiFormatAtcExplicitAlphaExt:
+					return 16;
+				case DxgiFormat.DxgiFormatAtcInterpolatedAlphaExt:
+					return 16;
 			}
 			return 4;
 		}
@@ -1045,6 +1086,9 @@ namespace BCnEncoder.Shared
 				case DxgiFormat.DxgiFormatBc7Typeless:
 				case DxgiFormat.DxgiFormatBc7Unorm:
 				case DxgiFormat.DxgiFormatBc7UnormSrgb:
+				case DxgiFormat.DxgiFormatAtcExt:
+				case DxgiFormat.DxgiFormatAtcExplicitAlphaExt:
+				case DxgiFormat.DxgiFormatAtcInterpolatedAlphaExt:
 					return true;
 
 				default:

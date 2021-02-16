@@ -1,5 +1,6 @@
 using System.IO;
 using BCnEncoder.Encoder;
+using BCnEncoder.ImageSharp;
 using BCnEncoder.Shared;
 using BCnEncTests.Support;
 using Xunit;
@@ -494,7 +495,7 @@ namespace BCnEncTests
 			encoder.OutputOptions.Format = CompressionFormat.Bc1;
 
 			using var fs = File.OpenWrite(filename);
-			encoder.EncodeCubeMap(images[0], images[1], images[2], images[3], images[4], images[5], fs);
+			encoder.EncodeCubeMapToStream(images[0], images[1], images[2], images[3], images[4], images[5], fs);
 		}
 	}
 }

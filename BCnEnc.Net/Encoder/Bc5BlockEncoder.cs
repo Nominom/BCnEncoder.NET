@@ -1,4 +1,5 @@
 using BCnEncoder.Shared;
+using BCnEncoder.Shared.ImageFiles;
 
 namespace BCnEncoder.Encoder
 {
@@ -7,10 +8,10 @@ namespace BCnEncoder.Encoder
 		private readonly Bc4ComponentBlockEncoder redBlockEncoder;
 		private readonly Bc4ComponentBlockEncoder greenBlockEncoder;
 
-		public Bc5BlockEncoder()
+		public Bc5BlockEncoder(ColorComponent component1, ColorComponent component2)
 		{
-			redBlockEncoder = new Bc4ComponentBlockEncoder(Bc4Component.R);
-			greenBlockEncoder = new Bc4ComponentBlockEncoder(Bc4Component.G);
+			redBlockEncoder = new Bc4ComponentBlockEncoder(component1);
+			greenBlockEncoder = new Bc4ComponentBlockEncoder(component2);
 		}
 
 		public override Bc5Block EncodeBlock(RawBlock4X4Rgba32 block, CompressionQuality quality)

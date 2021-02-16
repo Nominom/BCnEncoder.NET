@@ -1,6 +1,7 @@
 using BCnEncoder.Shared;
 using SixLabors.ImageSharp.PixelFormats;
 using Xunit;
+using BCnEncoder.ImageSharp;
 
 namespace BCnEncTests
 {
@@ -37,25 +38,25 @@ namespace BCnEncTests
 			block[15] = 0;
 
 			var raw = block.Decode(false);
-			Assert.Equal(new Rgba32(0, 0, 0), raw.p00);
-			Assert.Equal(new Rgba32(0, 0, 0), raw.p10);
-			Assert.Equal(new Rgba32(0, 0, 0), raw.p20);
-			Assert.Equal(new Rgba32(0, 0, 0), raw.p30);
+			Assert.Equal(new ColorRgba32(0, 0, 0), raw.p00);
+			Assert.Equal(new ColorRgba32(0, 0, 0), raw.p10);
+			Assert.Equal(new ColorRgba32(0, 0, 0), raw.p20);
+			Assert.Equal(new ColorRgba32(0, 0, 0), raw.p30);
 
-			Assert.Equal(new Rgba32(85, 85, 85), raw.p01);
-			Assert.Equal(new Rgba32(85, 85, 85), raw.p11);
-			Assert.Equal(new Rgba32(85, 85, 85), raw.p21);
-			Assert.Equal(new Rgba32(85, 85, 85), raw.p31);
+			Assert.Equal(new ColorRgba32(85, 85, 85), raw.p01);
+			Assert.Equal(new ColorRgba32(85, 85, 85), raw.p11);
+			Assert.Equal(new ColorRgba32(85, 85, 85), raw.p21);
+			Assert.Equal(new ColorRgba32(85, 85, 85), raw.p31);
 
-			Assert.Equal(new Rgba32(170, 170, 170), raw.p02);
-			Assert.Equal(new Rgba32(170, 170, 170), raw.p12);
-			Assert.Equal(new Rgba32(170, 170, 170), raw.p22);
-			Assert.Equal(new Rgba32(170, 170, 170), raw.p32);
+			Assert.Equal(new ColorRgba32(170, 170, 170), raw.p02);
+			Assert.Equal(new ColorRgba32(170, 170, 170), raw.p12);
+			Assert.Equal(new ColorRgba32(170, 170, 170), raw.p22);
+			Assert.Equal(new ColorRgba32(170, 170, 170), raw.p32);
 
-			Assert.Equal(new Rgba32(255, 255, 255), raw.p03);
-			Assert.Equal(new Rgba32(255, 255, 255), raw.p13);
-			Assert.Equal(new Rgba32(255, 255, 255), raw.p23);
-			Assert.Equal(new Rgba32(255, 255, 255), raw.p33);
+			Assert.Equal(new ColorRgba32(255, 255, 255), raw.p03);
+			Assert.Equal(new ColorRgba32(255, 255, 255), raw.p13);
+			Assert.Equal(new ColorRgba32(255, 255, 255), raw.p23);
+			Assert.Equal(new ColorRgba32(255, 255, 255), raw.p33);
 		}
 
 		[Fact]
@@ -88,25 +89,25 @@ namespace BCnEncTests
 			block[15] = 1;
 
 			var raw = block.Decode(false);
-			Assert.Equal(new Rgba32(206, 203, 206), raw.p00);
-			Assert.Equal(new Rgba32(206, 203, 206), raw.p10);
-			Assert.Equal(new Rgba32(206, 203, 206), raw.p20);
-			Assert.Equal(new Rgba32(206, 203, 206), raw.p30);
+			Assert.Equal(new ColorRgba32(206, 203, 206), raw.p00);
+			Assert.Equal(new ColorRgba32(206, 203, 206), raw.p10);
+			Assert.Equal(new ColorRgba32(206, 203, 206), raw.p20);
+			Assert.Equal(new ColorRgba32(206, 203, 206), raw.p30);
 
-			Assert.Equal(new Rgba32(0, 0, 0), raw.p01);
-			Assert.Equal(new Rgba32(0, 0, 0), raw.p11);
-			Assert.Equal(new Rgba32(0, 0, 0), raw.p21);
-			Assert.Equal(new Rgba32(0, 0, 0), raw.p31);
+			Assert.Equal(new ColorRgba32(0, 0, 0), raw.p01);
+			Assert.Equal(new ColorRgba32(0, 0, 0), raw.p11);
+			Assert.Equal(new ColorRgba32(0, 0, 0), raw.p21);
+			Assert.Equal(new ColorRgba32(0, 0, 0), raw.p31);
 
-			Assert.Equal(new Rgba32(230, 229, 230), raw.p02);
-			Assert.Equal(new Rgba32(230, 229, 230), raw.p12);
-			Assert.Equal(new Rgba32(230, 229, 230), raw.p22);
-			Assert.Equal(new Rgba32(230, 229, 230), raw.p32);
+			Assert.Equal(new ColorRgba32(230, 229, 230), raw.p02);
+			Assert.Equal(new ColorRgba32(230, 229, 230), raw.p12);
+			Assert.Equal(new ColorRgba32(230, 229, 230), raw.p22);
+			Assert.Equal(new ColorRgba32(230, 229, 230), raw.p32);
 
-			Assert.Equal(new Rgba32(255, 255, 255), raw.p03);
-			Assert.Equal(new Rgba32(255, 255, 255), raw.p13);
-			Assert.Equal(new Rgba32(255, 255, 255), raw.p23);
-			Assert.Equal(new Rgba32(255, 255, 255), raw.p33);
+			Assert.Equal(new ColorRgba32(255, 255, 255), raw.p03);
+			Assert.Equal(new ColorRgba32(255, 255, 255), raw.p13);
+			Assert.Equal(new ColorRgba32(255, 255, 255), raw.p23);
+			Assert.Equal(new ColorRgba32(255, 255, 255), raw.p33);
 		}
 
 		[Fact]
@@ -139,25 +140,25 @@ namespace BCnEncTests
 			block[15] = 1;
 
 			var raw = block.Decode(true);
-			Assert.Equal(new Rgba32(206, 203, 206), raw.p00);
-			Assert.Equal(new Rgba32(206, 203, 206), raw.p10);
-			Assert.Equal(new Rgba32(206, 203, 206), raw.p20);
-			Assert.Equal(new Rgba32(206, 203, 206), raw.p30);
+			Assert.Equal(new ColorRgba32(206, 203, 206), raw.p00);
+			Assert.Equal(new ColorRgba32(206, 203, 206), raw.p10);
+			Assert.Equal(new ColorRgba32(206, 203, 206), raw.p20);
+			Assert.Equal(new ColorRgba32(206, 203, 206), raw.p30);
 
-			Assert.Equal(new Rgba32(0,0,0,0), raw.p01);
-			Assert.Equal(new Rgba32(0,0,0,0), raw.p11);
-			Assert.Equal(new Rgba32(0,0,0,0), raw.p21);
-			Assert.Equal(new Rgba32(0,0,0,0), raw.p31);
+			Assert.Equal(new ColorRgba32(0,0,0,0), raw.p01);
+			Assert.Equal(new ColorRgba32(0,0,0,0), raw.p11);
+			Assert.Equal(new ColorRgba32(0,0,0,0), raw.p21);
+			Assert.Equal(new ColorRgba32(0,0,0,0), raw.p31);
 
-			Assert.Equal(new Rgba32(230, 229, 230), raw.p02);
-			Assert.Equal(new Rgba32(230, 229, 230), raw.p12);
-			Assert.Equal(new Rgba32(230, 229, 230), raw.p22);
-			Assert.Equal(new Rgba32(230, 229, 230), raw.p32);
+			Assert.Equal(new ColorRgba32(230, 229, 230), raw.p02);
+			Assert.Equal(new ColorRgba32(230, 229, 230), raw.p12);
+			Assert.Equal(new ColorRgba32(230, 229, 230), raw.p22);
+			Assert.Equal(new ColorRgba32(230, 229, 230), raw.p32);
 
-			Assert.Equal(new Rgba32(255, 255, 255), raw.p03);
-			Assert.Equal(new Rgba32(255, 255, 255), raw.p13);
-			Assert.Equal(new Rgba32(255, 255, 255), raw.p23);
-			Assert.Equal(new Rgba32(255, 255, 255), raw.p33);
+			Assert.Equal(new ColorRgba32(255, 255, 255), raw.p03);
+			Assert.Equal(new ColorRgba32(255, 255, 255), raw.p13);
+			Assert.Equal(new ColorRgba32(255, 255, 255), raw.p23);
+			Assert.Equal(new ColorRgba32(255, 255, 255), raw.p33);
 		}
 	}
 }

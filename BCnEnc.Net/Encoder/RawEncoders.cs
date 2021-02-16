@@ -1,12 +1,12 @@
 using System;
 using BCnEncoder.Shared;
-using SixLabors.ImageSharp.PixelFormats;
+using BCnEncoder.Shared.ImageFiles;
 
 namespace BCnEncoder.Encoder
 {
 	internal interface IRawEncoder
 	{
-		byte[] Encode(ReadOnlySpan<Rgba32> pixels);
+		byte[] Encode(ReadOnlyMemory<ColorRgba32> pixels);
 		GlInternalFormat GetInternalFormat();
 		GlFormat GetBaseInternalFormat();
 		GlFormat GetGlFormat();
@@ -24,18 +24,20 @@ namespace BCnEncoder.Encoder
 			this.useLuminance = useLuminance;
 		}
 
-		public byte[] Encode(ReadOnlySpan<Rgba32> pixels)
+		public byte[] Encode(ReadOnlyMemory<ColorRgba32> pixels)
 		{
+			var span = pixels.Span;
+
 			var output = new byte[pixels.Length];
 			for (var i = 0; i < pixels.Length; i++)
 			{
 				if (useLuminance)
 				{
-					output[i] = (byte)(new ColorYCbCr(pixels[i]).y * 255);
+					output[i] = (byte)(new ColorYCbCr(span[i]).y * 255);
 				}
 				else
 				{
-					output[i] = pixels[i].R;
+					output[i] = span[i].r;
 				}
 
 			}
@@ -75,13 +77,15 @@ namespace BCnEncoder.Encoder
 
 	internal class RawRgEncoder : IRawEncoder
 	{
-		public byte[] Encode(ReadOnlySpan<Rgba32> pixels)
+		public byte[] Encode(ReadOnlyMemory<ColorRgba32> pixels)
 		{
+			var span = pixels.Span;
+
 			var output = new byte[pixels.Length * 2];
 			for (var i = 0; i < pixels.Length; i++)
 			{
-				output[i * 2] = pixels[i].R;
-				output[i * 2 + 1] = pixels[i].G;
+				output[i * 2] = span[i].r;
+				output[i * 2 + 1] = span[i].g;
 			}
 			return output;
 		}
@@ -119,14 +123,16 @@ namespace BCnEncoder.Encoder
 
 	internal class RawRgbEncoder : IRawEncoder
 	{
-		public byte[] Encode(ReadOnlySpan<Rgba32> pixels)
+		public byte[] Encode(ReadOnlyMemory<ColorRgba32> pixels)
 		{
+			var span = pixels.Span;
+
 			var output = new byte[pixels.Length * 3];
 			for (var i = 0; i < pixels.Length; i++)
 			{
-				output[i * 3] = pixels[i].R;
-				output[i * 3 + 1] = pixels[i].G;
-				output[i * 3 + 2] = pixels[i].B;
+				output[i * 3] = span[i].r;
+				output[i * 3 + 1] = span[i].g;
+				output[i * 3 + 2] = span[i].b;
 			}
 			return output;
 		}
@@ -164,15 +170,17 @@ namespace BCnEncoder.Encoder
 
 	internal class RawRgbaEncoder : IRawEncoder
 	{
-		public byte[] Encode(ReadOnlySpan<Rgba32> pixels)
+		public byte[] Encode(ReadOnlyMemory<ColorRgba32> pixels)
 		{
+			var span = pixels.Span;
+
 			var output = new byte[pixels.Length * 4];
 			for (var i = 0; i < pixels.Length; i++)
 			{
-				output[i * 4] = pixels[i].R;
-				output[i * 4 + 1] = pixels[i].G;
-				output[i * 4 + 2] = pixels[i].B;
-				output[i * 4 + 3] = pixels[i].A;
+				output[i * 4] = span[i].r;
+				output[i * 4 + 1] = span[i].g;
+				output[i * 4 + 2] = span[i].b;
+				output[i * 4 + 3] = span[i].a;
 			}
 			return output;
 		}
@@ -210,15 +218,17 @@ namespace BCnEncoder.Encoder
 
 	internal class RawBgraEncoder : IRawEncoder
 	{
-		public byte[] Encode(ReadOnlySpan<Rgba32> pixels)
+		public byte[] Encode(ReadOnlyMemory<ColorRgba32> pixels)
 		{
+			var span = pixels.Span;
+
 			var output = new byte[pixels.Length * 4];
 			for (var i = 0; i < pixels.Length; i++)
 			{
-				output[i * 4] = pixels[i].B;
-				output[i * 4 + 1] = pixels[i].G;
-				output[i * 4 + 2] = pixels[i].R;
-				output[i * 4 + 3] = pixels[i].A;
+				output[i * 4] = span[i].b;
+				output[i * 4 + 1] = span[i].g;
+				output[i * 4 + 2] = span[i].r;
+				output[i * 4 + 3] = span[i].a;
 			}
 			return output;
 		}

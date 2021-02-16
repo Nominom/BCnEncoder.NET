@@ -1,5 +1,6 @@
 using System.IO;
 using BCnEncoder.Shared;
+using BCnEncoder.Shared.ImageFiles;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 

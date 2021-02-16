@@ -1,0 +1,35 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+
+	<PublishRepositoryUrl>true</PublishRepositoryUrl>
+	<IncludeSymbols>true</IncludeSymbols>
+	<SymbolPackageFormat>snupkg</SymbolPackageFormat>
+	<GenerateDocumentationFile>true</GenerateDocumentationFile>
+	<DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
+
+    <PackageId>BCnEncoder.Net.ImageSharp</PackageId>
+    <Product>BCnEncoder.Net.ImageSharp</Product>
+    <Authors>Nominom</Authors>
+    <Description>Adds ImageSharp apis to BCnEncoder.Net</Description>
+    <PackageLicenseExpression>MIT OR Unlicense</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/Nominom/BCnEncoder.NET</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Nominom/BCnEncoder.NET</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageReleaseNotes>Updated version</PackageReleaseNotes>
+    <Version>1.0.1</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="SixLabors.ImageSharp" Version="1.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BCnEnc.Net\BCnEncoder.csproj" />
+  </ItemGroup>
+</Project>

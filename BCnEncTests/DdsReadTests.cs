@@ -1,6 +1,8 @@
 using System.IO;
 using BCnEncoder.Decoder;
+using BCnEncoder.ImageSharp;
 using BCnEncoder.Shared;
+using BCnEncoder.Shared.ImageFiles;
 using BCnEncTests.Support;
 using SixLabors.ImageSharp;
 using Xunit;
@@ -39,7 +41,7 @@ namespace BCnEncTests
 			using var fs = File.OpenRead(DdsLoader.TestDecompressBc1Name);
 
 			var decoder = new BcDecoder();
-			var images = decoder.DecodeAllMipMaps(fs);
+			var images = decoder.DecodeAllMipMapsToImageRgba32(fs);
 
 			for (var i = 0; i < images.Length; i++)
 			{

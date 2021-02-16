@@ -1,8 +1,10 @@
+using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using BCnEncoder.Shared;
+using BCnEncoder.Shared.ImageFiles;
 
 namespace BCnEncoder.Encoder
 {
@@ -28,7 +30,10 @@ namespace BCnEncoder.Encoder
 					 if (context.Progress != null)
 					 {
 						 var progressValue = Interlocked.Add(ref currentBlocks, 1);
-						 context.Progress.Report(progressValue);
+						 if ((progressValue % 100) == 0)
+						 {
+							 context.Progress.Report(progressValue);
+						 }
 					 }
 				 });
 			}
@@ -41,16 +46,35 @@ namespace BCnEncoder.Encoder
 
 					outputBlocks[i] = EncodeBlock(blocks[i], quality);
 
-					context.Progress?.Report(currentBlocks++);
+					if ((++currentBlocks % 100) == 0)
+					{
+						context.Progress?.Report(currentBlocks);
+					}
 				}
 			}
 
+			context.Progress?.Report(currentBlocks);
+
 			return outputData;
+		}
+
+		public void EncodeBlock(RawBlock4X4Rgba32 block, CompressionQuality quality, Span<byte> output)
+		{
+			if (output.Length != Unsafe.SizeOf<T>())
+			{
+				throw new Exception("Cannot encode block! Output buffer is not the correct size.");
+			}
+			var encoded = EncodeBlock(block, quality);
+			MemoryMarshal.Cast<byte, T>(output)[0] = encoded;
 		}
 
 		public abstract GlInternalFormat GetInternalFormat();
 		public abstract GlFormat GetBaseInternalFormat();
 		public abstract DxgiFormat GetDxgiFormat();
+		public int GetBlockSize()
+		{
+			return Unsafe.SizeOf<T>();
+		}
 
 		public abstract T EncodeBlock(RawBlock4X4Rgba32 block, CompressionQuality quality);
 	}

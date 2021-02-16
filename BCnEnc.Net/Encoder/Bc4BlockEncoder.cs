@@ -1,32 +1,24 @@
 using System;
 using System.Diagnostics;
 using BCnEncoder.Shared;
+using BCnEncoder.Shared.ImageFiles;
 
 namespace BCnEncoder.Encoder
 {
-	internal enum Bc4Component
-	{
-		R,
-		G,
-		B,
-		A,
-		Luminance
-	}
-
 	internal class Bc4BlockEncoder : BaseBcBlockEncoder<Bc4Block>
 	{
 		private readonly Bc4ComponentBlockEncoder bc4Encoder;
 
-		public Bc4BlockEncoder(bool luminanceAsRed)
+		public Bc4BlockEncoder(ColorComponent component)
 		{
-			bc4Encoder = new Bc4ComponentBlockEncoder(luminanceAsRed ? Bc4Component.Luminance : Bc4Component.R);
+			bc4Encoder = new Bc4ComponentBlockEncoder(component);
 		}
 
 		public override Bc4Block EncodeBlock(RawBlock4X4Rgba32 block, CompressionQuality quality)
 		{
 			var output = new Bc4Block
 			{
-				redBlock = bc4Encoder.EncodeBlock(block, quality)
+				componentBlock = bc4Encoder.EncodeBlock(block, quality)
 			};
 
 			return output;
@@ -50,9 +42,9 @@ namespace BCnEncoder.Encoder
 
 	internal class Bc4ComponentBlockEncoder
 	{
-		private readonly Bc4Component component;
+		private readonly ColorComponent component;
 
-		public Bc4ComponentBlockEncoder(Bc4Component component)
+		public Bc4ComponentBlockEncoder(ColorComponent component)
 		{
 			this.component = component;
 		}
@@ -65,28 +57,7 @@ namespace BCnEncoder.Encoder
 			var colors = new byte[pixels.Length];
 
 			for (var i = 0; i < pixels.Length; i++)
-				switch (component)
-				{
-					case Bc4Component.R:
-						colors[i] = pixels[i].R;
-						break;
-
-					case Bc4Component.G:
-						colors[i] = pixels[i].G;
-						break;
-
-					case Bc4Component.B:
-						colors[i] = pixels[i].B;
-						break;
-
-					case Bc4Component.A:
-						colors[i] = pixels[i].A;
-						break;
-
-					case Bc4Component.Luminance:
-						colors[i] = (byte)(new ColorYCbCr(pixels[i]).y * 255);
-						break;
-				}
+				colors[i] = ComponentHelper.ColorToComponent(pixels[i], component);
 
 			switch (quality)
 			{

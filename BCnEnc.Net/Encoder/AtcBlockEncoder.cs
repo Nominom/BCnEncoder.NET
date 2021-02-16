@@ -1,4 +1,5 @@
 using BCnEncoder.Shared;
+using BCnEncoder.Shared.ImageFiles;
 
 namespace BCnEncoder.Encoder
 {
@@ -47,7 +48,7 @@ namespace BCnEncoder.Encoder
 
 		public override DxgiFormat GetDxgiFormat()
 		{
-			return DxgiFormat.DxgiFormatAtc;
+			return DxgiFormat.DxgiFormatAtcExt;
 		}
 	}
 
@@ -68,7 +69,7 @@ namespace BCnEncoder.Encoder
 			var bc2AlphaBlock = new Bc2AlphaBlock();
 			for (var i = 0; i < 16; i++)
 			{
-				bc2AlphaBlock.SetAlpha(i, block[i].A);
+				bc2AlphaBlock.SetAlpha(i, block[i].a);
 			}
 
 			return new AtcExplicitAlphaBlock
@@ -90,7 +91,7 @@ namespace BCnEncoder.Encoder
 
 		public override DxgiFormat GetDxgiFormat()
 		{
-			return DxgiFormat.DxgiFormatAtcExplicitAlpha;
+			return DxgiFormat.DxgiFormatAtcExplicitAlphaExt;
 		}
 	}
 
@@ -101,7 +102,7 @@ namespace BCnEncoder.Encoder
 
 		public AtcInterpolatedAlphaBlockEncoder()
 		{
-			bc4BlockEncoder = new Bc4ComponentBlockEncoder(Bc4Component.A);
+			bc4BlockEncoder = new Bc4ComponentBlockEncoder(ColorComponent.A);
 			atcBlockEncoder = new AtcBlockEncoder();
 		}
 
@@ -129,7 +130,7 @@ namespace BCnEncoder.Encoder
 
 		public override DxgiFormat GetDxgiFormat()
 		{
-			return DxgiFormat.DxgiFormatAtcInterpolatedAlpha;
+			return DxgiFormat.DxgiFormatAtcInterpolatedAlphaExt;
 		}
 	}
 }

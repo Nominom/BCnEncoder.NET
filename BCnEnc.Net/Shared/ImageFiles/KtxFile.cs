@@ -1,11 +1,11 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using static System.Text.Encoding;
 
-namespace BCnEncoder.Shared
+namespace BCnEncoder.Shared.ImageFiles
 {
 	/// <summary>
 	/// A representation of a ktx file.

@@ -1,27 +1,26 @@
-﻿using System;
+using System;
 using BCnEncoder.Shared;
-using SixLabors.ImageSharp.PixelFormats;
 
 namespace BCnEncoder.Encoder
 {
 	internal static class ColorChooser
 	{
 
-		public static int ChooseClosestColor4(ReadOnlySpan<ColorRgb24> colors, Rgba32 color, float rWeight, float gWeight, float bWeight, out float error)
+		public static int ChooseClosestColor4(ReadOnlySpan<ColorRgb24> colors, ColorRgba32 color, float rWeight, float gWeight, float bWeight, out float error)
 		{
 			ReadOnlySpan<float> d = stackalloc float[4] {
-				MathF.Abs(colors[0].r - color.R) * rWeight
-				+ MathF.Abs(colors[0].g - color.G) * gWeight
-				+ MathF.Abs(colors[0].b - color.B) * bWeight,
-				MathF.Abs(colors[1].r - color.R) * rWeight
-				+ MathF.Abs(colors[1].g - color.G) * gWeight
-				+ MathF.Abs(colors[1].b - color.B) * bWeight,
-				MathF.Abs(colors[2].r - color.R) * rWeight
-				+ MathF.Abs(colors[2].g - color.G) * gWeight
-				+ MathF.Abs(colors[2].b - color.B) * bWeight,
-				MathF.Abs(colors[3].r - color.R) * rWeight
-				+ MathF.Abs(colors[3].g - color.G) * gWeight
-				+ MathF.Abs(colors[3].b - color.B) * bWeight,
+				MathF.Abs(colors[0].r - color.r) * rWeight
+				+ MathF.Abs(colors[0].g - color.g) * gWeight
+				+ MathF.Abs(colors[0].b - color.b) * bWeight,
+				MathF.Abs(colors[1].r - color.r) * rWeight
+				+ MathF.Abs(colors[1].g - color.g) * gWeight
+				+ MathF.Abs(colors[1].b - color.b) * bWeight,
+				MathF.Abs(colors[2].r - color.r) * rWeight
+				+ MathF.Abs(colors[2].g - color.g) * gWeight
+				+ MathF.Abs(colors[2].b - color.b) * bWeight,
+				MathF.Abs(colors[3].r - color.r) * rWeight
+				+ MathF.Abs(colors[3].g - color.g) * gWeight
+				+ MathF.Abs(colors[3].b - color.b) * bWeight,
 			};
 
 			var b0 = d[0] > d[3] ? 1 : 0;
@@ -40,30 +39,30 @@ namespace BCnEncoder.Encoder
 		}
 
 
-		public static int ChooseClosestColor4AlphaCutoff(ReadOnlySpan<ColorRgb24> colors, Rgba32 color, float rWeight, float gWeight, float bWeight, int alphaCutoff, bool hasAlpha, out float error)
+		public static int ChooseClosestColor4AlphaCutoff(ReadOnlySpan<ColorRgb24> colors, ColorRgba32 color, float rWeight, float gWeight, float bWeight, int alphaCutoff, bool hasAlpha, out float error)
 		{
 
-			if (hasAlpha && color.A < alphaCutoff)
+			if (hasAlpha && color.a < alphaCutoff)
 			{
 				error = 0;
 				return 3;
 			}
 
 			ReadOnlySpan<float> d = stackalloc float[4] {
-				MathF.Abs(colors[0].r - color.R) * rWeight
-				+ MathF.Abs(colors[0].g - color.G) * gWeight
-				+ MathF.Abs(colors[0].b - color.B) * bWeight,
-				MathF.Abs(colors[1].r - color.R) * rWeight
-				+ MathF.Abs(colors[1].g - color.G) * gWeight
-				+ MathF.Abs(colors[1].b - color.B) * bWeight,
-				MathF.Abs(colors[2].r - color.R) * rWeight
-				+ MathF.Abs(colors[2].g - color.G) * gWeight
-				+ MathF.Abs(colors[2].b - color.B) * bWeight,
+				MathF.Abs(colors[0].r - color.r) * rWeight
+				+ MathF.Abs(colors[0].g - color.g) * gWeight
+				+ MathF.Abs(colors[0].b - color.b) * bWeight,
+				MathF.Abs(colors[1].r - color.r) * rWeight
+				+ MathF.Abs(colors[1].g - color.g) * gWeight
+				+ MathF.Abs(colors[1].b - color.b) * bWeight,
+				MathF.Abs(colors[2].r - color.r) * rWeight
+				+ MathF.Abs(colors[2].g - color.g) * gWeight
+				+ MathF.Abs(colors[2].b - color.b) * bWeight,
 
 				hasAlpha ? 999 :
-				MathF.Abs(colors[3].r - color.R) * rWeight
-				+ MathF.Abs(colors[3].g - color.G) * gWeight
-				+ MathF.Abs(colors[3].b - color.B) * bWeight,
+				MathF.Abs(colors[3].r - color.r) * rWeight
+				+ MathF.Abs(colors[3].g - color.g) * gWeight
+				+ MathF.Abs(colors[3].b - color.b) * bWeight,
 			};
 
 			var b0 = d[0] > d[2] ? 1 : 0;
@@ -80,20 +79,20 @@ namespace BCnEncoder.Encoder
 			return idx;
 		}
 
-		public static int ChooseClosestColor(Span<ColorRgb24> colors, Rgba32 color)
+		public static int ChooseClosestColor(Span<ColorRgb24> colors, ColorRgba32 color)
 		{
 			var closest = 0;
 			var closestError =
-				Math.Abs(colors[0].r - color.R)
-				+ Math.Abs(colors[0].g - color.G)
-				+ Math.Abs(colors[0].b - color.B);
+				Math.Abs(colors[0].r - color.r)
+				+ Math.Abs(colors[0].g - color.g)
+				+ Math.Abs(colors[0].b - color.b);
 
 			for (var i = 1; i < colors.Length; i++)
 			{
 				var error =
-					Math.Abs(colors[i].r - color.R)
-					+ Math.Abs(colors[i].g - color.G)
-					+ Math.Abs(colors[i].b - color.B);
+					Math.Abs(colors[i].r - color.r)
+					+ Math.Abs(colors[i].g - color.g)
+					+ Math.Abs(colors[i].b - color.b);
 				if (error < closestError)
 				{
 					closest = i;
@@ -103,22 +102,22 @@ namespace BCnEncoder.Encoder
 			return closest;
 		}
 
-		public static int ChooseClosestColor(Span<ColorRgba32> colors, Rgba32 color)
+		public static int ChooseClosestColor(Span<ColorRgba32> colors, ColorRgba32 color)
 		{
 			var closest = 0;
 			var closestError =
-				Math.Abs(colors[0].r - color.R)
-				+ Math.Abs(colors[0].g - color.G)
-				+ Math.Abs(colors[0].b - color.B)
-				+ Math.Abs(colors[0].a - color.A);
+				Math.Abs(colors[0].r - color.r)
+				+ Math.Abs(colors[0].g - color.g)
+				+ Math.Abs(colors[0].b - color.b)
+				+ Math.Abs(colors[0].a - color.a);
 
 			for (var i = 1; i < colors.Length; i++)
 			{
 				var error =
-					Math.Abs(colors[i].r - color.R)
-					+ Math.Abs(colors[i].g - color.G)
-					+ Math.Abs(colors[i].b - color.B)
-					+ Math.Abs(colors[i].a - color.A);
+					Math.Abs(colors[i].r - color.r)
+					+ Math.Abs(colors[i].g - color.g)
+					+ Math.Abs(colors[i].b - color.b)
+					+ Math.Abs(colors[i].a - color.a);
 				if (error < closestError)
 				{
 					closest = i;
@@ -128,26 +127,26 @@ namespace BCnEncoder.Encoder
 			return closest;
 		}
 
-		public static int ChooseClosestColorAlphaCutOff(Span<ColorRgba32> colors, Rgba32 color, byte alphaCutOff = 255 / 2)
+		public static int ChooseClosestColorAlphaCutOff(Span<ColorRgba32> colors, ColorRgba32 color, byte alphaCutOff = 255 / 2)
 		{
-			if (color.A <= alphaCutOff)
+			if (color.a <= alphaCutOff)
 			{
 				return 3;
 			}
 
 			var closest = 0;
 			var closestError =
-				Math.Abs(colors[0].r - color.R)
-				+ Math.Abs(colors[0].g - color.G)
-				+ Math.Abs(colors[0].b - color.B);
+				Math.Abs(colors[0].r - color.r)
+				+ Math.Abs(colors[0].g - color.g)
+				+ Math.Abs(colors[0].b - color.b);
 
 			for (var i = 1; i < colors.Length; i++)
 			{
 				if (i == 3) continue; // Skip transparent
 				var error =
-					Math.Abs(colors[i].r - color.R)
-					+ Math.Abs(colors[i].g - color.G)
-					+ Math.Abs(colors[i].b - color.B);
+					Math.Abs(colors[i].r - color.r)
+					+ Math.Abs(colors[i].g - color.g)
+					+ Math.Abs(colors[i].b - color.b);
 				if (error < closestError)
 				{
 					closest = i;
@@ -182,7 +181,7 @@ namespace BCnEncoder.Encoder
 			return closest;
 		}
 
-		public static int ChooseClosestColor(Span<ColorYCbCr> colors, Rgba32 color, float luminanceMultiplier = 4)
+		public static int ChooseClosestColor(Span<ColorYCbCr> colors, ColorRgba32 color, float luminanceMultiplier = 4)
 			=> ChooseClosestColor(colors, new ColorYCbCr(color), luminanceMultiplier);
 	}
 }

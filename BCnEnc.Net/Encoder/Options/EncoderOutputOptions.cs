@@ -1,4 +1,4 @@
-﻿using BCnEncoder.Shared;
+using BCnEncoder.Shared;
 
 namespace BCnEncoder.Encoder.Options
 {
@@ -44,5 +44,11 @@ namespace BCnEncoder.Encoder.Options
         /// Default is false.
         /// </summary>
         public bool DdsBc1WriteAlphaFlag { get; set; } = false;
+
+		/// <summary>
+		/// When writing a dds file, always prefer using the Dxt10 header
+		/// to write the compression format instead of DwFourCC.
+		/// </summary>
+		public bool DdsPreferDxt10Header { get; set; } = false;
     }
 }

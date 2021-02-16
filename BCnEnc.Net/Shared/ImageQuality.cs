@@ -1,11 +1,10 @@
-﻿using System;
-using SixLabors.ImageSharp.PixelFormats;
+using System;
 
 namespace BCnEncoder.Shared
 {
 	public class ImageQuality
 	{
-		public static float PeakSignalToNoiseRatio(ReadOnlySpan<Rgba32> original, ReadOnlySpan<Rgba32> other, bool countAlpha = true) {
+		public static float PeakSignalToNoiseRatio(ReadOnlySpan<ColorRgba32> original, ReadOnlySpan<ColorRgba32> other, bool countAlpha = true) {
 			if (original.Length != other.Length) {
 				throw new ArgumentException("Both spans should be the same length");
 			}
@@ -17,7 +16,7 @@ namespace BCnEncoder.Shared
 				error += (o.cb - c.cb) * (o.cb - c.cb);
 				error += (o.cr - c.cr) * (o.cr - c.cr);
 				if (countAlpha) {
-					error += (original[i].A - other[i].A) / 255.0f * ((original[i].A - other[i].A) / 255.0f);
+					error += (original[i].a - other[i].a) / 255.0f * ((original[i].a - other[i].a) / 255.0f);
 				}
 				
 			}
@@ -35,7 +34,7 @@ namespace BCnEncoder.Shared
 			return 20 * MathF.Log10(1 / MathF.Sqrt(error));
 		}
 
-		public static float PeakSignalToNoiseRatioLuminance(ReadOnlySpan<Rgba32> original, ReadOnlySpan<Rgba32> other, bool countAlpha = true) {
+		public static float PeakSignalToNoiseRatioLuminance(ReadOnlySpan<ColorRgba32> original, ReadOnlySpan<ColorRgba32> other, bool countAlpha = true) {
 			if (original.Length != other.Length) {
 				throw new ArgumentException("Both spans should be the same length");
 			}
@@ -45,7 +44,7 @@ namespace BCnEncoder.Shared
 				var c = new ColorYCbCr(other[i]);
 				error += (o.y - c.y) * (o.y - c.y);
 				if (countAlpha) {
-					error += (original[i].A - other[i].A) / 255.0f * ((original[i].A - other[i].A) / 255.0f);
+					error += (original[i].a - other[i].a) / 255.0f * ((original[i].a - other[i].a) / 255.0f);
 				}
 				
 			}
