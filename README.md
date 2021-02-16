@@ -83,7 +83,7 @@ image.SaveAsPng(outFs);
 All contributions are welcome. I'll try to respond to bug reports and feature requests as fast as possible, but you can also fix things yourself and submit a pull request. Please note, that by submitting a pull request you accept that your code will be dual licensed under MIT and public domain Unlicense.
 
 # License
-This library is dual-licensed under the [Unlicense](https://unlicense.org/), and [MIT](https://opensource.org/licenses/MIT) licenses.
+This library is dual-licensed under the [Unlicense](https://unlicense.org/) and [MIT](https://opensource.org/licenses/MIT) licenses.
 
 You may use this code under the terms of either license.
 
