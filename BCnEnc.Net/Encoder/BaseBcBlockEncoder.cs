@@ -10,6 +10,8 @@ namespace BCnEncoder.Encoder
 {
 	internal abstract class BaseBcBlockEncoder<T> : IBcBlockEncoder where T : unmanaged
 	{
+		private static readonly object lockObj = new object();
+
 		public byte[] Encode(RawBlock4X4Rgba32[] blocks, int blockWidth, int blockHeight, CompressionQuality quality, OperationContext context)
 		{
 			var outputData = new byte[blockWidth * blockHeight * Unsafe.SizeOf<T>()];
@@ -29,10 +31,9 @@ namespace BCnEncoder.Encoder
 
 					 if (context.Progress != null)
 					 {
-						 var progressValue = Interlocked.Add(ref currentBlocks, 1);
-						 if ((progressValue % 100) == 0)
+						 lock (lockObj)
 						 {
-							 context.Progress.Report(progressValue);
+							 context.Progress.Report(++currentBlocks);
 						 }
 					 }
 				 });
@@ -46,14 +47,9 @@ namespace BCnEncoder.Encoder
 
 					outputBlocks[i] = EncodeBlock(blocks[i], quality);
 
-					if ((++currentBlocks % 100) == 0)
-					{
-						context.Progress?.Report(currentBlocks);
-					}
+					context.Progress?.Report(++currentBlocks);
 				}
 			}
-
-			context.Progress?.Report(currentBlocks);
 
 			return outputData;
 		}

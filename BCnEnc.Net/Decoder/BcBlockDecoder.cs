@@ -16,6 +16,8 @@ namespace BCnEncoder.Decoder
 
 	internal abstract class BaseBcBlockDecoder<T> : IBcBlockDecoder where T : unmanaged
 	{
+		private static readonly object lockObj = new object();
+
 		public RawBlock4X4Rgba32[] Decode(ReadOnlyMemory<byte> data, OperationContext context)
 		{
 			// calculate number of 4x4 blocks by padding width/height to a multiple of 4 and shift it right by 2
@@ -45,10 +47,9 @@ namespace BCnEncoder.Decoder
 
 					if (context.Progress != null)
 					{
-						var progressValue = Interlocked.Add(ref currentBlocks, 1);
-						if ((progressValue % 100) == 0)
+						lock (lockObj)
 						{
-							context.Progress.Report(progressValue);
+							context.Progress.Report(++currentBlocks);
 						}
 					}
 				});
@@ -61,14 +62,10 @@ namespace BCnEncoder.Decoder
 					context.CancellationToken.ThrowIfCancellationRequested();
 
 					output[i] = DecodeBlock(encodedBlocks[i]);
-					if ((++currentBlocks % 100) == 0)
-					{
-						context.Progress?.Report(currentBlocks);
-					}
+
+					context.Progress?.Report(++currentBlocks);
 				}
 			}
-
-			context.Progress?.Report(currentBlocks);
 
 			return output;
 		}
