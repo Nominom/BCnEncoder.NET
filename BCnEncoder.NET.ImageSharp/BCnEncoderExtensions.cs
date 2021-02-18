@@ -49,17 +49,17 @@ namespace BCnEncoder.ImageSharp
 		}
 
 		/// <summary>
-		/// Encodes all mipmap levels into a list of byte buffers.
+		/// Encodes all mipmap levels into an array of byte buffers. This data does not contain any file headers, just the raw encoded data.
 		/// </summary>
 		/// <param name="inputImage">The image to encode.</param>
 		/// <returns>A list of raw encoded data.</returns>
-		public static IList<byte[]> EncodeToRawBytes(this BcEncoder encoder, Image<Rgba32> inputImage)
+		public static byte[][] EncodeToRawBytes(this BcEncoder encoder, Image<Rgba32> inputImage)
 		{
 			return encoder.EncodeToRawBytes(ImageToMemory2D(inputImage));
 		}
 
 		/// <summary>
-		/// Encodes a single mip level of the input image to a byte buffer.
+		/// Encodes a single mip level of the input image to a byte buffer. This data does not contain any file headers, just the raw encoded data.
 		/// </summary>
 		/// <param name="inputImage">The image to encode.</param>
 		/// <param name="mipLevel">The mipmap to encode.</param>
@@ -72,7 +72,7 @@ namespace BCnEncoder.ImageSharp
 		}
 
 		/// <summary>
-		/// Encodes all cubemap faces and mipmap levels into Ktx file and writes it to the output stream.
+		/// Encodes all cubemap faces and mipmap levels into either a ktx or a dds file and writes it to the output stream.
 		/// Order is +X, -X, +Y, -Y, +Z, -Z
 		/// </summary>
 		/// <param name="right">The right face of the cubemap.</param>
@@ -178,7 +178,7 @@ namespace BCnEncoder.ImageSharp
 		}
 
 		/// <summary>
-		/// Encodes all mipmap levels into a list of byte buffers asynchronously.
+		/// Encodes all mipmap levels into an array of byte buffers asynchronously. This data does not contain any file headers, just the raw encoded data.
 		/// </summary>
 		/// <param name="inputImage">The image to encode.</param>
 		/// <param name="token">The cancellation token for this operation. Can be default, if the operation is not asynchronous.</param>
@@ -189,7 +189,7 @@ namespace BCnEncoder.ImageSharp
 		}
 
 		/// <summary>
-		/// Encodes a single mip level of the input image to a byte buffer asynchronously.
+		/// Encodes a single mip level of the input image to a byte buffer asynchronously. This data does not contain any file headers, just the raw encoded data.
 		/// </summary>
 		/// <param name="inputImage">The image to encode.</param>
 		/// <param name="mipLevel">The mipmap to encode.</param>
@@ -202,7 +202,7 @@ namespace BCnEncoder.ImageSharp
 		}
 
 		/// <summary>
-		/// Encodes all cubemap faces and mipmap levels into Ktx file and writes it to the output stream asynchronously.
+		/// Encodes all cubemap faces and mipmap levels into either a ktx or a dds file and writes it to the output stream asynchronously.
 		/// Order is +X, -X, +Y, -Y, +Z, -Z
 		/// </summary>
 		/// <param name="right">The right face of the cubemap.</param>

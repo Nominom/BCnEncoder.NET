@@ -157,7 +157,7 @@ namespace BCnEncoder.Encoder
 		}
 
 		/// <summary>
-		/// Encodes all mipmap levels into a list of byte buffers asynchronously.
+		/// Encodes all mipmap levels into a list of byte buffers asynchronously. This data does not contain any file headers, just the raw encoded data.
 		/// </summary>
 		/// <param name="input">The input to encode represented by a <see cref="ReadOnlyMemory{T}"/>.</param>
 		/// <param name="width">The width of the image.</param>
@@ -171,7 +171,7 @@ namespace BCnEncoder.Encoder
 		}
 
 		/// <summary>
-		/// Encodes all mipmap levels into a list of byte buffers asynchronously.
+		/// Encodes all mipmap levels into an array of byte buffers asynchronously. This data does not contain any file headers, just the raw encoded data.
 		/// </summary>
 		/// <param name="input">The input to encode represented by a <see cref="ReadOnlyMemory2D{T}"/>.</param>
 		/// <param name="token">The cancellation token for this operation. Can be default if cancellation is not needed.</param>
@@ -183,7 +183,7 @@ namespace BCnEncoder.Encoder
 		}
 
 		/// <summary>
-		/// Encodes a single mip level of the input image to a byte buffer asynchronously.
+		/// Encodes a single mip level of the input image to a byte buffer asynchronously. This data does not contain any file headers, just the raw encoded data.
 		/// </summary>
 		/// <param name="input">The input to encode represented by a <see cref="ReadOnlyMemory{T}"/>.</param>
 		/// <param name="width">The width of the image.</param>
@@ -199,7 +199,7 @@ namespace BCnEncoder.Encoder
 		}
 
 		/// <summary>
-		/// Encodes a single mip level of the input image to a byte buffer asynchronously.
+		/// Encodes a single mip level of the input image to a byte buffer asynchronously. This data does not contain any file headers, just the raw encoded data.
 		/// </summary>
 		/// <param name="input">The input to encode represented by a <see cref="ReadOnlyMemory2D{T}"/>.</param>
 		/// <param name="mipLevel">The mipmap to encode.</param>
@@ -346,7 +346,7 @@ namespace BCnEncoder.Encoder
 		}
 
 		/// <summary>
-		/// Encodes all mipmap levels into a list of byte buffers.
+		/// Encodes all mipmap levels into an array of byte buffers. This data does not contain any file headers, just the raw encoded data.
 		/// </summary>
 		/// <param name="input">The input to encode represented by a <see cref="ReadOnlySpan{T}"/>.</param>
 		/// <param name="width">The width of the image.</param>
@@ -360,7 +360,7 @@ namespace BCnEncoder.Encoder
 		}
 
 		/// <summary>
-		/// Encodes all mipmap levels into a list of byte buffers.
+		/// Encodes all mipmap levels into a list of byte buffers. This data does not contain any file headers, just the raw encoded data.
 		/// </summary>
 		/// <param name="input">The input to encode represented by a <see cref="ReadOnlyMemory2D{T}"/>.</param>
 		/// <returns>An array of byte buffers containing all mipmap levels.</returns>
@@ -371,7 +371,7 @@ namespace BCnEncoder.Encoder
 		}
 
 		/// <summary>
-		/// Encodes a single mip level of the input image to a byte buffer.
+		/// Encodes a single mip level of the input image to a byte buffer. This data does not contain any file headers, just the raw encoded data.
 		/// </summary>
 		/// <param name="input">The input to encode represented by a <see cref="ReadOnlySpan{T}"/>.</param>
 		/// <param name="width">The width of the image.</param>
@@ -387,7 +387,7 @@ namespace BCnEncoder.Encoder
 		}
 
 		/// <summary>
-		/// Encodes a single mip level of the input image to a byte buffer.
+		/// Encodes a single mip level of the input image to a byte buffer. This data does not contain any file headers, just the raw encoded data.
 		/// </summary>
 		/// <param name="input">The input to encode represented by a <see cref="ReadOnlyMemory2D{T}"/>.</param>
 		/// <param name="mipLevel">The mipmap to encode.</param>
