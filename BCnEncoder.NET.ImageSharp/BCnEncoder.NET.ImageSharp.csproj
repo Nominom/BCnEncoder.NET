@@ -17,8 +17,8 @@
     <PackageProjectUrl>https://github.com/Nominom/BCnEncoder.NET</PackageProjectUrl>
     <RepositoryUrl>https://github.com/Nominom/BCnEncoder.NET</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <PackageReleaseNotes>Updated version</PackageReleaseNotes>
-    <Version>1.0.1</Version>
+    <PackageReleaseNotes></PackageReleaseNotes>
+    <Version>1.0.2</Version>
   </PropertyGroup>
 
   <ItemGroup>
@@ -26,7 +26,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="SixLabors.ImageSharp" Version="1.0.2" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="1.0.3" />
   </ItemGroup>
 
   <ItemGroup>

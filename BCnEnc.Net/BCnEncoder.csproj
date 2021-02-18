@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
@@ -12,7 +12,7 @@
     <PackageLicenseExpression>MIT OR Unlicense</PackageLicenseExpression>
     <Copyright />
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-    <Version>2.0.1</Version>
+    <Version>2.0.2</Version>
     <Authors>Nominom</Authors>
     <Company />
     <Product>BCnEncoder.Net</Product>
@@ -31,9 +31,9 @@ Supported formats are:
     <RepositoryType>git</RepositoryType>
     <PackageTags>BCn BC BC1 BC2 BC3 BC4 BC5 BC7 BPTC RGTC S3TC DXT1 DXT3 DXT5 ktx dds texture compression encoding decoding decompression image gpu</PackageTags>
     <PackageProjectUrl>https://github.com/Nominom/BCnEncoder.NET</PackageProjectUrl>
-    <PackageReleaseNotes>Removed ImageSharp dependency, added async api methods, added ATC and BGRA support, added new raw api methods, improved dds file handling and fixed some bugs. See the github page for more information about 2.0.
+    <PackageReleaseNotes>2.0.0 - Removed ImageSharp dependency, added async api methods, added ATC and BGRA support, added new raw api methods, improved dds file handling and fixed some bugs. See the github page for more information about 2.0.
 
-2.0.1 - fixed progress api</PackageReleaseNotes>
+2.0.2 - fixed a bug in mipmap calculations</PackageReleaseNotes>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">

@@ -82,10 +82,15 @@ namespace BCnEncoder.Shared
 			}
 
 			var output = 0;
-			for (var mipLevel = 1; mipLevel < maxNumMipMaps; mipLevel++)
+			for (var mipLevel = 1; mipLevel <= maxNumMipMaps; mipLevel++)
 			{
 				var mipWidth = Math.Max(1, width >> mipLevel);
 				var mipHeight = Math.Max(1, height >> mipLevel);
+
+				if (mipLevel == maxNumMipMaps)
+				{
+					return maxNumMipMaps;
+				}
 
 				if (mipWidth == 1 && mipHeight == 1)
 				{
