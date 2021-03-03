@@ -793,7 +793,6 @@ namespace BCnEncoder.Shared
 			{
 				numSubsets = NumSubsets;
 				partitionIndex = PartitionSetId;
-				//subset_index = get_partition_index(num_subsets, partition_set_id, x, y);
 			}
 
 			var pixels = output.AsSpan;

@@ -27,6 +27,12 @@ namespace BCnEncTests.Support
 			AssertPSNR(psnr, quality);
 		}
 
+		public static void AssertPixelsEqual(Span<ColorRgbFloat> originalPixels, Span<ColorRgbFloat> pixels, CompressionQuality quality, ITestOutputHelper output = null)
+		{
+			var rmse = ImageQuality.CalculateLogRMSE(originalPixels,pixels);
+			AssertRMSE(rmse, quality, output);
+		}
+
 		public static void AssertImagesEqual(Image<Rgba32> original, Image<Rgba32> image, CompressionQuality quality, bool countAlpha = true)
 		{
 			var psnr = CalculatePSNR(original, image, countAlpha);
@@ -181,6 +187,19 @@ namespace BCnEncTests.Support
 			else
 			{
 				Assert.True(psnr > 30);
+			}
+		}
+
+		public static void AssertRMSE(float rmse, CompressionQuality quality, ITestOutputHelper output = null)
+		{
+			output?.WriteLine($"RMSE: {rmse} , quality: {quality}");
+			if (quality == CompressionQuality.Fast)
+			{
+				Assert.True(rmse < 0.1);
+			}
+			else
+			{
+				Assert.True(rmse < 0.03);
 			}
 		}
 	}

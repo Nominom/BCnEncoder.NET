@@ -31,7 +31,7 @@ namespace BCnEncoder.Decoder
 		/// The output options of the decoder.
 		/// </summary>
 		public DecoderOutputOptions OutputOptions { get; } = new DecoderOutputOptions();
-
+		#region LDR
 		#region Async Api
 
 		/// <summary>
@@ -486,8 +486,558 @@ namespace BCnEncoder.Decoder
 			return bytesRead;
 		}
 
+		/// <summary>
+		/// Check whether a file is encoded in a supported format.
+		/// </summary>
+		/// <param name="file">The loaded ktx file to check</param>
+		/// <returns>If the format of the file is one of the supported formats.</returns>
+		public bool IsSupportedFormat(KtxFile file)
+		{
+			return GetCompressionFormat(file.header.GlInternalFormat) != CompressionFormat.Unknown;
+		}
+
+		/// <summary>
+		/// Check whether a file is encoded in a supported format.
+		/// </summary>
+		/// <param name="file">The loaded dds file to check</param>
+		/// <returns>If the format of the file is one of the supported formats.</returns>
+		public bool IsSupportedFormat(DdsFile file)
+		{
+			return GetCompressionFormat(file) != CompressionFormat.Unknown;
+		}
+
+		/// <summary>
+		/// Gets the format of the file.
+		/// </summary>
+		/// <param name="file">The loaded ktx file to check</param>
+		/// <returns>The <see cref="CompressionFormat"/> of the file.</returns>
+		public CompressionFormat GetFormat(KtxFile file)
+		{
+			return GetCompressionFormat(file.header.GlInternalFormat);
+		}
+
+		/// <summary>
+		/// Gets the format of the file.
+		/// </summary>
+		/// <param name="file">The loaded dds file to check</param>
+		/// <returns>The <see cref="CompressionFormat"/> of the file.</returns>
+		public CompressionFormat GetFormat(DdsFile file)
+		{
+			return GetCompressionFormat(file);
+		}
+
+
+		#endregion
 		#endregion
 
+		#region HDR
+		#region Async Api
+
+		/// <summary>
+		/// Decode a single encoded image from raw bytes.
+		/// This method will read the expected amount of bytes from the given input stream and decode it.
+		/// Make sure there is no file header information left in the stream before the encoded data.
+		/// This method is only for compressed Hdr formats. Please use the non-Hdr methods for other formats.
+		/// </summary>
+		/// <param name="inputStream">The stream containing the encoded data.</param>
+		/// <param name="format">The Format the encoded data is in.</param>
+		/// <param name="pixelWidth">The pixelWidth of the image.</param>
+		/// <param name="pixelHeight">The pixelHeight of the image.</param>
+		/// <param name="token">The cancellation token for this asynchronous operation.</param>
+		/// <returns>The awaitable operation to retrieve the decoded image.</returns>
+		public Task<ColorRgbFloat[]> DecodeRawHdrAsync(Stream inputStream, CompressionFormat format, int pixelWidth, int pixelHeight, CancellationToken token = default)
+		{
+			var dataArray = new byte[GetBufferSize(format, pixelWidth, pixelHeight)];
+			inputStream.Read(dataArray, 0, dataArray.Length);
+
+			return Task.Run(() => DecodeRawInternalHdr(dataArray, pixelWidth, pixelHeight, format, token), token);
+		}
+
+		/// <summary>
+		/// Decode a single encoded image from raw bytes.
+		/// This method is only for compressed Hdr formats. Please use the non-Hdr methods for other formats.
+		/// </summary>
+		/// <param name="input">The <see cref="Memory{T}"/> containing the encoded data.</param>
+		/// <param name="format">The Format the encoded data is in.</param>
+		/// <param name="pixelWidth">The pixelWidth of the image.</param>
+		/// <param name="pixelHeight">The pixelHeight of the image.</param>
+		/// <param name="token">The cancellation token for this asynchronous operation.</param>
+		/// <returns>The awaitable operation to retrieve the decoded image.</returns>
+		public Task<ColorRgbFloat[]> DecodeRawHdrAsync(ReadOnlyMemory<byte> input, CompressionFormat format, int pixelWidth, int pixelHeight, CancellationToken token = default)
+		{
+			return Task.Run(() => DecodeRawInternalHdr(input, pixelWidth, pixelHeight, format, token), token);
+		}
+
+		/// <summary>
+		/// Decode the main image from a Ktx file.
+		/// This method is only for compressed Hdr formats. Please use the non-Hdr methods for other formats.
+		/// </summary>
+		/// <param name="file">The loaded Ktx file.</param>
+		/// <param name="token">The cancellation token for this asynchronous operation.</param>
+		/// <returns>The awaitable operation to retrieve the decoded image.</returns>
+		public Task<ColorRgbFloat[]> DecodeHdrAsync(KtxFile file, CancellationToken token = default)
+		{
+			return Task.Run(() => DecodeInternalHdr(file, false, token)[0], token);
+		}
+
+		/// <summary>
+		/// Decode all available mipmaps from a Ktx file.
+		/// This method is only for compressed Hdr formats. Please use the non-Hdr methods for other formats.
+		/// </summary>
+		/// <param name="file">The loaded Ktx file.</param>
+		/// <param name="token">The cancellation token for this asynchronous operation.</param>
+		/// <returns>The awaitable operation to retrieve the decoded image.</returns>
+		public Task<ColorRgbFloat[][]> DecodeAllMipMapsHdrAsync(KtxFile file, CancellationToken token = default)
+		{
+			return Task.Run(() => DecodeInternalHdr(file, true, token), token);
+		}
+
+		/// <summary>
+		/// Decode the main image from a Dds file.
+		/// This method is only for compressed Hdr formats. Please use the non-Hdr methods for other formats.
+		/// </summary>
+		/// <param name="file">The loaded Dds file.</param>
+		/// <param name="token">The cancellation token for this asynchronous operation.</param>
+		/// <returns>The awaitable operation to retrieve the decoded image.</returns>
+		public Task<ColorRgbFloat[]> DecodeHdrAsync(DdsFile file, CancellationToken token = default)
+		{
+			return Task.Run(() => DecodeInternalHdr(file, false, token)[0], token);
+		}
+
+		/// <summary>
+		/// Decode all available mipmaps from a Dds file.
+		/// This method is only for compressed Hdr formats. Please use the non-Hdr methods for other formats.
+		/// </summary>
+		/// <param name="file">The loaded Dds file.</param>
+		/// <param name="token">The cancellation token for this asynchronous operation.</param>
+		/// <returns>The awaitable operation to retrieve the decoded image.</returns>
+		public Task<ColorRgbFloat[][]> DecodeAllMipMapsHdrAsync(DdsFile file, CancellationToken token = default)
+		{
+			return Task.Run(() => DecodeInternalHdr(file, true, token), token);
+		}
+
+		/// <summary>
+		/// Decode a single encoded image from raw bytes.
+		/// This method will read the expected amount of bytes from the given input stream and decode it.
+		/// Make sure there is no file header information left in the stream before the encoded data.
+		/// This method is only for compressed Hdr formats. Please use the non-Hdr methods for other formats.
+		/// </summary>
+		/// <param name="inputStream">The stream containing the raw encoded data.</param>
+		/// <param name="format">The Format the encoded data is in.</param>
+		/// <param name="pixelWidth">The pixelWidth of the image.</param>
+		/// <param name="pixelHeight">The pixelHeight of the image.</param>
+		/// <param name="token">The cancellation token for this asynchronous operation.</param>
+		/// <returns>The awaitable operation to retrieve the decoded image.</returns>
+		public Task<Memory2D<ColorRgbFloat>> DecodeRawHdr2DAsync(Stream inputStream, int pixelWidth, int pixelHeight, CompressionFormat format, CancellationToken token = default)
+		{
+			var dataArray = new byte[GetBufferSize(format, pixelWidth, pixelHeight)];
+			inputStream.Read(dataArray, 0, dataArray.Length);
+
+			return Task.Run(() => DecodeRawInternalHdr(dataArray, pixelWidth, pixelHeight, format, token)
+				.AsMemory().AsMemory2D(pixelHeight, pixelWidth), token);
+		}
+
+		/// <summary>
+		/// Decode a single encoded image from raw bytes.
+		/// This method is only for compressed Hdr formats. Please use the non-Hdr methods for other formats.
+		/// </summary>
+		/// <param name="input">The <see cref="Memory{T}"/> containing the encoded data.</param>
+		/// <param name="format">The Format the encoded data is in.</param>
+		/// <param name="pixelWidth">The pixelWidth of the image.</param>
+		/// <param name="pixelHeight">The pixelHeight of the image.</param>
+		/// <param name="token">The cancellation token for this asynchronous operation.</param>
+		/// <returns>The awaitable operation to retrieve the decoded image.</returns>
+		public Task<Memory2D<ColorRgbFloat>> DecodeRawHdr2DAsync(ReadOnlyMemory<byte> input, int pixelWidth, int pixelHeight, CompressionFormat format, CancellationToken token = default)
+		{
+			return Task.Run(() => DecodeRawInternalHdr(input, pixelWidth, pixelHeight, format, token)
+				.AsMemory().AsMemory2D(pixelHeight, pixelWidth), token);
+		}
+
+		/// <summary>
+		/// Read a Ktx or Dds file from a stream and decode the main image from it.
+		/// The type of file will be detected automatically.
+		/// This method is only for compressed Hdr formats. Please use the non-Hdr methods for other formats.
+		/// </summary>
+		/// <param name="inputStream">The stream containing a Ktx or Dds file.</param>
+		/// <param name="token">The cancellation token for this asynchronous operation.</param>
+		/// <returns>The awaitable operation to retrieve the decoded image.</returns>
+		public Task<Memory2D<ColorRgbFloat>> DecodeHdr2DAsync(Stream inputStream, CancellationToken token = default)
+		{
+			return Task.Run(() => DecodeFromStreamInternalHdr2D(inputStream, false, token)[0], token);
+		}
+
+		/// <summary>
+		/// Read a Ktx or Dds file from a stream and decode all available mipmaps from it.
+		/// The type of file will be detected automatically.
+		/// This method is only for compressed Hdr formats. Please use the non-Hdr methods for other formats.
+		/// </summary>
+		/// <param name="inputStream">The stream containing a Ktx or Dds file.</param>
+		/// <param name="token">The cancellation token for this asynchronous operation.</param>
+		/// <returns>The awaitable operation to retrieve the decoded image.</returns>
+		public Task<Memory2D<ColorRgbFloat>[]> DecodeAllMipMapsHdr2DAsync(Stream inputStream, CancellationToken token = default)
+		{
+			return Task.Run(() => DecodeFromStreamInternalHdr2D(inputStream, false, token), token);
+		}
+
+		/// <summary>
+		/// Decode the main image from a Ktx file.
+		/// This method is only for compressed Hdr formats. Please use the non-Hdr methods for other formats.
+		/// </summary>
+		/// <param name="file">The loaded Ktx file.</param>
+		/// <param name="token">The cancellation token for this asynchronous operation.</param>
+		/// <returns>The awaitable operation to retrieve the decoded image.</returns>
+		public Task<Memory2D<ColorRgbFloat>> DecodeHdr2DAsync(KtxFile file, CancellationToken token = default)
+		{
+			return Task.Run(() => DecodeInternalHdr(file, false, token)[0]
+				.AsMemory().AsMemory2D((int)file.header.PixelHeight, (int)file.header.PixelWidth), token);
+		}
+
+		/// <summary>
+		/// Decode all available mipmaps from a Ktx file.
+		/// This method is only for compressed Hdr formats. Please use the non-Hdr methods for other formats.
+		/// </summary>
+		/// <param name="file">The loaded Ktx file.</param>
+		/// <param name="token">The cancellation token for this asynchronous operation.</param>
+		/// <returns>The awaitable operation to retrieve the decoded image.</returns>
+		public Task<Memory2D<ColorRgbFloat>[]> DecodeAllMipMapsHdr2DAsync(KtxFile file, CancellationToken token = default)
+		{
+			return Task.Run(() =>
+			{
+				var decoded = DecodeInternalHdr(file, true, token);
+				var mem2Ds = new Memory2D<ColorRgbFloat>[decoded.Length];
+				for (var i = 0; i < decoded.Length; i++)
+				{
+					var mip = file.MipMaps[i];
+					mem2Ds[i] = decoded[i].AsMemory().AsMemory2D((int)mip.Height, (int)mip.Width);
+				}
+				return mem2Ds;
+			}, token);
+		}
+
+		/// <summary>
+		/// Decode the main image from a Dds file.
+		/// This method is only for compressed Hdr formats. Please use the non-Hdr methods for other formats.
+		/// </summary>
+		/// <param name="file">The loaded Dds file.</param>
+		/// <param name="token">The cancellation token for this asynchronous operation.</param>
+		/// <returns>The awaitable operation to retrieve the decoded image.</returns>
+		public Task<Memory2D<ColorRgbFloat>> DecodeHdr2DAsync(DdsFile file, CancellationToken token = default)
+		{
+			return Task.Run(() => DecodeInternalHdr(file, false, token)[0]
+				.AsMemory().AsMemory2D((int)file.header.dwHeight, (int)file.header.dwWidth), token);
+		}
+
+		/// <summary>
+		/// Decode all available mipmaps from a Dds file.
+		/// This method is only for compressed Hdr formats. Please use the non-Hdr methods for other formats.
+		/// </summary>
+		/// <param name="file">The loaded Dds file.</param>
+		/// <param name="token">The cancellation token for this asynchronous operation.</param>
+		/// <returns>The awaitable operation to retrieve the decoded image.</returns>
+		public Task<Memory2D<ColorRgbFloat>[]> DecodeAllMipMapsHdr2DAsync(DdsFile file, CancellationToken token = default)
+		{
+			return Task.Run(() =>
+			{
+				var decoded = DecodeInternalHdr(file, true, token);
+				var mem2Ds = new Memory2D<ColorRgbFloat>[decoded.Length];
+				for (var i = 0; i < decoded.Length; i++)
+				{
+					var mip = file.Faces[0].MipMaps[i];
+					mem2Ds[i] = decoded[i].AsMemory().AsMemory2D((int)mip.Height, (int)mip.Width);
+				}
+				return mem2Ds;
+			}, token);
+		}
+
+		#endregion
+
+		#region Sync API
+
+		/// <summary>
+		/// Decode a single encoded image from raw bytes.
+		/// This method will read the expected amount of bytes from the given input stream and decode it.
+		/// Make sure there is no file header information left in the stream before the encoded data.
+		/// This method is only for compressed Hdr formats. Please use the non-Hdr methods for other formats.
+		/// </summary>
+		/// <param name="inputStream">The stream containing the raw encoded data.</param>
+		/// <param name="pixelWidth">The pixelWidth of the image.</param>
+		/// <param name="pixelHeight">The pixelHeight of the image.</param>
+		/// <param name="format">The Format the encoded data is in.</param>
+		/// <returns>The decoded image.</returns>
+		public ColorRgbFloat[] DecodeRawHdr(Stream inputStream, int pixelWidth, int pixelHeight, CompressionFormat format)
+		{
+			var dataArray = new byte[GetBufferSize(format, pixelWidth, pixelHeight)];
+			inputStream.Read(dataArray, 0, dataArray.Length);
+
+			return DecodeRawHdr(dataArray, pixelWidth, pixelHeight, format);
+		}
+
+		/// <summary>
+		/// Decode a single encoded image from raw bytes.
+		/// This method is only for compressed Hdr formats. Please use the non-Hdr methods for other formats.
+		/// </summary>
+		/// <param name="input">The byte array containing the raw encoded data.</param>
+		/// <param name="pixelWidth">The pixelWidth of the image.</param>
+		/// <param name="pixelHeight">The pixelHeight of the image.</param>
+		/// <param name="format">The Format the encoded data is in.</param>
+		/// <returns>The decoded image.</returns>
+		public ColorRgbFloat[] DecodeRawHdr(byte[] input, int pixelWidth, int pixelHeight, CompressionFormat format)
+		{
+			return DecodeRawInternalHdr(input, pixelWidth, pixelHeight, format, default);
+		}
+
+		/// <summary>
+		/// Decode the main image from a Ktx file.
+		/// This method is only for compressed Hdr formats. Please use the non-Hdr methods for other formats.
+		/// </summary>
+		/// <param name="file">The loaded Ktx file.</param>
+		/// <returns>The decoded image.</returns>
+		public ColorRgbFloat[] DecodeHdr(KtxFile file)
+		{
+			return DecodeInternalHdr(file, false, default)[0];
+		}
+
+		/// <summary>
+		/// Decode all available mipmaps from a Ktx file.
+		/// This method is only for compressed Hdr formats. Please use the non-Hdr methods for other formats.
+		/// </summary>
+		/// <param name="file">The loaded Ktx file.</param>
+		/// <returns>An array of decoded images.</returns>
+		public ColorRgbFloat[][] DecodeAllMipMapsHdr(KtxFile file)
+		{
+			return DecodeInternalHdr(file, true, default);
+		}
+
+		/// <summary>
+		/// Decode the main image from a Dds file.
+		/// This method is only for compressed Hdr formats. Please use the non-Hdr methods for other formats.
+		/// </summary>
+		/// <param name="file">The loaded Dds file.</param>
+		/// <returns>The decoded image.</returns>
+		public ColorRgbFloat[] DecodeHdr(DdsFile file)
+		{
+			return DecodeInternalHdr(file, false, default)[0];
+		}
+
+		/// <summary>
+		/// Decode all available mipmaps from a Dds file.
+		/// This method is only for compressed Hdr formats. Please use the non-Hdr methods for other formats.
+		/// </summary>
+		/// <param name="file">The loaded Dds file.</param>
+		/// <returns>An array of decoded images.</returns>
+		public ColorRgbFloat[][] DecodeAllMipMapsHdr(DdsFile file)
+		{
+			return DecodeInternalHdr(file, true, default);
+		}
+
+		/// <summary>
+		/// Decode a single encoded image from raw bytes.
+		/// This method will read the expected amount of bytes from the given input stream and decode it.
+		/// Make sure there is no file header information left in the stream before the encoded data.
+		/// This method is only for compressed Hdr formats. Please use the non-Hdr methods for other formats.
+		/// </summary>
+		/// <param name="inputStream">The stream containing the encoded data.</param>
+		/// <param name="pixelWidth">The pixelWidth of the image.</param>
+		/// <param name="pixelHeight">The pixelHeight of the image.</param>
+		/// <param name="format">The Format the encoded data is in.</param>
+		/// <returns>The decoded image.</returns>
+		public Memory2D<ColorRgbFloat> DecodeRawHdr2D(Stream inputStream, int pixelWidth, int pixelHeight, CompressionFormat format)
+		{
+			var dataArray = new byte[GetBufferSize(format, pixelWidth, pixelHeight)];
+			inputStream.Read(dataArray, 0, dataArray.Length);
+
+			var decoded = DecodeRawHdr(dataArray, pixelWidth, pixelHeight, format);
+			return decoded.AsMemory().AsMemory2D(pixelHeight, pixelWidth);
+		}
+
+		/// <summary>
+		/// Decode a single encoded image from raw bytes.
+		/// This method is only for compressed Hdr formats. Please use the non-Hdr methods for other formats.
+		/// </summary>
+		/// <param name="input">The byte array containing the raw encoded data.</param>
+		/// <param name="pixelWidth">The pixelWidth of the image.</param>
+		/// <param name="pixelHeight">The pixelHeight of the image.</param>
+		/// <param name="format">The Format the encoded data is in.</param>
+		/// <returns>The decoded image.</returns>
+		public Memory2D<ColorRgbFloat> DecodeRawHdr2D(byte[] input, int pixelWidth, int pixelHeight, CompressionFormat format)
+		{
+			var decoded = DecodeRawInternalHdr(input, pixelWidth, pixelHeight, format, default);
+			return decoded.AsMemory().AsMemory2D(pixelHeight, pixelWidth);
+		}
+
+		/// <summary>
+		/// Read a Ktx or Dds file from a stream and decode the main image from it.
+		/// The type of file will be detected automatically.
+		/// This method is only for compressed Hdr formats. Please use the non-Hdr methods for other formats.
+		/// </summary>
+		/// <param name="inputStream">The stream containing a Ktx or Dds file.</param>
+		/// <returns>The decoded image.</returns>
+		public Memory2D<ColorRgbFloat> DecodeHdr2D(Stream inputStream)
+		{
+			return DecodeFromStreamInternalHdr2D(inputStream, false, default)[0];
+		}
+
+		/// <summary>
+		/// Read a Ktx or Dds file from a stream and decode all available mipmaps from it.
+		/// The type of file will be detected automatically.
+		/// This method is only for compressed Hdr formats. Please use the non-Hdr methods for other formats.
+		/// </summary>
+		/// <param name="inputStream">The stream containing a Ktx or Dds file.</param>
+		/// <returns>An array of decoded images.</returns>
+		public Memory2D<ColorRgbFloat>[] DecodeAllMipMapsHdr2D(Stream inputStream)
+		{
+			return DecodeFromStreamInternalHdr2D(inputStream, true, default);
+		}
+
+		/// <summary>
+		/// Decode the main image from a Ktx file.
+		/// This method is only for compressed Hdr formats. Please use the non-Hdr methods for other formats.
+		/// </summary>
+		/// <param name="file">The loaded Ktx file.</param>
+		/// <returns>The decoded image.</returns>
+		public Memory2D<ColorRgbFloat> DecodeHdr2D(KtxFile file)
+		{
+			return DecodeInternalHdr(file, false, default)[0].AsMemory().AsMemory2D((int)file.header.PixelHeight, (int)file.header.PixelWidth);
+		}
+
+		/// <summary>
+		/// Decode all available mipmaps from a Ktx file.
+		/// This method is only for compressed Hdr formats. Please use the non-Hdr methods for other formats.
+		/// </summary>
+		/// <param name="file">The loaded Ktx file.</param>
+		/// <returns>An array of decoded images.</returns>
+		public Memory2D<ColorRgbFloat>[] DecodeAllMipMapsHdr2D(KtxFile file)
+		{
+			var decoded = DecodeInternalHdr(file, true, default);
+			var mem2Ds = new Memory2D<ColorRgbFloat>[decoded.Length];
+			for (var i = 0; i < decoded.Length; i++)
+			{
+				var mip = file.MipMaps[i];
+				mem2Ds[i] = decoded[i].AsMemory().AsMemory2D((int)mip.Height, (int)mip.Width);
+			}
+			return mem2Ds;
+		}
+
+		/// <summary>
+		/// Decode the main image from a Dds file.
+		/// This method is only for compressed Hdr formats. Please use the non-Hdr methods for other formats.
+		/// </summary>
+		/// <param name="file">The loaded Dds file.</param>
+		/// <returns>The decoded image.</returns>
+		public Memory2D<ColorRgbFloat> DecodeHdr2D(DdsFile file)
+		{
+			return DecodeInternalHdr(file, false, default)[0].AsMemory().AsMemory2D((int)file.header.dwHeight, (int)file.header.dwWidth);
+		}
+
+		/// <summary>
+		/// Decode all available mipmaps from a Dds file.
+		/// This method is only for compressed Hdr formats. Please use the non-Hdr methods for other formats.
+		/// </summary>
+		/// <param name="file">The loaded Dds file.</param>
+		/// <returns>An array of decoded images.</returns>
+		public Memory2D<ColorRgbFloat>[] DecodeAllMipMapsHdr2D(DdsFile file)
+		{
+			var decoded = DecodeInternalHdr(file, true, default);
+			var mem2Ds = new Memory2D<ColorRgbFloat>[decoded.Length];
+			for (var i = 0; i < decoded.Length; i++)
+			{
+				var mip = file.Faces[0].MipMaps[i];
+				mem2Ds[i] = decoded[i].AsMemory().AsMemory2D((int)mip.Height, (int)mip.Width);
+			}
+			return mem2Ds;
+		}
+
+		/// <summary>
+		/// Decode a single block from raw bytes and return it as a <see cref="Memory2D{T}"/>.
+		/// Input Span size needs to equal the block size.
+		/// To get the block size (in bytes) of the compression format used, see <see cref="GetBlockSize(BCnEncoder.Shared.CompressionFormat)"/>.
+		/// This method is only for compressed Hdr formats. Please use the non-Hdr methods for other formats.
+		/// </summary>
+		/// <param name="blockData">The encoded block in bytes.</param>
+		/// <param name="format">The compression format used.</param>
+		/// <returns>The decoded 4x4 block.</returns>
+		public Memory2D<ColorRgbFloat> DecodeBlockHdr(ReadOnlySpan<byte> blockData, CompressionFormat format)
+		{
+			var output = new ColorRgbFloat[4, 4];
+			DecodeBlockInternalHdr(blockData, format, output);
+			return output;
+		}
+
+		/// <summary>
+		/// Decode a single block from raw bytes and write it to the given output span.
+		/// Output span size must be exactly 4x4 and input Span size needs to equal the block size.
+		/// To get the block size (in bytes) of the compression format used, see <see cref="GetBlockSize(BCnEncoder.Shared.CompressionFormat)"/>.
+		/// This method is only for compressed Hdr formats. Please use the non-Hdr methods for other formats.
+		/// </summary>
+		/// <param name="blockData">The encoded block in bytes.</param>
+		/// <param name="format">The compression format used.</param>
+		/// <param name="outputSpan">The destination span of the decoded data.</param>
+		public void DecodeBlockHdr(ReadOnlySpan<byte> blockData, CompressionFormat format, Span2D<ColorRgbFloat> outputSpan)
+		{
+			if (outputSpan.Width != 4 || outputSpan.Height != 4)
+			{
+				throw new ArgumentException($"Single block decoding needs an output span of exactly 4x4");
+			}
+			DecodeBlockInternalHdr(blockData, format, outputSpan);
+		}
+
+		/// <summary>
+		/// Decode a single block from a stream and write it to the given output span.
+		/// Output span size must be exactly 4x4.
+		/// This method is only for compressed Hdr formats. Please use the non-Hdr methods for other formats.
+		/// </summary>
+		/// <param name="inputStream">The stream to read encoded blocks from.</param>
+		/// <param name="format">The compression format used.</param>
+		/// <param name="outputSpan">The destination span of the decoded data.</param>
+		/// <returns>The number of bytes read from the stream. Zero (0) if reached the end of stream.</returns>
+		public int DecodeBlockHdr(Stream inputStream, CompressionFormat format, Span2D<ColorRgbFloat> outputSpan)
+		{
+			if (outputSpan.Width != 4 || outputSpan.Height != 4)
+			{
+				throw new ArgumentException($"Single block decoding needs an output span of exactly 4x4");
+			}
+
+			Span<byte> input = stackalloc byte[16];
+			input = input.Slice(0, GetBlockSize(format));
+
+			var bytesRead = inputStream.Read(input);
+
+			if (bytesRead == 0)
+			{
+				return 0; //End of stream
+			}
+
+			if (bytesRead != input.Length)
+			{
+				throw new Exception("Input stream does not have enough data available for a full block.");
+			}
+
+			DecodeBlockInternalHdr(input, format, outputSpan);
+			return bytesRead;
+		}
+
+		/// <summary>
+		/// Check whether a file is encoded in a supported HDR format.
+		/// </summary>
+		/// <param name="file">The loaded ktx file to check</param>
+		/// <returns>If the format of the file is one of the supported HDR formats.</returns>
+		public bool IsHdrFormat(KtxFile file)
+		{
+			return GetCompressionFormat(file.header.GlInternalFormat).IsHdrFormat();
+		}
+
+		/// <summary>
+		/// Check whether a file is encoded in a supported HDR format.
+		/// </summary>
+		/// <param name="file">The loaded dds file to check</param>
+		/// <returns>If the format of the file is one of the supported HDR formats.</returns>
+		public bool IsHdrFormat(DdsFile file)
+		{
+			return GetCompressionFormat(file).IsHdrFormat();
+		}
+
+		#endregion
+		#endregion
 		/// <summary>
 		/// Load a stream and extract either the main image or all mip maps.
 		/// </summary>
@@ -574,7 +1124,12 @@ namespace BCnEncoder.Decoder
 			}
 			else
 			{
-				var decoder = GetDecoder(file.header.GlInternalFormat);
+				var decoder = GetRgba32Decoder(file.header.GlInternalFormat);
+				var format = GetCompressionFormat(file.header.GlInternalFormat);
+				if (format.IsHdrFormat())
+				{
+					throw new NotSupportedException($"This Format is not an RGBA32 compatible format: {format}, please use the HDR versions of the decode methods.");
+				}
 				if (decoder == null)
 				{
 					throw new NotSupportedException($"This Format is not supported: {file.header.GlInternalFormat}");
@@ -637,14 +1192,19 @@ namespace BCnEncoder.Decoder
 			}
 			else
 			{
-				var format = file.header.ddsPixelFormat.IsDxt10Format ?
-					file.dx10Header.dxgiFormat :
-					file.header.ddsPixelFormat.DxgiFormat;
-				var decoder = GetDecoder(file);
+				var dxtFormat = file.header.ddsPixelFormat.IsDxt10Format
+					? file.dx10Header.dxgiFormat
+					: file.header.ddsPixelFormat.DxgiFormat;
+				var format = GetCompressionFormat(file);
+				var decoder = GetRgba32Decoder(format);
 
+				if (format.IsHdrFormat())
+				{
+					throw new NotSupportedException($"This Format is not an RGBA32 compatible format: {format}, please use the HDR versions of the decode methods.");
+				}
 				if (decoder == null)
 				{
-					throw new NotSupportedException($"This Format is not supported: {format}");
+					throw new NotSupportedException($"This Format is not supported: {dxtFormat}");
 				}
 
 				for (var mip = 0; mip < mipMaps; mip++)
@@ -699,8 +1259,12 @@ namespace BCnEncoder.Decoder
 			if (isCompressedFormat)
 			{
 				// DecodeInternal as compressed data
-				var decoder = GetDecoder(format);
+				var decoder = GetRgba32Decoder(format);
 
+				if (format.IsHdrFormat())
+				{
+					throw new NotSupportedException($"This Format is not an RGBA32 compatible format: {format}, please use the HDR versions of the decode methods.");
+				}
 				if (decoder == null)
 				{
 					throw new NotSupportedException($"This Format is not supported: {format}");
@@ -719,7 +1283,11 @@ namespace BCnEncoder.Decoder
 
 		private void DecodeBlockInternal(ReadOnlySpan<byte> blockData, CompressionFormat format, Span2D<ColorRgba32> outputSpan)
 		{
-			var decoder = GetDecoder(format);
+			var decoder = GetRgba32Decoder(format);
+			if (format.IsHdrFormat())
+			{
+				throw new NotSupportedException($"This Format is not an RGBA32 compatible format: {format}, please use the HDR versions of the decode methods.");
+			}
 			if (decoder == null)
 			{
 				throw new NotSupportedException($"This Format is not supported: {format}");
@@ -737,6 +1305,235 @@ namespace BCnEncoder.Decoder
 			pixels.Slice(8, 4).CopyTo(outputSpan.GetRowSpan(2));
 			pixels.Slice(12, 4).CopyTo(outputSpan.GetRowSpan(3));
 		}
+
+		#region Hdr internals
+
+		/// <summary>
+		/// Load a stream and extract either the main image or all mip maps.
+		/// </summary>
+		/// <param name="stream">The stream containing the image file.</param>
+		/// <param name="allMipMaps">If all mip maps or only the main image should be decoded.</param>
+		/// <param name="token">The cancellation token for this operation. Can be default, if the operation is not asynchronous.</param>
+		/// <returns>An array of decoded Rgba32 images.</returns>
+		private Memory2D<ColorRgbFloat>[] DecodeFromStreamInternalHdr2D(Stream stream, bool allMipMaps, CancellationToken token)
+		{
+			var format = ImageFile.DetermineImageFormat(stream);
+
+			switch (format)
+			{
+				case ImageFileFormat.Dds:
+					{
+						var file = DdsFile.Load(stream);
+						var decoded = DecodeInternalHdr(file, allMipMaps, token);
+						var mem2Ds = new Memory2D<ColorRgbFloat>[decoded.Length];
+						for (var i = 0; i < decoded.Length; i++)
+						{
+							var mip = file.Faces[0].MipMaps[i];
+							mem2Ds[i] = decoded[i].AsMemory().AsMemory2D((int)mip.Height, (int)mip.Width);
+						}
+
+						return mem2Ds;
+					}
+
+				case ImageFileFormat.Ktx:
+					{
+						var file = KtxFile.Load(stream);
+						var decoded = DecodeInternalHdr(file, allMipMaps, token);
+						var mem2Ds = new Memory2D<ColorRgbFloat>[decoded.Length];
+						for (var i = 0; i < decoded.Length; i++)
+						{
+							var mip = file.MipMaps[i];
+							mem2Ds[i] = decoded[i].AsMemory().AsMemory2D((int)mip.Height, (int)mip.Width);
+						}
+
+						return mem2Ds;
+					}
+
+				default:
+					throw new InvalidOperationException("Unknown image format.");
+			}
+		}
+
+		/// <summary>
+		/// Load a KTX file and extract either the main image or all mip maps.
+		/// </summary>
+		/// <param name="file">The Ktx file to decode.</param>
+		/// <param name="allMipMaps">If all mip maps or only the main image should be decoded.</param>
+		/// <param name="token">The cancellation token for this operation. Can be default, if the operation is not asynchronous.</param>
+		/// <returns>An array of decoded Rgba32 images.</returns>
+		private ColorRgbFloat[][] DecodeInternalHdr(KtxFile file, bool allMipMaps, CancellationToken token)
+		{
+			var mipMaps = allMipMaps ? file.MipMaps.Count : 1;
+			var colors = new ColorRgbFloat[mipMaps][];
+
+			var context = new OperationContext
+			{
+				CancellationToken = token,
+				IsParallel = Options.IsParallel,
+				TaskCount = Options.TaskCount
+			};
+
+			// Calculate total blocks
+			var blockSize = GetBlockSize(file.header.GlInternalFormat);
+			var totalBlocks = file.MipMaps.Take(mipMaps).Sum(m => m.Faces[0].Data.Length / blockSize);
+
+			context.Progress = new OperationProgress(Options.Progress, totalBlocks);
+
+			var decoder = GetRgbFloatDecoder(file.header.GlInternalFormat);
+			var format = GetCompressionFormat(file.header.GlInternalFormat);
+			if (!format.IsHdrFormat())
+			{
+				throw new NotSupportedException($"This Format is not an HDR format: {format}, please use the non-HDR versions of the decode methods.");
+			}
+			if (decoder == null)
+			{
+				throw new NotSupportedException($"This Format is not supported: {file.header.GlInternalFormat}");
+			}
+
+			for (var mip = 0; mip < mipMaps; mip++)
+			{
+				var data = file.MipMaps[mip].Faces[0].Data;
+				var pixelWidth = file.MipMaps[mip].Width;
+				var pixelHeight = file.MipMaps[mip].Height;
+
+				var blocks = decoder.Decode(data, context);
+
+				colors[mip] = ImageToBlocks.ColorsFromRawBlocks(blocks, (int)pixelWidth, (int)pixelHeight);
+
+				context.Progress.SetProcessedBlocks(file.MipMaps.Take(mip + 1).Sum(x => x.Faces[0].Data.Length / blockSize));
+			}
+
+			return colors;
+		}
+
+		/// <summary>
+		/// Load a DDS file and extract either the main image or all mip maps.
+		/// </summary>
+		/// <param name="file">The Dds file to decode.</param>
+		/// <param name="allMipMaps">If all mip maps or only the main image should be decoded.</param>
+		/// <param name="token">The cancellation token for this operation. Can be default, if the operation is not asynchronous.</param>
+		/// <returns>An array of decoded Rgba32 images.</returns>
+		private ColorRgbFloat[][] DecodeInternalHdr(DdsFile file, bool allMipMaps, CancellationToken token)
+		{
+			var mipMaps = allMipMaps ? file.header.dwMipMapCount : 1;
+			var colors = new ColorRgbFloat[mipMaps][];
+
+			var context = new OperationContext
+			{
+				CancellationToken = token,
+				IsParallel = Options.IsParallel,
+				TaskCount = Options.TaskCount
+			};
+
+			// Calculate total blocks
+			var blockSize = GetBlockSize(file);
+			var totalBlocks = file.Faces[0].MipMaps.Take((int)mipMaps).Sum(m => m.Data.Length / blockSize);
+
+			context.Progress = new OperationProgress(Options.Progress, totalBlocks);
+
+			var dxtFormat = file.header.ddsPixelFormat.IsDxt10Format
+				? file.dx10Header.dxgiFormat
+				: file.header.ddsPixelFormat.DxgiFormat;
+			var format = GetCompressionFormat(file);
+			var decoder = GetRgbFloatDecoder(format);
+
+			if (!format.IsHdrFormat())
+			{
+				throw new NotSupportedException($"This Format is not an HDR format: {format}, please use the non-HDR versions of the decode methods.");
+			}
+			if (decoder == null)
+			{
+				throw new NotSupportedException($"This Format is not supported: {dxtFormat}");
+			}
+
+			for (var mip = 0; mip < mipMaps; mip++)
+			{
+				var data = file.Faces[0].MipMaps[mip].Data;
+				var pixelWidth = file.Faces[0].MipMaps[mip].Width;
+				var pixelHeight = file.Faces[0].MipMaps[mip].Height;
+
+				var blocks = decoder.Decode(data, context);
+
+				var image = ImageToBlocks.ColorsFromRawBlocks(blocks, (int)pixelWidth, (int)pixelHeight);
+
+				colors[mip] = image;
+
+				context.Progress.SetProcessedBlocks(file.Faces[0].MipMaps.Take(mip + 1).Sum(x => x.Data.Length / blockSize));
+			}
+
+			return colors;
+		}
+
+		/// <summary>
+		/// Decode raw encoded image asynchronously.
+		/// </summary>
+		/// <param name="input">The <see cref="Memory{T}"/> containing the encoded data.</param>
+		/// <param name="pixelWidth">The width of the image.</param>
+		/// <param name="pixelHeight">The height of the image.</param>
+		/// <param name="format">The Format the encoded data is in.</param>
+		/// <param name="token">The cancellation token for this operation. May be default, if the operation is not asynchronous.</param>
+		/// <returns>The decoded Rgba32 image.</returns>
+		private ColorRgbFloat[] DecodeRawInternalHdr(ReadOnlyMemory<byte> input, int pixelWidth, int pixelHeight, CompressionFormat format, CancellationToken token)
+		{
+			if (input.Length % GetBlockSize(format) != 0)
+			{
+				throw new ArgumentException("The size of the input buffer does not align with the compression format.");
+			}
+
+			var context = new OperationContext
+			{
+				CancellationToken = token,
+				IsParallel = Options.IsParallel,
+				TaskCount = Options.TaskCount
+			};
+
+			// Calculate total blocks
+			var blockSize = GetBlockSize(format);
+			var totalBlocks = input.Length / blockSize;
+
+			context.Progress = new OperationProgress(Options.Progress, totalBlocks);
+
+			var decoder = GetRgbFloatDecoder(format);
+
+			if (!format.IsHdrFormat())
+			{
+				throw new NotSupportedException($"This Format is not an HDR format: {format}, please use the non-HDR versions of the decode methods.");
+			}
+			if (decoder == null)
+			{
+				throw new NotSupportedException($"This Format is not supported: {format}");
+			}
+
+			var blocks = decoder.Decode(input, context);
+
+			return ImageToBlocks.ColorsFromRawBlocks(blocks, pixelWidth, pixelHeight);
+		}
+
+		private void DecodeBlockInternalHdr(ReadOnlySpan<byte> blockData, CompressionFormat format, Span2D<ColorRgbFloat> outputSpan)
+		{
+			var decoder = GetRgbFloatDecoder(format);
+			if (!format.IsHdrFormat())
+			{
+				throw new NotSupportedException($"This Format is not an HDR format: {format}, please use the non-HDR versions of the decode methods.");
+			}
+			if (decoder == null)
+			{
+				throw new NotSupportedException($"This Format is not supported: {format}");
+			}
+			if (blockData.Length != GetBlockSize(format))
+			{
+				throw new ArgumentException("The size of the input buffer does not align with the compression format.");
+			}
+
+			var rawBlock = decoder.DecodeBlock(blockData);
+			var pixels = rawBlock.AsSpan;
+
+			pixels.Slice(0, 4).CopyTo(outputSpan.GetRowSpan(0));
+			pixels.Slice(4, 4).CopyTo(outputSpan.GetRowSpan(1));
+			pixels.Slice(8, 4).CopyTo(outputSpan.GetRowSpan(2));
+			pixels.Slice(12, 4).CopyTo(outputSpan.GetRowSpan(3));
+		}
+		#endregion
 
 		#region Support
 
@@ -772,17 +1569,17 @@ namespace BCnEncoder.Decoder
 
 		#region Get decoder
 
-		private IBcBlockDecoder GetDecoder(GlInternalFormat format)
+		private IBcBlockDecoder<RawBlock4X4Rgba32> GetRgba32Decoder(GlInternalFormat format)
 		{
-			return GetDecoder(GetCompressionFormat(format));
+			return GetRgba32Decoder(GetCompressionFormat(format));
 		}
 
-		private IBcBlockDecoder GetDecoder(DdsFile file)
+		private IBcBlockDecoder<RawBlock4X4Rgba32> GetRgba32Decoder(DdsFile file)
 		{
-			return GetDecoder(GetCompressionFormat(file));
+			return GetRgba32Decoder(GetCompressionFormat(file));
 		}
 
-		private IBcBlockDecoder GetDecoder(CompressionFormat format)
+		private IBcBlockDecoder<RawBlock4X4Rgba32> GetRgba32Decoder(CompressionFormat format)
 		{
 			switch (format)
 			{
@@ -816,6 +1613,29 @@ namespace BCnEncoder.Decoder
 				case CompressionFormat.AtcInterpolatedAlpha:
 					return new AtcInterpolatedAlphaDecoder();
 
+				default:
+					return null;
+			}
+		}
+
+		private IBcBlockDecoder<RawBlock4X4RgbFloat> GetRgbFloatDecoder(GlInternalFormat format)
+		{
+			return GetRgbFloatDecoder(GetCompressionFormat(format));
+		}
+
+		private IBcBlockDecoder<RawBlock4X4RgbFloat> GetRgbFloatDecoder(DdsFile file)
+		{
+			return GetRgbFloatDecoder(GetCompressionFormat(file));
+		}
+
+		private IBcBlockDecoder<RawBlock4X4RgbFloat> GetRgbFloatDecoder(CompressionFormat format)
+		{
+			switch (format)
+			{
+				case CompressionFormat.Bc6S:
+					return new Bc6SDecoder();
+				case CompressionFormat.Bc6U:
+					return new Bc6UDecoder();
 				default:
 					return null;
 			}
@@ -936,6 +1756,10 @@ namespace BCnEncoder.Decoder
 				case CompressionFormat.Bc5:
 					return Unsafe.SizeOf<Bc5Block>();
 
+				case CompressionFormat.Bc6S:
+				case CompressionFormat.Bc6U:
+					return Unsafe.SizeOf<Bc6Block>();
+
 				case CompressionFormat.Bc7:
 					return Unsafe.SizeOf<Bc7Block>();
 
@@ -948,6 +1772,9 @@ namespace BCnEncoder.Decoder
 				case CompressionFormat.AtcInterpolatedAlpha:
 					return Unsafe.SizeOf<AtcInterpolatedAlphaBlock>();
 
+				case CompressionFormat.Unknown:
+					return 0;
+				
 				default:
 					throw new ArgumentOutOfRangeException(nameof(format), format, null);
 			}
@@ -993,6 +1820,12 @@ namespace BCnEncoder.Decoder
 				case GlInternalFormat.GlCompressedRedGreenRgtc2Ext:
 					return CompressionFormat.Bc5;
 
+				case GlInternalFormat.GlCompressedRgbBptcUnsignedFloatArb:
+					return CompressionFormat.Bc6U;
+
+				case GlInternalFormat.GlCompressedRgbBptcSignedFloatArb:
+					return CompressionFormat.Bc6S;
+
 				// TODO: Not sure what to do with SRGB input.
 				case GlInternalFormat.GlCompressedRgbaBptcUnormArb:
 				case GlInternalFormat.GlCompressedSrgbAlphaBptcUnormArb:
@@ -1008,7 +1841,7 @@ namespace BCnEncoder.Decoder
 					return CompressionFormat.AtcInterpolatedAlpha;
 
 				default:
-					throw new ArgumentOutOfRangeException(nameof(format), format, null);
+					return CompressionFormat.Unknown;
 			}
 		}
 
@@ -1065,6 +1898,13 @@ namespace BCnEncoder.Decoder
 				case DxgiFormat.DxgiFormatBc5Typeless:
 					return CompressionFormat.Bc5;
 
+				case DxgiFormat.DxgiFormatBc6HTypeless:
+				case DxgiFormat.DxgiFormatBc6HUf16:
+					return CompressionFormat.Bc6U;
+
+				case DxgiFormat.DxgiFormatBc6HSf16:
+					return CompressionFormat.Bc6S;
+
 				case DxgiFormat.DxgiFormatBc7Unorm:
 				case DxgiFormat.DxgiFormatBc7UnormSrgb:
 				case DxgiFormat.DxgiFormatBc7Typeless:
@@ -1080,7 +1920,7 @@ namespace BCnEncoder.Decoder
 					return CompressionFormat.AtcInterpolatedAlpha;
 
 				default:
-					throw new ArgumentOutOfRangeException(nameof(format), format, null);
+					return CompressionFormat.Unknown;
 			}
 		}
 
@@ -1107,12 +1947,16 @@ namespace BCnEncoder.Decoder
 				case CompressionFormat.Bc3:
 				case CompressionFormat.Bc4:
 				case CompressionFormat.Bc5:
+				case CompressionFormat.Bc6S:
+				case CompressionFormat.Bc6U:
 				case CompressionFormat.Bc7:
 				case CompressionFormat.Atc:
 				case CompressionFormat.AtcExplicitAlpha:
 				case CompressionFormat.AtcInterpolatedAlpha:
 					return GetBlockSize(format) * ImageToBlocks.CalculateNumOfBlocks(pixelWidth, pixelHeight);
 
+				case CompressionFormat.Unknown:
+					return 0;
 				default:
 					throw new ArgumentOutOfRangeException(nameof(format), format, null);
 			}

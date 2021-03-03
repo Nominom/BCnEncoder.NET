@@ -49,6 +49,29 @@ namespace BCnEncoder.Shared
 			return output;
 		}
 
+		internal static ColorRgbFloat[] ColorsFromRawBlocks(RawBlock4X4RgbFloat[] blocks, int pixelWidth, int pixelHeight)
+		{
+			var blocksWidth = ((pixelWidth + 3) & ~3) >> 2;
+			var output = new ColorRgbFloat[pixelWidth * pixelHeight];
+
+			for (var y = 0; y < pixelHeight; y++)
+			{
+				for (var x = 0; x < pixelWidth; x++)
+				{
+					var blockIndexX = x >> 2;
+					var blockIndexY = y >> 2;
+					var blockInternalIndexX = x & 3;
+					var blockInternalIndexY = y & 3;
+
+					var blockIndex = blockIndexX + blockIndexY * blocksWidth;
+
+					output[x + y * pixelWidth] = blocks[blockIndex][blockInternalIndexX, blockInternalIndexY];
+				}
+			}
+
+			return output;
+		}
+
 		#endregion
 
 		#region Image to blocks
