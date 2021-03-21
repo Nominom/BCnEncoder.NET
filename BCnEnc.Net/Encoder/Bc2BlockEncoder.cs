@@ -4,7 +4,7 @@ using BCnEncoder.Shared.ImageFiles;
 
 namespace BCnEncoder.Encoder
 {
-	internal class Bc2BlockEncoder : BaseBcBlockEncoder<Bc2Block>
+	internal class Bc2BlockEncoder : BaseBcBlockEncoder<Bc2Block, RawBlock4X4Rgba32>
 	{
 		public override Bc2Block EncodeBlock(RawBlock4X4Rgba32 block, CompressionQuality quality)
 		{

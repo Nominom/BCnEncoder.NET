@@ -31,7 +31,7 @@ namespace BCnEncTests.Support
 			LoadTestImage("../../../testImages/cubemap/forward.png")
 		};
 
-		private static Image<Rgba32> LoadTestImage(string filename)
+		internal static Image<Rgba32> LoadTestImage(string filename)
 		{
 			return Image.Load<Rgba32>(filename);
 		}
@@ -51,7 +51,7 @@ namespace BCnEncTests.Support
 		public static DdsFile TestDecompressBc7 { get; } = LoadDdsFile(TestDecompressBc7Name);
 		public static DdsFile TestDecompressRgba { get; } = LoadDdsFile(TestDecompressRgbaName);
 
-		private static DdsFile LoadDdsFile(string filename)
+		internal static DdsFile LoadDdsFile(string filename)
 		{
 			using var fs = File.OpenRead(filename);
 			return DdsFile.Load(fs);
@@ -70,7 +70,7 @@ namespace BCnEncTests.Support
 		public static KtxFile TestDecompressBc7Types { get; } = LoadKtxFile("../../../testImages/test_decompress_bc7_types.ktx");
 		public static KtxFile TestDecompressBc7Unorm { get; } = LoadKtxFile("../../../testImages/test_decompress_bc7_unorm.ktx");
 
-		private static KtxFile LoadKtxFile(string filename)
+		internal static KtxFile LoadKtxFile(string filename)
 		{
 			using var fs = File.OpenRead(filename);
 			return KtxFile.Load(fs);

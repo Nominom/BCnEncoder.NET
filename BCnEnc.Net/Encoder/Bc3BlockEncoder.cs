@@ -4,7 +4,7 @@ using BCnEncoder.Shared.ImageFiles;
 
 namespace BCnEncoder.Encoder
 {
-	internal class Bc3BlockEncoder : BaseBcBlockEncoder<Bc3Block>
+	internal class Bc3BlockEncoder : BaseBcBlockEncoder<Bc3Block, RawBlock4X4Rgba32>
 	{
 		private static readonly Bc4ComponentBlockEncoder bc4BlockEncoder = new Bc4ComponentBlockEncoder(ColorComponent.A);
 

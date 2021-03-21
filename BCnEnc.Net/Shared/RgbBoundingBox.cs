@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.InteropServices;
 
 namespace BCnEncoder.Shared
 {
@@ -196,6 +197,81 @@ namespace BCnEncoder.Shared
 			max = new ColorRgb565((byte)maxR, (byte)maxG, (byte)maxB);
 			minAlpha = (byte)minA;
 			maxAlpha = (byte)maxA;
+		}
+
+		/// <summary>
+		/// Hdr rgb bounding box inset by Krzysztof Narkowicz. https://github.com/knarkowicz/GPURealTimeBC6H
+		/// Code is public domain.
+		/// </summary>
+		private static void InsetHdrChannel(ReadOnlySpan<ColorRgbFloat> colors, int channel, ref float blockMax, ref float blockMin)
+		{
+			var offset = 0f;
+			if (blockMin < 0)
+			{
+				offset = -blockMin;
+				blockMin += offset;
+				blockMax += offset;
+			}
+			
+			float Select(ReadOnlySpan<float> span, int i)
+			{
+				return span[i * 3 + channel] + offset;
+			}
+			
+			var floats = MemoryMarshal.Cast<ColorRgbFloat, float>(colors);
+			
+			var refinedBlockMin = blockMax;
+			var refinedBlockMax = blockMin;
+
+			for (var i = 0; i < 16; ++i)
+			{
+				refinedBlockMin = MathF.Min(refinedBlockMin, Select(floats, i) == blockMin ? refinedBlockMin : Select(floats, i));
+				refinedBlockMax = MathF.Max(refinedBlockMax, Select(floats, i) == blockMax ? refinedBlockMax : Select(floats, i));
+			}
+
+			var logRefinedBlockMax = MathF.Log(refinedBlockMax + 1.0f, 2);
+			var logRefinedBlockMin = MathF.Log(refinedBlockMin + 1.0f, 2);
+
+			var logBlockMax = MathF.Log(blockMax + 1.0f, 2);
+			var logBlockMin = MathF.Log(blockMin + 1.0f, 2);
+			var logBlockMaxExt = (logBlockMax - logBlockMin) * (1.0f / 32.0f);
+
+			logBlockMin += MathF.Min(logRefinedBlockMin - logBlockMin, logBlockMaxExt);
+			logBlockMax -= MathF.Min(logBlockMax - logRefinedBlockMax, logBlockMaxExt);
+
+			blockMin = MathF.Pow(2, logBlockMin) - 1.0f - offset;
+			blockMax = MathF.Pow(2, logBlockMax) - 1.0f - offset;
+		}
+
+		public static void CreateFloat(ReadOnlySpan<ColorRgbFloat> colors, out ColorRgbFloat min, out ColorRgbFloat max)
+		{
+
+			float minR = float.MaxValue,
+				  minG = float.MaxValue,
+				  minB = float.MaxValue;
+			float maxR = float.MinValue,
+				  maxG = float.MinValue,
+				  maxB = float.MinValue;
+
+			for (var i = 0; i < colors.Length; i++)
+			{
+				var c = colors[i];
+
+				if (c.r < minR) minR = c.r;
+				if (c.g < minG) minG = c.g;
+				if (c.b < minB) minB = c.b;
+
+				if (c.r > maxR) maxR = c.r;
+				if (c.g > maxG) maxG = c.g;
+				if (c.b > maxB) maxB = c.b;
+			}
+
+			InsetHdrChannel(colors, 0, ref maxR, ref minR);
+			InsetHdrChannel(colors, 1, ref maxG, ref minG);
+			InsetHdrChannel(colors, 2, ref maxB, ref minB);
+
+			min = new ColorRgbFloat(minR, minG, minB);
+			max = new ColorRgbFloat(maxR, maxG, maxB);
 		}
 	}
 }

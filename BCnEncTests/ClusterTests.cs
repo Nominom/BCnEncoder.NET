@@ -14,7 +14,7 @@ namespace BCnEncTests
 		[Fact]
 		public void Clusterize()
 		{
-			var testImage = ImageLoader.TestBlur1;
+			var testImage = ImageLoader.TestBlur1.Clone();
 
 			if (!testImage.TryGetSinglePixelSpan(out var pix))
 			{
@@ -43,6 +43,7 @@ namespace BCnEncTests
 			for (var i = 0; i < pixels.Length; i++)
 			{
 				pixels[i] = pixC[clusters[i]].ToColorRgba32();
+				pix[i] = new Rgba32(pixels[i].r, pixels[i].g, pixels[i].b, pixels[i].a);
 			}
 
 			using var fs = File.OpenWrite("test_cluster.png");

@@ -8,11 +8,11 @@ using BCnEncoder.Shared.ImageFiles;
 
 namespace BCnEncoder.Encoder
 {
-	internal abstract class BaseBcBlockEncoder<T> : IBcBlockEncoder where T : unmanaged
+	internal abstract class BaseBcBlockEncoder<T, TBlock> : IBcBlockEncoder<TBlock> where T : unmanaged where TBlock : unmanaged
 	{
 		private static readonly object lockObj = new object();
 
-		public byte[] Encode(RawBlock4X4Rgba32[] blocks, int blockWidth, int blockHeight, CompressionQuality quality, OperationContext context)
+		public byte[] Encode(TBlock[] blocks, int blockWidth, int blockHeight, CompressionQuality quality, OperationContext context)
 		{
 			var outputData = new byte[blockWidth * blockHeight * Unsafe.SizeOf<T>()];
 
@@ -54,7 +54,7 @@ namespace BCnEncoder.Encoder
 			return outputData;
 		}
 
-		public void EncodeBlock(RawBlock4X4Rgba32 block, CompressionQuality quality, Span<byte> output)
+		public void EncodeBlock(TBlock block, CompressionQuality quality, Span<byte> output)
 		{
 			if (output.Length != Unsafe.SizeOf<T>())
 			{
@@ -72,6 +72,6 @@ namespace BCnEncoder.Encoder
 			return Unsafe.SizeOf<T>();
 		}
 
-		public abstract T EncodeBlock(RawBlock4X4Rgba32 block, CompressionQuality quality);
+		public abstract T EncodeBlock(TBlock block, CompressionQuality quality);
 	}
 }
