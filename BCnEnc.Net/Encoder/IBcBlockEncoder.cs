@@ -4,10 +4,10 @@ using BCnEncoder.Shared.ImageFiles;
 
 namespace BCnEncoder.Encoder
 {
-	internal interface IBcBlockEncoder
+	internal interface IBcBlockEncoder<T> where T : unmanaged
 	{
-		byte[] Encode(RawBlock4X4Rgba32[] blocks, int blockWidth, int blockHeight, CompressionQuality quality, OperationContext context);
-		void EncodeBlock(RawBlock4X4Rgba32 block, CompressionQuality quality, Span<byte> output);
+		byte[] Encode(T[] blocks, int blockWidth, int blockHeight, CompressionQuality quality, OperationContext context);
+		void EncodeBlock(T block, CompressionQuality quality, Span<byte> output);
 		GlInternalFormat GetInternalFormat();
 		GlFormat GetBaseInternalFormat();
 		DxgiFormat GetDxgiFormat();

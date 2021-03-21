@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using BCnEncoder.Encoder.Bc7;
+using BCnEncoder.Encoder.Bptc;
 using BCnEncoder.Encoder.Options;
 using BCnEncoder.Shared;
 using BCnEncoder.Shared.ImageFiles;
@@ -73,6 +73,7 @@ namespace BCnEncoder.Encoder
 			OutputOptions.Format = format;
 		}
 
+		#region LDR
 		#region Async Api
 
 		/// <summary>
@@ -606,7 +607,7 @@ namespace BCnEncoder.Encoder
 		/// <returns>The size of a single 4x4 block in bytes</returns>
 		public int GetBlockSize()
 		{
-			var compressedEncoder = GetEncoder(OutputOptions.Format);
+			var compressedEncoder = GetRgba32BlockEncoder(OutputOptions.Format);
 			if (compressedEncoder == null)
 			{
 				throw new NotSupportedException($"This format is either not supported or does not use block compression: {OutputOptions.Format}");
@@ -638,7 +639,21 @@ namespace BCnEncoder.Encoder
 		}
 
 		#endregion
+		#endregion
 
+		#region HDR
+
+		/// <summary>
+		/// Encodes all mipmap levels into a ktx or a dds file and writes it to the output stream.
+		/// </summary>
+		/// <param name="input">The input to encode represented by a <see cref="ReadOnlyMemory2D{T}"/>.</param>
+		/// <param name="outputStream">The stream to write the encoded image to.</param>
+		public void EncodeToStreamHdr(ReadOnlyMemory2D<ColorRgbFloat> input, Stream outputStream)
+		{
+			EncodeToStreamInternalHdr(input, outputStream, default);
+		}
+
+		#endregion
 		#region MipMap operations
 
 		/// <summary>
@@ -687,10 +702,155 @@ namespace BCnEncoder.Encoder
 			}
 		}
 
+		private void EncodeToStreamInternalHdr(ReadOnlyMemory2D<ColorRgbFloat> input, Stream outputStream, CancellationToken token)
+		{
+			switch (OutputOptions.FileFormat)
+			{
+				case OutputFileFormat.Dds:
+					var dds = EncodeToDdsInternalHdr(input, token);
+					dds.Write(outputStream);
+					break;
+
+				case OutputFileFormat.Ktx:
+					var ktx = EncodeToKtxInternalHdr(input, token);
+					ktx.Write(outputStream);
+					break;
+			}
+		}
+
+		private KtxFile EncodeToKtxInternalHdr(ReadOnlyMemory2D<ColorRgbFloat> input, CancellationToken token)
+		{
+			KtxFile output;
+			IBcBlockEncoder<RawBlock4X4RgbFloat> compressedEncoder = null;
+			IRawEncoder uncompressedEncoder = null;
+
+			var numMipMaps = OutputOptions.GenerateMipMaps ? OutputOptions.MaxMipMapLevel : 1;
+			var mipChain = MipMapper.GenerateMipChain(input, ref numMipMaps);
+
+			// Setup encoders
+			if (!OutputOptions.Format.IsHdrFormat())
+			{
+				throw new NotSupportedException($"This Format is not supported for hdr images: {OutputOptions.Format}");
+			}
+			compressedEncoder = GetFloatBlockEncoder(OutputOptions.Format);
+			if (compressedEncoder == null)
+			{
+				throw new NotSupportedException($"This Format is not supported: {OutputOptions.Format}");
+			}
+
+			output = new KtxFile(
+				KtxHeader.InitializeCompressed(input.Width, input.Height,
+					compressedEncoder.GetInternalFormat(),
+					compressedEncoder.GetBaseInternalFormat()));
+
+			var context = new OperationContext
+			{
+				CancellationToken = token,
+				IsParallel = !Debugger.IsAttached && Options.IsParallel,
+				TaskCount = Options.TaskCount
+			};
+
+			// Calculate total blocks
+			var totalBlocks = mipChain.Sum(m => ImageToBlocks.CalculateNumOfBlocks(m.Width, m.Height));
+			context.Progress = new OperationProgress(Options.Progress, totalBlocks);
+
+			// Encode mipmap levels
+			for (var mip = 0; mip < numMipMaps; mip++)
+			{
+				byte[] encoded;
+				var blocks = ImageToBlocks.ImageTo4X4(mipChain[mip], out var blocksWidth,
+					out var blocksHeight);
+				encoded = compressedEncoder.Encode(blocks, blocksWidth, blocksHeight, OutputOptions.Quality,
+					context);
+
+				context.Progress.SetProcessedBlocks(mipChain.Take(mip + 1).Sum(x => ImageToBlocks.CalculateNumOfBlocks(x.Width, x.Height)));
+
+
+				output.MipMaps.Add(new KtxMipmap((uint)encoded.Length,
+					(uint)mipChain[mip].Width,
+					(uint)mipChain[mip].Height, 1));
+				output.MipMaps[mip].Faces[0] = new KtxMipFace(encoded,
+					(uint)mipChain[mip].Width,
+					(uint)mipChain[mip].Height);
+			}
+
+			output.header.NumberOfFaces = 1;
+			output.header.NumberOfMipmapLevels = (uint)numMipMaps;
+
+			return output;
+		}
+
+		private DdsFile EncodeToDdsInternalHdr(ReadOnlyMemory2D<ColorRgbFloat> input, CancellationToken token)
+		{
+			DdsFile output;
+			IBcBlockEncoder<RawBlock4X4RgbFloat> compressedEncoder = null;
+			IRawEncoder uncompressedEncoder = null;
+
+			var numMipMaps = OutputOptions.GenerateMipMaps ? OutputOptions.MaxMipMapLevel : 1;
+			var mipChain = MipMapper.GenerateMipChain(input, ref numMipMaps);
+
+			// Setup encoder
+			if (!OutputOptions.Format.IsHdrFormat())
+			{
+				throw new NotSupportedException($"This Format is not supported for hdr images: {OutputOptions.Format}");
+			}
+			compressedEncoder = GetFloatBlockEncoder(OutputOptions.Format);
+			if (compressedEncoder == null)
+			{
+				throw new NotSupportedException($"This Format is not supported: {OutputOptions.Format}");
+			}
+
+			var (ddsHeader, dxt10Header) = DdsHeader.InitializeCompressed(input.Width, input.Height,
+				compressedEncoder.GetDxgiFormat(), OutputOptions.DdsPreferDxt10Header);
+			output = new DdsFile(ddsHeader, dxt10Header);
+
+			var context = new OperationContext
+			{
+				CancellationToken = token,
+				IsParallel = !Debugger.IsAttached && Options.IsParallel,
+				TaskCount = Options.TaskCount
+			};
+
+			// Calculate total blocks
+			var totalBlocks = mipChain.Sum(m => ImageToBlocks.CalculateNumOfBlocks(m.Width, m.Height));
+			context.Progress = new OperationProgress(Options.Progress, totalBlocks);
+
+			// Encode mipmap levels
+			for (var mip = 0; mip < numMipMaps; mip++)
+			{
+				byte[] encoded;
+
+				var blocks = ImageToBlocks.ImageTo4X4(mipChain[mip], out var blocksWidth, out var blocksHeight);
+				encoded = compressedEncoder.Encode(blocks, blocksWidth, blocksHeight, OutputOptions.Quality, context);
+
+				context.Progress.SetProcessedBlocks(mipChain.Take(mip + 1).Sum(x => ImageToBlocks.CalculateNumOfBlocks(x.Width, x.Height)));
+
+
+				if (mip == 0)
+				{
+					output.Faces.Add(new DdsFace((uint)input.Width, (uint)input.Height,
+						(uint)encoded.Length, numMipMaps));
+				}
+
+				output.Faces[0].MipMaps[mip] = new DdsMipMap(encoded,
+					(uint)mipChain[mip].Width,
+					(uint)mipChain[mip].Height);
+			}
+
+
+			output.header.dwMipMapCount = (uint)numMipMaps;
+			if (numMipMaps > 1)
+			{
+				output.header.dwCaps |= HeaderCaps.DdscapsComplex | HeaderCaps.DdscapsMipmap;
+			}
+
+			return output;
+		}
+
 		private KtxFile EncodeToKtxInternal(ReadOnlyMemory2D<ColorRgba32> input, CancellationToken token)
 		{
 			KtxFile output;
-			IBcBlockEncoder compressedEncoder = null;
+			IBcBlockEncoder<RawBlock4X4Rgba32> compressedEncoder = null;
 			IRawEncoder uncompressedEncoder = null;
 
 			var numMipMaps = OutputOptions.GenerateMipMaps ? OutputOptions.MaxMipMapLevel : 1;
@@ -700,7 +860,7 @@ namespace BCnEncoder.Encoder
 			var isCompressedFormat = OutputOptions.Format.IsCompressedFormat();
 			if (isCompressedFormat)
 			{
-				compressedEncoder = GetEncoder(OutputOptions.Format);
+				compressedEncoder = GetRgba32BlockEncoder(OutputOptions.Format);
 				if (compressedEncoder == null)
 				{
 					throw new NotSupportedException($"This Format is not supported: {OutputOptions.Format}");
@@ -776,7 +936,7 @@ namespace BCnEncoder.Encoder
 		private DdsFile EncodeToDdsInternal(ReadOnlyMemory2D<ColorRgba32> input, CancellationToken token)
 		{
 			DdsFile output;
-			IBcBlockEncoder compressedEncoder = null;
+			IBcBlockEncoder<RawBlock4X4Rgba32> compressedEncoder = null;
 			IRawEncoder uncompressedEncoder = null;
 
 			var numMipMaps = OutputOptions.GenerateMipMaps ? OutputOptions.MaxMipMapLevel : 1;
@@ -786,7 +946,7 @@ namespace BCnEncoder.Encoder
 			var isCompressedFormat = OutputOptions.Format.IsCompressedFormat();
 			if (isCompressedFormat)
 			{
-				compressedEncoder = GetEncoder(OutputOptions.Format);
+				compressedEncoder = GetRgba32BlockEncoder(OutputOptions.Format);
 				if (compressedEncoder == null)
 				{
 					throw new NotSupportedException($"This Format is not supported: {OutputOptions.Format}");
@@ -871,7 +1031,7 @@ namespace BCnEncoder.Encoder
 			var mipChain = MipMapper.GenerateMipChain(input, ref numMipMaps);
 
 			var output = new byte[numMipMaps][];
-			IBcBlockEncoder compressedEncoder = null;
+			IBcBlockEncoder<RawBlock4X4Rgba32> compressedEncoder = null;
 			IRawEncoder uncompressedEncoder = null;
 
 			// Setup encoder
@@ -879,7 +1039,7 @@ namespace BCnEncoder.Encoder
 
 			if (isCompressedFormat)
 			{
-				compressedEncoder = GetEncoder(OutputOptions.Format);
+				compressedEncoder = GetRgba32BlockEncoder(OutputOptions.Format);
 				if (compressedEncoder == null)
 				{
 					throw new NotSupportedException($"This Format is not supported: {OutputOptions.Format}");
@@ -934,7 +1094,7 @@ namespace BCnEncoder.Encoder
 		{
 			mipLevel = Math.Max(0, mipLevel);
 
-			IBcBlockEncoder compressedEncoder = null;
+			IBcBlockEncoder<RawBlock4X4Rgba32> compressedEncoder = null;
 			IRawEncoder uncompressedEncoder = null;
 
 			var numMipMaps = OutputOptions.GenerateMipMaps ? OutputOptions.MaxMipMapLevel : 1;
@@ -944,7 +1104,7 @@ namespace BCnEncoder.Encoder
 			var isCompressedFormat = OutputOptions.Format.IsCompressedFormat();
 			if (isCompressedFormat)
 			{
-				compressedEncoder = GetEncoder(OutputOptions.Format);
+				compressedEncoder = GetRgba32BlockEncoder(OutputOptions.Format);
 				if (compressedEncoder == null)
 				{
 					throw new NotSupportedException($"This Format is not supported: {OutputOptions.Format}");
@@ -1016,7 +1176,7 @@ namespace BCnEncoder.Encoder
 			ReadOnlyMemory2D<ColorRgba32> back, ReadOnlyMemory2D<ColorRgba32> front, CancellationToken token)
 		{
 			KtxFile output;
-			IBcBlockEncoder compressedEncoder = null;
+			IBcBlockEncoder<RawBlock4X4Rgba32> compressedEncoder = null;
 			IRawEncoder uncompressedEncoder = null;
 
 			var faces = new[] { right, left, top, down, back, front };
@@ -1028,7 +1188,7 @@ namespace BCnEncoder.Encoder
 			var isCompressedFormat = OutputOptions.Format.IsCompressedFormat();
 			if (isCompressedFormat)
 			{
-				compressedEncoder = GetEncoder(OutputOptions.Format);
+				compressedEncoder = GetRgba32BlockEncoder(OutputOptions.Format);
 				if (compressedEncoder == null)
 				{
 					throw new NotSupportedException($"This Format is not supported: {OutputOptions.Format}");
@@ -1132,7 +1292,7 @@ namespace BCnEncoder.Encoder
 			ReadOnlyMemory2D<ColorRgba32> back, ReadOnlyMemory2D<ColorRgba32> front, CancellationToken token)
 		{
 			DdsFile output;
-			IBcBlockEncoder compressedEncoder = null;
+			IBcBlockEncoder<RawBlock4X4Rgba32> compressedEncoder = null;
 			IRawEncoder uncompressedEncoder = null;
 
 			var faces = new[] { right, left, top, down, back, front };
@@ -1144,7 +1304,7 @@ namespace BCnEncoder.Encoder
 			var isCompressedFormat = OutputOptions.Format.IsCompressedFormat();
 			if (isCompressedFormat)
 			{
-				compressedEncoder = GetEncoder(OutputOptions.Format);
+				compressedEncoder = GetRgba32BlockEncoder(OutputOptions.Format);
 				if (compressedEncoder == null)
 				{
 					throw new NotSupportedException($"This Format is not supported: {OutputOptions.Format}");
@@ -1253,7 +1413,7 @@ namespace BCnEncoder.Encoder
 
 		private byte[] EncodeBlockInternal(ReadOnlySpan2D<ColorRgba32> input)
 		{
-			var compressedEncoder = GetEncoder(OutputOptions.Format);
+			var compressedEncoder = GetRgba32BlockEncoder(OutputOptions.Format);
 			if (compressedEncoder == null)
 			{
 				throw new NotSupportedException($"This Format is not supported for single block encoding: {OutputOptions.Format}");
@@ -1277,7 +1437,7 @@ namespace BCnEncoder.Encoder
 
 		private void EncodeBlockInternal(ReadOnlySpan2D<ColorRgba32> input, Stream outputStream)
 		{
-			var compressedEncoder = GetEncoder(OutputOptions.Format);
+			var compressedEncoder = GetRgba32BlockEncoder(OutputOptions.Format);
 			if (compressedEncoder == null)
 			{
 				throw new NotSupportedException($"This Format is not supported for single block encoding: {OutputOptions.Format}");
@@ -1308,7 +1468,7 @@ namespace BCnEncoder.Encoder
 
 		#region Support
 
-		private IBcBlockEncoder GetEncoder(CompressionFormat format)
+		private IBcBlockEncoder<RawBlock4X4Rgba32> GetRgba32BlockEncoder(CompressionFormat format)
 		{
 			switch (format)
 			{
@@ -1342,6 +1502,19 @@ namespace BCnEncoder.Encoder
 				case CompressionFormat.AtcInterpolatedAlpha:
 					return new AtcInterpolatedAlphaBlockEncoder();
 
+				default:
+					return null;
+			}
+		}
+
+		private IBcBlockEncoder<RawBlock4X4RgbFloat> GetFloatBlockEncoder(CompressionFormat format)
+		{
+			switch (format)
+			{
+				case CompressionFormat.Bc6S:
+					return new Bc6Encoder(true);
+				case CompressionFormat.Bc6U:
+					return new Bc6Encoder(false);
 				default:
 					return null;
 			}

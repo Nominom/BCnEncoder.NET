@@ -8,6 +8,7 @@ using BCnEncoder.Encoder;
 using BCnEncoder.ImageSharp;
 using BCnEncoder.Shared;
 using BCnEncoder.Shared.ImageFiles;
+using Microsoft.Toolkit.HighPerformance.Extensions;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using Xunit;
@@ -133,7 +134,7 @@ namespace BCnEncTests.Support
 
 		#endregion
 
-		public static float DecodeCheckPSNR(string filename, Image<Rgba32> original)
+		public static float DecodeKtxCheckPSNR(string filename, Image<Rgba32> original)
 		{
 			using var fs = File.OpenRead(filename);
 			var ktx = KtxFile.Load(fs);
@@ -146,6 +147,20 @@ namespace BCnEncTests.Support
 			return CalculatePSNR(original, img);
 		}
 
+		public static float DecodeKtxCheckRMSEHdr(string filename, HdrImage original)
+		{
+			using var fs = File.OpenRead(filename);
+			var ktx = KtxFile.Load(fs);
+			var decoder = new BcDecoder()
+			{
+			};
+			
+			var decoded = decoder.DecodeHdr(ktx);
+
+			return ImageQuality.CalculateLogRMSE(original.pixels, decoded);
+		}
+
+
 		public static void ExecuteEncodingTest(Image<Rgba32> image, CompressionFormat format, CompressionQuality quality, string filename, ITestOutputHelper output)
 		{
 			var encoder = new BcEncoder();
@@ -157,9 +172,25 @@ namespace BCnEncTests.Support
 			encoder.EncodeToStream(image, fs);
 			fs.Close();
 
-			var psnr = DecodeCheckPSNR(filename, image);
+			var psnr = DecodeKtxCheckPSNR(filename, image);
 			output.WriteLine("RGBA PSNR: " + psnr + "db");
 			AssertPSNR(psnr, encoder.OutputOptions.Quality);
+		}
+
+		public static void ExecuteHdrEncodingTest(HdrImage image, CompressionFormat format, CompressionQuality quality, string filename, ITestOutputHelper output)
+		{
+			var encoder = new BcEncoder();
+			encoder.OutputOptions.Quality = quality;
+			encoder.OutputOptions.GenerateMipMaps = true;
+			encoder.OutputOptions.Format = format;
+
+			var fs = File.OpenWrite(filename);
+			encoder.EncodeToStreamHdr(image.pixels.AsMemory().AsMemory2D(image.height, image.width), fs);
+			fs.Close();
+
+			var rmse = DecodeKtxCheckRMSEHdr(filename, image);
+			output.WriteLine("RGBFloat RMSE: " + rmse);
+			AssertRMSE(rmse, encoder.OutputOptions.Quality);
 		}
 
 		private static float CalculatePSNR(Image<Rgba32> original, Image<Rgba32> decoded, bool countAlpha = true)
@@ -199,7 +230,7 @@ namespace BCnEncTests.Support
 			}
 			else
 			{
-				Assert.True(rmse < 0.03);
+				Assert.True(rmse < 0.04);
 			}
 		}
 	}

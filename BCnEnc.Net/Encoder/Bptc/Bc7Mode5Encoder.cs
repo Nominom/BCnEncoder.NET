@@ -1,7 +1,7 @@
-﻿using System;
+using System;
 using BCnEncoder.Shared;
 
-namespace BCnEncoder.Encoder.Bc7
+namespace BCnEncoder.Encoder.Bptc
 {
 	internal static class Bc7Mode5Encoder {
 

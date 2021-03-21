@@ -1,28 +1,34 @@
-﻿using System;
+using System;
 using BCnEncoder.Shared;
 
-namespace BCnEncoder.Encoder.Bc7
+namespace BCnEncoder.Encoder.Bptc
 {
-	internal static class Bc7Mode3Encoder
+	internal static class Bc7Mode0Encoder
 	{
 
 		public static Bc7Block EncodeBlock(RawBlock4X4Rgba32 block, int startingVariation, int bestPartition)
 		{
 			var output = new Bc7Block();
-			const Bc7BlockType type = Bc7BlockType.Type3;
+			const Bc7BlockType type = Bc7BlockType.Type0;
 
-			var endpoints = new ColorRgba32[4];
-			var pBits = new byte[4];
-			ReadOnlySpan<int> partitionTable = Bc7Block.Subsets2PartitionTable[bestPartition];
+			if(bestPartition >= 16)
+			{
+				throw new IndexOutOfRangeException("Mode0 only has 16 partitions");
+			}
+
+			var endpoints = new ColorRgba32[6];
+			var pBits = new byte[6];
+			ReadOnlySpan<int> partitionTable = Bc7Block.Subsets3PartitionTable[bestPartition];
 
 			var indices = new byte[16];
 
 			var anchorIndices = new int[] {
 				0,
-				Bc7Block.Subsets2AnchorIndices[bestPartition]
+				Bc7Block.Subsets3AnchorIndices2[bestPartition],
+				Bc7Block.Subsets3AnchorIndices3[bestPartition]
 			};
 
-			for (var subset = 0; subset < 2; subset++) {
+			for (var subset = 0; subset < 3; subset++) {
 				
 				Bc7EncodingHelpers.GetInitialUnscaledEndpointsForSubset(block, out var ep0, out var ep1,
 					partitionTable, subset);
@@ -41,7 +47,7 @@ namespace BCnEncoder.Encoder.Bc7
 					ep1,
 					partitionTable, subset, indices);
 
-				if ((indices[anchorIndices[subset]] & 0b10) > 0) //If anchor index most significant bit is 1, switch endpoints
+				if ((indices[anchorIndices[subset]] & 0b100) > 0) //If anchor index most significant bit is 1, switch endpoints
 				{
 					var c = scaledEp0;
 					var p = pBit0;
@@ -66,11 +72,13 @@ namespace BCnEncoder.Encoder.Bc7
 				pBits[subset * 2 + 1] = pBit1;
 			}
 
-			output.PackType3(bestPartition, new[]{
+			output.PackType0(bestPartition, new[]{
 					new byte[]{endpoints[0].r, endpoints[0].g, endpoints[0].b},
 					new byte[]{endpoints[1].r, endpoints[1].g, endpoints[1].b},
 					new byte[]{endpoints[2].r, endpoints[2].g, endpoints[2].b},
-					new byte[]{endpoints[3].r, endpoints[3].g, endpoints[3].b}
+					new byte[]{endpoints[3].r, endpoints[3].g, endpoints[3].b},
+					new byte[]{endpoints[4].r, endpoints[4].g, endpoints[4].b},
+					new byte[]{endpoints[5].r, endpoints[5].g, endpoints[5].b}
 				},
 				pBits,
 				indices);

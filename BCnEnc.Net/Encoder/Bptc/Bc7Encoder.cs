@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using BCnEncoder.Shared;
 using BCnEncoder.Shared.ImageFiles;
 
-namespace BCnEncoder.Encoder.Bc7
+namespace BCnEncoder.Encoder.Bptc
 {
-	internal class Bc7Encoder : BaseBcBlockEncoder<Bc7Block>
+	internal class Bc7Encoder : BaseBcBlockEncoder<Bc7Block, RawBlock4X4Rgba32>
 	{
 
 		public override Bc7Block EncodeBlock(RawBlock4X4Rgba32 rawBlock, CompressionQuality quality)
@@ -100,8 +100,8 @@ namespace BCnEncoder.Encoder.Bc7
 					indexBlock2 = indexBlock3;
 				}
 
-				var best2SubsetPartitions = Bc7EncodingHelpers.Rank2SubsetPartitions(indexBlock2, clusters2);
-				var best3SubsetPartitions = Bc7EncodingHelpers.Rank3SubsetPartitions(indexBlock3, clusters3);
+				var best2SubsetPartitions = BptcEncodingHelpers.Rank2SubsetPartitions(indexBlock2, clusters2);
+				var best3SubsetPartitions = BptcEncodingHelpers.Rank3SubsetPartitions(indexBlock3, clusters3);
 
 				float bestError = 99999;
 				var best = new Bc7Block();
@@ -173,8 +173,8 @@ namespace BCnEncoder.Encoder.Bc7
 					indexBlock2 = indexBlock3;
 				}
 
-				var best2SubsetPartitions = Bc7EncodingHelpers.Rank2SubsetPartitions(indexBlock2, clusters2);
-				var best3SubsetPartitions = Bc7EncodingHelpers.Rank3SubsetPartitions(indexBlock3, clusters3);
+				var best2SubsetPartitions = BptcEncodingHelpers.Rank2SubsetPartitions(indexBlock2, clusters2);
+				var best3SubsetPartitions = BptcEncodingHelpers.Rank3SubsetPartitions(indexBlock3, clusters3);
 
 				float bestError = 99999;
 				var best = new Bc7Block();
@@ -248,8 +248,8 @@ namespace BCnEncoder.Encoder.Bc7
 					indexBlock2 = indexBlock3;
 				}
 
-				var best2SubsetPartitions = Bc7EncodingHelpers.Rank2SubsetPartitions(indexBlock2, clusters2);
-				var best3SubsetPartitions = Bc7EncodingHelpers.Rank3SubsetPartitions(indexBlock3, clusters3);
+				var best2SubsetPartitions = BptcEncodingHelpers.Rank2SubsetPartitions(indexBlock2, clusters2);
+				var best3SubsetPartitions = BptcEncodingHelpers.Rank3SubsetPartitions(indexBlock3, clusters3);
 
 
 				float bestError = 99999;

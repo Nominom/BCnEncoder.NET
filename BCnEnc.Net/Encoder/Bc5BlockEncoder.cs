@@ -3,7 +3,7 @@ using BCnEncoder.Shared.ImageFiles;
 
 namespace BCnEncoder.Encoder
 {
-	internal class Bc5BlockEncoder : BaseBcBlockEncoder<Bc5Block>
+	internal class Bc5BlockEncoder : BaseBcBlockEncoder<Bc5Block, RawBlock4X4Rgba32>
 	{
 		private readonly Bc4ComponentBlockEncoder redBlockEncoder;
 		private readonly Bc4ComponentBlockEncoder greenBlockEncoder;

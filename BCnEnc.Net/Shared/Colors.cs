@@ -180,6 +180,11 @@ namespace BCnEncoder.Shared
 		{
 			return new ColorRgbaFloat(this);
 		}
+
+		public readonly ColorRgbFloat ToRgbFloat()
+		{
+			return new ColorRgbFloat(this);
+		}
 	}
 
 	internal struct ColorRgbaFloat : IEquatable<ColorRgbaFloat>
@@ -325,6 +330,13 @@ namespace BCnEncoder.Shared
 			this.b = other.b / 255f;
 		}
 
+		public ColorRgbFloat(Vector3 vector)
+		{
+			r = vector.X;
+			g = vector.Y;
+			b = vector.Z;
+		}
+
 		public bool Equals(ColorRgbFloat other)
 		{
 			return r == other.r && g == other.g && b == other.b;
@@ -414,6 +426,43 @@ namespace BCnEncoder.Shared
 				);
 		}
 
+		public Vector3 ToVector3()
+		{
+			return new Vector3(r, g, b);
+		}
+
+		public float CalcLogDist(ColorRgbFloat other)
+		{
+			var dr = Math.Sign(other.r) * MathF.Log(1 + MathF.Abs(other.r)) - Math.Sign(r) * MathF.Log(1 + MathF.Abs(r));
+			var dg = Math.Sign(other.g) * MathF.Log(1 + MathF.Abs(other.g)) - Math.Sign(g) * MathF.Log(1 + MathF.Abs(g));
+			var db = Math.Sign(other.b) * MathF.Log(1 + MathF.Abs(other.b)) - Math.Sign(b) * MathF.Log(1 + MathF.Abs(b));
+			return MathF.Sqrt((dr * dr) + (dg * dg) + (db * db));
+		}
+
+		public float CalcDist(ColorRgbFloat other)
+		{
+			var dr = other.r - r;
+			var dg = other.g - g;
+			var db = other.b - b;
+			return MathF.Sqrt((dr * dr) + (dg * dg) + (db * db));
+		}
+
+		public void ClampToPositive()
+		{
+			if (r < 0) r = 0;
+			if (g < 0) g = 0;
+			if (b < 0) b = 0;
+		}
+
+		public void ClampToHalf()
+		{
+			if (r < Half.MinValue) r = Half.MinValue;
+			else if (g > Half.MaxValue) g = Half.MaxValue;
+			if (b < Half.MinValue) b = Half.MinValue;
+			else if (r > Half.MaxValue) r = Half.MaxValue;
+			if (g < Half.MinValue) g = Half.MinValue;
+			else if (b > Half.MaxValue) b = Half.MaxValue;
+		}
 	}
 
 	internal struct ColorYCbCr
@@ -1102,6 +1151,11 @@ namespace BCnEncoder.Shared
 			this = ColorToXyz(color);
 		}
 
+		public ColorXyz(ColorRgbFloat color)
+		{
+			this = ColorToXyz(color);
+		}
+
 		public ColorRgbFloat ToColorRgbFloat()
 		{
 			return new ColorRgbFloat(
@@ -1116,6 +1170,16 @@ namespace BCnEncoder.Shared
 			var r = PivotRgb(color.r / 255.0f);
 			var g = PivotRgb(color.g / 255.0f);
 			var b = PivotRgb(color.b / 255.0f);
+
+			// Observer. = 2°, Illuminant = D65
+			return new ColorXyz(r * 0.4124f + g * 0.3576f + b * 0.1805f, r * 0.2126f + g * 0.7152f + b * 0.0722f, r * 0.0193f + g * 0.1192f + b * 0.9505f);
+		}
+
+		public static ColorXyz ColorToXyz(ColorRgbFloat color)
+		{
+			var r = PivotRgb(color.r);
+			var g = PivotRgb(color.g);
+			var b = PivotRgb(color.b);
 
 			// Observer. = 2°, Illuminant = D65
 			return new ColorXyz(r * 0.4124f + g * 0.3576f + b * 0.1805f, r * 0.2126f + g * 0.7152f + b * 0.0722f, r * 0.0193f + g * 0.1192f + b * 0.9505f);
@@ -1148,6 +1212,11 @@ namespace BCnEncoder.Shared
 		public ColorLab(ColorRgba32 color)
 		{
 			this = ColorToLab(new ColorRgb24(color.r, color.g, color.b));
+		}
+
+		public ColorLab(ColorRgbFloat color)
+		{
+			this = XyzToLab(new ColorXyz(color));
 		}
 
 		public static ColorLab ColorToLab(ColorRgb24 color)

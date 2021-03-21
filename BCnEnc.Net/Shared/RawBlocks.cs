@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
+using BCnEncoder.Encoder.Bptc;
 
 namespace BCnEncoder.Shared
 {
@@ -152,7 +153,7 @@ namespace BCnEncoder.Shared
 			set => AsSpan[index] = value;
 		}
 
-		internal int CalculateError(RawBlock4X4RgbFloat other)
+		internal float CalculateError(RawBlock4X4RgbFloat other)
 		{
 			float error = 0;
 			var pix1 = AsSpan;
@@ -162,10 +163,10 @@ namespace BCnEncoder.Shared
 				var col1 = pix1[i];
 				var col2 = pix2[i];
 
-				var re = col1.r - col2.r;
-				var ge = col1.g - col2.g;
-				var be = col1.b - col2.b;
-
+				var re = Math.Sign(col1.r) * MathF.Log( 1 + MathF.Abs(col1.r)) - Math.Sign(col2.r) * MathF.Log( 1 + MathF.Abs(col2.r));
+				var ge = Math.Sign(col1.g) * MathF.Log( 1 + MathF.Abs(col1.g)) - Math.Sign(col2.g) * MathF.Log( 1 + MathF.Abs(col2.g));
+				var be = Math.Sign(col1.b) * MathF.Log( 1 + MathF.Abs(col1.b)) - Math.Sign(col2.b) * MathF.Log( 1 + MathF.Abs(col2.b));
+																	   
 				error += re * re;
 				error += ge * ge;
 				error += be * be;
@@ -175,7 +176,7 @@ namespace BCnEncoder.Shared
 			error /= pix1.Length;
 			error = MathF.Sqrt(error);
 
-			return (int)error;
+			return error;
 		}
 
 		internal float CalculateYCbCrError(RawBlock4X4RgbFloat other)
@@ -216,6 +217,41 @@ namespace BCnEncoder.Shared
 			}
 			return rawYcbcr;
 		}
+	}
+
+	//Used for Bc6H
+	internal struct RawBlock4X4RgbHalfInt
+	{
+		public (int, int, int) p00, p10, p20, p30;
+		public (int, int, int) p01, p11, p21, p31;
+		public (int, int, int) p02, p12, p22, p32;
+		public (int, int, int) p03, p13, p23, p33;
+		public Span<(int, int, int)> AsSpan => MemoryMarshal.CreateSpan(ref p00, 16);
+
+		public (int, int, int) this[int x, int y]
+		{
+			get => AsSpan[x + y * 4];
+			set => AsSpan[x + y * 4] = value;
+		}
+
+		public (int, int, int) this[int index]
+		{
+			get => AsSpan[index];
+			set => AsSpan[index] = value;
+		}
+
+		public static RawBlock4X4RgbHalfInt FromRawFloats(RawBlock4X4RgbFloat other, bool signed)
+		{
+			var output = new RawBlock4X4RgbHalfInt();
+			var span = output.AsSpan;
+			var floats = other.AsSpan;
+			for (var i = 0; i < 16; i++)
+			{
+				span[i] = Bc6EncodingHelpers.PreQuantizeRawEndpoint(floats[i], signed);
+			}
+			return output;
+		}
+
 	}
 
 
