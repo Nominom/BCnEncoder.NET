@@ -8,8 +8,7 @@ using BCnEncoder.Encoder.Bc7;
 using BCnEncoder.Encoder.Options;
 using BCnEncoder.Shared;
 using BCnEncoder.Shared.ImageFiles;
-using Microsoft.Toolkit.HighPerformance.Extensions;
-using Microsoft.Toolkit.HighPerformance.Memory;
+using Microsoft.Toolkit.HighPerformance;
 
 namespace BCnEncoder.Encoder
 {

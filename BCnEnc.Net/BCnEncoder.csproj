@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
@@ -12,7 +12,7 @@
     <PackageLicenseExpression>MIT OR Unlicense</PackageLicenseExpression>
     <Copyright />
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-    <Version>2.0.2</Version>
+    <Version>2.0.3</Version>
     <Authors>Nominom</Authors>
     <Company />
     <Product>BCnEncoder.Net</Product>
@@ -33,7 +33,7 @@ Supported formats are:
     <PackageProjectUrl>https://github.com/Nominom/BCnEncoder.NET</PackageProjectUrl>
     <PackageReleaseNotes>2.0.0 - Removed ImageSharp dependency, added async api methods, added ATC and BGRA support, added new raw api methods, improved dds file handling and fixed some bugs. See the github page for more information about 2.0.
 
-2.0.2 - fixed a bug in mipmap calculations</PackageReleaseNotes>
+2.0.3 - Updated Microsoft high performance toolkit version</PackageReleaseNotes>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
@@ -46,7 +46,7 @@ Supported formats are:
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Toolkit.HighPerformance" Version="7.0.0-preview4" />
+    <PackageReference Include="Microsoft.Toolkit.HighPerformance" Version="7.0.0" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
   </ItemGroup>
 
