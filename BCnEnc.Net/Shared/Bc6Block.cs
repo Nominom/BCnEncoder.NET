@@ -132,7 +132,29 @@ namespace BCnEncoder.Shared
 			15, 15, 15, 15, 15, 2, 2, 15
 		};
 
-		public Bc6BlockType Type
+		public static readonly Bc6BlockType[] Subsets1Types =
+		{
+			Bc6BlockType.Type3,
+			Bc6BlockType.Type7,
+			Bc6BlockType.Type11,
+			Bc6BlockType.Type15
+		};
+
+		public static readonly Bc6BlockType[] Subsets2Types =
+		{
+			Bc6BlockType.Type0 ,
+			Bc6BlockType.Type1 ,
+			Bc6BlockType.Type2 ,
+			Bc6BlockType.Type6 ,
+			Bc6BlockType.Type10,
+			Bc6BlockType.Type14,
+			Bc6BlockType.Type18,
+			Bc6BlockType.Type22,
+			Bc6BlockType.Type26,
+			Bc6BlockType.Type30
+		};
+
+		public readonly Bc6BlockType Type
 		{
 			get
 			{
@@ -166,19 +188,19 @@ namespace BCnEncoder.Shared
 			}
 		}
 
-		public bool HasSubsets => Type.HasSubsets();
+		public readonly bool HasSubsets => Type.HasSubsets();
 
-		public int NumEndpoints => HasSubsets ? 4 : 2;
+		public readonly int NumEndpoints => HasSubsets ? 4 : 2;
 
-		public bool HasTransformedEndpoints => Type.HasTransformedEndpoints();
+		public readonly bool HasTransformedEndpoints => Type.HasTransformedEndpoints();
 
-		public int PartitionSetId => HasSubsets ? ByteHelper.Extract5(highBits, 13) : -1;
+		public readonly int PartitionSetId => HasSubsets ? ByteHelper.Extract5(highBits, 13) : -1;
 
-		public int EndpointBits => Type.EndpointBits();
+		public readonly int EndpointBits => Type.EndpointBits();
 
-		public (int, int, int) DeltaBits => Type.DeltaBits();
+		public readonly (int, int, int) DeltaBits => Type.DeltaBits();
 
-		public int ColorIndexBitCount => HasSubsets ? 3 : 4;
+		public readonly int ColorIndexBitCount => HasSubsets ? 3 : 4;
 
 		internal void StoreEp0((int, int, int) endpoint)
 		{
@@ -190,47 +212,31 @@ namespace BCnEncoder.Shared
 			(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 15, Math.Min(10, EndpointBits), g0);
 			(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 25, Math.Min(10, EndpointBits), b0);
 			
-			//r0 = ByteHelper.ExtractFrom128(lowBits, highBits, 5, Math.Min(10, EndpointBits));
-			//g0 = ByteHelper.ExtractFrom128(lowBits, highBits, 15, Math.Min(10, EndpointBits));
-			//b0 = ByteHelper.ExtractFrom128(lowBits, highBits, 25, Math.Min(10, EndpointBits));
-
 			switch (Type)
 			{
 				case Bc6BlockType.Type2:
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 40, 1, r0 >> 10);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 49, 1, g0 >> 10);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 59, 1, b0 >> 10);
-					
-					//r0 |= ByteHelper.ExtractFrom128(lowBits, highBits, 40, 1) << 10;
-					//g0 |= ByteHelper.ExtractFrom128(lowBits, highBits, 49, 1) << 10;
-					//b0 |= ByteHelper.ExtractFrom128(lowBits, highBits, 59, 1) << 10;
+																				   
 					break;
 				case Bc6BlockType.Type6:
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 39, 1, r0 >> 10);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 50, 1, g0 >> 10);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 59, 1, b0 >> 10);
 					
-					//r0 |= ByteHelper.ExtractFrom128(lowBits, highBits, 39, 1) << 10;
-					//g0 |= ByteHelper.ExtractFrom128(lowBits, highBits, 50, 1) << 10;
-					//b0 |= ByteHelper.ExtractFrom128(lowBits, highBits, 59, 1) << 10;
 					break;
 				case Bc6BlockType.Type10:
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 39, 1, r0 >> 10);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 49, 1, g0 >> 10);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 60, 1, b0 >> 10);
 					
-					//r0 |= ByteHelper.ExtractFrom128(lowBits, highBits, 39, 1) << 10;
-					//g0 |= ByteHelper.ExtractFrom128(lowBits, highBits, 49, 1) << 10;
-					//b0 |= ByteHelper.ExtractFrom128(lowBits, highBits, 60, 1) << 10;
 					break;
 				case Bc6BlockType.Type7:
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 44, 1, r0 >> 10);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 54, 1, g0 >> 10);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 64, 1, b0 >> 10);
-
-					//r0 |= ByteHelper.ExtractFrom128(lowBits, highBits, 44, 1) << 10;
-					//g0 |= ByteHelper.ExtractFrom128(lowBits, highBits, 54, 1) << 10;
-					//b0 |= ByteHelper.ExtractFrom128(lowBits, highBits, 64, 1) << 10;
+					
 					break;
 				case Bc6BlockType.Type11:
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 44, 1, r0 >> 10);
@@ -240,68 +246,38 @@ namespace BCnEncoder.Shared
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 43, 1, r0 >> 11);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 53, 1, g0 >> 11);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 63, 1, b0 >> 11);
-
-					//r0 |= ByteHelper.ExtractFrom128(lowBits, highBits, 44, 1) << 10;
-					//g0 |= ByteHelper.ExtractFrom128(lowBits, highBits, 54, 1) << 10;
-					//b0 |= ByteHelper.ExtractFrom128(lowBits, highBits, 64, 1) << 10;
-
-					//r0 |= ByteHelper.ExtractFrom128(lowBits, highBits, 43, 1) << 11;
-					//g0 |= ByteHelper.ExtractFrom128(lowBits, highBits, 53, 1) << 11;
-					//b0 |= ByteHelper.ExtractFrom128(lowBits, highBits, 63, 1) << 11;
+																						
 					break;
 				case Bc6BlockType.Type15:
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 44, 1, r0 >> 10);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 54, 1, g0 >> 10);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 64, 1, b0 >> 10);
 
-					//r0 |= ByteHelper.ExtractFrom128(lowBits, highBits, 44, 1) << 10;
-					//g0 |= ByteHelper.ExtractFrom128(lowBits, highBits, 54, 1) << 10;
-					//b0 |= ByteHelper.ExtractFrom128(lowBits, highBits, 64, 1) << 10;
-
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 43, 1, r0 >> 11);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 53, 1, g0 >> 11);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 63, 1, b0 >> 11);
-
-					//r0 |= ByteHelper.ExtractFrom128(lowBits, highBits, 43, 1) << 11;
-					//g0 |= ByteHelper.ExtractFrom128(lowBits, highBits, 53, 1) << 11;
-					//b0 |= ByteHelper.ExtractFrom128(lowBits, highBits, 63, 1) << 11;
 
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 42, 1, r0 >> 12);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 52, 1, g0 >> 12);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 62, 1, b0 >> 12);
 
-					//r0 |= ByteHelper.ExtractFrom128(lowBits, highBits, 42, 1) << 12;
-					//g0 |= ByteHelper.ExtractFrom128(lowBits, highBits, 52, 1) << 12;
-					//b0 |= ByteHelper.ExtractFrom128(lowBits, highBits, 62, 1) << 12;
-
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 41, 1, r0 >> 13);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 51, 1, g0 >> 13);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 61, 1, b0 >> 13);
-
-					//r0 |= ByteHelper.ExtractFrom128(lowBits, highBits, 41, 1) << 13;
-					//g0 |= ByteHelper.ExtractFrom128(lowBits, highBits, 51, 1) << 13;
-					//b0 |= ByteHelper.ExtractFrom128(lowBits, highBits, 61, 1) << 13;
-
+					
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 40, 1, r0 >> 14);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 50, 1, g0 >> 14);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 60, 1, b0 >> 14);
-
-					//r0 |= ByteHelper.ExtractFrom128(lowBits, highBits, 40, 1) << 14;
-					//g0 |= ByteHelper.ExtractFrom128(lowBits, highBits, 50, 1) << 14;
-					//b0 |= ByteHelper.ExtractFrom128(lowBits, highBits, 60, 1) << 14;
-
+					
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 39, 1, r0 >> 15);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 49, 1, g0 >> 15);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 59, 1, b0 >> 15);
-
-					//r0 |= ByteHelper.ExtractFrom128(lowBits, highBits, 39, 1) << 15;
-					//g0 |= ByteHelper.ExtractFrom128(lowBits, highBits, 49, 1) << 15;
-					//b0 |= ByteHelper.ExtractFrom128(lowBits, highBits, 59, 1) << 15;
+					
 					break;
 			}
 		}
 
-		internal (int, int, int) ExtractEp0()
+		internal readonly (int, int, int) ExtractEp0()
 		{
 			ulong r0 = 0;
 			ulong g0 = 0;
@@ -399,9 +375,6 @@ namespace BCnEncoder.Shared
 				(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 45, Math.Min(5, DeltaBits.Item2), g1);
 				(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 55, Math.Min(5, DeltaBits.Item3), b1);
 				
-				//r1 = ByteHelper.ExtractFrom128(lowBits, highBits, 35, Math.Min(5, DeltaBits.Item1));
-				//g1 = ByteHelper.ExtractFrom128(lowBits, highBits, 45, Math.Min(5, DeltaBits.Item2));
-				//b1 = ByteHelper.ExtractFrom128(lowBits, highBits, 55, Math.Min(5, DeltaBits.Item3));
 			}
 
 			switch (Type)
@@ -411,27 +384,19 @@ namespace BCnEncoder.Shared
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 50, 1, g1 >> 5);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 60, 1, b1 >> 5);
 					
-					//r1 |= ByteHelper.ExtractFrom128(lowBits, highBits, 40, 1) << 5;
-					//g1 |= ByteHelper.ExtractFrom128(lowBits, highBits, 50, 1) << 5;
-					//b1 |= ByteHelper.ExtractFrom128(lowBits, highBits, 60, 1) << 5;
 
 					break;
 				case Bc6BlockType.Type18:
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 40, 1, r1 >> 5);
 					
-					//r1 |= ByteHelper.ExtractFrom128(lowBits, highBits, 40, 1) << 5;
 
 					break;
 				case Bc6BlockType.Type22:
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 50, 1, g1 >> 5);
-					
-					//g1 |= ByteHelper.ExtractFrom128(lowBits, highBits, 50, 1) << 5;
 
 					break;
 				case Bc6BlockType.Type26:
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 60, 1, b1 >> 5);
-					
-					//b1 |= ByteHelper.ExtractFrom128(lowBits, highBits, 60, 1) << 5;
 
 					break;
 				case Bc6BlockType.Type30:
@@ -439,45 +404,29 @@ namespace BCnEncoder.Shared
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 45, 6, g1);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 55, 6, b1);
 
-					//r1 = ByteHelper.ExtractFrom128(lowBits, highBits, 35, 6);
-					//g1 = ByteHelper.ExtractFrom128(lowBits, highBits, 45, 6);
-					//b1 = ByteHelper.ExtractFrom128(lowBits, highBits, 55, 6);
-
 					break;
 				case Bc6BlockType.Type3:
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 35, 10, r1);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 45, 10, g1);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 55, 10, b1);
-					
-					//r1 = ByteHelper.ExtractFrom128(lowBits, highBits, 35, 10);
-					//g1 = ByteHelper.ExtractFrom128(lowBits, highBits, 45, 10);
-					//b1 = ByteHelper.ExtractFrom128(lowBits, highBits, 55, 10);
 
 					break;
 				case Bc6BlockType.Type7:
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 40, 4, r1 >> 5);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 50, 4, g1 >> 5);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 60, 4, b1 >> 5);
-					
-					//r1 |= ByteHelper.ExtractFrom128(lowBits, highBits, 40, 4) << 5;
-					//g1 |= ByteHelper.ExtractFrom128(lowBits, highBits, 50, 4) << 5;
-					//b1 |= ByteHelper.ExtractFrom128(lowBits, highBits, 60, 4) << 5;
 
 					break;
 				case Bc6BlockType.Type11:
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 40, 3, r1 >> 5);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 50, 3, g1 >> 5);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 60, 3, b1 >> 5);
-					
-					//r1 |= ByteHelper.ExtractFrom128(lowBits, highBits, 40, 3) << 5;
-					//g1 |= ByteHelper.ExtractFrom128(lowBits, highBits, 50, 3) << 5;
-					//b1 |= ByteHelper.ExtractFrom128(lowBits, highBits, 60, 3) << 5;
 
 					break;
 			}
 		}
 
-		internal (int, int, int) ExtractEp1()
+		internal readonly (int, int, int) ExtractEp1()
 		{
 			ulong r1 = 0;
 			ulong g1 = 0;
@@ -549,107 +498,75 @@ namespace BCnEncoder.Shared
 			(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 41, 4, g2);
 			(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 61, 4, b2);
 
-			//r2 = ByteHelper.ExtractFrom128(lowBits, highBits, 65, Math.Min(5, DeltaBits.Item1));
-			//g2 = ByteHelper.ExtractFrom128(lowBits, highBits, 41, 4);
-			//b2 = ByteHelper.ExtractFrom128(lowBits, highBits, 61, 4);
-
 			switch (Type)
 			{
 				case Bc6BlockType.Type0:
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 2, 1, g2 >> 4);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 3, 1, b2 >> 4);
 					
-					//g2 |= ByteHelper.ExtractFrom128(lowBits, highBits, 2, 1) << 4;
-					//b2 |= ByteHelper.ExtractFrom128(lowBits, highBits, 3, 1) << 4;
 					break;
 				case Bc6BlockType.Type1:
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 70, 1, r2 >> 5);
 
-					//r2 |= ByteHelper.ExtractFrom128(lowBits, highBits, 70, 1) << 5;
-
-
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 24, 1, g2 >> 4);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 2, 1, g2 >> 5);
-
-					//g2 |= ByteHelper.ExtractFrom128(lowBits, highBits, 24, 1) << 4;
-					//g2 |= ByteHelper.ExtractFrom128(lowBits, highBits, 2, 1) << 5;
-
-
+					
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 14, 1, b2 >> 4);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 22, 1, b2 >> 5);
-
-					//b2 |= ByteHelper.ExtractFrom128(lowBits, highBits, 14, 1) << 4;
-					//b2 |= ByteHelper.ExtractFrom128(lowBits, highBits, 22, 1) << 5;
-
+					
 					break;
 				case Bc6BlockType.Type6:
 
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 75, 1, g2 >> 4);
-					//g2 |= ByteHelper.ExtractFrom128(lowBits, highBits, 75, 1) << 4;
+
 					break;
 				case Bc6BlockType.Type10:
 
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 40, 1, b2 >> 4);
-					//b2 |= ByteHelper.ExtractFrom128(lowBits, highBits, 40, 1) << 4;
 
 					break;
 				case Bc6BlockType.Type14:
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 24, 1, g2 >> 4);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 14, 1, b2 >> 4);
-					//g2 |= ByteHelper.ExtractFrom128(lowBits, highBits, 24, 1) << 4;
-					//b2 |= ByteHelper.ExtractFrom128(lowBits, highBits, 14, 1) << 4;
-
+					
 					break;
 				case Bc6BlockType.Type18:
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 70, 1, r2 >> 4);
-					//r2 |= ByteHelper.ExtractFrom128(lowBits, highBits, 70, 1) << 5;
+					
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 24, 1, g2 >> 4);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 14, 1, b2 >> 4);
-					//g2 |= ByteHelper.ExtractFrom128(lowBits, highBits, 24, 1) << 4;
-					//b2 |= ByteHelper.ExtractFrom128(lowBits, highBits, 14, 1) << 4;
-
+					
 					break;
 				case Bc6BlockType.Type22:
 
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 24, 1, g2 >> 4);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 23, 1, g2 >> 5);
-					//g2 |= ByteHelper.ExtractFrom128(lowBits, highBits, 24, 1) << 4;
-					//g2 |= ByteHelper.ExtractFrom128(lowBits, highBits, 23, 1) << 5;
 
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 14, 1, b2 >> 4);
-					//b2 |= ByteHelper.ExtractFrom128(lowBits, highBits, 14, 1) << 4;
+					
 					break;
 				case Bc6BlockType.Type26:
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 24, 1, g2 >> 4);
 
-					//g2 |= ByteHelper.ExtractFrom128(lowBits, highBits, 24, 1) << 4;
-
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 14, 1, b2 >> 4);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 23, 1, b2 >> 5);
-					//b2 |= ByteHelper.ExtractFrom128(lowBits, highBits, 14, 1) << 4;
-					//b2 |= ByteHelper.ExtractFrom128(lowBits, highBits, 23, 1) << 5;
+					
 					break;
 				case Bc6BlockType.Type30:
 					
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 65, 6, r2);
-					//r2 = ByteHelper.ExtractFrom128(lowBits, highBits, 65, 6);
 
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 24, 1, g2 >> 4);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 21, 1, g2 >> 5);
-					//g2 |= ByteHelper.ExtractFrom128(lowBits, highBits, 24, 1) << 4;
-					//g2 |= ByteHelper.ExtractFrom128(lowBits, highBits, 21, 1) << 5;
-
 
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 14, 1, b2 >> 4);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 22, 1, b2 >> 5);
-					//b2 |= ByteHelper.ExtractFrom128(lowBits, highBits, 14, 1) << 4;
-					//b2 |= ByteHelper.ExtractFrom128(lowBits, highBits, 22, 1) << 5;
-
+					
 					break;
 			}
 		}
 
-		internal (int, int, int) ExtractEp2()
+		internal readonly (int, int, int) ExtractEp2()
 		{
 			ulong r2 = 0;
 			ulong g2 = 0;
@@ -662,7 +579,7 @@ namespace BCnEncoder.Shared
 			switch (Type)
 			{
 				case Bc6BlockType.Type0:
-					//r2 |= ByteHelper.ExtractFrom128(lowBits, highBits, 40, 1) << 5;
+					
 					g2 |= ByteHelper.ExtractFrom128(lowBits, highBits, 2, 1) << 4;
 					b2 |= ByteHelper.ExtractFrom128(lowBits, highBits, 3, 1) << 4;
 					break;
@@ -736,46 +653,30 @@ namespace BCnEncoder.Shared
 			(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 71, Math.Min(5, DeltaBits.Item1), r3);
 			(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 51, 4, g3);
 
-			//r3 = ByteHelper.ExtractFrom128(lowBits, highBits, 71, Math.Min(5, DeltaBits.Item1));
-			//g3 = ByteHelper.ExtractFrom128(lowBits, highBits, 51, 4);
-
 			switch (Type)
 			{
 				case Bc6BlockType.Type0:
 					
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 40, 1, g3 >> 4);
-					//g3 |= ByteHelper.ExtractFrom128(lowBits, highBits, 40, 1) << 4;
-
 
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 50, 1, b3 >> 0);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 60, 1, b3 >> 1);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 70, 1, b3 >> 2);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 76, 1, b3 >> 3);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 4, 1, b3 >> 4);
-					//b3 = ByteHelper.ExtractFrom128(lowBits, highBits, 50, 1);
-					//b3 |= ByteHelper.ExtractFrom128(lowBits, highBits, 60, 1) << 1;
-					//b3 |= ByteHelper.ExtractFrom128(lowBits, highBits, 70, 1) << 2;
-					//b3 |= ByteHelper.ExtractFrom128(lowBits, highBits, 76, 1) << 3;
-					//b3 |= ByteHelper.ExtractFrom128(lowBits, highBits, 4, 1) << 4;
+					
 					break;
 				case Bc6BlockType.Type1:
 
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 76, 1, r3 >> 5);
-					//r3 |= ByteHelper.ExtractFrom128(lowBits, highBits, 76, 1) << 5;
 
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 3, 2, g3 >> 4);
-					//g3 |= ByteHelper.ExtractFrom128(lowBits, highBits, 3, 2) << 4;
-					
+
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 12, 2, b3 >> 0);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 23, 1, b3 >> 2);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 32, 1, b3 >> 3);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 34, 1, b3 >> 4);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 33, 1, b3 >> 5);
-					//b3 = ByteHelper.ExtractFrom128(lowBits, highBits, 12, 2);
-					//b3 |= ByteHelper.ExtractFrom128(lowBits, highBits, 23, 1) << 2;
-					//b3 |= ByteHelper.ExtractFrom128(lowBits, highBits, 32, 1) << 3;
-					//b3 |= ByteHelper.ExtractFrom128(lowBits, highBits, 34, 1) << 4;
-					//b3 |= ByteHelper.ExtractFrom128(lowBits, highBits, 33, 1) << 5;
 
 					break;
 				case Bc6BlockType.Type2:
@@ -784,27 +685,16 @@ namespace BCnEncoder.Shared
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 60, 1, b3 >> 1);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 70, 1, b3 >> 2);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 76, 1, b3 >> 3);
-					
-					//b3 = ByteHelper.ExtractFrom128(lowBits, highBits, 50, 1);
-					//b3 |= ByteHelper.ExtractFrom128(lowBits, highBits, 60, 1) << 1;
-					//b3 |= ByteHelper.ExtractFrom128(lowBits, highBits, 70, 1) << 2;
-					//b3 |= ByteHelper.ExtractFrom128(lowBits, highBits, 76, 1) << 3;
 
 					break;
 				case Bc6BlockType.Type6:
 
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 40, 1, g3 >> 4);
-					//g3 |= ByteHelper.ExtractFrom128(lowBits, highBits, 40, 1) << 4;
 
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 69, 1, b3 >> 0);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 60, 1, b3 >> 1);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 70, 1, b3 >> 2);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 76, 1, b3 >> 3);
-					
-					//b3 = ByteHelper.ExtractFrom128(lowBits, highBits, 69, 1);
-					//b3 |= ByteHelper.ExtractFrom128(lowBits, highBits, 60, 1) << 1;
-					//b3 |= ByteHelper.ExtractFrom128(lowBits, highBits, 70, 1) << 2;
-					//b3 |= ByteHelper.ExtractFrom128(lowBits, highBits, 76, 1) << 3;
 
 					break;
 				case Bc6BlockType.Type10:
@@ -814,114 +704,74 @@ namespace BCnEncoder.Shared
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 70, 1, b3 >> 2);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 76, 1, b3 >> 3);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 75, 1, b3 >> 4);
-					//b3 = ByteHelper.ExtractFrom128(lowBits, highBits, 50, 1);
-					//b3 |= ByteHelper.ExtractFrom128(lowBits, highBits, 69, 1) << 1;
-					//b3 |= ByteHelper.ExtractFrom128(lowBits, highBits, 70, 1) << 2;
-					//b3 |= ByteHelper.ExtractFrom128(lowBits, highBits, 76, 1) << 3;
-					//b3 |= ByteHelper.ExtractFrom128(lowBits, highBits, 75, 1) << 4;
-
+					
 					break;
 				case Bc6BlockType.Type14:
 
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 40, 1, g3 >> 4);
-					//g3 |= ByteHelper.ExtractFrom128(lowBits, highBits, 40, 1) << 4;
-
+					
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 50, 1, b3 >> 0);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 60, 1, b3 >> 1);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 70, 1, b3 >> 2);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 76, 1, b3 >> 3);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 34, 1, b3 >> 4);
-					//b3 = ByteHelper.ExtractFrom128(lowBits, highBits, 50, 1);
-					//b3 |= ByteHelper.ExtractFrom128(lowBits, highBits, 60, 1) << 1;
-					//b3 |= ByteHelper.ExtractFrom128(lowBits, highBits, 70, 1) << 2;
-					//b3 |= ByteHelper.ExtractFrom128(lowBits, highBits, 76, 1) << 3;
-					//b3 |= ByteHelper.ExtractFrom128(lowBits, highBits, 34, 1) << 4;
-
+					
 					break;
 				case Bc6BlockType.Type18:
 
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 76, 1, r3 >> 4);
-					//r3 |= ByteHelper.ExtractFrom128(lowBits, highBits, 76, 1) << 5;
-
+					
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 13, 1, g3 >> 4);
-					//g3 |= ByteHelper.ExtractFrom128(lowBits, highBits, 13, 1) << 4;
-
+					
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 50, 1, b3 >> 0);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 60, 1, b3 >> 1);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 23, 1, b3 >> 2);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 33, 1, b3 >> 3);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 34, 1, b3 >> 4);
-					//b3 = ByteHelper.ExtractFrom128(lowBits, highBits, 50, 1);
-					//b3 |= ByteHelper.ExtractFrom128(lowBits, highBits, 60, 1) << 1;
-					//b3 |= ByteHelper.ExtractFrom128(lowBits, highBits, 23, 1) << 2;
-					//b3 |= ByteHelper.ExtractFrom128(lowBits, highBits, 33, 1) << 3;
-					//b3 |= ByteHelper.ExtractFrom128(lowBits, highBits, 34, 1) << 4;
-
+					
 					break;
 				case Bc6BlockType.Type22:
 
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 40, 1, g3 >> 4);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 33, 1, g3 >> 5);
-					//g3 |= ByteHelper.ExtractFrom128(lowBits, highBits, 40, 1) << 4;
-					//g3 |= ByteHelper.ExtractFrom128(lowBits, highBits, 33, 1) << 5;
-
+					
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 13, 1, b3 >> 0);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 60, 1, b3 >> 1);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 70, 1, b3 >> 2);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 76, 1, b3 >> 3);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 34, 1, b3 >> 4);
-					//b3 = ByteHelper.ExtractFrom128(lowBits, highBits, 13, 1);
-					//b3 |= ByteHelper.ExtractFrom128(lowBits, highBits, 60, 1) << 1;
-					//b3 |= ByteHelper.ExtractFrom128(lowBits, highBits, 70, 1) << 2;
-					//b3 |= ByteHelper.ExtractFrom128(lowBits, highBits, 76, 1) << 3;
-					//b3 |= ByteHelper.ExtractFrom128(lowBits, highBits, 34, 1) << 4;
-
+					
 					break;
 				case Bc6BlockType.Type26:
 
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 40, 1, g3 >> 4);
-					//g3 |= ByteHelper.ExtractFrom128(lowBits, highBits, 40, 1) << 4;
-
+					
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 50, 1, b3 >> 0);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 13, 1, b3 >> 1);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 70, 1, b3 >> 2);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 76, 1, b3 >> 3);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 34, 1, b3 >> 4);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 33, 1, b3 >> 5);
-					//b3 = ByteHelper.ExtractFrom128(lowBits, highBits, 50, 1);
-					//b3 |= ByteHelper.ExtractFrom128(lowBits, highBits, 13, 1) << 1;
-					//b3 |= ByteHelper.ExtractFrom128(lowBits, highBits, 70, 1) << 2;
-					//b3 |= ByteHelper.ExtractFrom128(lowBits, highBits, 76, 1) << 3;
-					//b3 |= ByteHelper.ExtractFrom128(lowBits, highBits, 34, 1) << 4;
-					//b3 |= ByteHelper.ExtractFrom128(lowBits, highBits, 33, 1) << 5;
-
+					
 					break;
 				case Bc6BlockType.Type30:
 
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 71, 6, r3);
-					//r3 = ByteHelper.ExtractFrom128(lowBits, highBits, 71, 6);
-
+					
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 11, 1, g3 >> 4);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 31, 1, g3 >> 5);
-					//g3 |= ByteHelper.ExtractFrom128(lowBits, highBits, 11, 1) << 4;
-					//g3 |= ByteHelper.ExtractFrom128(lowBits, highBits, 31, 1) << 5;
-
+					
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 12, 2, b3 >> 0);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 23, 1, b3 >> 2);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 32, 1, b3 >> 3);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 34, 1, b3 >> 4);
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 33, 1, b3 >> 5);
-					//b3 = ByteHelper.ExtractFrom128(lowBits, highBits, 12, 2);
-					//b3 |= ByteHelper.ExtractFrom128(lowBits, highBits, 23, 1) << 2;
-					//b3 |= ByteHelper.ExtractFrom128(lowBits, highBits, 32, 1) << 3;
-					//b3 |= ByteHelper.ExtractFrom128(lowBits, highBits, 34, 1) << 4;
-					//b3 |= ByteHelper.ExtractFrom128(lowBits, highBits, 33, 1) << 5;
-
+					
 					break;
 			}
 		}
 
-		internal (int, int, int) ExtractEp3()
+		internal readonly (int, int, int) ExtractEp3()
 		{
 			ulong r3 = 0;
 			ulong g3 = 0;
@@ -933,7 +783,6 @@ namespace BCnEncoder.Shared
 			switch (Type)
 			{
 				case Bc6BlockType.Type0:
-					//r2 |= ByteHelper.ExtractFrom128(lowBits, highBits, 40, 1) << 5;
 					g3 |= ByteHelper.ExtractFrom128(lowBits, highBits, 40, 1) << 4;
 
 					b3 = ByteHelper.ExtractFrom128(lowBits, highBits, 50, 1);
@@ -1047,7 +896,7 @@ namespace BCnEncoder.Shared
 			return ((int)r3, (int)g3, (int)b3);
 		}
 
-		private (int, int, int)[] ExtractRawEndpoints(bool signedBc6)
+		private readonly (int, int, int)[] ExtractRawEndpoints(bool signedBc6)
 		{
 			var outEndpoints = new (int, int, int)[HasSubsets ? 4 : 2];
 			var endpointBits = EndpointBits;
@@ -1187,7 +1036,7 @@ namespace BCnEncoder.Shared
 				component = (component * 31) >> 6; // scale the magnitude by 31/64
 				return Half.ToHalf((ushort)component);
 			}
-			else // (BC6H::FORMAT == SIGNED_F16)
+			else // signed format
 			{
 				component = (component < 0) ? -(((-component) * 31) >> 5) : (component * 31) >> 5; // scale the magnitude by 31/32
 				var s = 0;
@@ -1209,7 +1058,7 @@ namespace BCnEncoder.Shared
 			);
 		}
 
-		private int GetPartitionIndex(int numSubsets, int partitionSetId, int i)
+		private static int GetPartitionIndex(int numSubsets, int partitionSetId, int i)
 		{
 			switch (numSubsets)
 			{
@@ -1222,7 +1071,7 @@ namespace BCnEncoder.Shared
 			}
 		}
 
-		private int GetIndexOffset(int numSubsets, int partitionIndex, int bitCount, int index)
+		private static int GetIndexOffset(int numSubsets, int partitionIndex, int bitCount, int index)
 		{
 			if (index == 0) return 0;
 			if (numSubsets == 1)
@@ -1247,7 +1096,7 @@ namespace BCnEncoder.Shared
 		/// <summary>
 		/// Decrements bitCount by one if index is one of the anchor indices.
 		/// </summary>
-		private int GetIndexBitCount(int numSubsets, int partitionIndex, int bitCount, int index)
+		private static int GetIndexBitCount(int numSubsets, int partitionIndex, int bitCount, int index)
 		{
 			if (index == 0) return bitCount - 1;
 			if (numSubsets == 2)
@@ -1261,12 +1110,12 @@ namespace BCnEncoder.Shared
 			return bitCount;
 		}
 
-		private int GetIndexBegin()
+		private readonly int GetIndexBegin()
 		{
 			return HasSubsets ? 82 : 65;
 		}
 
-		internal int GetColorIndex(Bc6BlockType type, int numSubsets, int partitionIndex, int bitCount, int index)
+		internal readonly int GetColorIndex(int numSubsets, int partitionIndex, int bitCount, int index)
 		{
 			var indexOffset = GetIndexOffset(numSubsets, partitionIndex, bitCount, index);
 			var indexBitCount = GetIndexBitCount(numSubsets, partitionIndex, bitCount, index);
@@ -1313,7 +1162,7 @@ namespace BCnEncoder.Shared
 				var endPointStart = endpoints[2 * subsetIndex];
 				var endPointEnd = endpoints[2 * subsetIndex + 1];
 
-				var colorIndex = GetColorIndex(Type, numSubsets, partitionIndex, ColorIndexBitCount, i);
+				var colorIndex = GetColorIndex(numSubsets, partitionIndex, ColorIndexBitCount, i);
 
 				var (r, g, b) = FinishUnQuantize(InterpolateColor(endPointStart, endPointEnd, colorIndex, ColorIndexBitCount), signed);
 
@@ -1351,7 +1200,7 @@ namespace BCnEncoder.Shared
 		public static Bc6Block PackType0((int, int, int) endpoint0, (int, int, int) endpoint1,
 			(int, int, int) endpoint2, (int, int, int) endpoint3, int partitionSetId, Span<byte> indices)
 		{
-			Bc6Block block = new Bc6Block();
+			var block = new Bc6Block();
 			block.lowBits = 0;
 			block.StorePartitionSetId(partitionSetId);
 			block.StoreEp0(endpoint0);
@@ -1366,7 +1215,7 @@ namespace BCnEncoder.Shared
 		public static Bc6Block PackType1((int, int, int) endpoint0, (int, int, int) endpoint1,
 			(int, int, int) endpoint2, (int, int, int) endpoint3, int partitionSetId, Span<byte> indices)
 		{
-			Bc6Block block = new Bc6Block();
+			var block = new Bc6Block();
 			block.lowBits = 1;
 			block.StorePartitionSetId(partitionSetId);
 			block.StoreEp0(endpoint0);
@@ -1381,7 +1230,7 @@ namespace BCnEncoder.Shared
 		public static Bc6Block PackType2((int, int, int) endpoint0, (int, int, int) endpoint1,
 			(int, int, int) endpoint2, (int, int, int) endpoint3, int partitionSetId, Span<byte> indices)
 		{
-			Bc6Block block = new Bc6Block();
+			var block = new Bc6Block();
 			block.lowBits = 2;
 			block.StorePartitionSetId(partitionSetId);
 			block.StoreEp0(endpoint0);
@@ -1396,7 +1245,7 @@ namespace BCnEncoder.Shared
 		public static Bc6Block PackType6((int, int, int) endpoint0, (int, int, int) endpoint1,
 			(int, int, int) endpoint2, (int, int, int) endpoint3, int partitionSetId, Span<byte> indices)
 		{
-			Bc6Block block = new Bc6Block();
+			var block = new Bc6Block();
 			block.lowBits = 6;
 			block.StorePartitionSetId(partitionSetId);
 			block.StoreEp0(endpoint0);
@@ -1411,7 +1260,7 @@ namespace BCnEncoder.Shared
 		public static Bc6Block PackType10((int, int, int) endpoint0, (int, int, int) endpoint1,
 			(int, int, int) endpoint2, (int, int, int) endpoint3, int partitionSetId, Span<byte> indices)
 		{
-			Bc6Block block = new Bc6Block();
+			var block = new Bc6Block();
 			block.lowBits = 10;
 			block.StorePartitionSetId(partitionSetId);
 			block.StoreEp0(endpoint0);
@@ -1426,7 +1275,7 @@ namespace BCnEncoder.Shared
 		public static Bc6Block PackType14((int, int, int) endpoint0, (int, int, int) endpoint1,
 			(int, int, int) endpoint2, (int, int, int) endpoint3, int partitionSetId, Span<byte> indices)
 		{
-			Bc6Block block = new Bc6Block();
+			var block = new Bc6Block();
 			block.lowBits = 14;
 			block.StorePartitionSetId(partitionSetId);
 			block.StoreEp0(endpoint0);
@@ -1441,7 +1290,7 @@ namespace BCnEncoder.Shared
 		public static Bc6Block PackType18((int, int, int) endpoint0, (int, int, int) endpoint1,
 			(int, int, int) endpoint2, (int, int, int) endpoint3, int partitionSetId, Span<byte> indices)
 		{
-			Bc6Block block = new Bc6Block();
+			var block = new Bc6Block();
 			block.lowBits = 18;
 			block.StorePartitionSetId(partitionSetId);
 			block.StoreEp0(endpoint0);
@@ -1456,7 +1305,7 @@ namespace BCnEncoder.Shared
 		public static Bc6Block PackType22((int, int, int) endpoint0, (int, int, int) endpoint1,
 			(int, int, int) endpoint2, (int, int, int) endpoint3, int partitionSetId, Span<byte> indices)
 		{
-			Bc6Block block = new Bc6Block();
+			var block = new Bc6Block();
 			block.lowBits = 22;
 			block.StorePartitionSetId(partitionSetId);
 			block.StoreEp0(endpoint0);
@@ -1471,7 +1320,7 @@ namespace BCnEncoder.Shared
 		public static Bc6Block PackType26((int, int, int) endpoint0, (int, int, int) endpoint1,
 			(int, int, int) endpoint2, (int, int, int) endpoint3, int partitionSetId, Span<byte> indices)
 		{
-			Bc6Block block = new Bc6Block();
+			var block = new Bc6Block();
 			block.lowBits = 26;
 			block.StorePartitionSetId(partitionSetId);
 			block.StoreEp0(endpoint0);
@@ -1486,7 +1335,7 @@ namespace BCnEncoder.Shared
 		public static Bc6Block PackType30((int, int, int) endpoint0, (int, int, int) endpoint1,
 			(int, int, int) endpoint2, (int, int, int) endpoint3, int partitionSetId, Span<byte> indices)
 		{
-			Bc6Block block = new Bc6Block();
+			var block = new Bc6Block();
 			block.lowBits = 30;
 			block.StorePartitionSetId(partitionSetId);
 			block.StoreEp0(endpoint0);
@@ -1500,7 +1349,7 @@ namespace BCnEncoder.Shared
 
 		public static Bc6Block PackType3((int, int, int) endpoint0, (int, int, int) endpoint1, Span<byte> indices)
 		{
-			Bc6Block block = new Bc6Block();
+			var block = new Bc6Block();
 			block.lowBits = 3;
 			block.StoreEp0(endpoint0);
 			block.StoreEp1(endpoint1);
@@ -1511,7 +1360,7 @@ namespace BCnEncoder.Shared
 
 		public static Bc6Block PackType7((int, int, int) endpoint0, (int, int, int) endpoint1, Span<byte> indices)
 		{
-			Bc6Block block = new Bc6Block();
+			var block = new Bc6Block();
 			block.lowBits = 7;
 			block.StoreEp0(endpoint0);
 			block.StoreEp1(endpoint1);
@@ -1522,7 +1371,7 @@ namespace BCnEncoder.Shared
 
 		public static Bc6Block PackType11((int, int, int) endpoint0, (int, int, int) endpoint1, Span<byte> indices)
 		{
-			Bc6Block block = new Bc6Block();
+			var block = new Bc6Block();
 			block.lowBits = 11;
 			block.StoreEp0(endpoint0);
 			block.StoreEp1(endpoint1);
@@ -1533,7 +1382,7 @@ namespace BCnEncoder.Shared
 
 		public static Bc6Block PackType15((int, int, int) endpoint0, (int, int, int) endpoint1, Span<byte> indices)
 		{
-			Bc6Block block = new Bc6Block();
+			var block = new Bc6Block();
 			block.lowBits = 15;
 			block.StoreEp0(endpoint0);
 			block.StoreEp1(endpoint1);

@@ -393,7 +393,7 @@ namespace BCnEncoder.Shared
 		/// </returns>
 		public int CompareTo(Half other)
 		{
-			int result = 0;
+			var result = 0;
 			if (this < other)
 			{
 				result = -1;
@@ -429,7 +429,7 @@ namespace BCnEncoder.Shared
 		/// <exception cref="System.ArgumentException">value is not a System.Half</exception>
 		public int CompareTo(object obj)
 		{
-			int result = 0;
+			var result = 0;
 			if (obj == null)
 			{
 				result = 1;
@@ -465,10 +465,10 @@ namespace BCnEncoder.Shared
 		/// <returns>true if value is a System.Half and equal to this instance; otherwise, false.</returns>
 		public override bool Equals(object obj)
 		{
-			bool result = false;
+			var result = false;
 			if (obj is Half)
 			{
-				Half half = (Half)obj;
+				var half = (Half)obj;
 				if ((half == this) || (IsNaN(half) && IsNaN(this)))
 				{
 					result = true;
@@ -764,7 +764,7 @@ namespace BCnEncoder.Shared
 		/// </exception>
 		public static bool TryParse(string value, NumberStyles style, IFormatProvider provider, out Half result)
 		{
-			bool parseResult = false;
+			var parseResult = false;
 			float f;
 			if (float.TryParse(value, style, provider, out f))
 			{
@@ -914,7 +914,7 @@ namespace BCnEncoder.Shared
 		// Transforms the subnormal representation to a normalized one. 
 		private static uint ConvertMantissa(int i)
 		{
-			uint m = (uint)(i << 13); // Zero pad mantissa bits
+			var m = (uint)(i << 13); // Zero pad mantissa bits
 			uint e = 0; // Zero exponent
 
 			// While not normalized
@@ -930,13 +930,13 @@ namespace BCnEncoder.Shared
 
 		private static uint[] GenerateMantissaTable()
 		{
-			uint[] mantissaTable = new uint[2048];
+			var mantissaTable = new uint[2048];
 			mantissaTable[0] = 0;
-			for (int i = 1; i < 1024; i++)
+			for (var i = 1; i < 1024; i++)
 			{
 				mantissaTable[i] = ConvertMantissa(i);
 			}
-			for (int i = 1024; i < 2048; i++)
+			for (var i = 1024; i < 2048; i++)
 			{
 				mantissaTable[i] = (uint)(0x38000000 + ((i - 1024) << 13));
 			}
@@ -945,15 +945,15 @@ namespace BCnEncoder.Shared
 		}
 		private static uint[] GenerateExponentTable()
 		{
-			uint[] exponentTable = new uint[64];
+			var exponentTable = new uint[64];
 			exponentTable[0] = 0;
-			for (int i = 1; i < 31; i++)
+			for (var i = 1; i < 31; i++)
 			{
 				exponentTable[i] = (uint)(i << 23);
 			}
 			exponentTable[31] = 0x47800000;
 			exponentTable[32] = 0x80000000;
-			for (int i = 33; i < 63; i++)
+			for (var i = 33; i < 63; i++)
 			{
 				exponentTable[i] = (uint)(0x80000000 + ((i - 32) << 23));
 			}
@@ -963,14 +963,14 @@ namespace BCnEncoder.Shared
 		}
 		private static ushort[] GenerateOffsetTable()
 		{
-			ushort[] offsetTable = new ushort[64];
+			var offsetTable = new ushort[64];
 			offsetTable[0] = 0;
-			for (int i = 1; i < 32; i++)
+			for (var i = 1; i < 32; i++)
 			{
 				offsetTable[i] = 1024;
 			}
 			offsetTable[32] = 0;
-			for (int i = 33; i < 64; i++)
+			for (var i = 33; i < 64; i++)
 			{
 				offsetTable[i] = 1024;
 			}
@@ -979,10 +979,10 @@ namespace BCnEncoder.Shared
 		}
 		private static ushort[] GenerateBaseTable()
 		{
-			ushort[] baseTable = new ushort[512];
-			for (int i = 0; i < 256; ++i)
+			var baseTable = new ushort[512];
+			for (var i = 0; i < 256; ++i)
 			{
-				sbyte e = (sbyte)(127 - i);
+				var e = (sbyte)(127 - i);
 				if (e > 24)
 				{ // Very small numbers map to zero
 					baseTable[i | 0x000] = 0x0000;
@@ -1014,10 +1014,10 @@ namespace BCnEncoder.Shared
 		}
 		private static sbyte[] GenerateShiftTable()
 		{
-			sbyte[] shiftTable = new sbyte[512];
-			for (int i = 0; i < 256; ++i)
+			var shiftTable = new sbyte[512];
+			for (var i = 0; i < 256; ++i)
 			{
-				sbyte e = (sbyte)(127 - i);
+				var e = (sbyte)(127 - i);
 				if (e > 24)
 				{ // Very small numbers map to zero
 					shiftTable[i | 0x000] = 24;
@@ -1050,14 +1050,14 @@ namespace BCnEncoder.Shared
 
 		public static unsafe float HalfToSingle(Half half)
 		{
-			uint result = MantissaTable[OffsetTable[half.Value >> 10] + (half.Value & 0x3ff)] + ExponentTable[half.Value >> 10];
+			var result = MantissaTable[OffsetTable[half.Value >> 10] + (half.Value & 0x3ff)] + ExponentTable[half.Value >> 10];
 			return *(float*)&result;
 		}
 		public static unsafe Half SingleToHalf(float single)
 		{
-			uint value = *(uint*)&single;
+			var value = *(uint*)&single;
 
-			ushort result = (ushort)(BaseTable[(value >> 23) & 0x1ff] + ((value & 0x007fffff) >> ShiftTable[value >> 23]));
+			var result = (ushort)(BaseTable[(value >> 23) & 0x1ff] + ((value & 0x007fffff) >> ShiftTable[value >> 23]));
 			return Half.ToHalf(result);
 		}
 

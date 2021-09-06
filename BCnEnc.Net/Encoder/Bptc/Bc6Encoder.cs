@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using BCnEncoder.Shared;
 using BCnEncoder.Shared.ImageFiles;
@@ -8,7 +9,7 @@ namespace BCnEncoder.Encoder.Bptc
 	internal class Bc6Encoder : BaseBcBlockEncoder<Bc6Block, RawBlock4X4RgbFloat>
 	{
 		private readonly bool signed;
-		
+
 		public Bc6Encoder(bool signed)
 		{
 			this.signed = signed;
@@ -70,122 +71,269 @@ namespace BCnEncoder.Encoder.Bptc
 			return indexBlock;
 		}
 
-		internal static Bc6Block SelectBestCandidate(RawBlock4X4RgbFloat block, ReadOnlySpan<Bc6Block> candidates, bool signed)
-		{
-			Debug.Assert(candidates.Length > 0);
-			var bestError = candidates[0].Decode(signed).CalculateError(block);
-			var bestIdx = 0;
-			for (var i = 1; i < candidates.Length; i++)
-			{
-				var error = candidates[i].Decode(signed).CalculateError(block);
-				if (error < bestError)
-				{
-					bestError = error;
-					bestIdx = i;
-				}
-			}
-			return candidates[bestIdx];
-		}
-
 		internal static class Bc6EncoderFast
 		{
 			internal static Bc6Block EncodeBlock(RawBlock4X4RgbFloat block, bool signed)
 			{
-				var intBlock = RawBlock4X4RgbHalfInt.FromRawFloats(block, signed);
 				RgbBoundingBox.CreateFloat(block.AsSpan, out var min, out var max);
-				//var (ep0, ep1) = LeastSquares.OptimizeEndpoints1SubInt(intBlock, ref min, ref max, signed);
-				//LeastSquares.OptimizeEndpoints1Sub(block, ref min, ref max);
-				min.ClampToHalf();
-				max.ClampToHalf();
-				return Bc6ModeEncoder.EncodeBlock1Sub(Bc6BlockType.Type3, block, min, max, false, 0, signed, out _);
+
+				LeastSquares.OptimizeEndpoints1Sub(block, ref min, ref max);
+
+				return Bc6ModeEncoder.EncodeBlock1Sub(Bc6BlockType.Type3, block, min, max, signed, out _);
 			}
 		}
 
 		internal static class Bc6EncoderBalanced
 		{
-			private const float targetError = 0.01f;
-			
-			internal static Bc6Block EncodeBlock(RawBlock4X4RgbFloat block, bool signed)
+
+			private const float TargetError = 0.001f;
+			private const int MaxTries = 10;
+
+			private static IEnumerable<Bc6Block> GenerateCandidates(RawBlock4X4RgbFloat block, bool signed)
 			{
-				var indexBlock = CreateClusterIndexBlock(block, out var numClusters, 2);
-				var best2SubsetPartitions = BptcEncodingHelpers.Rank2SubsetPartitions(indexBlock, numClusters, true);
-				var bestPartition = best2SubsetPartitions[0];
-				
-				Bc6EncodingHelpers.GetInitialUnscaledEndpointsForSubset(block, out var ep0, out var ep1, bestPartition, 0);
-				Bc6EncodingHelpers.GetInitialUnscaledEndpointsForSubset(block, out var ep2, out var ep3, bestPartition, 1);
+				var candidates = 0;
 				Bc6EncodingHelpers.GetInitialUnscaledEndpoints(block, out var ep0Sub1, out var ep1Sub1);
 
-				ep0.ClampToHalf();
-				ep1.ClampToHalf();
-				ep2.ClampToHalf();
-				ep3.ClampToHalf();
+				if (!signed)
+				{
+					LeastSquares.OptimizeEndpoints1Sub(block, ref ep0Sub1, ref ep1Sub1);
+				}
+
 				ep0Sub1.ClampToHalf();
 				ep1Sub1.ClampToHalf();
 
 				if (!signed)
 				{
-					ep0.ClampToPositive();
-					ep1.ClampToPositive();
-					ep2.ClampToPositive();
-					ep3.ClampToPositive();
 					ep0Sub1.ClampToPositive();
 					ep1Sub1.ClampToPositive();
 				}
 				
-				var type1Block = Bc6ModeEncoder.EncodeBlock2Sub(Bc6BlockType.Type1, block, ep0, ep1, ep2, ep3,
-					bestPartition, false, 0, signed, out var badType1);
-				var type14Block = Bc6ModeEncoder.EncodeBlock2Sub(Bc6BlockType.Type14, block, ep0, ep1, ep2, ep3,
-					bestPartition, false, 0, signed, out var badType14);
+				//Type3 Always ok!
+				yield return Bc6ModeEncoder.EncodeBlock1Sub(Bc6BlockType.Type3, block, ep0Sub1, ep1Sub1,
+					signed, out _);
+				candidates++;
 
 				var type15Block = Bc6ModeEncoder.EncodeBlock1Sub(Bc6BlockType.Type15, block, ep0Sub1, ep1Sub1,
-					false, 0, signed, out var badType15);
-
-				var backupCandidate = Bc6ModeEncoder.EncodeBlock1Sub(Bc6BlockType.Type3, block, ep0Sub1, ep1Sub1,
-					true, targetError, signed, out _);
-
-				Span<Bc6Block> candidates = stackalloc Bc6Block[3];
-				var i = 0;
-				if (!badType1) candidates[i++] = type1Block;
-				if (!badType14) candidates[i++] = type14Block;
-				if (!badType15) candidates[i++] = type15Block;
-
-				if (i == 0)
+					signed, out var badType15);
+				candidates++;
+				if (!badType15)
 				{
-					return backupCandidate;
-				}
-				
-				var bestCandidate = SelectBestCandidate(block, candidates.Slice(0, i), signed);
-
-				Bc6Block finalCandidate;
-				bool badFinal;
-				if (bestCandidate.HasSubsets)
-				{
-					finalCandidate = Bc6ModeEncoder.EncodeBlock2Sub(bestCandidate.Type, block, ep0, ep1, ep2, ep3,
-						bestPartition, true, targetError, signed, out badFinal);
+					yield return type15Block;
 				}
 				else
 				{
-					finalCandidate = Bc6ModeEncoder.EncodeBlock1Sub(bestCandidate.Type, block, ep0Sub1, ep1Sub1,
-						true, targetError, signed, out badFinal);
+					var indexBlock = CreateClusterIndexBlock(block, out var numClusters, 2);
+					var best2SubsetPartitions = BptcEncodingHelpers.Rank2SubsetPartitions(indexBlock, numClusters, true);
+
+					foreach (var subsetPartition in best2SubsetPartitions)
+					{
+						Bc6EncodingHelpers.GetInitialUnscaledEndpointsForSubset(block, out var ep0, out var ep1, subsetPartition, 0);
+						Bc6EncodingHelpers.GetInitialUnscaledEndpointsForSubset(block, out var ep2, out var ep3, subsetPartition, 1);
+
+						if (!signed)
+						{
+							LeastSquares.OptimizeEndpoints2Sub(block, ref ep0, ref ep1, subsetPartition, 0);
+							LeastSquares.OptimizeEndpoints2Sub(block, ref ep2, ref ep3, subsetPartition, 1);
+						}
+
+						ep0.ClampToHalf();
+						ep1.ClampToHalf();
+						ep2.ClampToHalf();
+						ep3.ClampToHalf();
+
+						if (!signed)
+						{
+							ep0.ClampToPositive();
+							ep1.ClampToPositive();
+							ep2.ClampToPositive();
+							ep3.ClampToPositive();
+						}
+						
+						{
+							var type1Block = Bc6ModeEncoder.EncodeBlock2Sub(Bc6BlockType.Type1, block, ep0, ep1, ep2, ep3,
+								subsetPartition, signed, out var badType1);
+							candidates++;
+
+							if (!badType1)
+							{
+								yield return type1Block;
+							}
+
+							if (candidates >= MaxTries)
+							{
+								yield break;
+							}
+						}
+
+						{
+							var type14Block = Bc6ModeEncoder.EncodeBlock2Sub(Bc6BlockType.Type14, block, ep0, ep1, ep2, ep3,
+								subsetPartition, signed, out var badType14);
+							candidates++;
+
+							if (!badType14)
+							{
+								yield return type14Block;
+							}
+
+							if (candidates >= MaxTries)
+							{
+								yield break;
+							}
+						}
+					}
 				}
-				
-				if (badFinal)
+			}
+
+			internal static Bc6Block EncodeBlock(RawBlock4X4RgbFloat block, bool signed)
+			{
+				var result = new Bc6Block();
+				var bestError = 9999999f;
+
+				foreach (var candidate in GenerateCandidates(block, signed))
 				{
-					return backupCandidate;
+					var error = block.CalculateError(candidate.Decode(signed));
+
+					if (error < bestError)
+					{
+						result = candidate;
+						bestError = error;
+					}
+
+					if (error <= TargetError)
+					{
+						break;
+					}
 				}
-				
-				var finalError = block.CalculateError(finalCandidate.Decode(signed));
-				var backupError = block.CalculateError(backupCandidate.Decode(signed));
-				
-				return finalError < backupError ? finalCandidate : backupCandidate;
+
+				return result;
 			}
 		}
 
 		internal static class Bc6EncoderBestQuality
 		{
+			private const float TargetError = 0.0005f;
+			private const int MaxTries = 500;
+
+			private static IEnumerable<Bc6Block> GenerateCandidates(RawBlock4X4RgbFloat block, bool signed)
+			{
+				var candidates = 0;
+				Bc6EncodingHelpers.GetInitialUnscaledEndpoints(block, out var ep0Sub1, out var ep1Sub1);
+
+				if (!signed)
+				{
+					LeastSquares.OptimizeEndpoints1Sub(block, ref ep0Sub1, ref ep1Sub1);
+				}
+
+				ep0Sub1.ClampToHalf();
+				ep1Sub1.ClampToHalf();
+
+				if (!signed)
+				{
+					ep0Sub1.ClampToPositive();
+					ep1Sub1.ClampToPositive();
+				}
+				//Type3 Always ok!
+				yield return Bc6ModeEncoder.EncodeBlock1Sub(Bc6BlockType.Type3, block, ep0Sub1, ep1Sub1,
+					signed, out _);
+				candidates++;
+
+				//Type7
+				{
+					var type7Block = Bc6ModeEncoder.EncodeBlock1Sub(Bc6BlockType.Type7, block, ep0Sub1, ep1Sub1,
+						signed, out var badType7);
+					candidates++;
+					if (!badType7)
+					{
+						yield return type7Block;
+					}
+				}
+				//Type11
+				{
+					var type11Block = Bc6ModeEncoder.EncodeBlock1Sub(Bc6BlockType.Type11, block, ep0Sub1, ep1Sub1,
+						signed, out var badType11);
+					candidates++;
+					if (!badType11)
+					{
+						yield return type11Block;
+					}
+				}
+				//Type15
+				{
+					var type15Block = Bc6ModeEncoder.EncodeBlock1Sub(Bc6BlockType.Type15, block, ep0Sub1, ep1Sub1,
+						signed, out var badType15);
+					candidates++;
+					if (!badType15)
+					{
+						yield return type15Block;
+					}
+				}
+
+				var indexBlock = CreateClusterIndexBlock(block, out var numClusters, 2);
+				var best2SubsetPartitions = BptcEncodingHelpers.Rank2SubsetPartitions(indexBlock, numClusters, true);
+
+				foreach (var subsetPartition in best2SubsetPartitions)
+				{
+					Bc6EncodingHelpers.GetInitialUnscaledEndpointsForSubset(block, out var ep0, out var ep1, subsetPartition, 0);
+					Bc6EncodingHelpers.GetInitialUnscaledEndpointsForSubset(block, out var ep2, out var ep3, subsetPartition, 1);
+
+					if (!signed)
+					{
+						LeastSquares.OptimizeEndpoints2Sub(block, ref ep0, ref ep1, subsetPartition, 0);
+						LeastSquares.OptimizeEndpoints2Sub(block, ref ep2, ref ep3, subsetPartition, 1);
+					}
+
+					ep0.ClampToHalf();
+					ep1.ClampToHalf();
+					ep2.ClampToHalf();
+					ep3.ClampToHalf();
+
+					if (!signed)
+					{
+						ep0.ClampToPositive();
+						ep1.ClampToPositive();
+						ep2.ClampToPositive();
+						ep3.ClampToPositive();
+					}
+
+					foreach (var type in Bc6Block.Subsets2Types)
+					{
+						var sub2Block = Bc6ModeEncoder.EncodeBlock2Sub(type, block, ep0, ep1, ep2, ep3,
+							subsetPartition, signed, out var badTransform);
+						candidates++;
+						
+						if (!badTransform)
+						{
+							yield return sub2Block;
+						}
+
+						if (candidates >= MaxTries)
+						{
+							yield break;
+						}
+					}
+				}
+			}
+			
 			internal static Bc6Block EncodeBlock(RawBlock4X4RgbFloat block, bool signed)
 			{
-				Bc6Block result = new Bc6Block();
+				var result = new Bc6Block();
+				float bestError = 9999999;
+				
+				foreach (var candidate in GenerateCandidates(block, signed))
+				{
+					var error = block.CalculateError(candidate.Decode(signed));
+
+					if (error < bestError)
+					{
+						result = candidate;
+						bestError = error;
+					}
+
+					if (error <= TargetError)
+					{
+						break;
+					}
+				}
 
 				return result;
 			}

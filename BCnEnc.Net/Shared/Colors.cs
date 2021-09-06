@@ -311,7 +311,7 @@ namespace BCnEncoder.Shared
 		}
 
 	}
-
+	
 	public struct ColorRgbFloat : IEquatable<ColorRgbFloat>
 	{
 		public float r, g, b;
@@ -431,7 +431,7 @@ namespace BCnEncoder.Shared
 			return new Vector3(r, g, b);
 		}
 
-		public float CalcLogDist(ColorRgbFloat other)
+		internal float CalcLogDist(ColorRgbFloat other)
 		{
 			var dr = Math.Sign(other.r) * MathF.Log(1 + MathF.Abs(other.r)) - Math.Sign(r) * MathF.Log(1 + MathF.Abs(r));
 			var dg = Math.Sign(other.g) * MathF.Log(1 + MathF.Abs(other.g)) - Math.Sign(g) * MathF.Log(1 + MathF.Abs(g));
@@ -439,7 +439,7 @@ namespace BCnEncoder.Shared
 			return MathF.Sqrt((dr * dr) + (dg * dg) + (db * db));
 		}
 
-		public float CalcDist(ColorRgbFloat other)
+		internal float CalcDist(ColorRgbFloat other)
 		{
 			var dr = other.r - r;
 			var dg = other.g - g;
@@ -447,14 +447,14 @@ namespace BCnEncoder.Shared
 			return MathF.Sqrt((dr * dr) + (dg * dg) + (db * db));
 		}
 
-		public void ClampToPositive()
+		internal void ClampToPositive()
 		{
 			if (r < 0) r = 0;
 			if (g < 0) g = 0;
 			if (b < 0) b = 0;
 		}
 
-		public void ClampToHalf()
+		internal void ClampToHalf()
 		{
 			if (r < Half.MinValue) r = Half.MinValue;
 			else if (g > Half.MaxValue) g = Half.MaxValue;

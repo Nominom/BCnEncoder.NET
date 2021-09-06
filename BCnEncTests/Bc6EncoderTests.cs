@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Text;
 using BCnEncoder.Encoder;
 using BCnEncoder.Encoder.Bptc;
@@ -127,7 +128,7 @@ namespace BCnEncTests
 
 			for (var i = 0; i < indices.Length; i++)
 			{
-				var idx = block.GetColorIndex(Bc6BlockType.Type3, 1, 0, 4, i);
+				var idx = block.GetColorIndex(1, 0, 4, i);
 				Assert.Equal(indices[i], idx);
 			}
 		}
@@ -183,12 +184,12 @@ namespace BCnEncTests
 				Bc6EncodingHelpers.GetInitialUnscaledEndpointsForSubset(testBlock, out var ep2, out var ep3, bestPartition, 1);
 
 				encoded = Bc6ModeEncoder.EncodeBlock2Sub(type, testBlock, ep0, ep1, ep2, ep3, bestPartition,
-					false, 0, false, out badTransform);
+					false, out badTransform);
 			}
 			else
 			{
 				BCnEncoder.Shared.RgbBoundingBox.CreateFloat(testBlock.AsSpan, out var min, out var max);
-				encoded = Bc6ModeEncoder.EncodeBlock1Sub(type, testBlock, min, max, false, 0, false,
+				encoded = Bc6ModeEncoder.EncodeBlock1Sub(type, testBlock, min, max, false,
 					out badTransform);
 			}
 
@@ -249,12 +250,12 @@ namespace BCnEncTests
 				Bc6EncodingHelpers.GetInitialUnscaledEndpointsForSubset(testBlock, out var ep2, out var ep3, bestPartition, 1);
 
 				encoded = Bc6ModeEncoder.EncodeBlock2Sub(type, testBlock, ep0, ep1, ep2, ep3, bestPartition,
-					false, 0, true, out badTransform);
+					 true, out badTransform);
 			}
 			else
 			{
 				BCnEncoder.Shared.RgbBoundingBox.CreateFloat(testBlock.AsSpan, out var min, out var max);
-				encoded = Bc6ModeEncoder.EncodeBlock1Sub(type, testBlock, min, max, false, 0, true,
+				encoded = Bc6ModeEncoder.EncodeBlock1Sub(type, testBlock, min, max, true,
 					out badTransform);
 			}
 
@@ -296,8 +297,109 @@ namespace BCnEncTests
 		[Fact]
 		public void EncodeBalanced()
 		{
-			TestHelper.ExecuteHdrEncodingTest(HdrLoader.TestHdrKiara, CompressionFormat.Bc6S, CompressionQuality.Balanced,
+			TestHelper.ExecuteHdrEncodingTest(HdrLoader.TestHdrKiara, CompressionFormat.Bc6U, CompressionQuality.Balanced,
 				"encoding_bc6_kiara_balanced.ktx", output);
+		}
+
+		[Fact]
+		public void EncodeBestQuality()
+		{
+			TestHelper.ExecuteHdrEncodingTest(HdrLoader.TestHdrKiara, CompressionFormat.Bc6U, CompressionQuality.BestQuality,
+				"encoding_bc6_kiara_bestquality.ktx", output);
+		}
+
+		[Fact]
+		public void EncodeProbeFast()
+		{
+			TestHelper.ExecuteHdrEncodingTest(HdrLoader.TestHdrProbe, CompressionFormat.Bc6U, CompressionQuality.Fast,
+				"encoding_bc6_probe_fast.ktx", output);
+		}
+
+		[Fact]
+		public void EncodeProbeBalanced()
+		{
+			TestHelper.ExecuteHdrEncodingTest(HdrLoader.TestHdrProbe, CompressionFormat.Bc6U, CompressionQuality.Balanced,
+				"encoding_bc6_probe_balanced.ktx", output);
+		}
+
+		[Fact]
+		public void EncodeProbeBestQuality()
+		{
+			TestHelper.ExecuteHdrEncodingTest(HdrLoader.TestHdrProbe, CompressionFormat.Bc6U, CompressionQuality.BestQuality,
+				"encoding_bc6_probe_bestquality.ktx", output);
+		}
+
+		[Fact]
+		public void EncodeProbeSignedFast()
+		{
+			TestHelper.ExecuteHdrEncodingTest(HdrLoader.TestHdrProbe, CompressionFormat.Bc6S, CompressionQuality.Fast,
+				"encoding_bc6_probe_signed_fast.ktx", output);
+		}
+
+		[Fact]
+		public void EncodeProbSignedBalanced()
+		{
+			TestHelper.ExecuteHdrEncodingTest(HdrLoader.TestHdrProbe, CompressionFormat.Bc6S, CompressionQuality.Balanced,
+				"encoding_bc6_probe_signed_balanced.ktx", output);
+		}
+
+		[Fact]
+		public void EncodeProbeSignedBestQuality()
+		{
+			TestHelper.ExecuteHdrEncodingTest(HdrLoader.TestHdrProbe, CompressionFormat.Bc6S, CompressionQuality.BestQuality,
+				"encoding_bc6_probe_signed_bestquality.ktx", output);
+		}
+
+		[Fact]
+		public void EncodeToKtx()
+		{
+			var encoder = new BcEncoder();
+			encoder.OutputOptions.Quality = CompressionQuality.Fast;
+			encoder.OutputOptions.GenerateMipMaps = true;
+			encoder.OutputOptions.Format = CompressionFormat.Bc6U;
+
+			var ktx = encoder.EncodeToKtxHdr(HdrLoader.TestHdrKiara.PixelMemory);
+
+			using var fs = File.OpenWrite("encoding_bc6_ktx.ktx");
+			ktx.Write(fs);
+		}
+
+		[Fact]
+		public void EncodeToDds()
+		{
+			var encoder = new BcEncoder();
+			encoder.OutputOptions.Quality = CompressionQuality.Fast;
+			encoder.OutputOptions.GenerateMipMaps = true;
+			encoder.OutputOptions.Format = CompressionFormat.Bc6U;
+
+			var dds = encoder.EncodeToDdsHdr(HdrLoader.TestHdrKiara.PixelMemory);
+
+			using var fs = File.OpenWrite("encoding_bc6_dds.dds");
+			dds.Write(fs);
+		}
+
+		[Fact]
+		public void EncodeToRaw()
+		{
+			var encoder = new BcEncoder();
+			encoder.OutputOptions.Quality = CompressionQuality.Fast;
+			encoder.OutputOptions.GenerateMipMaps = true;
+			encoder.OutputOptions.Format = CompressionFormat.Bc6U;
+
+			var ktx = encoder.EncodeToKtxHdr(HdrLoader.TestHdrKiara.PixelMemory);
+
+			var allMips = encoder.EncodeToRawBytesHdr(HdrLoader.TestHdrKiara.PixelMemory);
+
+			Assert.True(allMips.Length > 1);
+			Assert.True(allMips.Length == ktx.MipMaps.Count);
+			
+			for (var i = 0; i < allMips.Length; i++)
+			{
+				var single = encoder.EncodeToRawBytesHdr(HdrLoader.TestHdrKiara.PixelMemory, i, out var mW, out var mH);
+
+				Assert.Equal(ktx.MipMaps[i].Faces[0].Data, single);
+				Assert.Equal(allMips[i], single);
+			}
 		}
 	}
 }

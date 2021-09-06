@@ -125,7 +125,7 @@ namespace BCnEncoder.Shared
 		{
 
 			var floats = new ColorRgbFloat[pixels.Length];
-			for (int i = 0; i < pixels.Length; i++)
+			for (var i = 0; i < pixels.Length; i++)
 			{
 				floats[i] = pixels[i].ToRgbFloat();
 			}

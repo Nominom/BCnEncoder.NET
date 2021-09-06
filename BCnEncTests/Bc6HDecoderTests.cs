@@ -36,6 +36,15 @@ namespace BCnEncTests
 				pixels[i] = new RgbaVector(decoded[i].r, decoded[i].g, decoded[i].b);
 			}
 
+			var hdr = new HdrImage((int) HdrLoader.TestHdrKiaraDds.header.dwWidth,
+				(int) HdrLoader.TestHdrKiaraDds.header.dwHeight);
+			
+			Assert.Equal(hdr.pixels.Length, decoded.Length);
+			
+			hdr.pixels = decoded;
+			using var sfs = File.OpenWrite("decoding_test_dds_bc6h.hdr");
+			hdr.Write(sfs);
+			
 			img.SaveAsPng("decoding_test_dds_bc6h.png");
 
 			TestHelper.AssertPixelsEqual(HdrLoader.TestHdrKiara.pixels, decoded, CompressionQuality.Fast, output);
@@ -56,6 +65,15 @@ namespace BCnEncTests
 			{
 				pixels[i] = new RgbaVector(decoded[i].r, decoded[i].g, decoded[i].b);
 			}
+
+			var hdr = new HdrImage((int)HdrLoader.TestHdrKiaraKtx.header.PixelWidth,
+				(int)HdrLoader.TestHdrKiaraKtx.header.PixelHeight);
+
+			Assert.Equal(hdr.pixels.Length, decoded.Length);
+
+			hdr.pixels = decoded;
+			using var sfs = File.OpenWrite("decoding_test_ktx_bc6h.hdr");
+			hdr.Write(sfs);
 
 			img.SaveAsPng("decoding_test_ktx_bc6h.png");
 

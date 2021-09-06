@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using BCnEncoder.Encoder;
+using BCnEncoder.Shared;
 using BCnEncTests.Support;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;

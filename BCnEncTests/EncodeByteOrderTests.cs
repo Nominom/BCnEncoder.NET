@@ -36,7 +36,7 @@ namespace BCnEncTests
 
 			var decoded = decoder.DecodeToImageRgba32(ms);
 
-			bool hasNoAlpha = pixelFormat == PixelFormat.Rgb24 || pixelFormat == PixelFormat.Bgr24;
+			var hasNoAlpha = pixelFormat == PixelFormat.Rgb24 || pixelFormat == PixelFormat.Bgr24;
 
 			TestHelper.AssertImagesEqual(imageOrig, decoded, encoder.OutputOptions.Quality,
 				!hasNoAlpha);

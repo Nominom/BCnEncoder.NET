@@ -1,14 +1,16 @@
 using System;
-using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
-using BCnEncoder.Shared;
+using Microsoft.Toolkit.HighPerformance.Memory;
 
-namespace BCnEncTests.Support
+namespace BCnEncoder.Shared
 {
 	/// <summary>
-	/// Reads .hdr RGBE/Radiance HDR files. File format by Gregory Ward
+	/// Reads and writes .hdr RGBE/Radiance HDR files. File format by Gregory Ward.
+	/// This class is experimental, incomplete and probably going to be removed in a future version.
+	/// Use only if you don't have anything better.
 	/// </summary>
 	public class HdrImage
 	{
@@ -24,6 +26,36 @@ namespace BCnEncTests.Support
 		public int height;
 
 		public ColorRgbFloat[] pixels;
+
+		/// <summary>
+		/// Gets a span2D over the <see cref="pixels"/> array.
+		/// </summary>
+		public Span2D<ColorRgbFloat> PixelSpan => new Span2D<ColorRgbFloat>(pixels, height, width);
+		/// <summary>
+		/// Gets a span2D over the <see cref="pixels"/> array.
+		/// </summary>
+		public Memory2D<ColorRgbFloat> PixelMemory => new Memory2D<ColorRgbFloat>(pixels, height, width);
+
+		public HdrImage() {}
+
+		public HdrImage(int width, int height, float exposure = 0, float gamma = 0)
+		{
+			this.width = width;
+			this.height = height;
+			this.exposure = exposure;
+			this.gamma = gamma;
+			this.pixels = new ColorRgbFloat[width * height];
+		}
+
+		public HdrImage(Span2D<ColorRgbFloat> pixels, float exposure = 0, float gamma = 0)
+		{
+			this.width = pixels.Width;
+			this.height = pixels.Height;
+			this.exposure = exposure;
+			this.gamma = gamma;
+			this.pixels = new ColorRgbFloat[width * height];
+			pixels.CopyTo(this.pixels);
+		}
 
 		// StreamReader class does not work. Have to use custom string reading.
 		private static string ReadFromStream(Stream stream)
@@ -43,16 +75,37 @@ namespace BCnEncTests.Support
 			} while (c != (char)10);
 			return new string(buffer.AsSpan().Slice(0, i)).Trim();
 		}
+		
+		private static void WriteLineToStream(BinaryWriter br, string s)
+		{
+			foreach (var c in s)
+			{
+				var b = (byte) c;
+				br.Write(b);
+			}
+			br.Write((byte)10);
+		}
 
+		/// <summary>
+		/// Read a Radiance HDR image by filename.
+		/// Just calls <see cref="Read(Stream)"/> internally.
+		/// </summary>
+		/// <param name="filename">The filename or path of the image</param>
+		/// <returns>A new HdrImage with the data</returns>
 		public static HdrImage Read(string filename)
 		{
 			using var fs = File.OpenRead(filename);
 			return Read(fs);
 		}
 
+		/// <summary>
+		/// Read a Radiance HDR image from a stream
+		/// </summary>
+		/// <param name="stream">The stream to read from</param>
+		/// <returns>A new HdrImage with the data</returns>
 		public static HdrImage Read(Stream stream)
 		{
-			HdrImage image = new HdrImage();
+			var image = new HdrImage();
 
 			var line = ReadFromStream(stream);
 
@@ -96,12 +149,12 @@ namespace BCnEncTests.Support
 
 				else if (line.StartsWith("EXPOSURE="))
 				{
-					image.exposure = float.Parse(line.Replace("EXPOSURE=", ""));
+					image.exposure = float.Parse(line.Replace("EXPOSURE=", "").Trim(), CultureInfo.InvariantCulture);
 				}
 
 				else if (line.StartsWith("GAMMA="))
 				{
-					image.gamma = float.Parse(line.Replace("GAMMA=", ""));
+					image.gamma = float.Parse(line.Replace("GAMMA=", "").Trim(), CultureInfo.InvariantCulture);
 				}
 
 			} while (true);
@@ -138,7 +191,7 @@ namespace BCnEncTests.Support
 			return image;
 		}
 
-		
+
 		private static void RleReadChannel(BinaryReader br, Span<byte> dest, int width)
 		{
 			var i = 0;
@@ -210,7 +263,7 @@ namespace BCnEncTests.Support
 
 					for (var x = 0; x < width; x++)
 					{
-						ColorRgbe color = new ColorRgbe(
+						var color = new ColorRgbe(
 							bytes[x + width * 0],
 							bytes[x + width * 1],
 							bytes[x + width * 2],
@@ -227,7 +280,7 @@ namespace BCnEncTests.Support
 
 					for (var x = 0; x < width; x++)
 					{
-						ColorRgbe color = new ColorRgbe(
+						var color = new ColorRgbe(
 							bytes[4 * x + 0],
 							bytes[4 * x + 1],
 							bytes[4 * x + 2],
@@ -236,6 +289,54 @@ namespace BCnEncTests.Support
 
 						destImage.pixels[y * width + x] = color.ToColorRgbFloat(destImage.exposure);
 					}
+				}
+			}
+		}
+
+		/// <summary>
+		/// Write this file to a stream.
+		/// </summary>
+		/// <param name="stream">The stream to write it to.</param>
+		public void Write(Stream stream)
+		{
+			using var br = new BinaryWriter(stream, Encoding.ASCII, true);
+
+			WriteLineToStream(br, "#?RADIANCE");
+			WriteLineToStream(br, "# BCnEncoder.Net HdrImage");
+			WriteLineToStream(br, "FORMAT=32-bit_rle_rgbe");
+			if (exposure > 0)
+			{
+				WriteLineToStream(br, "EXPOSURE=" + exposure.ToString(CultureInfo.InvariantCulture));
+			}
+			if (gamma > 0)
+			{
+				WriteLineToStream(br, "GAMMA=" + gamma.ToString(CultureInfo.InvariantCulture));
+			}
+			
+			WriteLineToStream(br, ""); // Start data with empty row
+			WriteLineToStream(br, $"-Y {height} +X {width}");
+			
+			WritePixels(br);
+		}
+
+		private void WritePixels(BinaryWriter br)
+		{
+			var buffer = new byte[4];
+			var span = PixelSpan;
+			
+			for (var y = 0; y < height; y++)
+			{
+				for (var x = 0; x < width; x++)
+				{
+					var pixel = span[y, x];
+					var rgbe = new ColorRgbe(pixel);
+					
+					buffer[0] = rgbe.r;
+					buffer[1] = rgbe.g;
+					buffer[2] = rgbe.b;
+					buffer[3] = rgbe.e;
+
+					br.Write(buffer);
 				}
 			}
 		}

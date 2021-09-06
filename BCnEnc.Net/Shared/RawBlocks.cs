@@ -173,7 +173,7 @@ namespace BCnEncoder.Shared
 
 			}
 
-			error /= pix1.Length;
+			error /= pix1.Length * 3;
 			error = MathF.Sqrt(error);
 
 			return error;
