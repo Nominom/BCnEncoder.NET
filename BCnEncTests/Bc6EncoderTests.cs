@@ -7,7 +7,7 @@ using BCnEncoder.Encoder;
 using BCnEncoder.Encoder.Bptc;
 using BCnEncoder.Shared;
 using BCnEncTests.Support;
-using Microsoft.Toolkit.HighPerformance.Extensions;
+using Microsoft.Toolkit.HighPerformance;
 using Xunit;
 using Xunit.Abstractions;
 
