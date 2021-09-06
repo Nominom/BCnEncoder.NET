@@ -1,6 +1,5 @@
 using System;
-using Microsoft.Toolkit.HighPerformance.Extensions;
-using Microsoft.Toolkit.HighPerformance.Memory;
+using Microsoft.Toolkit.HighPerformance;
 
 namespace BCnEncoder.Shared
 {
