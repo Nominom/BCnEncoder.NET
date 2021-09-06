@@ -65,6 +65,35 @@ using FileStream outFs = File.OpenWrite("decoding_test_bc1.png");
 image.SaveAsPng(outFs);
 ```
 
+How to encode an HDR image with BC6H. 
+(HdrImage class reads and writes Radiance HDR files. This class is experimental and subject to be removed)
+```CSharp
+HdrImage image = HdrImage.Read("example.hdr");
+			
+BcEncoder encoder = new BcEncoder();
+
+encoder.OutputOptions.GenerateMipMaps = true;
+encoder.OutputOptions.Quality = CompressionQuality.Balanced;
+encoder.OutputOptions.Format = CompressionFormat.Bc6U;
+encoder.OutputOptions.FileFormat = OutputFileFormat.Ktx; //Change to Dds for a dds file.
+
+using FileStream fs = File.OpenWrite("example.ktx");
+encoder.EncodeToStreamHdr(image.PixelMemory, fs);
+```
+
+How to decode a BC6H encoded file.
+```CSharp
+using FileStream fs = File.OpenRead("compressed_bc6.ktx");
+
+BcDecoder decoder = new BcDecoder();
+Memory2D<ColorRgbFloat> pixels = decoder.DecodeHdr2D(fs);
+
+HdrImage image = new HdrImage(pixels.Span);
+
+using FileStream outFs = File.OpenWrite("decoded.hdr");
+image.Write(outFs);
+```
+
 # TO-DO
 
 - [x] BC1 / DXT1 Encoding Without Alpha
