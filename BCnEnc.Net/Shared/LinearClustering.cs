@@ -124,10 +124,13 @@ namespace BCnEncoder.Shared
 			int clusters, float m = 10, int maxIterations = 10, bool enforceConnectivity = true)
 		{
 
-			if (clusters < 2)
+			var floats = new ColorRgbFloat[pixels.Length];
+			for (var i = 0; i < pixels.Length; i++)
 			{
-				throw new ArgumentException("Number of clusters should be more than 1");
+				floats[i] = pixels[i].ToRgbFloat();
 			}
+
+			return ClusterPixels(floats, width, height, clusters, m, maxIterations, enforceConnectivity);
 
 			//Grid interval S
 			var s = MathF.Sqrt(pixels.Length / (float)clusters);
@@ -192,6 +195,87 @@ namespace BCnEncoder.Shared
 				clusterIndices = EnforceConnectivity(clusterIndices, width, height, clusters);
 			}
 			
+			return clusterIndices;
+		}
+
+		/// <summary>
+		/// The greater the value of M,
+		/// the more spatial proximity is emphasized and the more compact the cluster,
+		/// M should be in range of 1 to 20.
+		/// </summary>
+		public static int[] ClusterPixels(ReadOnlySpan<ColorRgbFloat> pixels, int width, int height,
+			int clusters, float m = 10, int maxIterations = 10, bool enforceConnectivity = true)
+		{
+
+			if (clusters < 2)
+			{
+				throw new ArgumentException("Number of clusters should be more than 1");
+			}
+
+			//Grid interval S
+			var s = MathF.Sqrt(pixels.Length / (float)clusters);
+			var clusterIndices = new int[pixels.Length];
+
+			var labXys = ConvertToLabXy(pixels, width, height);
+
+
+			Span<ClusterCenter> clusterCenters = InitialClusterCenters(width, height, clusters, s, labXys);
+			Span<ClusterCenter> previousCenters = new ClusterCenter[clusters];
+
+			float error = 999;
+			const float threshold = 0.1f;
+			var iter = 0;
+			while (error > threshold)
+			{
+				if (maxIterations > 0 && iter >= maxIterations)
+				{
+					break;
+				}
+				iter++;
+
+				clusterCenters.CopyTo(previousCenters);
+
+				Array.Fill(clusterIndices, -1);
+
+				// Find closest cluster for pixels
+				for (var j = 0; j < clusters; j++)
+				{
+					var xL = Math.Max(0, (int)(clusterCenters[j].x - s));
+					var xH = Math.Min(width, (int)(clusterCenters[j].x + s));
+					var yL = Math.Max(0, (int)(clusterCenters[j].y - s));
+					var yH = Math.Min(height, (int)(clusterCenters[j].y + s));
+
+					for (var x = xL; x < xH; x++)
+					{
+						for (var y = yL; y < yH; y++)
+						{
+							var i = x + y * width;
+
+							if (clusterIndices[i] == -1)
+							{
+								clusterIndices[i] = j;
+							}
+							else
+							{
+								var prevDistance = clusterCenters[clusterIndices[i]].Distance(labXys[i], m, s);
+								var distance = clusterCenters[j].Distance(labXys[i], m, s);
+								if (distance < prevDistance)
+								{
+									clusterIndices[i] = j;
+								}
+							}
+						}
+					}
+				}
+
+				error = RecalculateCenters(clusters, m, labXys, clusterIndices, previousCenters, s, ref clusterCenters);
+			}
+
+			if (enforceConnectivity)
+			{
+				clusterIndices = EnforceConnectivity(clusterIndices, width, height, clusters);
+			}
+
 			return clusterIndices;
 		}
 
@@ -292,6 +376,30 @@ namespace BCnEncoder.Shared
 		}
 
 		private static LabXy[] ConvertToLabXy(ReadOnlySpan<ColorRgba32> pixels, int width, int height)
+		{
+			var labXys = new LabXy[pixels.Length];
+			//Convert pixels to LabXy
+			for (var x = 0; x < width; x++)
+			{
+				for (var y = 0; y < height; y++)
+				{
+					var i = x + y * width;
+					var lab = new ColorLab(pixels[i]);
+					labXys[i] = new LabXy
+					{
+						l = lab.l,
+						a = lab.a,
+						b = lab.b,
+						x = x,
+						y = y
+					};
+				}
+			}
+
+			return labXys;
+		}
+
+		private static LabXy[] ConvertToLabXy(ReadOnlySpan<ColorRgbFloat> pixels, int width, int height)
 		{
 			var labXys = new LabXy[pixels.Length];
 			//Convert pixels to LabXy

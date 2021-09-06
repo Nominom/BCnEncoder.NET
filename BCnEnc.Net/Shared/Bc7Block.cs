@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using BCnEncoder.Encoder.Bptc;
 
 namespace BCnEncoder.Shared
 {
@@ -22,10 +23,6 @@ namespace BCnEncoder.Shared
 	{
 		public ulong lowBits;
 		public ulong highBits;
-
-		public static ReadOnlySpan<byte> ColorInterpolationWeights2 => new byte[] { 0, 21, 43, 64 };
-		public static ReadOnlySpan<byte> ColorInterpolationWeights3 => new byte[] { 0, 9, 18, 27, 37, 46, 55, 64 };
-		public static ReadOnlySpan<byte> ColorInterpolationWeights4 => new byte[] { 0, 4, 9, 13, 17, 21, 26, 30, 34, 38, 43, 47, 51, 55, 60, 64 };
 
 
 		public static readonly int[][] Subsets2PartitionTable = {
@@ -194,6 +191,8 @@ namespace BCnEncoder.Shared
 			15, 3, 15, 15, 15, 15, 15, 15,
 			15, 15, 15, 15, 3, 15, 15, 8
 		};
+
+		public static readonly RawBlock4X4Rgba32 ErrorBlock = new RawBlock4X4Rgba32(new ColorRgba32(255, 0, 255));
 
 		public Bc7BlockType Type
 		{
@@ -733,26 +732,11 @@ namespace BCnEncoder.Shared
 		private ColorRgba32 InterpolateColor(ColorRgba32 endPointStart, ColorRgba32 endPointEnd,
 			int colorIndex, int alphaIndex, int colorBitCount, int alphaBitCount)
 		{
-			
-			byte InterpolateByte(byte e0, byte e1, int index, int indexPrecision) {
-				if (indexPrecision == 0) return e0;
-				var aWeights2 = ColorInterpolationWeights2;
-				var aWeights3 = ColorInterpolationWeights3;
-				var aWeights4 = ColorInterpolationWeights4;
-
-				if(indexPrecision == 2)
-					return (byte) (((64 - aWeights2[index])* e0 + aWeights2[index]*e1 + 32) >> 6);
-				else if(indexPrecision == 3)
-					return (byte) (((64 - aWeights3[index])*e0 + aWeights3[index]*e1 + 32) >> 6);
-				else // indexprecision == 4
-					return (byte) (((64 - aWeights4[index])*e0 + aWeights4[index]*e1 + 32) >> 6);
-			}
-
 			var result = new ColorRgba32(
-				InterpolateByte(endPointStart.r, endPointEnd.r, colorIndex, colorBitCount),
-				InterpolateByte(endPointStart.g, endPointEnd.g, colorIndex, colorBitCount),
-				InterpolateByte(endPointStart.b, endPointEnd.b, colorIndex, colorBitCount),
-				InterpolateByte(endPointStart.a, endPointEnd.a, alphaIndex, alphaBitCount)
+				BptcEncodingHelpers.InterpolateByte(endPointStart.r, endPointEnd.r, colorIndex, colorBitCount),
+				BptcEncodingHelpers.InterpolateByte(endPointStart.g, endPointEnd.g, colorIndex, colorBitCount),
+				BptcEncodingHelpers.InterpolateByte(endPointStart.b, endPointEnd.b, colorIndex, colorBitCount),
+				BptcEncodingHelpers.InterpolateByte(endPointStart.a, endPointEnd.a, alphaIndex, alphaBitCount)
 				);
 
 			return result;
@@ -784,6 +768,11 @@ namespace BCnEncoder.Shared
 			var output = new RawBlock4X4Rgba32();
 			var type = Type;
 
+			if (type == Bc7BlockType.Type8Reserved)
+			{
+				return ErrorBlock;
+			}
+
 			////decode partition data from explicit partition bits
 			//subset_index = 0;
 			var numSubsets = 1;
@@ -793,7 +782,6 @@ namespace BCnEncoder.Shared
 			{
 				numSubsets = NumSubsets;
 				partitionIndex = PartitionSetId;
-				//subset_index = get_partition_index(num_subsets, partition_set_id, x, y);
 			}
 
 			var pixels = output.AsSpan;
@@ -1175,7 +1163,6 @@ namespace BCnEncoder.Shared
 
 					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 
 						colorIndexBegin + indexOffset, indexBitCount, indices[i]);
-				
 			}
 		}
 

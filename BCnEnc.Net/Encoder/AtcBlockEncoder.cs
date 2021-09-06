@@ -3,7 +3,7 @@ using BCnEncoder.Shared.ImageFiles;
 
 namespace BCnEncoder.Encoder
 {
-	internal unsafe class AtcBlockEncoder : BaseBcBlockEncoder<AtcBlock>
+	internal unsafe class AtcBlockEncoder : BaseBcBlockEncoder<AtcBlock, RawBlock4X4Rgba32>
 	{
 		private readonly Bc1BlockEncoder bc1BlockEncoder;
 
@@ -52,7 +52,7 @@ namespace BCnEncoder.Encoder
 		}
 	}
 
-	internal class AtcExplicitAlphaBlockEncoder : BaseBcBlockEncoder<AtcExplicitAlphaBlock>
+	internal class AtcExplicitAlphaBlockEncoder : BaseBcBlockEncoder<AtcExplicitAlphaBlock, RawBlock4X4Rgba32>
 	{
 		private readonly AtcBlockEncoder atcBlockEncoder;
 
@@ -95,7 +95,7 @@ namespace BCnEncoder.Encoder
 		}
 	}
 
-	internal class AtcInterpolatedAlphaBlockEncoder : BaseBcBlockEncoder<AtcInterpolatedAlphaBlock>
+	internal class AtcInterpolatedAlphaBlockEncoder : BaseBcBlockEncoder<AtcInterpolatedAlphaBlock, RawBlock4X4Rgba32>
 	{
 		private readonly Bc4ComponentBlockEncoder bc4BlockEncoder;
 		private readonly AtcBlockEncoder atcBlockEncoder;

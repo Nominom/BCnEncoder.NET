@@ -8,21 +8,18 @@ using BCnEncoder.Shared;
 
 namespace BCnEncoder.Decoder
 {
-	internal interface IBcBlockDecoder
+	internal interface IBcBlockDecoder<T> where T : unmanaged
 	{
-		RawBlock4X4Rgba32[] Decode(ReadOnlyMemory<byte> data, OperationContext context);
-		RawBlock4X4Rgba32 DecodeBlock(ReadOnlySpan<byte> data);
+		T[] Decode(ReadOnlyMemory<byte> data, OperationContext context);
+		T DecodeBlock(ReadOnlySpan<byte> data);
 	}
 
-	internal abstract class BaseBcBlockDecoder<T> : IBcBlockDecoder where T : unmanaged
+	internal abstract class BaseBcBlockDecoder<T, TBlock> : IBcBlockDecoder<TBlock> where T : unmanaged where TBlock : unmanaged
 	{
 		private static readonly object lockObj = new object();
 
-		public RawBlock4X4Rgba32[] Decode(ReadOnlyMemory<byte> data, OperationContext context)
+		public TBlock[] Decode(ReadOnlyMemory<byte> data, OperationContext context)
 		{
-			// calculate number of 4x4 blocks by padding width/height to a multiple of 4 and shift it right by 2
-			//blockWidth = ((pixelWidth + 3) & ~3) >> 2;
-			//blockHeight = ((pixelHeight + 3) & ~3) >> 2;
 
 			if (data.Length % Unsafe.SizeOf<T>() != 0)
 			{
@@ -30,7 +27,7 @@ namespace BCnEncoder.Decoder
 			}
 
 			var blockCount = data.Length / Unsafe.SizeOf<T>();
-			var output = new RawBlock4X4Rgba32[blockCount];
+			var output = new TBlock[blockCount];
 
 			var currentBlocks = 0;
 			if (context.IsParallel)
@@ -70,16 +67,16 @@ namespace BCnEncoder.Decoder
 			return output;
 		}
 
-		public RawBlock4X4Rgba32 DecodeBlock(ReadOnlySpan<byte> data)
+		public TBlock DecodeBlock(ReadOnlySpan<byte> data)
 		{
 			var encodedBlock = MemoryMarshal.Cast<byte, T>(data)[0];
 			return DecodeBlock(encodedBlock);
 		}
 
-		protected abstract RawBlock4X4Rgba32 DecodeBlock(T block);
+		protected abstract TBlock DecodeBlock(T block);
 	}
 
-	internal class Bc1NoAlphaDecoder : BaseBcBlockDecoder<Bc1Block>
+	internal class Bc1NoAlphaDecoder : BaseBcBlockDecoder<Bc1Block, RawBlock4X4Rgba32>
 	{
 		protected override RawBlock4X4Rgba32 DecodeBlock(Bc1Block block)
 		{
@@ -87,7 +84,7 @@ namespace BCnEncoder.Decoder
 		}
 	}
 
-	internal class Bc1ADecoder : BaseBcBlockDecoder<Bc1Block>
+	internal class Bc1ADecoder : BaseBcBlockDecoder<Bc1Block, RawBlock4X4Rgba32>
 	{
 		protected override RawBlock4X4Rgba32 DecodeBlock(Bc1Block block)
 		{
@@ -95,7 +92,7 @@ namespace BCnEncoder.Decoder
 		}
 	}
 
-	internal class Bc2Decoder : BaseBcBlockDecoder<Bc2Block>
+	internal class Bc2Decoder : BaseBcBlockDecoder<Bc2Block, RawBlock4X4Rgba32>
 	{
 		protected override RawBlock4X4Rgba32 DecodeBlock(Bc2Block block)
 		{
@@ -103,7 +100,7 @@ namespace BCnEncoder.Decoder
 		}
 	}
 
-	internal class Bc3Decoder : BaseBcBlockDecoder<Bc3Block>
+	internal class Bc3Decoder : BaseBcBlockDecoder<Bc3Block, RawBlock4X4Rgba32>
 	{
 		protected override RawBlock4X4Rgba32 DecodeBlock(Bc3Block block)
 		{
@@ -111,7 +108,7 @@ namespace BCnEncoder.Decoder
 		}
 	}
 
-	internal class Bc4Decoder : BaseBcBlockDecoder<Bc4Block>
+	internal class Bc4Decoder : BaseBcBlockDecoder<Bc4Block, RawBlock4X4Rgba32>
 	{
 		private readonly ColorComponent component;
 
@@ -126,7 +123,7 @@ namespace BCnEncoder.Decoder
 		}
 	}
 
-	internal class Bc5Decoder : BaseBcBlockDecoder<Bc5Block>
+	internal class Bc5Decoder : BaseBcBlockDecoder<Bc5Block, RawBlock4X4Rgba32>
 	{
 		private readonly ColorComponent component1;
 		private readonly ColorComponent component2;
@@ -143,7 +140,23 @@ namespace BCnEncoder.Decoder
 		}
 	}
 
-	internal class Bc7Decoder : BaseBcBlockDecoder<Bc7Block>
+	internal class Bc6UDecoder : BaseBcBlockDecoder<Bc6Block, RawBlock4X4RgbFloat>
+	{
+		protected override RawBlock4X4RgbFloat DecodeBlock(Bc6Block block)
+		{
+			return block.Decode(false);
+		}
+	}
+
+	internal class Bc6SDecoder : BaseBcBlockDecoder<Bc6Block, RawBlock4X4RgbFloat>
+	{
+		protected override RawBlock4X4RgbFloat DecodeBlock(Bc6Block block)
+		{
+			return block.Decode(true);
+		}
+	}
+
+	internal class Bc7Decoder : BaseBcBlockDecoder<Bc7Block, RawBlock4X4Rgba32>
 	{
 		protected override RawBlock4X4Rgba32 DecodeBlock(Bc7Block block)
 		{
@@ -151,7 +164,7 @@ namespace BCnEncoder.Decoder
 		}
 	}
 
-	internal class AtcDecoder : BaseBcBlockDecoder<AtcBlock>
+	internal class AtcDecoder : BaseBcBlockDecoder<AtcBlock, RawBlock4X4Rgba32>
 	{
 		protected override RawBlock4X4Rgba32 DecodeBlock(AtcBlock block)
 		{
@@ -159,7 +172,7 @@ namespace BCnEncoder.Decoder
 		}
 	}
 
-	internal class AtcExplicitAlphaDecoder : BaseBcBlockDecoder<AtcExplicitAlphaBlock>
+	internal class AtcExplicitAlphaDecoder : BaseBcBlockDecoder<AtcExplicitAlphaBlock, RawBlock4X4Rgba32>
 	{
 		protected override RawBlock4X4Rgba32 DecodeBlock(AtcExplicitAlphaBlock block)
 		{
@@ -167,7 +180,7 @@ namespace BCnEncoder.Decoder
 		}
 	}
 
-	internal class AtcInterpolatedAlphaDecoder : BaseBcBlockDecoder<AtcInterpolatedAlphaBlock>
+	internal class AtcInterpolatedAlphaDecoder : BaseBcBlockDecoder<AtcInterpolatedAlphaBlock, RawBlock4X4Rgba32>
 	{
 		protected override RawBlock4X4Rgba32 DecodeBlock(AtcInterpolatedAlphaBlock block)
 		{

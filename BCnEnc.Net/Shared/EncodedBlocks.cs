@@ -5,7 +5,7 @@ using BCnEncoder.Encoder;
 namespace BCnEncoder.Shared
 {
 	[StructLayout(LayoutKind.Sequential)]
-	internal unsafe struct Bc1Block
+	internal struct Bc1Block
 	{
 		public ColorRgb565 color0;
 		public ColorRgb565 color1;
@@ -65,7 +65,7 @@ namespace BCnEncoder.Shared
 	}
 
 	[StructLayout(LayoutKind.Sequential)]
-	internal unsafe struct Bc2Block
+	internal struct Bc2Block
 	{
 		public Bc2AlphaBlock alphaBlock;
 		public ColorRgb565 color0;
@@ -114,7 +114,7 @@ namespace BCnEncoder.Shared
 	}
 
 	[StructLayout(LayoutKind.Sequential)]
-	internal unsafe struct Bc3Block
+	internal struct Bc3Block
 	{
 		public Bc4ComponentBlock alphaBlock;
 		public ColorRgb565 color0;
@@ -270,7 +270,7 @@ namespace BCnEncoder.Shared
 	}
 
 	[StructLayout(LayoutKind.Sequential)]
-	internal unsafe struct AtcBlock
+	internal struct AtcBlock
 	{
 		public ColorRgb555 color0;
 		public ColorRgb565 color1;
@@ -338,7 +338,7 @@ namespace BCnEncoder.Shared
 	}
 
 	[StructLayout(LayoutKind.Sequential)]
-	internal unsafe struct Bc4ComponentBlock
+	internal struct Bc4ComponentBlock
 	{
 		public ulong componentBlock;
 

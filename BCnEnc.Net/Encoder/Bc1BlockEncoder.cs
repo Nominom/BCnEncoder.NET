@@ -4,7 +4,7 @@ using BCnEncoder.Shared.ImageFiles;
 
 namespace BCnEncoder.Encoder
 {
-	internal class Bc1BlockEncoder : BaseBcBlockEncoder<Bc1Block>
+	internal class Bc1BlockEncoder : BaseBcBlockEncoder<Bc1Block, RawBlock4X4Rgba32>
 	{
 		public override Bc1Block EncodeBlock(RawBlock4X4Rgba32 block, CompressionQuality quality)
 		{
@@ -218,7 +218,7 @@ namespace BCnEncoder.Encoder
 		#endregion
 	}
 
-	internal class Bc1AlphaBlockEncoder : BaseBcBlockEncoder<Bc1Block>
+	internal class Bc1AlphaBlockEncoder : BaseBcBlockEncoder<Bc1Block, RawBlock4X4Rgba32>
 	{
 		public override Bc1Block EncodeBlock(RawBlock4X4Rgba32 block, CompressionQuality quality)
 		{

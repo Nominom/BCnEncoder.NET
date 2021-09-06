@@ -47,13 +47,17 @@ namespace BCnEncoder.Shared
         /// </summary>
         Bc5,
         /// <summary>
-        /// BC6H / BPTC float encoding. Can compress HDR textures without alpha. Currently not supported.
+        /// BC6H / BPTC unsigned float encoding. Can compress HDR textures without alpha. Does not support negative values.
         /// </summary>
-        Bc6,
-        /// <summary>
-        /// BC7 / BPTC unorm encoding. Very high Quality rgba or rgb encoding. Also very slow.
-        /// </summary>
-        Bc7,
+        Bc6U,
+		/// <summary>
+		/// BC6H / BPTC signed float encoding. Can compress HDR textures without alpha. Supports negative values.
+		/// </summary>
+		Bc6S,
+		/// <summary>
+		/// BC7 / BPTC unorm encoding. Very high Quality rgba or rgb encoding. Also very slow.
+		/// </summary>
+		Bc7,
 		/// <summary>
 		/// ATC / Adreno Texture Compression encoding. Derivative of BC1.
 		/// </summary>
@@ -65,7 +69,11 @@ namespace BCnEncoder.Shared
 		/// <summary>
 		/// ATC / Adreno Texture Compression encoding. Derivative of BC3. Good for smooth alpha transitions.
 		/// </summary>
-		AtcInterpolatedAlpha
+		AtcInterpolatedAlpha,
+		/// <summary>
+		/// Unknown format
+		/// </summary>
+		Unknown
 	}
 
     public static class CompressionFormatExtensions
@@ -85,5 +93,18 @@ namespace BCnEncoder.Shared
                     return true;
             }
         }
-    }
+
+		public static bool IsHdrFormat(this CompressionFormat format)
+		{
+			switch (format)
+			{
+				case CompressionFormat.Bc6S:
+				case CompressionFormat.Bc6U:
+					return true;
+
+				default:
+					return false;
+			}
+		}
+	}
 }

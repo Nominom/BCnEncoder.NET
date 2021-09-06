@@ -180,6 +180,11 @@ namespace BCnEncoder.Shared
 		{
 			return new ColorRgbaFloat(this);
 		}
+
+		public readonly ColorRgbFloat ToRgbFloat()
+		{
+			return new ColorRgbFloat(this);
+		}
 	}
 
 	internal struct ColorRgbaFloat : IEquatable<ColorRgbaFloat>
@@ -306,6 +311,159 @@ namespace BCnEncoder.Shared
 		}
 
 	}
+	
+	public struct ColorRgbFloat : IEquatable<ColorRgbFloat>
+	{
+		public float r, g, b;
+
+		public ColorRgbFloat(float r, float g, float b)
+		{
+			this.r = r;
+			this.g = g;
+			this.b = b;
+		}
+
+		public ColorRgbFloat(ColorRgba32 other)
+		{
+			this.r = other.r / 255f;
+			this.g = other.g / 255f;
+			this.b = other.b / 255f;
+		}
+
+		public ColorRgbFloat(Vector3 vector)
+		{
+			r = vector.X;
+			g = vector.Y;
+			b = vector.Z;
+		}
+
+		public bool Equals(ColorRgbFloat other)
+		{
+			return r == other.r && g == other.g && b == other.b;
+		}
+
+		public override bool Equals(object obj)
+		{
+			return obj is ColorRgbFloat other && Equals(other);
+		}
+
+		public override int GetHashCode()
+		{
+			unchecked
+			{
+				var hashCode = r.GetHashCode();
+				hashCode = (hashCode * 397) ^ g.GetHashCode();
+				hashCode = (hashCode * 397) ^ b.GetHashCode();
+				return hashCode;
+			}
+		}
+
+		public static bool operator ==(ColorRgbFloat left, ColorRgbFloat right)
+		{
+			return left.Equals(right);
+		}
+
+		public static bool operator !=(ColorRgbFloat left, ColorRgbFloat right)
+		{
+			return !left.Equals(right);
+		}
+
+		public static ColorRgbFloat operator +(ColorRgbFloat left, ColorRgbFloat right)
+		{
+			return new ColorRgbFloat(
+				left.r + right.r,
+				left.g + right.g,
+				left.b + right.b);
+		}
+
+		public static ColorRgbFloat operator -(ColorRgbFloat left, ColorRgbFloat right)
+		{
+			return new ColorRgbFloat(
+				left.r - right.r,
+				left.g - right.g,
+				left.b - right.b);
+		}
+
+		public static ColorRgbFloat operator /(ColorRgbFloat left, float right)
+		{
+			return new ColorRgbFloat(
+				left.r / right,
+				left.g / right,
+				left.b / right
+			);
+		}
+
+		public static ColorRgbFloat operator *(ColorRgbFloat left, float right)
+		{
+			return new ColorRgbFloat(
+				left.r * right,
+				left.g * right,
+				left.b * right
+			);
+		}
+
+		public static ColorRgbFloat operator *(float left, ColorRgbFloat right)
+		{
+			return new ColorRgbFloat(
+				right.r * left,
+				right.g * left,
+				right.b * left
+			);
+		}
+
+		public override string ToString()
+		{
+			return $"r : {r:0.00} g : {g:0.00} b : {b:0.00}";
+		}
+
+		public ColorRgba32 ToRgba32()
+		{
+			return new ColorRgba32(
+				(byte)(ByteHelper.ClampToByte(r * 255)),
+				(byte)(ByteHelper.ClampToByte(g * 255)),
+				(byte)(ByteHelper.ClampToByte(b * 255)),
+				255
+				);
+		}
+
+		public Vector3 ToVector3()
+		{
+			return new Vector3(r, g, b);
+		}
+
+		internal float CalcLogDist(ColorRgbFloat other)
+		{
+			var dr = Math.Sign(other.r) * MathF.Log(1 + MathF.Abs(other.r)) - Math.Sign(r) * MathF.Log(1 + MathF.Abs(r));
+			var dg = Math.Sign(other.g) * MathF.Log(1 + MathF.Abs(other.g)) - Math.Sign(g) * MathF.Log(1 + MathF.Abs(g));
+			var db = Math.Sign(other.b) * MathF.Log(1 + MathF.Abs(other.b)) - Math.Sign(b) * MathF.Log(1 + MathF.Abs(b));
+			return MathF.Sqrt((dr * dr) + (dg * dg) + (db * db));
+		}
+
+		internal float CalcDist(ColorRgbFloat other)
+		{
+			var dr = other.r - r;
+			var dg = other.g - g;
+			var db = other.b - b;
+			return MathF.Sqrt((dr * dr) + (dg * dg) + (db * db));
+		}
+
+		internal void ClampToPositive()
+		{
+			if (r < 0) r = 0;
+			if (g < 0) g = 0;
+			if (b < 0) b = 0;
+		}
+
+		internal void ClampToHalf()
+		{
+			if (r < Half.MinValue) r = Half.MinValue;
+			else if (g > Half.MaxValue) g = Half.MaxValue;
+			if (b < Half.MinValue) b = Half.MinValue;
+			else if (r > Half.MaxValue) r = Half.MaxValue;
+			if (g < Half.MinValue) g = Half.MinValue;
+			else if (b > Half.MaxValue) b = Half.MaxValue;
+		}
+	}
 
 	internal struct ColorYCbCr
 	{
@@ -325,6 +483,28 @@ namespace BCnEncoder.Shared
 			var fr = (float)rgb.r / 255;
 			var fg = (float)rgb.g / 255;
 			var fb = (float)rgb.b / 255;
+
+			y = 0.2989f * fr + 0.5866f * fg + 0.1145f * fb;
+			cb = -0.1687f * fr - 0.3313f * fg + 0.5000f * fb;
+			cr = 0.5000f * fr - 0.4184f * fg - 0.0816f * fb;
+		}
+
+		internal ColorYCbCr(ColorRgbaFloat rgb)
+		{
+			var fr = rgb.r;
+			var fg = rgb.g;
+			var fb = rgb.b;
+
+			y = 0.2989f * fr + 0.5866f * fg + 0.1145f * fb;
+			cb = -0.1687f * fr - 0.3313f * fg + 0.5000f * fb;
+			cr = 0.5000f * fr - 0.4184f * fg - 0.0816f * fb;
+		}
+
+		internal ColorYCbCr(ColorRgbFloat rgb)
+		{
+			var fr = rgb.r;
+			var fg = rgb.g;
+			var fb = rgb.b;
 
 			y = 0.2989f * fr + 0.5866f * fg + 0.1145f * fb;
 			cb = -0.1687f * fr - 0.3313f * fg + 0.5000f * fb;
@@ -893,6 +1073,18 @@ namespace BCnEncoder.Shared
 			alpha = rgba.a / 255f;
 		}
 
+		public ColorYCbCrAlpha(ColorRgbaFloat rgba)
+		{
+			var fr = rgba.r;
+			var fg = rgba.g;
+			var fb = rgba.b;
+
+			y = 0.2989f * fr + 0.5866f * fg + 0.1145f * fb;
+			cb = -0.1687f * fr - 0.3313f * fg + 0.5000f * fb;
+			cr = 0.5000f * fr - 0.4184f * fg - 0.0816f * fb;
+			alpha = rgba.a;
+		}
+
 
 		public ColorRgb565 ToColorRgb565()
 		{
@@ -959,11 +1151,35 @@ namespace BCnEncoder.Shared
 			this = ColorToXyz(color);
 		}
 
+		public ColorXyz(ColorRgbFloat color)
+		{
+			this = ColorToXyz(color);
+		}
+
+		public ColorRgbFloat ToColorRgbFloat()
+		{
+			return new ColorRgbFloat(
+				3.2404542f * x - 1.5371385f * y - 0.4985314f * z,
+				-0.9692660f * x + 1.8760108f * y + 0.0415560f * z,
+				0.0556434f * x - 0.2040259f * y + 1.0572252f * z
+			);
+		}
+
 		public static ColorXyz ColorToXyz(ColorRgb24 color)
 		{
 			var r = PivotRgb(color.r / 255.0f);
 			var g = PivotRgb(color.g / 255.0f);
 			var b = PivotRgb(color.b / 255.0f);
+
+			// Observer. = 2°, Illuminant = D65
+			return new ColorXyz(r * 0.4124f + g * 0.3576f + b * 0.1805f, r * 0.2126f + g * 0.7152f + b * 0.0722f, r * 0.0193f + g * 0.1192f + b * 0.9505f);
+		}
+
+		public static ColorXyz ColorToXyz(ColorRgbFloat color)
+		{
+			var r = PivotRgb(color.r);
+			var g = PivotRgb(color.g);
+			var b = PivotRgb(color.b);
 
 			// Observer. = 2°, Illuminant = D65
 			return new ColorXyz(r * 0.4124f + g * 0.3576f + b * 0.1805f, r * 0.2126f + g * 0.7152f + b * 0.0722f, r * 0.0193f + g * 0.1192f + b * 0.9505f);
@@ -998,6 +1214,11 @@ namespace BCnEncoder.Shared
 			this = ColorToLab(new ColorRgb24(color.r, color.g, color.b));
 		}
 
+		public ColorLab(ColorRgbFloat color)
+		{
+			this = XyzToLab(new ColorXyz(color));
+		}
+
 		public static ColorLab ColorToLab(ColorRgb24 color)
 		{
 			var xyz = new ColorXyz(color);
@@ -1022,6 +1243,96 @@ namespace BCnEncoder.Shared
 		{
 			var i = MathF.Cbrt(n);
 			return n > 0.008856f ? i : 7.787f * n + 16 / 116f;
+		}
+	}
+
+	internal struct ColorRgbe : IEquatable<ColorRgbe>
+	{
+		public byte r;
+		public byte g;
+		public byte b;
+		public byte e;
+
+		public ColorRgbe(byte r, byte g, byte b, byte e)
+		{
+			this.r = r;
+			this.g = g;
+			this.b = b;
+			this.e = e;
+		}
+
+		public ColorRgbe(ColorRgbFloat color)
+		{
+			var max = MathF.Max(color.b, MathF.Max(color.g, color.r));
+			if (max <= 1e-32f)
+			{
+				r = g = b = e = 0;
+			}
+			else
+			{
+				MathHelper.FrExp(max, out var exponent);
+				var scale = MathHelper.LdExp(1f, -exponent + 8);
+				r = (byte)(scale * color.r);
+				g = (byte)(scale * color.g);
+				b = (byte)(scale * color.b);
+				e = (byte)(exponent + 128);
+			}
+		}
+
+		public ColorRgbFloat ToColorRgbFloat(float exposure = 1.0f)
+		{
+			if (e == 0)
+			{
+				return new ColorRgbFloat(0, 0, 0);
+			}
+			else
+			{
+				var fexp = MathHelper.LdExp(1f, e - (128 + 8)) / exposure;
+
+				return new ColorRgbFloat(
+					(r + 0.5f) * fexp,
+					(g + 0.5f) * fexp,
+					(b + 0.5f) * fexp
+					);
+			}
+		}
+
+
+		public bool Equals(ColorRgbe other)
+		{
+			return r == other.r && g == other.g && b == other.b && e == other.e;
+		}
+
+		public override bool Equals(object obj)
+		{
+			return obj is ColorRgbe other && Equals(other);
+		}
+
+		public override int GetHashCode()
+		{
+			unchecked
+			{
+				var hashCode = r.GetHashCode();
+				hashCode = (hashCode * 397) ^ g.GetHashCode();
+				hashCode = (hashCode * 397) ^ b.GetHashCode();
+				hashCode = (hashCode * 397) ^ e.GetHashCode();
+				return hashCode;
+			}
+		}
+
+		public static bool operator ==(ColorRgbe left, ColorRgbe right)
+		{
+			return left.Equals(right);
+		}
+
+		public static bool operator !=(ColorRgbe left, ColorRgbe right)
+		{
+			return !left.Equals(right);
+		}
+
+		public override string ToString()
+		{
+			return $"{nameof(r)}: {r}, {nameof(g)}: {g}, {nameof(b)}: {b}, {nameof(e)}: {e}";
 		}
 	}
 }
