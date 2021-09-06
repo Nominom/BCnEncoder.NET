@@ -14,11 +14,12 @@ Supported formats are:
  - BC3 (S3TC DXT5)
  - BC4 (RGTC1)
  - BC5 (RGTC2)
+ - BC6 (BPTC_FLOAT)
  - BC7 (BPTC)
 
 # Current state
 The current state of this library is in development but quite usable. I'm planning on implementing support for more codecs and 
-different algorithms. The current version is capable of encoding and decoding BC1-BC5 and BC7 images in both KTX or DDS formats.
+different algorithms. The current version is capable of encoding and decoding BC1-BC7 images in both KTX or DDS formats.
 
 Please note, that the API might change between versions.
 # Dependencies
@@ -105,7 +106,8 @@ image.Write(outFs);
 - [x] BC7 / BPTC Encoding
 - [x] DDS file support
 - [x] Implement PCA to remove Accord.Statistics dependency
-- [ ] BC6H HDR Encoding
+- [x] BC6H HDR Encoding
+- [ ] Performance improvements
 - [ ] ETC / ETC2 Encoding?
 
 # Contributing
