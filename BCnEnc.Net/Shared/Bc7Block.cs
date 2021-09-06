@@ -192,6 +192,8 @@ namespace BCnEncoder.Shared
 			15, 15, 15, 15, 3, 15, 15, 8
 		};
 
+		public static readonly RawBlock4X4Rgba32 ErrorBlock = new RawBlock4X4Rgba32(new ColorRgba32(255, 0, 255));
+
 		public Bc7BlockType Type
 		{
 			get
@@ -765,6 +767,11 @@ namespace BCnEncoder.Shared
 		{
 			var output = new RawBlock4X4Rgba32();
 			var type = Type;
+
+			if (type == Bc7BlockType.Type8Reserved)
+			{
+				return ErrorBlock;
+			}
 
 			////decode partition data from explicit partition bits
 			//subset_index = 0;

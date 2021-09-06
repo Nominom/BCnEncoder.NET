@@ -1,12 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using BCnEncoder.Decoder;
 using BCnEncoder.Encoder;
 using BCnEncoder.Shared;
 using BCnEncTests.Support;
+using Microsoft.Toolkit.HighPerformance;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using Xunit;
@@ -147,6 +149,27 @@ namespace BCnEncTests
 			Assert.True(modes[7] > 0);
 			Assert.True(modes[11] > 0);
 			Assert.True(modes[15] > 0);
+		}
+
+		[Fact]
+		public void DecodeErrorBlock()
+		{
+			var decoder = new BcDecoder();
+
+			var width = 16;
+			var height = 16;
+			var bufferSize = decoder.GetBlockSize(CompressionFormat.Bc6U) * width * height;
+
+			var buffer = new byte[bufferSize];
+			Random r = new Random(44);
+			r.NextBytes(buffer);
+
+			var decoded = decoder.DecodeRawHdr(buffer, width * 4, height * 4, CompressionFormat.Bc6U);
+			Assert.Contains(new ColorRgbFloat(1, 0, 1), decoded);
+
+			HdrImage image = new HdrImage(new Span2D<ColorRgbFloat>(decoded, height * 4, width * 4));
+			using var fs = File.OpenWrite("test_decode_bc6h_error.hdr");
+			image.Write(fs);
 		}
 
 	}

@@ -2,8 +2,11 @@ using System;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using BCnEncoder.Decoder;
+using BCnEncoder.ImageSharp;
 using BCnEncoder.Shared;
 using BCnEncoder.Shared.ImageFiles;
+using SixLabors.ImageSharp;
 using Xunit;
 
 namespace BCnEncTests
@@ -64,6 +67,27 @@ namespace BCnEncTests
 
 			var fs = File.OpenWrite("bc7_blocktests.ktx");
 			output.Write(fs);
+		}
+
+		[Fact]
+		public void DecodeErrorBlock()
+		{
+			var decoder = new BcDecoder();
+
+			var width = 32;
+			var height = 32;
+			var bufferSize = decoder.GetBlockSize(CompressionFormat.Bc7) * width * height;
+
+			var buffer = new byte[bufferSize];
+			Random r = new Random(50);
+			r.NextBytes(buffer);
+
+			var pixels = decoder.DecodeRaw(buffer, width * 4, height * 4, CompressionFormat.Bc7);
+			var decoded = decoder.DecodeRawToImageRgba32(buffer, width * 4, height * 4, CompressionFormat.Bc7);
+			Assert.Contains(new ColorRgba32(255, 0, 255), pixels);
+
+			using var fs = File.OpenWrite("test_decode_bc7_error.png");
+			decoded.SaveAsPng(fs);
 		}
 
 		#region Type Packs

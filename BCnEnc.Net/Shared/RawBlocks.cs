@@ -11,6 +11,15 @@ namespace BCnEncoder.Shared
 		public ColorRgba32 p01, p11, p21, p31;
 		public ColorRgba32 p02, p12, p22, p32;
 		public ColorRgba32 p03, p13, p23, p33;
+
+		public RawBlock4X4Rgba32(ColorRgba32 fillColor)
+		{
+			p00 = p01 = p02 = p03 =
+				p10 = p11 = p12 = p13 =
+					p20 = p21 = p22 = p23 =
+						p30 = p31 = p32 = p33 = fillColor;
+		}
+		
 		public Span<ColorRgba32> AsSpan => MemoryMarshal.CreateSpan(ref p00, 16);
 
 		public ColorRgba32 this[int x, int y]
@@ -139,6 +148,15 @@ namespace BCnEncoder.Shared
 		public ColorRgbFloat p01, p11, p21, p31;
 		public ColorRgbFloat p02, p12, p22, p32;
 		public ColorRgbFloat p03, p13, p23, p33;
+
+		public RawBlock4X4RgbFloat(ColorRgbFloat fillColor)
+		{
+			p00 = p01 = p02 = p03 =
+				p10 = p11 = p12 = p13 =
+					p20 = p21 = p22 = p23 =
+						p30 = p31 = p32 = p33 = fillColor;
+		}
+		
 		public Span<ColorRgbFloat> AsSpan => MemoryMarshal.CreateSpan(ref p00, 16);
 
 		public ColorRgbFloat this[int x, int y]

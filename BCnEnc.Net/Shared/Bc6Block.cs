@@ -132,6 +132,8 @@ namespace BCnEncoder.Shared
 			15, 15, 15, 15, 15, 2, 2, 15
 		};
 
+		public static readonly RawBlock4X4RgbFloat ErrorBlock = new RawBlock4X4RgbFloat(new ColorRgbFloat(1, 0, 1));
+
 		public static readonly Bc6BlockType[] Subsets1Types =
 		{
 			Bc6BlockType.Type3,
@@ -1139,6 +1141,11 @@ namespace BCnEncoder.Shared
 		{
 			var output = new RawBlock4X4RgbFloat();
 			var pixels = output.AsSpan;
+
+			if (Type == Bc6BlockType.Unknown)
+			{
+				return ErrorBlock;
+			}
 
 			var endpoints = ExtractRawEndpoints(signed);
 			var numSubsets = 1;

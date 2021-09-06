@@ -20,9 +20,6 @@ namespace BCnEncoder.Decoder
 
 		public TBlock[] Decode(ReadOnlyMemory<byte> data, OperationContext context)
 		{
-			// calculate number of 4x4 blocks by padding width/height to a multiple of 4 and shift it right by 2
-			//blockWidth = ((pixelWidth + 3) & ~3) >> 2;
-			//blockHeight = ((pixelHeight + 3) & ~3) >> 2;
 
 			if (data.Length % Unsafe.SizeOf<T>() != 0)
 			{
