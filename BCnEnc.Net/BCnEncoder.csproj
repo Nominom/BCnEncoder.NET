@@ -12,11 +12,11 @@
     <PackageLicenseExpression>MIT OR Unlicense</PackageLicenseExpression>
     <Copyright />
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
-    <Version>2.0.3</Version>
+    <Version>2.1.0</Version>
     <Authors>Nominom</Authors>
     <Company />
     <Product>BCnEncoder.Net</Product>
-    <Description>BCnEncoder.NET is a library for compressing rgba images to different block-compressed formats. Both ktx and dds output formats are supported. It has no native dependencies and is .NET Standard 2.1 compatible.
+    <Description>BCnEncoder.NET is a library for compressing rgba images to different block-compressed formats. Both ktx and dds output file-formats are supported. It has no native dependencies and is .NET Standard 2.1 compatible.
 
 Supported formats are:
     Raw unsigned byte R, RG, RGB and RGBA formats
@@ -25,15 +25,16 @@ Supported formats are:
     BC3 (S3TC DXT5)
     BC4 (RGTC1)
     BC5 (RGTC2)
+    BC6 (BPTC-FLOAT)
     BC7 (BPTC)</Description>
     <PackageId>BCnEncoder.Net</PackageId>
     <RepositoryUrl>https://github.com/Nominom/BCnEncoder.NET</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <PackageTags>BCn BC BC1 BC2 BC3 BC4 BC5 BC7 BPTC RGTC S3TC DXT1 DXT3 DXT5 ktx dds texture compression encoding decoding decompression image gpu</PackageTags>
+    <PackageTags>BCn BC BC1 BC2 BC3 BC4 BC5 BC6 BC6H BC7 BPTC RGTC S3TC DXT1 DXT3 DXT5 ktx dds texture compression encoding decoding decompression image gpu</PackageTags>
     <PackageProjectUrl>https://github.com/Nominom/BCnEncoder.NET</PackageProjectUrl>
     <PackageReleaseNotes>2.0.0 - Removed ImageSharp dependency, added async api methods, added ATC and BGRA support, added new raw api methods, improved dds file handling and fixed some bugs. See the github page for more information about 2.0.
 
-2.0.3 - Updated Microsoft high performance toolkit version</PackageReleaseNotes>
+2.1.0 - BC6H Support</PackageReleaseNotes>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
