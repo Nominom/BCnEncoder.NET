@@ -24,7 +24,7 @@ different algorithms. The current version is capable of encoding and decoding BC
 Please note, that the API might change between versions.
 # Dependencies
 Current dependencies are:
-* [Microsoft.Toolkit.HighPerformance](https://github.com/windows-toolkit/WindowsCommunityToolkit) licenced under the [MIT](https://opensource.org/licenses/MIT) licence for Span2D and Memory2D types.
+* [Microsoft.Toolkit.HighPerformance](https://github.com/windows-toolkit/WindowsCommunityToolkit) licensed under the [MIT](https://opensource.org/licenses/MIT) license for Span2D and Memory2D types.
 
 # Image library extensions
 This library has extension packages available for the following image libraries:
