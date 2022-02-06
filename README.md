@@ -38,7 +38,15 @@ The extension packages provide extension methods for ease of use with the image 
 If you're upgrading from 1.X.X to version 2, expect some of your exsting code to be broken. ImageSharp was removed as a core dependency in version 2.0, so the code will no longer work with ImageSharp's Image types by default. You can install the extension package for ImageSharp to continue using this library easily with ImageSharp apis.
 
 # API
-The below examples are using the ImageSharp extension package. For more detailed usage examples, you can go look at the unit tests. 
+The below examples are using the ImageSharp extension package. For more detailed usage examples, you can go look at the unit tests.
+
+Remember add the following usings to the top of the file:
+```CSharp
+using BCnEncoder.Encoder;
+using BCnEncoder.Decoder;
+using BCnEncoder.Shared;
+using BCnEncoder.ImageSharp;
+```
 
 Here's an example on how to encode a png image to BC1 without alpha, and save it to a file.
 ```CSharp
