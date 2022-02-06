@@ -46,6 +46,8 @@ using BCnEncoder.Encoder;
 using BCnEncoder.Decoder;
 using BCnEncoder.Shared;
 using BCnEncoder.ImageSharp;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
 ```
 
 Here's an example on how to encode a png image to BC1 without alpha, and save it to a file.
