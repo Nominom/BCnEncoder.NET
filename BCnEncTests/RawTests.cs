@@ -24,8 +24,8 @@ namespace BCnEncTests
 			var encodedRawBytes = encoder.EncodeToRawBytes(inputImage);
 			var decodedImage = decoder.DecodeRawToImageRgba32(encodedRawBytes[0], inputImage.Width, inputImage.Height, CompressionFormat.Bc1);
 
-			ImageLoader.TestGradient1.TryGetSinglePixelSpan(out var originalPixels);
-			decodedImage.TryGetSinglePixelSpan(out var decodedPixels);
+			var originalPixels = TestHelper.GetSinglePixelArray(ImageLoader.TestGradient1);
+			var decodedPixels  = TestHelper.GetSinglePixelArray(decodedImage);
 
 			TestHelper.AssertPixelsEqual(originalPixels, decodedPixels, encoder.OutputOptions.Quality);
 		}
@@ -47,9 +47,9 @@ namespace BCnEncTests
 			Assert.Equal(0, ms.Position);
 
 			var decodedImage = decoder.DecodeRawToImageRgba32(ms, inputImage.Width, inputImage.Height, CompressionFormat.Bc1);
-
-			inputImage.TryGetSinglePixelSpan(out var originalPixels);
-			decodedImage.TryGetSinglePixelSpan(out var decodedPixels);
+			
+			var originalPixels = TestHelper.GetSinglePixelArray(inputImage);
+			var decodedPixels  = TestHelper.GetSinglePixelArray(decodedImage);
 
 			TestHelper.AssertPixelsEqual(originalPixels, decodedPixels, encoder.OutputOptions.Quality);
 		}
@@ -91,8 +91,9 @@ namespace BCnEncTests
 				using var resized = inputImage.Clone(x => x.Resize(mipWidth, mipHeight));
 
 				var decodedImage = decoder.DecodeRawToImageRgba32(ms, mipWidth, mipHeight, CompressionFormat.Bc1);
-				resized.TryGetSinglePixelSpan(out var originalPixels);
-				decodedImage.TryGetSinglePixelSpan(out var decodedPixels);
+
+				var originalPixels = TestHelper.GetSinglePixelArray(resized);
+				var decodedPixels  = TestHelper.GetSinglePixelArray(decodedImage);
 
 				TestHelper.AssertPixelsEqual(originalPixels, decodedPixels, encoder.OutputOptions.Quality);
 			}

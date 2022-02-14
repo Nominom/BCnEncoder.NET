@@ -30,13 +30,15 @@ namespace BCnEncTests
 
 			var img = new Image<RgbaVector>((int)HdrLoader.TestHdrKiaraDds.header.dwWidth,
 				(int)HdrLoader.TestHdrKiaraDds.header.dwHeight);
-
-			img.TryGetSinglePixelSpan(out var pixels);
+			
+			var pixels = TestHelper.GetSinglePixelArray(img);
 
 			for (var i = 0; i < decoded.Length; i++)
 			{
 				pixels[i] = new RgbaVector(decoded[i].r, decoded[i].g, decoded[i].b);
 			}
+
+			TestHelper.SetSinglePixelArray(img, pixels);
 
 			var hdr = new HdrImage((int) HdrLoader.TestHdrKiaraDds.header.dwWidth,
 				(int) HdrLoader.TestHdrKiaraDds.header.dwHeight);
@@ -60,13 +62,15 @@ namespace BCnEncTests
 
 			var img = new Image<RgbaVector>((int)HdrLoader.TestHdrKiaraKtx.header.PixelWidth,
 				(int)HdrLoader.TestHdrKiaraKtx.header.PixelHeight);
-
-			img.TryGetSinglePixelSpan(out var pixels);
+			
+			var pixels = TestHelper.GetSinglePixelArray(img);
 
 			for (var i = 0; i < decoded.Length; i++)
 			{
 				pixels[i] = new RgbaVector(decoded[i].r, decoded[i].g, decoded[i].b);
 			}
+
+			TestHelper.SetSinglePixelArray(img, pixels);
 
 			var hdr = new HdrImage((int)HdrLoader.TestHdrKiaraKtx.header.PixelWidth,
 				(int)HdrLoader.TestHdrKiaraKtx.header.PixelHeight);

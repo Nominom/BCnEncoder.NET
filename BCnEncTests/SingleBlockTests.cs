@@ -35,9 +35,9 @@ namespace BCnEncTests
 					Quality = quality
 				}
 			};
-			
-			var pixels = testImage.GetPixelMemoryGroup()[0];
-			var colors = MemoryMarshal.Cast<Rgba32, ColorRgba32>(pixels.Span)
+
+			var pixels = TestHelper.GetSinglePixelArray(testImage);
+			var colors = MemoryMarshal.Cast<Rgba32, ColorRgba32>(pixels)
 				.AsSpan2D(testImage.Height, testImage.Width);
 
 			var ms = new MemoryStream(); 
@@ -94,8 +94,8 @@ namespace BCnEncTests
 				}
 			};
 
-			var pixels = testImage.GetPixelMemoryGroup()[0];
-			var colors = MemoryMarshal.Cast<Rgba32, ColorRgba32>(pixels.Span)
+			var pixels = TestHelper.GetSinglePixelArray(testImage);
+			var colors = MemoryMarshal.Cast<Rgba32, ColorRgba32>(pixels)
 				.AsSpan2D(testImage.Height, testImage.Width);
 
 			Span<byte> buffer = new byte[encoder.GetBlockSize() * encoder.GetBlockCount(testImage.Width, testImage.Height)];

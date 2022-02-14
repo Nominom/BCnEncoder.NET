@@ -251,13 +251,12 @@ namespace BCnEncoder.ImageSharp
 		private static Image<Rgba32> ColorMemoryToImage(Memory2D<ColorRgba32> colors)
 		{
 			var output = new Image<Rgba32>(colors.Width, colors.Height);
-			output.TryGetSinglePixelSpan(out var pixels);
-			colors.Span.TryGetSpan(out var decodedPixels);
-
-			for (var i = 0; i < pixels.Length; i++)
+			for (var y = 0; y < colors.Height; y++)
 			{
-				var c = decodedPixels[i];
-				pixels[i] = new Rgba32(c.r, c.g, c.b, c.a);
+				var yPixels = output.Frames.RootFrame.PixelBuffer.DangerousGetRowSpan(y);
+				var yColors = colors.Span.GetRowSpan(y);
+
+				MemoryMarshal.Cast<ColorRgba32, Rgba32>(yColors).CopyTo(yPixels);
 			}
 			return output;
 		}

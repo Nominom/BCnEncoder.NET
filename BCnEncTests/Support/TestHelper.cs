@@ -102,11 +102,8 @@ namespace BCnEncTests.Support
 			{
 				if (assertAlpha)
 				{
-					if (!images[0].TryGetSinglePixelSpan(out var pixels))
-					{
-						throw new Exception("Cannot get pixel span.");
-					}
-					Assert.Contains(pixels.ToArray(), x => x.A == 0);
+					var pixels = GetSinglePixelArrayAsColors(images[0]);
+					Assert.Contains(pixels, x => x.a == 0);
 				}
 
 				using var outFs = File.OpenWrite(string.Format(outputFile, i));
@@ -195,18 +192,10 @@ namespace BCnEncTests.Support
 
 		private static float CalculatePSNR(Image<Rgba32> original, Image<Rgba32> decoded, bool countAlpha = true)
 		{
-			if (!original.TryGetSinglePixelSpan(out var pixels))
-			{
-				throw new Exception("Cannot get pixel span.");
-			}
-			if (!decoded.TryGetSinglePixelSpan(out var pixels2))
-			{
-				throw new Exception("Cannot get pixel span.");
-			}
+			var pixels  = GetSinglePixelArrayAsColors(original);
+			var pixels2 = GetSinglePixelArrayAsColors(decoded);
 			
-			return ImageQuality.PeakSignalToNoiseRatio(
-				MemoryMarshal.Cast<Rgba32, ColorRgba32>(pixels),
-				MemoryMarshal.Cast<Rgba32, ColorRgba32>(pixels2), countAlpha);
+			return ImageQuality.PeakSignalToNoiseRatio(pixels, pixels2, countAlpha);
 		}
 
 		public static void AssertPSNR(float psnr, CompressionQuality quality)
@@ -231,6 +220,45 @@ namespace BCnEncTests.Support
 			else
 			{
 				Assert.True(rmse < 0.04);
+			}
+		}
+
+		public static ColorRgba32[] GetSinglePixelArrayAsColors(Image<Rgba32> original)
+		{
+			ColorRgba32[] pixels = new ColorRgba32[original.Width * original.Height];
+			for (var y = 0; y < original.Height; y++)
+			{
+				for (var x = 0; x < original.Width; x++)
+				{
+					var oPixel = original[x, y];
+					pixels[y * original.Width + x] = new ColorRgba32(oPixel.R, oPixel.G, oPixel.B, oPixel.A);
+				}
+			}
+			return pixels;
+		}
+
+		public static T[] GetSinglePixelArray<T>(Image<T> original) where T : unmanaged, IPixel<T>
+		{
+			T[] pixels = new T[original.Width * original.Height];
+			for (var y = 0; y < original.Height; y++)
+			{
+				for (var x = 0; x < original.Width; x++)
+				{
+					var oPixel = original[x, y];
+					pixels[y * original.Width + x] = oPixel;
+				}
+			}
+			return pixels;
+		}
+
+		public static void SetSinglePixelArray<T>(Image<T> dest, T[] pixels) where T : unmanaged, IPixel<T>
+		{
+			for (var y = 0; y < dest.Height; y++)
+			{
+				for (var x = 0; x < dest.Width; x++)
+				{
+					dest[x, y] = pixels[y * dest.Width + x];
+				}
 			}
 		}
 	}

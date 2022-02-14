@@ -16,10 +16,7 @@ namespace BCnEncTests
 		{
 			var testImage = ImageLoader.TestBlur1.Clone();
 
-			if (!testImage.TryGetSinglePixelSpan(out var pix))
-			{
-				throw new Exception("Cannot get pixel span.");
-			}
+			var pix = TestHelper.GetSinglePixelArray(testImage);
 
 			var pixels = MemoryMarshal.Cast<Rgba32, ColorRgba32>(pix).ToArray();
 
@@ -45,6 +42,8 @@ namespace BCnEncTests
 				pixels[i] = pixC[clusters[i]].ToColorRgba32();
 				pix[i] = new Rgba32(pixels[i].r, pixels[i].g, pixels[i].b, pixels[i].a);
 			}
+
+			TestHelper.SetSinglePixelArray(testImage, pix);
 
 			using var fs = File.OpenWrite("test_cluster.png");
 			testImage.SaveAsPng(fs);

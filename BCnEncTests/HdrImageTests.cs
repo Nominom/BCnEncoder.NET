@@ -24,11 +24,13 @@ namespace BCnEncTests
 			
 			var img = new Image<RgbaVector>(hdrImg.width, hdrImg.height);
 
-			img.TryGetSinglePixelSpan(out var pixels);
-			
-			for (var i = 0; i < hdrImg.pixels.Length; i++)
+			for (var y = 0; y < hdrImg.height; y++)
 			{
-				pixels[i] = new RgbaVector(hdrImg.pixels[i].r, hdrImg.pixels[i].g, hdrImg.pixels[i].b);
+				for (var x = 0; x < hdrImg.width; x++)
+				{
+					var i = y * hdrImg.width + x;
+					img[x, y] = new RgbaVector(hdrImg.pixels[i].r, hdrImg.pixels[i].g, hdrImg.pixels[i].b);
+				}
 			}
 
 			img.SaveAsPng("test_hdr_load.png");

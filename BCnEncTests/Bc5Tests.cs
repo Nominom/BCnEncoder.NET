@@ -34,9 +34,9 @@ namespace BCnEncTests
 		{
 			var reference = ImageLoader.TestDecodingBc5Reference;
 			var decoded = new BcDecoder().DecodeToImageRgba32(DdsLoader.TestDecompressBc5);
-
-			reference.TryGetSinglePixelSpan(out var refSpan);
-			decoded.TryGetSinglePixelSpan(out var decSpan);
+			
+			var refSpan = TestHelper.GetSinglePixelArrayAsColors(reference);
+			var decSpan = TestHelper.GetSinglePixelArrayAsColors(decoded);
 
 			Assert.Equal(reference.Width, decoded.Width);
 			Assert.Equal(reference.Height, decoded.Height);
