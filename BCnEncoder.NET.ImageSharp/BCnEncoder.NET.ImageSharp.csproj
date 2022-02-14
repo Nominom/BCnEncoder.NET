@@ -18,7 +18,7 @@
     <RepositoryUrl>https://github.com/Nominom/BCnEncoder.NET</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageReleaseNotes>Fix issues with ImageSharp 2.0.0</PackageReleaseNotes>
-    <Version>1.1.0</Version>
+    <Version>1.1.1</Version>
   </PropertyGroup>
 
   <ItemGroup>
@@ -27,6 +27,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="SixLabors.ImageSharp" Version="2.0.0" />
+    <PackageReference Include="Microsoft.Toolkit.HighPerformance" Version="7.1.2" />
   </ItemGroup>
 
   <ItemGroup>
