@@ -1,191 +1,86 @@
 using System;
+using System.Runtime.CompilerServices;
 using BCnEncoder.Shared;
+using Microsoft.Toolkit.HighPerformance;
 
 namespace BCnEncoder.Decoder
 {
-	internal interface IRawDecoder
+	internal class RawLdrDecoder<TColor> : IBcLdrDecoder where TColor : unmanaged, IColor
 	{
-		ColorRgba32[] Decode(ReadOnlyMemory<byte> data, OperationContext context);
-	}
-
-	/// <summary>
-	/// A class to decode data to R components.
-	/// </summary>
-	public class RawRDecoder : IRawDecoder
-	{
-		private readonly bool redAsLuminance;
-
-		/// <summary>
-		/// Create a new instance of <see cref="RawRDecoder"/>.
-		/// </summary>
-		/// <param name="redAsLuminance">If the decoded component should be used as the red component or luminance.</param>
-		public RawRDecoder(bool redAsLuminance)
+		public RawLdrDecoder(bool redAsLuminance)
 		{
 			this.redAsLuminance = redAsLuminance;
 		}
 
-		/// <summary>
-		/// Decode the data to color components.
-		/// </summary>
-		/// <param name="data">The data to decode.</param>
-		/// <param name="context">The context of the current operation.</param>
-		/// <returns>The decoded color components.</returns>
-		public ColorRgba32[] Decode(ReadOnlyMemory<byte> data, OperationContext context)
+		private readonly bool redAsLuminance;
+
+		/// <inheritdoc />
+		public byte[] Decode(ReadOnlyMemory<byte> data, int width, int height, OperationContext context)
 		{
-			var output = new ColorRgba32[data.Length];
-
-			// HINT: Ignoring parallel execution since we wouldn't gain performance from it.
-
-			var span = data.Span;
-			for (var i = 0; i < output.Length; i++)
+			if (data.Length != width * height * Unsafe.SizeOf<TColor>())
 			{
-				context.CancellationToken.ThrowIfCancellationRequested();
-
-				if (redAsLuminance)
-				{
-					output[i].r = span[i];
-					output[i].g = span[i];
-					output[i].b = span[i];
-				}
-				else
-				{
-					output[i].r = span[i];
-					output[i].g = 0;
-					output[i].b = 0;
-				}
-
-				output[i].a = 255;
+				throw new ArgumentException("Input data buffer incorrectly sized!");
 			}
 
-			return output;
+			var bytes = data.Cast<byte, TColor>().ConvertToAsBytes<TColor, ColorRgba32>();
+			if (redAsLuminance)
+			{
+				ExpandRToLuminance(bytes);
+			}
+			context.Progress?.Report(width * height);
+			return bytes;
+		}
+
+		/// <inheritdoc />
+		public ColorRgba32[] DecodeColor(ReadOnlyMemory<byte> data, int width, int height, OperationContext context)
+		{
+			if (data.Length != width * height * Unsafe.SizeOf<TColor>())
+			{
+				throw new ArgumentException("Input data buffer incorrectly sized!");
+			}
+			var colors = data.Cast<byte, TColor>().ConvertTo<TColor, ColorRgba32>();
+			if (redAsLuminance)
+			{
+				ExpandRToLuminance(colors.AsSpan().AsBytes());
+			}
+			context.Progress?.Report(width * height);
+			return colors;
+		}
+
+		private static void ExpandRToLuminance(Span<byte> bytes)
+		{
+			for (var i = 0; i < bytes.Length; i += 4)
+			{
+				bytes[i + 1] = bytes[i];
+				bytes[i + 2] = bytes[i];
+			}
 		}
 	}
 
-	/// <summary>
-	/// A class to decode data to RG components.
-	/// </summary>
-	public class RawRgDecoder : IRawDecoder
+	internal class RawHdrDecoder<TColor> : IBcHdrDecoder where TColor : unmanaged, IColor
 	{
-		/// <summary>
-		/// Decode the data to color components.
-		/// </summary>
-		/// <param name="data">The data to decode.</param>
-		/// <param name="context">The context of the current operation.</param>
-		/// <returns>The decoded color components.</returns>
-		public ColorRgba32[] Decode(ReadOnlyMemory<byte> data, OperationContext context)
+		/// <inheritdoc />
+		public byte[] Decode(ReadOnlyMemory<byte> data, int width, int height, OperationContext context)
 		{
-			var output = new ColorRgba32[data.Length / 2];
-
-			// HINT: Ignoring parallel execution since we wouldn't gain performance from it.
-
-			var span = data.Span;
-			for (var i = 0; i < output.Length; i++)
+			if (data.Length != width * height * Unsafe.SizeOf<TColor>())
 			{
-				context.CancellationToken.ThrowIfCancellationRequested();
-
-				output[i].r = span[i * 2];
-				output[i].g = span[i * 2 + 1];
-				output[i].b = 0;
-				output[i].a = 255;
+				throw new ArgumentException("Input data buffer incorrectly sized!");
 			}
 
-			return output;
+			context.Progress?.Report(width * height);
+			return data.Cast<byte, TColor>().ConvertToAsBytes<TColor, ColorRgbaFloat>();
 		}
-	}
 
-	/// <summary>
-	/// A class to decode data to RGB components.
-	/// </summary>
-	public class RawRgbDecoder : IRawDecoder
-	{
-		/// <summary>
-		/// Decode the data to color components.
-		/// </summary>
-		/// <param name="data">The data to decode.</param>
-		/// <param name="context">The context of the current operation.</param>
-		/// <returns>The decoded color components.</returns>
-		public ColorRgba32[] Decode(ReadOnlyMemory<byte> data, OperationContext context)
+		/// <inheritdoc />
+		public ColorRgbaFloat[] DecodeColor(ReadOnlyMemory<byte> data, int width, int height, OperationContext context)
 		{
-			var output = new ColorRgba32[data.Length / 3];
-
-			// HINT: Ignoring parallel execution since we wouldn't gain performance from it.
-
-			var span = data.Span;
-			for (var i = 0; i < output.Length; i++)
+			if (data.Length != width * height * Unsafe.SizeOf<TColor>())
 			{
-				context.CancellationToken.ThrowIfCancellationRequested();
-
-				output[i].r = span[i * 3];
-				output[i].g = span[i * 3 + 1];
-				output[i].b = span[i * 3 + 2];
-				output[i].a = 255;
+				throw new ArgumentException("Input data buffer incorrectly sized!");
 			}
 
-			return output;
-		}
-	}
-
-	/// <summary>
-	/// A class to decode data to RGBA components.
-	/// </summary>
-	public class RawRgbaDecoder : IRawDecoder
-	{
-		/// <summary>
-		/// Decode the data to color components.
-		/// </summary>
-		/// <param name="data">The data to decode.</param>
-		/// <param name="context">The context of the current operation.</param>
-		/// <returns>The decoded color components.</returns>
-		public ColorRgba32[] Decode(ReadOnlyMemory<byte> data, OperationContext context)
-		{
-			var output = new ColorRgba32[data.Length / 4];
-
-			// HINT: Ignoring parallel execution since we wouldn't gain performance from it.
-
-			var span = data.Span;
-			for (var i = 0; i < output.Length; i++)
-			{
-				context.CancellationToken.ThrowIfCancellationRequested();
-
-				output[i].r = span[i * 4];
-				output[i].g = span[i * 4 + 1];
-				output[i].b = span[i * 4 + 2];
-				output[i].a = span[i * 4 + 3];
-			}
-
-			return output;
-		}
-	}
-
-	/// <summary>
-	/// A class to decode data to BGRA components.
-	/// </summary>
-	public class RawBgraDecoder : IRawDecoder
-	{
-		/// <summary>
-		/// Decode the data to color components.
-		/// </summary>
-		/// <param name="data">The data to decode.</param>
-		/// <param name="context">The context of the current operation.</param>
-		/// <returns>The decoded color components.</returns>
-		public ColorRgba32[] Decode(ReadOnlyMemory<byte> data, OperationContext context)
-		{
-			var output = new ColorRgba32[data.Length / 4];
-
-			// HINT: Ignoring parallel execution since we wouldn't gain performance from it.
-
-			var span = data.Span;
-			for (var i = 0; i < output.Length; i++)
-			{
-				context.CancellationToken.ThrowIfCancellationRequested();
-
-				output[i].b = span[i * 4];
-				output[i].g = span[i * 4 + 1];
-				output[i].r = span[i * 4 + 2];
-				output[i].a = span[i * 4 + 3];
-			}
-
-			return output;
+			context.Progress?.Report(width * height);
+			return data.Cast<byte, TColor>().ConvertTo<TColor, ColorRgbaFloat>();
 		}
 	}
 }

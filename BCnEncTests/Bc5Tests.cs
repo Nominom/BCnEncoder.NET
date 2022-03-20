@@ -1,6 +1,7 @@
 using BCnEncoder.Decoder;
 using BCnEncoder.ImageSharp;
 using BCnEncoder.Shared;
+using BCnEncoder.TextureFormats;
 using BCnEncTests.Support;
 using Xunit;
 
@@ -27,23 +28,6 @@ namespace BCnEncTests
 				Assert.Equal((byte)(i % 8), rI);
 				Assert.Equal((byte)((i + 3) % 8), gI);
 			}
-		}
-
-		[Fact]
-		public void Bc5DdsDecode()
-		{
-			var reference = ImageLoader.TestDecodingBc5Reference;
-			var decoded = new BcDecoder().DecodeToImageRgba32(DdsLoader.TestDecompressBc5);
-			
-			var refSpan = TestHelper.GetSinglePixelArrayAsColors(reference);
-			var decSpan = TestHelper.GetSinglePixelArrayAsColors(decoded);
-
-			Assert.Equal(reference.Width, decoded.Width);
-			Assert.Equal(reference.Height, decoded.Height);
-
-			// Exactly equal
-			for (var i = 0; i < reference.Width * reference.Height; i++)
-				Assert.Equal(refSpan[i], decSpan[i]);
 		}
 
 		[Fact]

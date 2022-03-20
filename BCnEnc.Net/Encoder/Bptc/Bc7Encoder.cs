@@ -1,11 +1,10 @@
 using System;
 using System.Collections.Generic;
 using BCnEncoder.Shared;
-using BCnEncoder.Shared.ImageFiles;
 
 namespace BCnEncoder.Encoder.Bptc
 {
-	internal class Bc7Encoder : BaseBcBlockEncoder<Bc7Block, RawBlock4X4Rgba32>
+	internal class Bc7Encoder : BaseBcLdrBlockEncoder<Bc7Block>
 	{
 
 		public override Bc7Block EncodeBlock(RawBlock4X4Rgba32 rawBlock, CompressionQuality quality)
@@ -23,19 +22,8 @@ namespace BCnEncoder.Encoder.Bptc
 			}
 		}
 
-		public override GlInternalFormat GetInternalFormat()
-		{
-			return GlInternalFormat.GlCompressedRgbaBptcUnormArb;
-		}
-
-		public override GlFormat GetBaseInternalFormat()
-		{
-			return GlFormat.GlRgba;
-		}
-
-		public override DxgiFormat GetDxgiFormat() {
-			return DxgiFormat.DxgiFormatBc7Unorm;
-		}
+		/// <inheritdoc />
+		public override CompressionFormat EncodedFormat => CompressionFormat.Bc7;
 
 		private static ClusterIndices4X4 CreateClusterIndexBlock(RawBlock4X4Rgba32 raw, out int outputNumClusters, 
 			int numClusters = 3)

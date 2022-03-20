@@ -1,6 +1,10 @@
+using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using BCnEncoder.ImageSharp;
 using BCnEncoder.Shared;
-using BCnEncoder.Shared.ImageFiles;
+using BCnEncoder.TextureFormats;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
@@ -8,19 +12,98 @@ namespace BCnEncTests.Support
 {
 	public static class ImageLoader
 	{
-		public static Image<Rgba32> TestDiffuse1 { get; } = LoadTestImage("../../../testImages/test_diffuse_1_512.jpg");
-		public static Image<Rgba32> TestBlur1 { get; } = LoadTestImage("../../../testImages/test_blur_1_512.jpg");
-		public static Image<Rgba32> TestNormal1 { get; } = LoadTestImage("../../../testImages/test_normal_1_512.jpg");
-		public static Image<Rgba32> TestHeight1 { get; } = LoadTestImage("../../../testImages/test_height_1_512.jpg");
-		public static Image<Rgba32> TestGradient1 { get; } = LoadTestImage("../../../testImages/test_gradient_1_512.jpg");
+		public const string TestImageRawFolder = "../../../testImages/raw";
+		public const string TestImageEncodedFolder = "../../../testImages/encoded";
+		public const string TestImageReferenceFolder = "../../../testImages/reference";
 
-		public static Image<Rgba32> TestTransparentSprite1 { get; } = LoadTestImage("../../../testImages/test_transparent.png");
-		public static Image<Rgba32> TestAlphaGradient1 { get; } = LoadTestImage("../../../testImages/test_alphagradient_1_512.png");
-		public static Image<Rgba32> TestAlpha1 { get; } = LoadTestImage("../../../testImages/test_alpha_1_512.png");
-		public static Image<Rgba32> TestRedGreen1 { get; } = LoadTestImage("../../../testImages/test_red_green_1_64.png");
-		public static Image<Rgba32> TestRgbHard1 { get; } = LoadTestImage("../../../testImages/test_rgb_hard_1.png");
-		public static Image<Rgba32> TestLenna { get; } = LoadTestImage("../../../testImages/test_lenna_512.png");
-		public static Image<Rgba32> TestDecodingBc5Reference { get; } = LoadTestImage("../../../testImages/decoding_dds_bc5_reference.png");
+		public static (string, System.Type)[] EncodedFileEndingPatterns => new (string, Type)[]
+		{
+			("ktx", typeof(KtxFile)),
+			("dds", typeof(DdsFile)),
+			("hdr", typeof(RadianceFile))
+		};
+
+		public static readonly List<(string, Exception)> ReadThrownExceptions = new List<(string, Exception)>();
+
+		public static readonly IReadOnlyDictionary<string, Image<Rgba32>> TestRawImages = FindRawTestImages();
+		public static readonly IReadOnlyDictionary<string, (ITextureFileFormat, Image<Rgba32>)> TestEncodedImages = FindEncodedTestImages();
+
+
+		private static Dictionary<string, Image<Rgba32>> FindRawTestImages()
+		{
+			var rawImages = new Dictionary<string, Image<Rgba32>>();
+
+			if (!new DirectoryInfo(TestImageRawFolder).Exists)
+				throw new FileNotFoundException($"Raw test folder does not exist! {TestImageRawFolder}");
+
+			foreach (var file in Directory.EnumerateFiles(TestImageRawFolder, "*.png", new EnumerationOptions
+			         {
+						 IgnoreInaccessible = true,
+						 RecurseSubdirectories = false,
+						 AttributesToSkip = FileAttributes.Directory | FileAttributes.System | FileAttributes.Hidden,
+			         }))
+			{
+				try
+				{
+					var img = Image.Load<Rgba32>(file);
+					var name = Path.GetFileNameWithoutExtension(file);
+					rawImages.Add(name, img);
+				}
+				catch (Exception e)
+				{
+					ReadThrownExceptions.Add((file, e));
+				}
+			}
+
+			return rawImages;
+		}
+
+		private static Dictionary<string, (ITextureFileFormat, Image<Rgba32>)> FindEncodedTestImages()
+		{
+			var encodedImages = new Dictionary<string, (ITextureFileFormat, Image<Rgba32>)>();
+
+			if (!new DirectoryInfo(TestImageEncodedFolder).Exists)
+				throw new FileNotFoundException($"Encoded test folder does not exist! {TestImageEncodedFolder}");
+
+			if (!new DirectoryInfo(TestImageReferenceFolder).Exists)
+				throw new FileNotFoundException($"Reference test folder does not exist! {TestImageReferenceFolder}");
+
+			foreach (var file in Directory.EnumerateFiles(TestImageEncodedFolder, "*.*", new EnumerationOptions
+			         {
+				         IgnoreInaccessible = true,
+				         RecurseSubdirectories = false,
+				         AttributesToSkip = FileAttributes.Directory | FileAttributes.System | FileAttributes.Hidden
+			         }))
+			{
+				try
+				{
+					var fileType = EncodedFileEndingPatterns.FirstOrDefault(x => file.EndsWith(x.Item1)).Item2;
+					if (fileType == null)
+					{
+						continue;
+					}
+
+					var texture = Activator.CreateInstance(fileType) as ITextureFileFormat;
+					using var fs = File.OpenRead(file);
+
+					texture.ReadFromStream(fs);
+
+					var referenceFileName = Path.Join(TestImageReferenceFolder,
+						Path.GetFileNameWithoutExtension(file) + ".png");
+
+					var reference = Image.Load<Rgba32>(referenceFileName);
+					var name = Path.GetFileNameWithoutExtension(file);
+
+					encodedImages.Add(name, (texture, reference));
+				}
+				catch (Exception e)
+				{
+					ReadThrownExceptions.Add((file, e));
+				}
+			}
+
+			return encodedImages;
+		}
 
 		public static Image<Rgba32>[] TestCubemap { get; } = {
 			LoadTestImage("../../../testImages/cubemap/right.png"),
@@ -31,49 +114,30 @@ namespace BCnEncTests.Support
 			LoadTestImage("../../../testImages/cubemap/forward.png")
 		};
 
+		public static Image<Rgba32>[] TestCubemap2 { get; } = {
+			LoadTestImage("../../../testImages/cubemap/cube_2_posx.jpg"),
+			LoadTestImage("../../../testImages/cubemap/cube_2_negx.jpg"),
+			LoadTestImage("../../../testImages/cubemap/cube_2_posy.jpg"),
+			LoadTestImage("../../../testImages/cubemap/cube_2_negy.jpg"),
+			LoadTestImage("../../../testImages/cubemap/cube_2_posz.jpg"),
+			LoadTestImage("../../../testImages/cubemap/cube_2_negz.jpg")
+		};
+
+		public static RadianceFile TestHdr1 => TestEncodedImages["hdr_1_rgbe"].Item1 as RadianceFile;
+		public static RadianceFile TestHdr2 => TestEncodedImages["hdr_2_rgbe"].Item1 as RadianceFile;
+
+		public static Image<Rgba32> TestLdrRgba => TestRawImages["rgba_1"];
+
 		internal static Image<Rgba32> LoadTestImage(string filename)
 		{
 			return Image.Load<Rgba32>(filename);
 		}
-	}
 
-	public static class DdsLoader
-	{
-		public const string TestDecompressBc1Name = "../../../testImages/test_decompress_bc1.dds";
-		public const string TestDecompressBc1AName = "../../../testImages/test_decompress_bc1a.dds";
-		public const string TestDecompressBc7Name = "../../../testImages/test_decompress_bc7.dds";
-		public const string TestDecompressBc5Name = "../../../testImages/decoding_dds_bc5.dds";
-		public const string TestDecompressRgbaName = "../../../testImages/test_decompress_rgba.dds";
-
-		public static DdsFile TestDecompressBc1 { get; } = LoadDdsFile(TestDecompressBc1Name);
-		public static DdsFile TestDecompressBc1A { get; } = LoadDdsFile(TestDecompressBc1AName);
-		public static DdsFile TestDecompressBc5 { get; } = LoadDdsFile(TestDecompressBc5Name);
-		public static DdsFile TestDecompressBc7 { get; } = LoadDdsFile(TestDecompressBc7Name);
-		public static DdsFile TestDecompressRgba { get; } = LoadDdsFile(TestDecompressRgbaName);
-
-		internal static DdsFile LoadDdsFile(string filename)
+		internal static BCnTextureData LoadTestData(string name)
 		{
-			using var fs = File.OpenRead(filename);
-			return DdsFile.Load(fs);
-		}
-	}
-
-	public static class KtxLoader
-	{
-		public static KtxFile TestDecompressBc1 { get; } = LoadKtxFile("../../../testImages/test_decompress_bc1.ktx");
-		public static KtxFile TestDecompressBc1A { get; } = LoadKtxFile("../../../testImages/test_decompress_bc1a.ktx");
-		public static KtxFile TestDecompressBc2 { get; } = LoadKtxFile("../../../testImages/test_decompress_bc2.ktx");
-		public static KtxFile TestDecompressBc3 { get; } = LoadKtxFile("../../../testImages/test_decompress_bc3.ktx");
-		public static KtxFile TestDecompressBc4Unorm { get; } = LoadKtxFile("../../../testImages/test_decompress_bc4_unorm.ktx");
-		public static KtxFile TestDecompressBc5Unorm { get; } = LoadKtxFile("../../../testImages/test_decompress_bc5_unorm.ktx");
-		public static KtxFile TestDecompressBc7Rgb { get; } = LoadKtxFile("../../../testImages/test_decompress_bc7_rgb.ktx");
-		public static KtxFile TestDecompressBc7Types { get; } = LoadKtxFile("../../../testImages/test_decompress_bc7_types.ktx");
-		public static KtxFile TestDecompressBc7Unorm { get; } = LoadKtxFile("../../../testImages/test_decompress_bc7_unorm.ktx");
-
-		internal static KtxFile LoadKtxFile(string filename)
-		{
-			using var fs = File.OpenRead(filename);
-			return KtxFile.Load(fs);
+			return TestRawImages.ContainsKey(name) ?
+				TestRawImages[name].ToBCnTextureData() :
+				TestEncodedImages[name].Item1.ToTextureData();
 		}
 	}
 }

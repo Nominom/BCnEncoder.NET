@@ -5,6 +5,7 @@ using BCnEncoder.Encoder;
 using BCnEncTests.Support;
 using Xunit;
 using BCnEncoder.ImageSharp;
+using BCnEncoder.TextureFormats;
 
 namespace BCnEncTests
 {
@@ -15,10 +16,9 @@ namespace BCnEncTests
 		[InlineData(1)]
 		[InlineData(2)]
 		[InlineData(5)]
-		[InlineData(10)]
 		public void MaxMipMaps(int requestedMipMaps)
 		{
-			var testImage = ImageLoader.TestBlur1;
+			var testImage = ImageLoader.TestRawImages["rgba_1"];
 			var encoder = new BcEncoder()
 			{
 				OutputOptions =
@@ -28,14 +28,19 @@ namespace BCnEncTests
 				}
 			};
 
-			Assert.Equal(requestedMipMaps, encoder.CalculateNumberOfMipLevels(testImage));
+			Assert.Equal(requestedMipMaps, encoder.CalculateNumberOfMipLevels(testImage.Width, testImage.Height));
 
-			var ktx = encoder.EncodeToKtx(testImage);
+			var bcnData = encoder.Encode(testImage);
+
+			Assert.Equal(requestedMipMaps, bcnData.NumMips);
+			Assert.Equal(requestedMipMaps, bcnData.MipLevels.Length);
+
+			var ktx = encoder.EncodeToTexture<KtxFile>(testImage);
 
 			Assert.Equal(requestedMipMaps, (int)ktx.header.NumberOfMipmapLevels);
 			Assert.Equal(requestedMipMaps, ktx.MipMaps.Count);
 
-			var dds = encoder.EncodeToDds(testImage);
+			var dds = encoder.EncodeToTexture<DdsFile>(testImage);
 
 			Assert.Equal(requestedMipMaps, (int)dds.header.dwMipMapCount);
 			Assert.Equal(requestedMipMaps, dds.Faces[0].MipMaps.Length);
@@ -45,7 +50,7 @@ namespace BCnEncTests
 		[System.Diagnostics.CodeAnalysis.SuppressMessage("Assertions", "xUnit2013:Do not use equality check to check for collection size.", Justification = "<Pending>")]
 		public void GenerateMipMaps()
 		{
-			var testImage = ImageLoader.TestBlur1;
+			var testImage = ImageLoader.TestRawImages["rgba_1"];
 			const int requestedMipMaps = 1;
 			var encoder = new BcEncoder()
 			{
@@ -55,14 +60,19 @@ namespace BCnEncTests
 				}
 			};
 
-			Assert.Equal(requestedMipMaps, encoder.CalculateNumberOfMipLevels(testImage));
+			Assert.Equal(requestedMipMaps, encoder.CalculateNumberOfMipLevels(testImage.Width, testImage.Height));
 
-			var ktx = encoder.EncodeToKtx(testImage);
+			var bcnData = encoder.Encode(testImage);
+
+			Assert.Equal(requestedMipMaps, bcnData.NumMips);
+			Assert.Equal(requestedMipMaps, bcnData.MipLevels.Length);
+
+			var ktx = encoder.EncodeToTexture<KtxFile>(testImage);
 
 			Assert.Equal(requestedMipMaps, (int)ktx.header.NumberOfMipmapLevels);
 			Assert.Equal(requestedMipMaps, (int)ktx.MipMaps.Count);
 
-			var dds = encoder.EncodeToDds(testImage);
+			var dds = encoder.EncodeToTexture<DdsFile>(testImage);
 
 			Assert.Equal(requestedMipMaps, (int)dds.header.dwMipMapCount);
 			Assert.Equal(requestedMipMaps, dds.Faces[0].MipMaps.Length);

@@ -6,7 +6,7 @@ namespace BCnEncoder.Shared
 	/// <summary>
 	/// The operation context.
 	/// </summary>
-	public class OperationContext
+	internal class OperationContext
 	{
 		/// <summary>
 		/// Whether the blocks should be decoded in parallel.

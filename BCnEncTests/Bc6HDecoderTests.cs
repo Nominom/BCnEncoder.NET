@@ -7,6 +7,7 @@ using System.Text;
 using BCnEncoder.Decoder;
 using BCnEncoder.Encoder;
 using BCnEncoder.Shared;
+using BCnEncoder.TextureFormats;
 using BCnEncTests.Support;
 using Microsoft.Toolkit.HighPerformance;
 using SixLabors.ImageSharp;
@@ -22,80 +23,20 @@ namespace BCnEncTests
 		
 		public Bc6HDecoderTests(ITestOutputHelper output) => this.output = output;
 
-		[Fact]
-		public void DecodeDds()
-		{
-			var decoder = new BcDecoder();
-			var decoded = decoder.DecodeHdr(HdrLoader.TestHdrKiaraDds);
 
-			var img = new Image<RgbaVector>((int)HdrLoader.TestHdrKiaraDds.header.dwWidth,
-				(int)HdrLoader.TestHdrKiaraDds.header.dwHeight);
-			
-			var pixels = TestHelper.GetSinglePixelArray(img);
-
-			for (var i = 0; i < decoded.Length; i++)
-			{
-				pixels[i] = new RgbaVector(decoded[i].r, decoded[i].g, decoded[i].b);
-			}
-
-			TestHelper.SetSinglePixelArray(img, pixels);
-
-			var hdr = new HdrImage((int) HdrLoader.TestHdrKiaraDds.header.dwWidth,
-				(int) HdrLoader.TestHdrKiaraDds.header.dwHeight);
-			
-			Assert.Equal(hdr.pixels.Length, decoded.Length);
-			
-			hdr.pixels = decoded;
-			using var sfs = File.OpenWrite("decoding_test_dds_bc6h.hdr");
-			hdr.Write(sfs);
-			
-			img.SaveAsPng("decoding_test_dds_bc6h.png");
-
-			TestHelper.AssertPixelsEqual(HdrLoader.TestHdrKiara.pixels, decoded, CompressionQuality.Fast, output);
-		}
-
-		[Fact]
-		public void DecodeKtx()
-		{
-			var decoder = new BcDecoder();
-			var decoded = decoder.DecodeHdr(HdrLoader.TestHdrKiaraKtx);
-
-			var img = new Image<RgbaVector>((int)HdrLoader.TestHdrKiaraKtx.header.PixelWidth,
-				(int)HdrLoader.TestHdrKiaraKtx.header.PixelHeight);
-			
-			var pixels = TestHelper.GetSinglePixelArray(img);
-
-			for (var i = 0; i < decoded.Length; i++)
-			{
-				pixels[i] = new RgbaVector(decoded[i].r, decoded[i].g, decoded[i].b);
-			}
-
-			TestHelper.SetSinglePixelArray(img, pixels);
-
-			var hdr = new HdrImage((int)HdrLoader.TestHdrKiaraKtx.header.PixelWidth,
-				(int)HdrLoader.TestHdrKiaraKtx.header.PixelHeight);
-
-			Assert.Equal(hdr.pixels.Length, decoded.Length);
-
-			hdr.pixels = decoded;
-			using var sfs = File.OpenWrite("decoding_test_ktx_bc6h.hdr");
-			hdr.Write(sfs);
-
-			img.SaveAsPng("decoding_test_ktx_bc6h.png");
-
-			TestHelper.AssertPixelsEqual(HdrLoader.TestHdrKiara.pixels, decoded, CompressionQuality.BestQuality, output);
-		}
-
-		// TestHdrKiaraDds includes some blocks with all modes.
-		// The test_hdr_kiara_dds_float16_data.bin file contains Half-float values decoded with a reference decoder.
+		// bc6h_alltypes.dds includes some blocks with all modes.
+		// The bc6h_alltypes.bin file contains Half-float values decoded with a reference decoder.
 		// This test ensures that decoding is bit-exact.
 		[Fact]
 		public void AllBlocksDecodesExact()
 		{
 			var decoder = new BcDecoder();
-			var decoded = decoder.DecodeHdr(HdrLoader.TestHdrKiaraDds);
+			using var fs1 = File.OpenRead("../../../testImages/bc6h_alltypes.dds");
 
-			using var fs = File.OpenRead("../../../testImages/test_hdr_kiara_dds_float16_data.bin");
+			var ddsFile = DdsFile.Load(fs1);
+			var decoded = decoder.Decode(ddsFile).MipLevels[0].AsMemory<ColorRgbaFloat>();
+
+			using var fs = File.OpenRead("../../../testImages/bc6h_alltypes.bin");
 			using var ms = new MemoryStream();
 			fs.CopyTo(ms);
 			var length = (int)ms.Position;
@@ -110,9 +51,9 @@ namespace BCnEncTests
 				float g = halfs[i * 4 + 1];
 				float b = halfs[i * 4 + 2];
 
-				Assert.Equal(r, decoded[i].r);
-				Assert.Equal(g, decoded[i].g);
-				Assert.Equal(b, decoded[i].b);
+				Assert.Equal(r, decoded.Span[i].r);
+				Assert.Equal(g, decoded.Span[i].g);
+				Assert.Equal(b, decoded.Span[i].b);
 			}
 		}
 
@@ -122,7 +63,9 @@ namespace BCnEncTests
 		{
 			var modes = new int[31];
 
-			var hdr = HdrLoader.TestHdrKiaraDds;
+			using var fs1 = File.OpenRead("../../../testImages/bc6h_alltypes.dds");
+
+			var hdr = DdsFile.Load(fs1);
 
 			var bytes = hdr.Faces[0].MipMaps[0].Data;
 			var blocks = MemoryMarshal.Cast<byte, Bc6Block>(bytes);
@@ -169,11 +112,11 @@ namespace BCnEncTests
 			r.NextBytes(buffer);
 
 			var decoded = decoder.DecodeRawHdr(buffer, width * 4, height * 4, CompressionFormat.Bc6U);
-			Assert.Contains(new ColorRgbFloat(1, 0, 1), decoded);
+			Assert.Contains(new ColorRgbaFloat(1, 0, 1), decoded);
 
-			HdrImage image = new HdrImage(new Span2D<ColorRgbFloat>(decoded, height * 4, width * 4));
+			var image = decoded.AsBCnTextureData(width * 4, height * 4).AsTexture<RadianceFile>();
 			using var fs = File.OpenWrite("test_decode_bc6h_error.hdr");
-			image.Write(fs);
+			image.WriteToStream(fs);
 		}
 
 	}

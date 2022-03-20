@@ -14,7 +14,7 @@ namespace BCnEncTests
 		[Fact]
 		public void Clusterize()
 		{
-			var testImage = ImageLoader.TestBlur1.Clone();
+			var testImage = ImageLoader.TestRawImages["diffuse_1"].Clone();
 
 			var pix = TestHelper.GetSinglePixelArray(testImage);
 

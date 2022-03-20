@@ -1,11 +1,12 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using BCnEncoder.Decoder;
 using BCnEncoder.Encoder;
 using BCnEncoder.ImageSharp;
 using BCnEncoder.Shared;
-using BCnEncoder.Shared.ImageFiles;
+using BCnEncoder.TextureFormats;
 using BCnEncTests.Support;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
@@ -16,25 +17,33 @@ namespace BCnEncTests
 {
 	public class ProgressTests
 	{
-		private ITestOutputHelper output;
+		private readonly ITestOutputHelper output;
 
 		public ProgressTests(ITestOutputHelper output) => this.output = output;
 
-		private async Task ExecuteEncodeProgressReport(BcEncoder encoder, Image<Rgba32> testImage, int expectedTotalBlocks)
+		private async Task ExecuteEncodeProgressReport(BcEncoder encoder, Image<Rgba32> testImage)
 		{
 			var lastProgress = new ProgressElement(0, 1);
-
-			var processedBlocks = 0;
+			
 			encoder.Options.Progress = new SynchronousProgress<ProgressElement>(element =>
 			{
-				output.WriteLine($"Progress = {element.CurrentBlock} / {element.TotalBlocks}");
-
-				Assert.Equal(++processedBlocks, element.CurrentBlock);
+				Assert.True(lastProgress.CurrentBlock < element.CurrentBlock);
 				lastProgress = element;
 			});
+
+			var numMips = encoder.CalculateNumberOfMipLevels(testImage.Width, testImage.Height);
+
+			var expectedTotalBlocks = 0L;
+
+			for (var i = 0; i < numMips; i++)
+			{
+				encoder.CalculateMipMapSize(testImage.Width, testImage.Height, i, out var mW, out var mH);
+				expectedTotalBlocks += encoder.OutputOptions.Format.CalculateMipByteSize(mW, mH) / encoder.OutputOptions.Format.BytesPerBlock();
+			}
+
 
 			await using var ms = new MemoryStream();
-			await encoder.EncodeToStreamAsync(testImage, ms);
+			await encoder.EncodeToStreamAsync<DdsFile>(testImage, ms);
 
 			output.WriteLine("LastProgress = " + lastProgress);
 
@@ -42,27 +51,23 @@ namespace BCnEncTests
 			Assert.Equal(1, lastProgress.Percentage);
 		}
 
-		private async Task ExecuteDecodeProgressReport(BcDecoder decoder, KtxFile image, int expectedTotalBlocks, bool singleMip)
+		private async Task ExecuteDecodeProgressReport<T>(BcDecoder decoder, T image)
+			where T : ITextureFileFormat
 		{
 			var lastProgress = new ProgressElement(0, 1);
-
-			var processedBlocks = 0;
+			
 			decoder.Options.Progress = new SynchronousProgress<ProgressElement>(element =>
 			{
-				output.WriteLine($"Progress = {element.CurrentBlock} / {element.TotalBlocks}");
-
-				Assert.Equal(++processedBlocks, element.CurrentBlock);
+				Assert.True(lastProgress.CurrentBlock < element.CurrentBlock);
 				lastProgress = element;
 			});
 
-			if (singleMip)
-			{
-				await decoder.DecodeAsync(image);
-			}
-			else
-			{
-				await decoder.DecodeAllMipMapsAsync(image);
-			}
+			var bcnData = image.ToTextureData();
+
+			var expectedTotalBlocks = bcnData.MipLevels.Sum(m =>
+				bcnData.Format.CalculateMipByteSize(m.Width, m.Height)) / bcnData.Format.BytesPerBlock();
+
+			await decoder.DecodeAsync(bcnData);
 
 			output.WriteLine("LastProgress = " + lastProgress);
 
@@ -70,27 +75,21 @@ namespace BCnEncTests
 			Assert.Equal(1, lastProgress.Percentage);
 		}
 
-		private async Task ExecuteDecodeProgressReport(BcDecoder decoder, DdsFile image, int expectedTotalBlocks, bool singleMip)
+		private async Task ExecuteEncodeSingleMipProgressReport(BcEncoder encoder, Image<Rgba32> testImage, int mipLevel)
 		{
 			var lastProgress = new ProgressElement(0, 1);
-
-			var processedBlocks = 0;
-			decoder.Options.Progress = new SynchronousProgress<ProgressElement>(element =>
+			
+			encoder.Options.Progress = new SynchronousProgress<ProgressElement>(element =>
 			{
-				output.WriteLine($"Progress = {element.CurrentBlock} / {element.TotalBlocks}");
-
-				Assert.Equal(++processedBlocks, element.CurrentBlock);
+				Assert.True(lastProgress.CurrentBlock < element.CurrentBlock);
 				lastProgress = element;
 			});
 
-			if (singleMip)
-			{
-				await decoder.DecodeAsync(image);
-			}
-			else
-			{
-				await decoder.DecodeAllMipMapsAsync(image);
-			}
+			encoder.CalculateMipMapSize(testImage.Width, testImage.Height, mipLevel, out var mW, out var mH);
+			var expectedTotalBlocks = encoder.OutputOptions.Format.CalculateMipByteSize(mW, mH) / encoder.OutputOptions.Format.BytesPerBlock();
+
+			await using var ms = new MemoryStream();
+			await encoder.EncodeToRawBytesAsync(testImage, mipLevel);
 
 			output.WriteLine("LastProgress = " + lastProgress);
 
@@ -98,280 +97,68 @@ namespace BCnEncTests
 			Assert.Equal(1, lastProgress.Percentage);
 		}
 
-		[Fact]
-		public async void DecodeProgressReportParallel()
+		private async Task ExecuteDecodeSingleMipProgressReport<T>(BcDecoder decoder, T image, int mipLevel)
+			where T : ITextureFileFormat
 		{
-			var testImage = KtxLoader.TestDecompressBc1;
+			var lastProgress = new ProgressElement(0, 1);
+			
+			decoder.Options.Progress = new SynchronousProgress<ProgressElement>(element =>
+			{
+				Assert.True(lastProgress.CurrentBlock < element.CurrentBlock);
+				lastProgress = element;
+			});
+
+			var bcnData = image.ToTextureData();
+			var expectedTotalBlocks = bcnData.Format.CalculateMipByteSize(bcnData.MipLevels[mipLevel].Width, bcnData.MipLevels[mipLevel].Height) / bcnData.Format.BytesPerBlock();
+
+			await decoder.DecodeRawLdrAsync(bcnData.MipLevels[mipLevel].Data, bcnData.MipLevels[mipLevel].Width, bcnData.MipLevels[mipLevel].Height, bcnData.Format);
+
+			output.WriteLine("LastProgress = " + lastProgress);
+
+			Assert.Equal(expectedTotalBlocks, lastProgress.TotalBlocks);
+			Assert.Equal(1, lastProgress.Percentage);
+		}
+
+
+
+		[Theory]
+		[InlineData("bc1_unorm", true)]
+		[InlineData("bc1_unorm", false)]
+		[InlineData("alpha_1_bgra", true)]
+		[InlineData("alpha_1_bgra", false)]
+		public async void DecodeProgress(string decodeFile, bool parallel)
+		{
+			var testImage = ImageLoader.TestEncodedImages[decodeFile].Item1;
 			var decoder = new BcDecoder
 			{
-				Options = { IsParallel = true }
+				Options = { IsParallel = parallel }
 			};
-
-			var expectedTotal = 0;
-
-			for (var i = 0; i < testImage.header.NumberOfMipmapLevels; i++)
-			{
-				expectedTotal += decoder.GetBlockCount((int)testImage.MipMaps[i].Width, (int)testImage.MipMaps[i].Height);
-			}
-
-			await ExecuteDecodeProgressReport(decoder, testImage, expectedTotal, false);
+			
+			await ExecuteDecodeProgressReport(decoder, testImage);
+			await ExecuteDecodeSingleMipProgressReport(decoder, testImage, 0);
+			await ExecuteDecodeSingleMipProgressReport(decoder, testImage, 1);
+			await ExecuteDecodeSingleMipProgressReport(decoder, testImage, 2);
 		}
 
-		[Fact]
-		public async void DecodeProgressReportNonParallel()
+		[Theory]
+		[InlineData("diffuse_1", true, CompressionFormat.Bc1)]
+		[InlineData("diffuse_1", false, CompressionFormat.Bc1)]
+		[InlineData("diffuse_1", true, CompressionFormat.R8G8)]
+		[InlineData("diffuse_1", false, CompressionFormat.R8G8)]
+		public async void EncodeProgressReport(string testRaw, bool parallel, CompressionFormat format)
 		{
-			var testImage = KtxLoader.TestDecompressBc1;
-			var decoder = new BcDecoder
+			var testImage = ImageLoader.TestRawImages[testRaw];
+			var encoder = new BcEncoder(format)
 			{
-				Options = { IsParallel = false }
+				Options = { IsParallel = parallel },
+				OutputOptions = { Quality = CompressionQuality.Fast }
 			};
-
-			var expectedTotal = 0;
-
-			for (var i = 0; i < testImage.header.NumberOfMipmapLevels; i++)
-			{
-				expectedTotal += decoder.GetBlockCount((int)testImage.MipMaps[i].Width, (int)testImage.MipMaps[i].Height);
-			}
-
-			await ExecuteDecodeProgressReport(decoder, testImage, expectedTotal, false);
-		}
-
-		[Fact]
-		public async void DecodeProgressReportParallelOneMip()
-		{
-			var testImage = KtxLoader.TestDecompressBc1;
-			var decoder = new BcDecoder
-			{
-				Options = { IsParallel = true }
-			};
-
-			var expectedTotal = decoder.GetBlockCount((int)testImage.MipMaps[0].Width, (int)testImage.MipMaps[0].Height);
-
-			await ExecuteDecodeProgressReport(decoder, testImage, expectedTotal, true);
-		}
-
-		[Fact]
-		public async void DecodeProgressReportNonParallelOneMip()
-		{
-			var testImage = KtxLoader.TestDecompressBc1;
-			var decoder = new BcDecoder
-			{
-				Options = { IsParallel = false }
-			};
-
-			var expectedTotal = decoder.GetBlockCount((int)testImage.MipMaps[0].Width, (int)testImage.MipMaps[0].Height);
-
-			await ExecuteDecodeProgressReport(decoder, testImage, expectedTotal, true);
-		}
-
-		[Fact]
-		public async void DecodeProgressReportParallelDds()
-		{
-			var testImage = DdsLoader.TestDecompressBc1;
-			var decoder = new BcDecoder
-			{
-				Options = { IsParallel = true }
-			};
-
-			var expectedTotal = 0;
-
-			for (var i = 0; i < testImage.header.dwMipMapCount; i++)
-			{
-				expectedTotal += decoder.GetBlockCount((int)testImage.Faces[0].MipMaps[i].Width, (int)testImage.Faces[0].MipMaps[i].Height);
-			}
-
-			await ExecuteDecodeProgressReport(decoder, testImage, expectedTotal, false);
-		}
-
-		[Fact]
-		public async void DecodeProgressReportNonParallelDds()
-		{
-			var testImage = DdsLoader.TestDecompressBc1;
-			var decoder = new BcDecoder
-			{
-				Options = { IsParallel = false }
-			};
-
-			var expectedTotal = 0;
-
-			for (var i = 0; i < testImage.header.dwMipMapCount; i++)
-			{
-				expectedTotal += decoder.GetBlockCount((int)testImage.Faces[0].MipMaps[i].Width, (int)testImage.Faces[0].MipMaps[i].Height);
-			}
-
-			await ExecuteDecodeProgressReport(decoder, testImage, expectedTotal, false);
-		}
-
-		[Fact]
-		public async void DecodeProgressReportParallelOneMipDds()
-		{
-			var testImage = DdsLoader.TestDecompressBc1;
-			var decoder = new BcDecoder
-			{
-				Options = { IsParallel = true }
-			};
-
-			var expectedTotal = decoder.GetBlockCount((int)testImage.Faces[0].MipMaps[0].Width, (int)testImage.Faces[0].MipMaps[0].Height);
-
-			await ExecuteDecodeProgressReport(decoder, testImage, expectedTotal, true);
-		}
-
-		[Fact]
-		public async void DecodeProgressReportNonParallelOneMipDds()
-		{
-			var testImage = DdsLoader.TestDecompressBc1;
-			var decoder = new BcDecoder
-			{
-				Options = { IsParallel = false }
-			};
-
-			var expectedTotal = decoder.GetBlockCount((int)testImage.Faces[0].MipMaps[0].Width, (int)testImage.Faces[0].MipMaps[0].Height);
-
-			await ExecuteDecodeProgressReport(decoder, testImage, expectedTotal, true);
-		}
-
-		[Fact]
-		public async void EncodeProgressReportParallelKtx()
-		{
-			var testImage = ImageLoader.TestBlur1;
-			var encoder = new BcEncoder
-			{
-				Options = { IsParallel = true },
-				OutputOptions = { FileFormat = OutputFileFormat.Ktx }
-			};
-
-			var expectedTotal = 0;
-
-			for (var i = 0; i < encoder.CalculateNumberOfMipLevels(testImage); i++)
-			{
-				encoder.CalculateMipMapSize(testImage, i, out var mW, out var mH);
-				expectedTotal += encoder.GetBlockCount(mW, mH);
-			}
-
-			await ExecuteEncodeProgressReport(encoder, testImage, expectedTotal);
-		}
-
-		[Fact]
-		public async void EncodeProgressReportNonParallelKtx()
-		{
-			var testImage = ImageLoader.TestBlur1;
-			var encoder = new BcEncoder
-			{
-				Options = { IsParallel = false },
-				OutputOptions = { FileFormat = OutputFileFormat.Ktx }
-			};
-
-			var expectedTotal = 0;
-
-			for (var i = 0; i < encoder.CalculateNumberOfMipLevels(testImage); i++)
-			{
-				encoder.CalculateMipMapSize(testImage, i, out var mW, out var mH);
-				expectedTotal += encoder.GetBlockCount(mW, mH);
-			}
-
-			await ExecuteEncodeProgressReport(encoder, testImage, expectedTotal);
-		}
-
-		[Fact]
-		public async void EncodeProgressReportParallelOneMipKtx()
-		{
-			var testImage = ImageLoader.TestBlur1;
-			var encoder = new BcEncoder
-			{
-				Options = { IsParallel = true },
-				OutputOptions = { MaxMipMapLevel = 1, FileFormat = OutputFileFormat.Ktx }
-			};
-
-			var expectedTotal = encoder.GetBlockCount(testImage.Width, testImage.Height);
-
-			await ExecuteEncodeProgressReport(encoder, testImage, expectedTotal);
-		}
-
-		[Fact]
-		public async void EncodeProgressReportNonParallelOneMipKtx()
-		{
-			var testImage = ImageLoader.TestBlur1;
-			var encoder = new BcEncoder
-			{
-				Options = { IsParallel = false },
-				OutputOptions = { MaxMipMapLevel = 1, FileFormat = OutputFileFormat.Ktx }
-			};
-
-			var expectedTotal = encoder.GetBlockCount(testImage.Width, testImage.Height);
-
-			await ExecuteEncodeProgressReport(encoder, testImage, expectedTotal);
-		}
-
-		[Fact]
-		public async void EncodeProgressReportParallelDds()
-		{
-			var testImage = ImageLoader.TestBlur1;
-			var encoder = new BcEncoder
-			{
-				Options = { IsParallel = true },
-				OutputOptions = { FileFormat = OutputFileFormat.Dds }
-			};
-
-			var expectedTotal = 0;
-
-			for (var i = 0; i < encoder.CalculateNumberOfMipLevels(testImage); i++)
-			{
-				encoder.CalculateMipMapSize(testImage, i, out var mW, out var mH);
-				expectedTotal += encoder.GetBlockCount(mW, mH);
-			}
-
-			await ExecuteEncodeProgressReport(encoder, testImage, expectedTotal);
-		}
-
-		[Fact]
-		public async void EncodeProgressReportNonParallelDds()
-		{
-			var testImage = ImageLoader.TestBlur1;
-			var encoder = new BcEncoder
-			{
-				Options = { IsParallel = false },
-				OutputOptions = { FileFormat = OutputFileFormat.Dds }
-			};
-
-			var expectedTotal = 0;
-
-			for (var i = 0; i < encoder.CalculateNumberOfMipLevels(testImage); i++)
-			{
-				encoder.CalculateMipMapSize(testImage, i, out var mW, out var mH);
-				expectedTotal += encoder.GetBlockCount(mW, mH);
-			}
-
-			await ExecuteEncodeProgressReport(encoder, testImage, expectedTotal);
-		}
-
-		[Fact]
-		public async void EncodeProgressReportParallelOneMipDds()
-		{
-			var testImage = ImageLoader.TestBlur1;
-			var encoder = new BcEncoder
-			{
-				Options = { IsParallel = true },
-				OutputOptions = { MaxMipMapLevel = 1, FileFormat = OutputFileFormat.Dds }
-			};
-
-			var expectedTotal = encoder.GetBlockCount(testImage.Width, testImage.Height);
-
-			await ExecuteEncodeProgressReport(encoder, testImage, expectedTotal);
-		}
-
-		[Fact]
-		public async void EncodeProgressReportNonParallelOneMipDds()
-		{
-			var testImage = ImageLoader.TestBlur1;
-			var encoder = new BcEncoder
-			{
-				Options = { IsParallel = false },
-				OutputOptions = { MaxMipMapLevel = 1, FileFormat = OutputFileFormat.Dds }
-			};
-
-			var expectedTotal = encoder.GetBlockCount(testImage.Width, testImage.Height);
-
-			await ExecuteEncodeProgressReport(encoder, testImage, expectedTotal);
+			
+			await ExecuteEncodeProgressReport(encoder, testImage);
+			await ExecuteEncodeSingleMipProgressReport(encoder, testImage, 0);
+			await ExecuteEncodeSingleMipProgressReport(encoder, testImage, 1);
+			await ExecuteEncodeSingleMipProgressReport(encoder, testImage, 2);
+			await ExecuteEncodeSingleMipProgressReport(encoder, testImage, 3);
 		}
 	}
 
@@ -386,7 +173,7 @@ namespace BCnEncTests
 
 		public void Report(T value)
 		{
-			handler(value);
+			handler.Invoke(value);
 		}
 	}
 }

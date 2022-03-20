@@ -8,12 +8,6 @@ namespace BCnEncoder.Encoder.Options
 	public class EncoderInputOptions
     {
 	    /// <summary>
-	    /// If true, when encoding to R8 raw format,
-	    /// use the pixel luminance instead of just the red channel. Default is false. (Does not apply to BC4 format)
-	    /// </summary>
-	    public bool LuminanceAsRed { get; set; } = false;
-
-	    /// <summary>
 	    /// The color channel to take for the values of a BC4 block. Default is red.
 	    /// </summary>
 		public ColorComponent Bc4Component { get; set; } = ColorComponent.R;

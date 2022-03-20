@@ -29,26 +29,5 @@ namespace BCnEncoder.Encoder.Options
         /// Use bestQuality when needed. Default is balanced.
         /// </summary>
         public CompressionQuality Quality { get; set; } = CompressionQuality.Balanced;
-
-        /// <summary>
-        /// The output file Format of the data. Either Ktx or Dds.
-        /// Default is Ktx.
-        /// </summary>
-        public OutputFileFormat FileFormat { get; set; } = OutputFileFormat.Ktx;
-
-        /// <summary>
-        /// The DDS file Format doesn't seem to have a standard for indicating whether a BC1 texture
-        /// includes 1bit of alpha. This option will write DDPF_ALPHAPIXELS flag to the header
-        /// to indicate the presence of an alpha channel. Some programs read and write this flag,
-        /// but some programs don't like it and get confused. Your mileage may vary.
-        /// Default is false.
-        /// </summary>
-        public bool DdsBc1WriteAlphaFlag { get; set; } = false;
-
-		/// <summary>
-		/// When writing a dds file, always prefer using the Dxt10 header
-		/// to write the compression format instead of DwFourCC.
-		/// </summary>
-		public bool DdsPreferDxt10Header { get; set; } = false;
     }
 }

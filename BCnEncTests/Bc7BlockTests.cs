@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 using BCnEncoder.Decoder;
 using BCnEncoder.ImageSharp;
 using BCnEncoder.Shared;
-using BCnEncoder.Shared.ImageFiles;
+using BCnEncoder.TextureFormats;
 using SixLabors.ImageSharp;
 using Xunit;
 
@@ -21,10 +21,11 @@ namespace BCnEncTests
 			var outputBlocks = new Bc7Block[64 * numWidthBlocks * numHeightBlocks];
 			var encoded = new byte[64 * numWidthBlocks * numHeightBlocks * Unsafe.SizeOf<Bc7Block>()];
 
-			var output = new KtxFile(
+			var output = new KtxFile();
+			output.header =
 				KtxHeader.InitializeCompressed(numWidthBlocks * 8 * 4, numHeightBlocks * 8 * 4,
 					GlInternalFormat.GlCompressedRgbaBptcUnormArb,
-					GlFormat.GlRgba));
+					GlFormat.GlRgba);
 
 			var type0 = new Span<Bc7Block>(outputBlocks, 0, 64);
 			Type0Pack(type0);
@@ -66,7 +67,7 @@ namespace BCnEncTests
 				(uint)(8 * 4 * numHeightBlocks));
 
 			var fs = File.OpenWrite("bc7_blocktests.ktx");
-			output.Write(fs);
+			output.WriteToStream(fs);
 		}
 
 		[Fact]
@@ -82,12 +83,11 @@ namespace BCnEncTests
 			Random r = new Random(50);
 			r.NextBytes(buffer);
 
-			var pixels = decoder.DecodeRaw(buffer, width * 4, height * 4, CompressionFormat.Bc7);
-			var decoded = decoder.DecodeRawToImageRgba32(buffer, width * 4, height * 4, CompressionFormat.Bc7);
+			var pixels = decoder.DecodeRawLdr(buffer, width * 4, height * 4, CompressionFormat.Bc7);
 			Assert.Contains(new ColorRgba32(255, 0, 255), pixels);
 
 			using var fs = File.OpenWrite("test_decode_bc7_error.png");
-			decoded.SaveAsPng(fs);
+			pixels.AsBCnTextureData(width, height).AsImageRgba32().SaveAsPng(fs);
 		}
 
 		#region Type Packs

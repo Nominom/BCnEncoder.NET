@@ -1,18 +1,20 @@
 using System;
 using BCnEncoder.Shared;
-using BCnEncoder.Shared.ImageFiles;
 
 namespace BCnEncoder.Encoder
 {
-	internal interface IBcBlockEncoder<T> where T : unmanaged
+	internal interface IBcBlockEncoder<TRawBlock> : IBcEncoder
+		where TRawBlock : unmanaged
 	{
-		byte[] Encode(T[] blocks, int blockWidth, int blockHeight, CompressionQuality quality, OperationContext context);
-		void EncodeBlock(T block, CompressionQuality quality, Span<byte> output);
-		GlInternalFormat GetInternalFormat();
-		GlFormat GetBaseInternalFormat();
-		DxgiFormat GetDxgiFormat();
+		void EncodeBlock(TRawBlock block, CompressionQuality quality, Span<byte> output);
 		int GetBlockSize();
 	}
 
+	internal interface IBcLdrBlockEncoder : IBcBlockEncoder<RawBlock4X4Rgba32>, IBcLdrEncoder
+	{
+	}
 
+	internal interface IBcHdrBlockEncoder : IBcBlockEncoder<RawBlock4X4RgbFloat>
+	{
+	}
 }

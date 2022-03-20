@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -7,12 +8,13 @@ using BCnEncoder.Decoder;
 using BCnEncoder.Encoder;
 using BCnEncoder.ImageSharp;
 using BCnEncoder.Shared;
-using BCnEncoder.Shared.ImageFiles;
+using BCnEncoder.TextureFormats;
 using Microsoft.Toolkit.HighPerformance;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using Xunit;
 using Xunit.Abstractions;
+using Xunit.Sdk;
 
 namespace BCnEncTests.Support
 {
@@ -20,174 +22,166 @@ namespace BCnEncTests.Support
 	{
 		#region Assertions
 
-		public static void AssertPixelsEqual(Span<Rgba32> originalPixels, Span<Rgba32> pixels, CompressionQuality quality)
+		public static void AssertImagesEqual<TPixel>(Image<TPixel> expected, Image<TPixel> actual, int tolerance = 0)
+			where TPixel : unmanaged, IPixel<TPixel>
+		{
+			Assert.Equal(expected.Width, actual.Width);
+			Assert.Equal(expected.Height, actual.Height);
+			var size = Unsafe.SizeOf<TPixel>();
+			var bytes1 = new byte[expected.Height * expected.Width * size];
+			var bytes2 = new byte[actual.Height * actual.Width * size];
+			var pixels1 = bytes1.AsSpan().Cast<byte, TPixel>();
+			var pixels2 = bytes2.AsSpan().Cast<byte, TPixel>();
+
+			expected.CopyPixelDataTo(bytes1);
+			actual.CopyPixelDataTo(bytes2);
+
+			for (var i = 0; i < bytes1.Length; i++)
+			{
+				if (Math.Abs(bytes1[i] - bytes2[i]) > tolerance)
+				{
+					var tPixel1 = pixels1[i / size];
+					var tPixel2 = pixels2[i / size];
+					throw new AssertActualExpectedException(tPixel1, tPixel2,
+						$"Pixels were not exactly equal within tolerance of {tolerance}!",
+						"Expected", "Actual");
+				}
+			}
+		}
+
+		public static void AssertPixelsSimilar(Span<Rgba32> originalPixels, Span<Rgba32> pixels, CompressionQuality quality, bool countAlpha = true, ITestOutputHelper output = null)
 		{
 			var psnr = ImageQuality.PeakSignalToNoiseRatio(
 				MemoryMarshal.Cast<Rgba32, ColorRgba32>(originalPixels),
-				MemoryMarshal.Cast<Rgba32, ColorRgba32>(pixels));
-			AssertPSNR(psnr, quality);
+				MemoryMarshal.Cast<Rgba32, ColorRgba32>(pixels), countAlpha);
+			AssertPSNR(psnr, quality, output);
 		}
 
-		public static void AssertPixelsEqual(Span<ColorRgbFloat> originalPixels, Span<ColorRgbFloat> pixels, CompressionQuality quality, ITestOutputHelper output = null)
+		public static void AssertPixelsSimilar(Span<ColorRgbaFloat> originalPixels, Span<ColorRgbaFloat> pixels, CompressionQuality quality, bool countAlpha = true, ITestOutputHelper output = null)
 		{
-			var rmse = ImageQuality.CalculateLogRMSE(originalPixels,pixels);
+			var rmse = ImageQuality.CalculateLogRMSE(originalPixels,pixels, countAlpha);
 			AssertRMSE(rmse, quality, output);
 		}
 
-		public static void AssertImagesEqual(Image<Rgba32> original, Image<Rgba32> image, CompressionQuality quality, bool countAlpha = true)
+		public static void AssertImagesSimilar(Image<Rgba32> original, Image<Rgba32> image, CompressionQuality quality, bool countAlpha = true, ITestOutputHelper output = null)
 		{
+			Assert.Equal(original.Width, image.Width);
+			Assert.Equal(original.Height, image.Height);
+
 			var psnr = CalculatePSNR(original, image, countAlpha);
-			AssertPSNR(psnr, quality);
+			AssertPSNR(psnr, quality, output);
+		}
+
+		public static void AssertImagesSimilar(Image<RgbaVector> original, Image<RgbaVector> image, CompressionQuality quality, bool countAlpha = true, ITestOutputHelper output = null)
+		{
+			Assert.Equal(original.Width, image.Width);
+			Assert.Equal(original.Height, image.Height);
+
+			var rmse = CalculateLogRMSE(original, image, countAlpha);
+			AssertRMSE(rmse, quality, output);
 		}
 
 		#endregion
 
-		#region Execute methods
-
-		public static void ExecuteDecodingTest(KtxFile file, string outputFile)
+		public static void TestDecodingLdr<TTexture>(TTexture texture, Image<Rgba32> reference, BcDecoder decoder = null, string outMipFileFormat = null, int tolerance = 0)
+			where TTexture : ITextureFileFormat
 		{
-			Assert.True(file.header.VerifyHeader());
-			Assert.Equal((uint)1, file.header.NumberOfFaces);
-
-			var decoder = new BcDecoder();
-			using var image = decoder.DecodeToImageRgba32(file);
-
-			Assert.Equal((uint)image.Width, file.header.PixelWidth);
-			Assert.Equal((uint)image.Height, file.header.PixelHeight);
-
-			using var outFs = File.OpenWrite(outputFile);
-			image.SaveAsPng(outFs);
-		}
-
-		#region Dds
-
-		public static void ExecuteDdsWritingTest(Image<Rgba32> image, CompressionFormat format, string outputFile)
-		{
-			ExecuteDdsWritingTest(new[] { image }, format, outputFile);
-		}
-
-		public static void ExecuteDdsWritingTest(Image<Rgba32>[] images, CompressionFormat format, string outputFile)
-		{
-			var encoder = new BcEncoder();
-			encoder.OutputOptions.Quality = CompressionQuality.Fast;
-			encoder.OutputOptions.GenerateMipMaps = true;
-			encoder.OutputOptions.Format = format;
-			encoder.OutputOptions.FileFormat = OutputFileFormat.Dds;
-
-			using var fs = File.OpenWrite(outputFile);
-
-			if (images.Length == 1)
+			var bcnData = texture.ToTextureData();
+			if (bcnData.Format == CompressionFormat.Bc1 && texture is DdsFile)
 			{
-				encoder.EncodeToStream(images[0], fs);
+				bcnData.Format = CompressionFormat.Bc1WithAlpha;
 			}
-			else
+
+			decoder ??= new BcDecoder();
+			var decoded = decoder.Decode(bcnData)
+				.ConvertTo(CompressionFormat.Rgba32);
+
+			Assert.Equal(CompressionFormat.Rgba32, decoded.Format);
+
+			if (!string.IsNullOrEmpty(outMipFileFormat))
 			{
-				encoder.EncodeCubeMapToStream(images[0], images[1], images[2], images[3], images[4], images[5], fs);
-			}
-		}
-
-		public static void ExecuteDdsReadingTest(DdsFile file, DxgiFormat format, string outputFile, bool assertAlpha = false)
-		{
-			Assert.Equal(format, file.header.ddsPixelFormat.DxgiFormat);
-			Assert.Equal(file.header.dwMipMapCount, (uint)file.Faces[0].MipMaps.Length);
-
-			var decoder = new BcDecoder();
-			decoder.InputOptions.DdsBc1ExpectAlpha = assertAlpha;
-			var images = decoder.DecodeAllMipMapsToImageRgba32(file);
-
-			Assert.Equal((uint)images[0].Width, file.header.dwWidth);
-			Assert.Equal((uint)images[0].Height, file.header.dwHeight);
-
-			for (var i = 0; i < images.Length; i++)
-			{
-				if (assertAlpha)
+				for (var i = 0; i < decoded.NumMips; i++)
 				{
-					var pixels = GetSinglePixelArrayAsColors(images[0]);
-					Assert.Contains(pixels, x => x.a == 0);
+					var mipDecoded = decoded.AsImageRgba32(i);
+					mipDecoded.SaveAsPng(string.Format(outMipFileFormat, i));
 				}
+			}
 
-				using var outFs = File.OpenWrite(string.Format(outputFile, i));
-				images[i].SaveAsPng(outFs);
-				images[i].Dispose();
+			var imageDecoded = decoded.AsImageRgba32();
+
+			AssertImagesEqual(reference, imageDecoded, tolerance);
+		}
+
+		public static void TestDecodingHdr<TTexture>(TTexture texture, Image<RgbaVector> reference, BcDecoder decoder = null, string outMipFileFormat = null)
+			where TTexture : ITextureFileFormat
+		{
+			decoder ??= new BcDecoder();
+			var decoded = decoder.Decode(texture.ToTextureData());
+
+			Assert.Equal(CompressionFormat.RgbaFloat, decoded.Format);
+
+			using var imageDecoded = decoded.AsImageRgbaVector();
+
+			AssertImagesEqual(reference, imageDecoded);
+
+			if (!string.IsNullOrEmpty(outMipFileFormat))
+			{
+				for (var i = 0; i < decoded.NumMips; i++)
+				{
+					var mipDecoded = decoded.AsImageRgbaVector(i);
+					mipDecoded.SaveAsPng(string.Format(outMipFileFormat, i));
+				}
 			}
 		}
 
-		#endregion
-
-		#region Cancellation
-
-		public static async Task ExecuteCancellationTest(Image<Rgba32> image, bool isParallel)
+		public static void TestEncodingLdr<TTexture>(Image<Rgba32> original, string outFileName, CompressionFormat format, CompressionQuality quality, ITestOutputHelper output)
+			where TTexture : class, ITextureFileFormat<TTexture>, new()
 		{
-			var encoder = new BcEncoder(CompressionFormat.Bc7);
-			encoder.OutputOptions.Quality = CompressionQuality.Fast;
-			encoder.Options.IsParallel = isParallel;
-
-			var source = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
-			await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
-				encoder.EncodeToRawBytesAsync(image, 0, source.Token));
-		}
-
-		#endregion
-
-		#endregion
-
-		public static float DecodeKtxCheckPSNR(string filename, Image<Rgba32> original)
-		{
-			using var fs = File.OpenRead(filename);
-			var ktx = KtxFile.Load(fs);
-			var decoder = new BcDecoder()
+			var encoder = new BcEncoder(format)
 			{
-				OutputOptions = { Bc4Component = ColorComponent.Luminance }
+				OutputOptions =
+				{
+					GenerateMipMaps = true,
+					Quality = quality
+				}
 			};
-			using var img = decoder.DecodeToImageRgba32(ktx);
 
-			return CalculatePSNR(original, img);
-		}
+			var texture = encoder.EncodeToTexture<TTexture>(original);
+			using var fs = File.OpenWrite(outFileName);
+			texture.WriteToStream(fs);
 
-		public static float DecodeKtxCheckRMSEHdr(string filename, HdrImage original)
-		{
-			using var fs = File.OpenRead(filename);
-			var ktx = KtxFile.Load(fs);
-			var decoder = new BcDecoder()
-			{
-			};
+			var decoder = new BcDecoder();
+			var decoded = decoder.Decode(texture.ToTextureData()).ConvertTo(CompressionFormat.Rgba32);
 			
-			var decoded = decoder.DecodeHdr(ktx);
+			using var imageDecoded = decoded.AsImageRgba32();
 
-			return ImageQuality.CalculateLogRMSE(original.pixels, decoded);
+			AssertImagesSimilar(original, imageDecoded, quality, format.SupportsAlpha(), output);
 		}
 
-
-		public static void ExecuteEncodingTest(Image<Rgba32> image, CompressionFormat format, CompressionQuality quality, string filename, ITestOutputHelper output)
+		public static void TestEncodingHdr<TTexture>(Image<RgbaVector> original, string outFileName, CompressionFormat format, CompressionQuality quality, ITestOutputHelper output)
+			where TTexture : class, ITextureFileFormat<TTexture>, new()
 		{
-			var encoder = new BcEncoder();
-			encoder.OutputOptions.Quality = quality;
-			encoder.OutputOptions.GenerateMipMaps = true;
-			encoder.OutputOptions.Format = format;
+			var encoder = new BcEncoder(format)
+			{
+				OutputOptions =
+				{
+					GenerateMipMaps = true,
+					Quality = quality
+				}
+			};
 
-			var fs = File.OpenWrite(filename);
-			encoder.EncodeToStream(image, fs);
-			fs.Close();
+			var texture = encoder.EncodeToTexture<TTexture>(original.ToBCnTextureData());
+			using var fs = File.OpenWrite(outFileName);
+			texture.WriteToStream(fs);
 
-			var psnr = DecodeKtxCheckPSNR(filename, image);
-			output.WriteLine("RGBA PSNR: " + psnr + "db");
-			AssertPSNR(psnr, encoder.OutputOptions.Quality);
-		}
+			var decoder = new BcDecoder();
+			var decoded = decoder.Decode(texture.ToTextureData());
 
-		public static void ExecuteHdrEncodingTest(HdrImage image, CompressionFormat format, CompressionQuality quality, string filename, ITestOutputHelper output)
-		{
-			var encoder = new BcEncoder();
-			encoder.OutputOptions.Quality = quality;
-			encoder.OutputOptions.GenerateMipMaps = true;
-			encoder.OutputOptions.Format = format;
+			Assert.Equal(CompressionFormat.RgbaFloat, decoded.Format);
 
-			var fs = File.OpenWrite(filename);
-			encoder.EncodeToStreamHdr(image.pixels.AsMemory().AsMemory2D(image.height, image.width), fs);
-			fs.Close();
+			using var imageDecoded = decoded.AsImageRgbaVector();
 
-			var rmse = DecodeKtxCheckRMSEHdr(filename, image);
-			output.WriteLine("RGBFloat RMSE: " + rmse);
-			AssertRMSE(rmse, encoder.OutputOptions.Quality);
+			AssertImagesSimilar(original, imageDecoded, quality, format.SupportsAlpha(), output);
 		}
 
 		private static float CalculatePSNR(Image<Rgba32> original, Image<Rgba32> decoded, bool countAlpha = true)
@@ -198,8 +192,17 @@ namespace BCnEncTests.Support
 			return ImageQuality.PeakSignalToNoiseRatio(pixels, pixels2, countAlpha);
 		}
 
-		public static void AssertPSNR(float psnr, CompressionQuality quality)
+		private static float CalculateLogRMSE(Image<RgbaVector> original, Image<RgbaVector> decoded, bool countAlpha = true)
 		{
+			var pixels = GetSinglePixelArrayAsColors(original);
+			var pixels2 = GetSinglePixelArrayAsColors(decoded);
+
+			return ImageQuality.CalculateLogRMSE(pixels, pixels2, countAlpha);
+		}
+
+		public static void AssertPSNR(float psnr, CompressionQuality quality, ITestOutputHelper output = null)
+		{
+			output?.WriteLine($"PSNR: {psnr} , quality: {quality}");
 			if (quality == CompressionQuality.Fast)
 			{
 				Assert.True(psnr > 25);
@@ -232,6 +235,20 @@ namespace BCnEncTests.Support
 				{
 					var oPixel = original[x, y];
 					pixels[y * original.Width + x] = new ColorRgba32(oPixel.R, oPixel.G, oPixel.B, oPixel.A);
+				}
+			}
+			return pixels;
+		}
+
+		public static ColorRgbaFloat[] GetSinglePixelArrayAsColors(Image<RgbaVector> original)
+		{
+			var pixels = new ColorRgbaFloat[original.Width * original.Height];
+			for (var y = 0; y < original.Height; y++)
+			{
+				for (var x = 0; x < original.Width; x++)
+				{
+					var oPixel = original[x, y];
+					pixels[y * original.Width + x] = new ColorRgbaFloat(oPixel.R, oPixel.G, oPixel.B, oPixel.A);
 				}
 			}
 			return pixels;

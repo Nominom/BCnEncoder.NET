@@ -14,93 +14,44 @@ namespace BCnEncTests
 		[Fact]
 		public void EncodeDecode()
 		{
-			var inputImage = ImageLoader.TestGradient1;
+			var inputImage = ImageLoader.TestRawImages["diffuse_1"];
 			var decoder = new BcDecoder();
 			var encoder = new BcEncoder
 			{
 				OutputOptions = { Quality = CompressionQuality.BestQuality }
 			};
 
-			var encodedRawBytes = encoder.EncodeToRawBytes(inputImage);
-			var decodedImage = decoder.DecodeRawToImageRgba32(encodedRawBytes[0], inputImage.Width, inputImage.Height, CompressionFormat.Bc1);
+			var encodedRawBytes = encoder.EncodeToRawBytes(inputImage, 0, out _, out _);
+			var decodedImage = decoder.DecodeRawLdr(encodedRawBytes, inputImage.Width, inputImage.Height, CompressionFormat.Bc1);
 
-			var originalPixels = TestHelper.GetSinglePixelArray(ImageLoader.TestGradient1);
-			var decodedPixels  = TestHelper.GetSinglePixelArray(decodedImage);
+			var originalPixels = TestHelper.GetSinglePixelArray(inputImage);
+			var decodedPixels  = TestHelper.GetSinglePixelArray(decodedImage.AsBCnTextureData(inputImage.Width, inputImage.Height).AsImageRgba32());
 
-			TestHelper.AssertPixelsEqual(originalPixels, decodedPixels, encoder.OutputOptions.Quality);
+			TestHelper.AssertPixelsSimilar(originalPixels, decodedPixels, encoder.OutputOptions.Quality);
 		}
 
 		[Fact]
 		public void EncodeDecodeStream()
 		{
-			var inputImage = ImageLoader.TestGradient1;
+			var inputImage = ImageLoader.TestRawImages["diffuse_2"];
 			var decoder = new BcDecoder();
 			var encoder = new BcEncoder
 			{
 				OutputOptions = { Quality = CompressionQuality.BestQuality }
 			};
 
-			var encodedRawBytes = encoder.EncodeToRawBytes(inputImage);
+			var encodedRawBytes = encoder.EncodeToRawBytes(inputImage, 0, out _, out _);
 
-			using var ms = new MemoryStream(encodedRawBytes[0]);
+			using var ms = new MemoryStream(encodedRawBytes);
 
 			Assert.Equal(0, ms.Position);
 
-			var decodedImage = decoder.DecodeRawToImageRgba32(ms, inputImage.Width, inputImage.Height, CompressionFormat.Bc1);
+			var decodedImage = decoder.DecodeRawLdr(ms, inputImage.Width, inputImage.Height, CompressionFormat.Bc1);
 			
 			var originalPixels = TestHelper.GetSinglePixelArray(inputImage);
-			var decodedPixels  = TestHelper.GetSinglePixelArray(decodedImage);
+			var decodedPixels = TestHelper.GetSinglePixelArray(decodedImage.AsBCnTextureData(inputImage.Width, inputImage.Height).AsImageRgba32());
 
-			TestHelper.AssertPixelsEqual(originalPixels, decodedPixels, encoder.OutputOptions.Quality);
-		}
-
-
-		[Fact]
-		public void EncodeDecodeAllMipMapsStream()
-		{
-			var inputImage = ImageLoader.TestGradient1;
-			var decoder = new BcDecoder();
-			var encoder = new BcEncoder
-			{
-				OutputOptions =
-				{
-					Quality = CompressionQuality.BestQuality,
-					GenerateMipMaps = true,
-					MaxMipMapLevel = 0
-				}
-			};
-
-			using var ms = new MemoryStream();
-
-			var encodedRawBytes = encoder.EncodeToRawBytes(inputImage);
-
-			var mipLevels = encoder.CalculateNumberOfMipLevels(inputImage);
-			Assert.True(mipLevels > 1);
-
-			for (var i = 0; i < mipLevels; i++)
-			{
-				ms.Write(encodedRawBytes[i]);
-			}
-
-			ms.Position = 0;
-			Assert.Equal(0, ms.Position);
-
-			for (var i = 0; i < mipLevels; i++)
-			{
-				encoder.CalculateMipMapSize(inputImage, i, out var mipWidth, out var mipHeight);
-				using var resized = inputImage.Clone(x => x.Resize(mipWidth, mipHeight));
-
-				var decodedImage = decoder.DecodeRawToImageRgba32(ms, mipWidth, mipHeight, CompressionFormat.Bc1);
-
-				var originalPixels = TestHelper.GetSinglePixelArray(resized);
-				var decodedPixels  = TestHelper.GetSinglePixelArray(decodedImage);
-
-				TestHelper.AssertPixelsEqual(originalPixels, decodedPixels, encoder.OutputOptions.Quality);
-			}
-
-			encoder.CalculateMipMapSize(inputImage, mipLevels - 1, out var lastMWidth, out var lastMHeight);
-			Assert.Equal(1, lastMWidth);
-			Assert.Equal(1, lastMHeight);
+			TestHelper.AssertPixelsSimilar(originalPixels, decodedPixels, encoder.OutputOptions.Quality);
 		}
 	}
 }

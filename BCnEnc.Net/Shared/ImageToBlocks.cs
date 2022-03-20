@@ -206,9 +206,7 @@ namespace BCnEncoder.Shared
 
 		public static int CalculateNumOfBlocks(int pixelWidth, int pixelHeight)
 		{
-			var blocksWidth = ((pixelWidth + 3) & ~3) >> 2;
-			var blocksHeight = ((pixelHeight + 3) & ~3) >> 2;
-
+			CalculateNumOfBlocks(pixelWidth, pixelHeight, out var blocksWidth, out var blocksHeight);
 			return blocksWidth * blocksHeight;
 		}
 		public static void CalculateNumOfBlocks(int pixelWidth, int pixelHeight, out int blocksWidth, out int blocksHeight)

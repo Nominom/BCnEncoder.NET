@@ -6,10 +6,12 @@ using BCnEncoder.Decoder;
 using BCnEncoder.Encoder;
 using BCnEncoder.ImageSharp;
 using BCnEncoder.Shared;
+using BCnEncoder.TextureFormats;
 using Microsoft.Toolkit.HighPerformance;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using Xunit;
+using EncoderExtensions = BCnEncoder.ImageSharp.EncoderExtensions;
 
 namespace BCnEncTests
 {
@@ -25,10 +27,9 @@ namespace BCnEncTests
 			encoder.OutputOptions.GenerateMipMaps = true;
 			encoder.OutputOptions.Quality = CompressionQuality.Balanced;
 			encoder.OutputOptions.Format = CompressionFormat.Bc1;
-			encoder.OutputOptions.FileFormat = OutputFileFormat.Ktx; //Change to Dds for a dds file.
-
 			using FileStream fs = File.OpenWrite("example.ktx");
-			encoder.EncodeToStream(image, fs);
+
+			encoder.EncodeToStream<KtxFile>(image, fs);
 		}
 		
 		public void DecodeImageSharp()
@@ -36,7 +37,7 @@ namespace BCnEncTests
 			using FileStream fs = File.OpenRead("compressed_bc1.ktx");
 
 			BcDecoder decoder = new BcDecoder();
-			using Image<Rgba32> image = decoder.DecodeToImageRgba32(fs);
+			using Image<Rgba32> image = decoder.Decode<KtxFile>(fs).AsImageRgba32();
 			
 			using FileStream outFs = File.OpenWrite("decoding_test_bc1.png");
 			image.SaveAsPng(outFs);
@@ -44,7 +45,8 @@ namespace BCnEncTests
 
 		public void EncodeHdr()
 		{
-			HdrImage image = HdrImage.Read("example.hdr");
+			using FileStream ifs = File.OpenRead("example.hdr");
+			RadianceFile image = RadianceFile.Load(ifs);
 			
 
 			BcEncoder encoder = new BcEncoder();
@@ -52,10 +54,9 @@ namespace BCnEncTests
 			encoder.OutputOptions.GenerateMipMaps = true;
 			encoder.OutputOptions.Quality = CompressionQuality.Balanced;
 			encoder.OutputOptions.Format = CompressionFormat.Bc6U;
-			encoder.OutputOptions.FileFormat = OutputFileFormat.Ktx; //Change to Dds for a dds file.
 
-			using FileStream fs = File.OpenWrite("example.ktx");
-			encoder.EncodeToStreamHdr(image.PixelMemory, fs);
+			using FileStream fs = File.OpenWrite("example.dds");
+			encoder.EncodeToStream<DdsFile>(image.ToTextureData(), fs);
 		}
 
 		public void DecodeHdr()
@@ -63,12 +64,14 @@ namespace BCnEncTests
 			using FileStream fs = File.OpenRead("compressed_bc6.ktx");
 
 			BcDecoder decoder = new BcDecoder();
-			Memory2D<ColorRgbFloat> pixels = decoder.DecodeHdr2D(fs);
+			BCnTextureData decodedData = decoder.Decode<KtxFile>(fs);
 
-			HdrImage image = new HdrImage(pixels.Span);
+			BCnTextureData rgbeData = decodedData.ConvertTo(CompressionFormat.Rgbe);
+
+			RadianceFile image = rgbeData.AsTexture<RadianceFile>();
 
 			using FileStream outFs = File.OpenWrite("decoded.hdr");
-			image.Write(outFs);
+			image.WriteToStream(outFs);
 		}
 	}
 }

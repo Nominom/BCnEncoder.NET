@@ -1,10 +1,9 @@
 using System;
 using BCnEncoder.Shared;
-using BCnEncoder.Shared.ImageFiles;
 
 namespace BCnEncoder.Encoder
 {
-	internal class Bc1BlockEncoder : BaseBcBlockEncoder<Bc1Block, RawBlock4X4Rgba32>
+	internal class Bc1BlockEncoder : BaseBcLdrBlockEncoder<Bc1Block>
 	{
 		public override Bc1Block EncodeBlock(RawBlock4X4Rgba32 block, CompressionQuality quality)
 		{
@@ -22,20 +21,8 @@ namespace BCnEncoder.Encoder
 			}
 		}
 
-		public override GlInternalFormat GetInternalFormat()
-		{
-			return GlInternalFormat.GlCompressedRgbS3TcDxt1Ext;
-		}
-
-		public override GlFormat GetBaseInternalFormat()
-		{
-			return GlFormat.GlRgb;
-		}
-
-		public override DxgiFormat GetDxgiFormat()
-		{
-			return DxgiFormat.DxgiFormatBc1Unorm;
-		}
+		/// <inheritdoc />
+		public override CompressionFormat EncodedFormat => CompressionFormat.Bc1;
 
 		#region Encoding private stuff
 
@@ -218,7 +205,7 @@ namespace BCnEncoder.Encoder
 		#endregion
 	}
 
-	internal class Bc1AlphaBlockEncoder : BaseBcBlockEncoder<Bc1Block, RawBlock4X4Rgba32>
+	internal class Bc1AlphaBlockEncoder : BaseBcLdrBlockEncoder<Bc1Block>
 	{
 		public override Bc1Block EncodeBlock(RawBlock4X4Rgba32 block, CompressionQuality quality)
 		{
@@ -236,20 +223,8 @@ namespace BCnEncoder.Encoder
 			}
 		}
 
-		public override GlInternalFormat GetInternalFormat()
-		{
-			return GlInternalFormat.GlCompressedRgbaS3TcDxt1Ext;
-		}
-
-		public override GlFormat GetBaseInternalFormat()
-		{
-			return GlFormat.GlRgba;
-		}
-
-		public override DxgiFormat GetDxgiFormat()
-		{
-			return DxgiFormat.DxgiFormatBc1Unorm;
-		}
+		/// <inheritdoc />
+		public override CompressionFormat EncodedFormat => CompressionFormat.Bc1WithAlpha;
 
 		#region Encoding private stuff
 

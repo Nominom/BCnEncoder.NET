@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
@@ -8,6 +8,7 @@
 	<SymbolPackageFormat>snupkg</SymbolPackageFormat>
 	<GenerateDocumentationFile>true</GenerateDocumentationFile>
 	<DocumentationFile>bin\$(Configuration)\$(TargetFramework)\$(AssemblyName).xml</DocumentationFile>
+	<RootNamespace>BCnEncoder.ImageSharp</RootNamespace>
 
     <PackageId>BCnEncoder.Net.ImageSharp</PackageId>
     <Product>BCnEncoder.Net.ImageSharp</Product>

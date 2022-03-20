@@ -1,10 +1,9 @@
 using System;
 using BCnEncoder.Shared;
-using BCnEncoder.Shared.ImageFiles;
 
 namespace BCnEncoder.Encoder
 {
-	internal class Bc2BlockEncoder : BaseBcBlockEncoder<Bc2Block, RawBlock4X4Rgba32>
+	internal class Bc2BlockEncoder : BaseBcLdrBlockEncoder<Bc2Block>
 	{
 		public override Bc2Block EncodeBlock(RawBlock4X4Rgba32 block, CompressionQuality quality)
 		{
@@ -22,20 +21,8 @@ namespace BCnEncoder.Encoder
 			}
 		}
 
-		public override GlInternalFormat GetInternalFormat()
-		{
-			return GlInternalFormat.GlCompressedRgbaS3TcDxt3Ext;
-		}
-
-		public override GlFormat GetBaseInternalFormat()
-		{
-			return GlFormat.GlRgba;
-		}
-
-		public override DxgiFormat GetDxgiFormat()
-		{
-			return DxgiFormat.DxgiFormatBc2Unorm;
-		}
+		/// <inheritdoc />
+		public override CompressionFormat EncodedFormat => CompressionFormat.Bc2;
 
 		#region Encoding private stuff
 

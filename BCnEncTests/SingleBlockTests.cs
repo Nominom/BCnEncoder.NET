@@ -25,7 +25,7 @@ namespace BCnEncTests
 		[InlineData(CompressionFormat.Bc7, CompressionQuality.Fast)]
 		public void SingleBlockEncodeDecodeStream(CompressionFormat format, CompressionQuality quality)
 		{
-			var testImage = ImageLoader.TestAlpha1;
+			var testImage = ImageLoader.TestRawImages["alpha_1"];
 
 			var encoder = new BcEncoder()
 			{
@@ -62,7 +62,7 @@ namespace BCnEncTests
 			{
 				for (var x = 0; x < testImage.Width; x += 4)
 				{
-					decoder.DecodeBlock(ms, format,
+					decoder.DecodeBlockLdr(ms, format,
 						decoded.AsSpan2D().Slice(y, x, 4, 4));
 				}
 			}
@@ -83,7 +83,7 @@ namespace BCnEncTests
 		[InlineData(CompressionFormat.Bc7, CompressionQuality.Fast)]
 		public void SingleBlockEncodeDecode(CompressionFormat format, CompressionQuality quality)
 		{
-			var testImage = ImageLoader.TestAlpha1;
+			var testImage = ImageLoader.TestRawImages["alpha_1"];
 
 			var encoder = new BcEncoder()
 			{
@@ -121,7 +121,7 @@ namespace BCnEncTests
 				for (var x = 0; x < testImage.Width; x += 4)
 				{
 					
-					decoder.DecodeBlock(
+					decoder.DecodeBlockLdr(
 						buffer.Slice(
 							blockIndex * decoder.GetBlockSize(format),
 							decoder.GetBlockSize(format)

@@ -1,23 +1,23 @@
 namespace BCnEncoder.Shared
 {
-	public struct ProgressElement
+	public readonly struct ProgressElement
 	{
 		/// <summary>
 		/// Current block being processed
 		/// </summary>
-		public int CurrentBlock { get; }
+		public long CurrentBlock { get; }
 
 		/// <summary>
 		/// The total amount of blocks to be processed
 		/// </summary>
-		public int TotalBlocks { get; }
+		public long TotalBlocks { get; }
 
 		/// <summary>
 		/// Returns the progress percentage as a float from 0 to 1
 		/// </summary>
 		public float Percentage => CurrentBlock / (float) TotalBlocks;
 
-		public ProgressElement(int currentBlock, int totalBlocks)
+		public ProgressElement(long currentBlock, long totalBlocks)
 		{
 			CurrentBlock = currentBlock;
 			TotalBlocks = totalBlocks;

@@ -1,3 +1,7 @@
+using System.IO;
+using BCnEncoder.Decoder;
+using BCnEncoder.Shared;
+using BCnEncoder.TextureFormats;
 using BCnEncTests.Support;
 using Xunit;
 
@@ -5,58 +9,49 @@ namespace BCnEncTests
 {
 	public class DecodingTests
 	{
-		[Fact]
-		public void Bc1Decode()
+		[Theory]
+		[InlineData("alpha_1_bc1a", 1)]
+		[InlineData("alpha_1_bc2", 1)]
+		[InlineData("alpha_1_bc3", 1)]
+		[InlineData("alpha_1_bc7", 0)]
+		[InlineData("alpha_1_bgra", 0)]
+		[InlineData("alpha_2_bc1a", 1)]
+		[InlineData("alpha_2_bc2", 1)]
+		[InlineData("alpha_2_bc3", 1)]
+		[InlineData("alpha_2_bc7", 0)]
+		[InlineData("alpha_2_rgba", 0)]
+		[InlineData("bc1_unorm", 0)]
+		[InlineData("bc1a_unorm", 0)]
+		[InlineData("bc2_unorm", 0)]
+		[InlineData("bc3_unorm", 0)]
+		[InlineData("bc4_unorm", 0)]
+		[InlineData("bc5_unorm", 0)]
+		[InlineData("bc7_unorm", 0)]
+		[InlineData("bc7_unorm_alltypes", 0)]
+		[InlineData("bc6h_ufloat", 1)]
+		[InlineData("hdr_1_rgbe", 1)]
+		[InlineData("hdr_1_xyze", 5)] // Need high tolerance for xyze :/ ?
+		[InlineData("hdr_2_rgbe", 1)]
+		[InlineData("raw_r8_unorm", 0)]
+		[InlineData("raw_r8g8_unorm", 0)]
+		[InlineData("raw_r8g8b8_unorm", 0)]
+		[InlineData("raw_r8g8b8a8_unorm", 0)]
+		[InlineData("raw_r16g16b16_sfloat", 1)]
+		public void TestDecoding(string testImage, int tolerance)
 		{
-			TestHelper.ExecuteDecodingTest(KtxLoader.TestDecompressBc1, "decoding_test_bc1.png");
-		}
+			var decoder = new BcDecoder();
+			decoder.OutputOptions.Bc4Component = ColorComponent.Luminance;
 
-		[Fact]
-		public void Bc1AlphaDecode()
-		{
-			TestHelper.ExecuteDecodingTest(KtxLoader.TestDecompressBc1A, "decoding_test_bc1a.png");
-		}
+			var encodedFile = ImageLoader.TestEncodedImages[testImage];
+			var bcnData = encodedFile.Item1.ToTextureData();
 
-		[Fact]
-		public void Bc2Decode()
-		{
-			TestHelper.ExecuteDecodingTest(KtxLoader.TestDecompressBc2, "decoding_test_bc2.png");
-		}
+			Assert.True(bcnData.Format != CompressionFormat.Unknown);
+			Assert.True(bcnData.Width > 0);
+			Assert.True(bcnData.Height > 0);
+			Assert.True(bcnData.NumMips > 0);
+			Assert.True(bcnData.NumFaces == 1);
 
-		[Fact]
-		public void Bc3Decode()
-		{
-			TestHelper.ExecuteDecodingTest(KtxLoader.TestDecompressBc3, "decoding_test_bc3.png");
-		}
-
-		[Fact]
-		public void Bc4Decode()
-		{
-			TestHelper.ExecuteDecodingTest(KtxLoader.TestDecompressBc4Unorm, "decoding_test_bc4.png");
-		}
-
-		[Fact]
-		public void Bc5Decode()
-		{
-			TestHelper.ExecuteDecodingTest(KtxLoader.TestDecompressBc5Unorm, "decoding_test_bc5.png");
-		}
-
-		[Fact]
-		public void Bc7DecodeRgb()
-		{
-			TestHelper.ExecuteDecodingTest(KtxLoader.TestDecompressBc7Rgb, "decoding_test_bc7_rgb.png");
-		}
-
-		[Fact]
-		public void Bc7DecodeUnorm()
-		{
-			TestHelper.ExecuteDecodingTest(KtxLoader.TestDecompressBc7Unorm, "decoding_test_bc7_unorm.png");
-		}
-
-		[Fact]
-		public void Bc7DecodeEveryBlockType()
-		{
-			TestHelper.ExecuteDecodingTest(KtxLoader.TestDecompressBc7Types, "decoding_test_bc7_types.png");
+			TestHelper.TestDecodingLdr(encodedFile.Item1, encodedFile.Item2, decoder, $"test_decode_{testImage}_{bcnData.Format}_mip{{0}}.png", tolerance);
 		}
 	}
 }

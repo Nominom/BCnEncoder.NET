@@ -1,9 +1,8 @@
 using BCnEncoder.Shared;
-using BCnEncoder.Shared.ImageFiles;
 
 namespace BCnEncoder.Encoder
 {
-	internal class Bc5BlockEncoder : BaseBcBlockEncoder<Bc5Block, RawBlock4X4Rgba32>
+	internal class Bc5BlockEncoder : BaseBcLdrBlockEncoder<Bc5Block>
 	{
 		private readonly Bc4ComponentBlockEncoder redBlockEncoder;
 		private readonly Bc4ComponentBlockEncoder greenBlockEncoder;
@@ -23,19 +22,7 @@ namespace BCnEncoder.Encoder
 			};
 		}
 
-		public override GlInternalFormat GetInternalFormat()
-		{
-			return GlInternalFormat.GlCompressedRedGreenRgtc2Ext;
-		}
-
-		public override GlFormat GetBaseInternalFormat()
-		{
-			return GlFormat.GlRg;
-		}
-
-		public override DxgiFormat GetDxgiFormat()
-		{
-			return DxgiFormat.DxgiFormatBc5Unorm;
-		}
+		/// <inheritdoc />
+		public override CompressionFormat EncodedFormat => CompressionFormat.Bc5;
 	}
 }

@@ -1,11 +1,10 @@
 using System;
 using System.Diagnostics;
 using BCnEncoder.Shared;
-using BCnEncoder.Shared.ImageFiles;
 
 namespace BCnEncoder.Encoder
 {
-	internal class Bc4BlockEncoder : BaseBcBlockEncoder<Bc4Block, RawBlock4X4Rgba32>
+	internal class Bc4BlockEncoder : BaseBcLdrBlockEncoder<Bc4Block>
 	{
 		private readonly Bc4ComponentBlockEncoder bc4Encoder;
 
@@ -24,20 +23,8 @@ namespace BCnEncoder.Encoder
 			return output;
 		}
 
-		public override GlInternalFormat GetInternalFormat()
-		{
-			return GlInternalFormat.GlCompressedRedRgtc1Ext;
-		}
-
-		public override GlFormat GetBaseInternalFormat()
-		{
-			return GlFormat.GlRed;
-		}
-
-		public override DxgiFormat GetDxgiFormat()
-		{
-			return DxgiFormat.DxgiFormatBc4Unorm;
-		}
+		/// <inheritdoc />
+		public override CompressionFormat EncodedFormat => CompressionFormat.Bc4;
 	}
 
 	internal class Bc4ComponentBlockEncoder

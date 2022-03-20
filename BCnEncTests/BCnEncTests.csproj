@@ -16,6 +16,7 @@
   <ItemGroup>
     <ProjectReference Include="..\BCnEnc.Net\BCnEncoder.csproj" />
     <ProjectReference Include="..\BCnEncoder.NET.ImageSharp\BCnEncoder.NET.ImageSharp.csproj" />
+    <ProjectReference Include="..\BCnEncoder.Net.TextureFormats\BCnEncoder.Net.TextureFormats.csproj" />
   </ItemGroup>
 
 </Project>

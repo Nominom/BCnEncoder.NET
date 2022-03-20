@@ -107,7 +107,7 @@ namespace BCnEncoder.Shared
 				var ye = (col1.y - col2.y) * yMultiplier;
 				var cbe = col1.cb - col2.cb;
 				var cre = col1.cr - col2.cr;
-				var ae = (col1.alpha - col2.alpha) * alphaMultiplier;
+				var ae = (col1.a - col2.a) * alphaMultiplier;
 
 				yError += ye * ye;
 				cbError += cbe * cbe;

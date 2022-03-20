@@ -1,34 +1,16 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using BCnEncoder.Shared;
-using BCnEncoder.Shared.ImageFiles;
 
 namespace BCnEncoder.Encoder.Bptc
 {
-	internal class Bc6Encoder : BaseBcBlockEncoder<Bc6Block, RawBlock4X4RgbFloat>
+	internal class Bc6Encoder : BaseBcHdrBlockEncoder<Bc6Block>
 	{
 		private readonly bool signed;
 
 		public Bc6Encoder(bool signed)
 		{
 			this.signed = signed;
-		}
-
-
-		public override GlInternalFormat GetInternalFormat()
-		{
-			return signed ? GlInternalFormat.GlCompressedRgbBptcSignedFloatArb : GlInternalFormat.GlCompressedRgbBptcUnsignedFloatArb;
-		}
-
-		public override GlFormat GetBaseInternalFormat()
-		{
-			return GlFormat.GlRgb;
-		}
-
-		public override DxgiFormat GetDxgiFormat()
-		{
-			return signed ? DxgiFormat.DxgiFormatBc6HSf16 : DxgiFormat.DxgiFormatBc6HUf16;
 		}
 
 		public override Bc6Block EncodeBlock(RawBlock4X4RgbFloat block, CompressionQuality quality)
@@ -45,6 +27,9 @@ namespace BCnEncoder.Encoder.Bptc
 					throw new ArgumentOutOfRangeException(nameof(quality), quality, null);
 			}
 		}
+
+		/// <inheritdoc />
+		public override CompressionFormat EncodedFormat => signed ? CompressionFormat.Bc6S : CompressionFormat.Bc6U;
 
 		internal static ClusterIndices4X4 CreateClusterIndexBlock(RawBlock4X4RgbFloat raw, out int outputNumClusters,
 			int numClusters = 2)

@@ -1,9 +1,8 @@
 using BCnEncoder.Shared;
-using BCnEncoder.Shared.ImageFiles;
 
 namespace BCnEncoder.Encoder
 {
-	internal unsafe class AtcBlockEncoder : BaseBcBlockEncoder<AtcBlock, RawBlock4X4Rgba32>
+	internal unsafe class AtcBlockEncoder : BaseBcLdrBlockEncoder<AtcBlock>
 	{
 		private readonly Bc1BlockEncoder bc1BlockEncoder;
 
@@ -36,23 +35,11 @@ namespace BCnEncoder.Encoder
 			return atcBlock;
 		}
 
-		public override GlInternalFormat GetInternalFormat()
-		{
-			return GlInternalFormat.GlCompressedRgbAtc;
-		}
-
-		public override GlFormat GetBaseInternalFormat()
-		{
-			return GlFormat.GlRgb;
-		}
-
-		public override DxgiFormat GetDxgiFormat()
-		{
-			return DxgiFormat.DxgiFormatAtcExt;
-		}
+		/// <inheritdoc />
+		public override CompressionFormat EncodedFormat => CompressionFormat.Atc;
 	}
 
-	internal class AtcExplicitAlphaBlockEncoder : BaseBcBlockEncoder<AtcExplicitAlphaBlock, RawBlock4X4Rgba32>
+	internal class AtcExplicitAlphaBlockEncoder : BaseBcLdrBlockEncoder<AtcExplicitAlphaBlock>
 	{
 		private readonly AtcBlockEncoder atcBlockEncoder;
 
@@ -79,23 +66,11 @@ namespace BCnEncoder.Encoder
 			};
 		}
 
-		public override GlInternalFormat GetInternalFormat()
-		{
-			return GlInternalFormat.GlCompressedRgbaAtcExplicitAlpha;
-		}
-
-		public override GlFormat GetBaseInternalFormat()
-		{
-			return GlFormat.GlRgba;
-		}
-
-		public override DxgiFormat GetDxgiFormat()
-		{
-			return DxgiFormat.DxgiFormatAtcExplicitAlphaExt;
-		}
+		/// <inheritdoc />
+		public override CompressionFormat EncodedFormat => CompressionFormat.AtcExplicitAlpha;
 	}
 
-	internal class AtcInterpolatedAlphaBlockEncoder : BaseBcBlockEncoder<AtcInterpolatedAlphaBlock, RawBlock4X4Rgba32>
+	internal class AtcInterpolatedAlphaBlockEncoder : BaseBcLdrBlockEncoder<AtcInterpolatedAlphaBlock>
 	{
 		private readonly Bc4ComponentBlockEncoder bc4BlockEncoder;
 		private readonly AtcBlockEncoder atcBlockEncoder;
@@ -118,19 +93,7 @@ namespace BCnEncoder.Encoder
 			};
 		}
 
-		public override GlInternalFormat GetInternalFormat()
-		{
-			return GlInternalFormat.GlCompressedRgbaAtcInterpolatedAlpha;
-		}
-
-		public override GlFormat GetBaseInternalFormat()
-		{
-			return GlFormat.GlRgba;
-		}
-
-		public override DxgiFormat GetDxgiFormat()
-		{
-			return DxgiFormat.DxgiFormatAtcInterpolatedAlphaExt;
-		}
+		/// <inheritdoc />
+		public override CompressionFormat EncodedFormat => CompressionFormat.AtcInterpolatedAlpha;
 	}
 }

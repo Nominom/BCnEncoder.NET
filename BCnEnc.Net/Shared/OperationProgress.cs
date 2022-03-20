@@ -2,26 +2,22 @@ using System;
 
 namespace BCnEncoder.Shared
 {
-	public class OperationProgress
+	internal class OperationProgress
 	{
-		private readonly IProgress<ProgressElement> progress;
-		private readonly int totalBlocks;
-		private int processedBlocks;
+		internal readonly IProgress<ProgressElement> progress;
+		internal readonly long totalBlocks;
+		internal long processedBlocks;
 
-		public OperationProgress(IProgress<ProgressElement> progress, int totalBlocks)
+		public OperationProgress(IProgress<ProgressElement> progress, long totalBlocks)
 		{
 			this.progress = progress;
 			this.totalBlocks = totalBlocks;
 		}
 
-		public void SetProcessedBlocks(int processedBlocks)
+		public void Report(long blocksSinceLastReport)
 		{
-			this.processedBlocks = processedBlocks;
-		}
-
-		public void Report(int currentBlock)
-		{
-			progress?.Report(new ProgressElement(processedBlocks + currentBlock, totalBlocks));
+			processedBlocks += blocksSinceLastReport;
+			progress?.Report(new ProgressElement(processedBlocks, totalBlocks));
 		}
 	}
 }
