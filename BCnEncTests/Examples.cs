@@ -9,6 +9,7 @@ using BCnEncoder.Shared;
 using BCnEncoder.TextureFormats;
 using Microsoft.Toolkit.HighPerformance;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Metadata.Profiles.Icc;
 using SixLabors.ImageSharp.PixelFormats;
 using Xunit;
 using EncoderExtensions = BCnEncoder.ImageSharp.EncoderExtensions;
@@ -23,7 +24,7 @@ namespace BCnEncTests
 			using Image<Rgba32> image = Image.Load<Rgba32>("example.png");
 
 			BcEncoder encoder = new BcEncoder();
-
+			
 			encoder.OutputOptions.GenerateMipMaps = true;
 			encoder.OutputOptions.Quality = CompressionQuality.Balanced;
 			encoder.OutputOptions.Format = CompressionFormat.Bc1;
