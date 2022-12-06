@@ -486,6 +486,24 @@ namespace BCnEncoder.Shared.ImageFiles
 									return DxgiFormat.DxgiFormatB8G8R8A8Unorm;
 								}
 							}
+							else if (dwRgbBitCount == 16)
+							{
+								if (dwRBitMask == 0b0_11111_00000_00000 &&
+									dwGBitMask == 0b0_00000_11111_00000 &&
+									dwBBitMask == 0b0_00000_00000_11111 &&
+									dwABitMask == 0b1_00000_00000_00000)
+								{
+									return DxgiFormat.DxgiFormatB5G5R5A1Unorm;
+								}
+
+								if (dwRBitMask == 0b0000_1111_0000_0000 &&
+									dwGBitMask == 0b0000_0000_1111_0000 &&
+									dwBBitMask == 0b0000_0000_0000_1111 &&
+									dwABitMask == 0b1111_0000_0000_0000)
+								{
+									return DxgiFormat.DxgiFormatB4G4R4A4Unorm;
+								}
+							}
 						}
 						else //RGB
 						{
@@ -494,6 +512,25 @@ namespace BCnEncoder.Shared.ImageFiles
 								if (dwRBitMask == 0xff0000 && dwGBitMask == 0xff00 && dwBBitMask == 0xff)
 								{
 									return DxgiFormat.DxgiFormatB8G8R8X8Unorm;
+								}
+							}
+							else if (dwRgbBitCount == 16)
+							{
+								if (dwRBitMask == 0b0_11111_00000_00000 &&
+									dwGBitMask == 0b0_00000_11111_00000 &&
+									dwBBitMask == 0b0_00000_00000_11111)
+								{
+									// B5G5R5A1 without DdpfAlphaPixels and dwABitMask = 0.
+									// There is no DxgiFormat that matches.
+									// Visual Studio reports it as B5G5R5A1
+									return DxgiFormat.DxgiFormatB5G5R5A1Unorm;
+								}
+
+								if (dwRBitMask == 0b11111_000000_00000 &&
+								    dwGBitMask == 0b00000_111111_00000 &&
+								    dwBBitMask == 0b00000_000000_11111)
+								{
+									return DxgiFormat.DxgiFormatB5G6R5Unorm;
 								}
 							}
 						}
