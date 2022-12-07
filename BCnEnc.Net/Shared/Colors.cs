@@ -311,7 +311,7 @@ namespace BCnEncoder.Shared
 		}
 
 	}
-	
+
 	public struct ColorRgbFloat : IEquatable<ColorRgbFloat>
 	{
 		public float r, g, b;
@@ -597,6 +597,197 @@ namespace BCnEncoder.Shared
 		}
 	}
 
+	internal struct ColorRgb4444 : IEquatable<ColorRgb4444>
+	{
+		public bool Equals(ColorRgb4444 other)
+		{
+			return data == other.data;
+		}
+
+		public override bool Equals(object obj)
+		{
+			return obj is ColorRgb4444 other && Equals(other);
+		}
+
+		public override int GetHashCode()
+		{
+			return data.GetHashCode();
+		}
+
+		public static bool operator ==(ColorRgb4444 left, ColorRgb4444 right)
+		{
+			return left.Equals(right);
+		}
+
+		public static bool operator !=(ColorRgb4444 left, ColorRgb4444 right)
+		{
+			return !left.Equals(right);
+		}
+
+		private const ushort AlphaMask = 0b1111_0000_0000_0000;
+		private const int AlphaShift = 12;
+		private const ushort RedMask = 0b0000_1111_0000_0000;
+		private const int RedShift = 8;
+		private const ushort GreenMask = 0b0000_0000_1111_0000;
+		private const int GreenShift = 4;
+		private const ushort BlueMask = 0b0000_0000_0000_1111;
+
+		public ushort data;
+
+		public byte A
+		{
+			readonly get
+			{
+				var a4 = (data & AlphaMask) >> AlphaShift;
+				return (byte)((a4 << 4) | (a4 >> 0));
+			}
+			set
+			{
+				var a4 = value >> 4;
+				data = (ushort)(data & ~AlphaMask);
+				data = (ushort)(data | (a4 << AlphaShift));
+			}
+		}
+
+		public byte R
+		{
+			readonly get
+			{
+				var r4 = (data & RedMask) >> RedShift;
+				return (byte)((r4 << 4) | (r4 >> 0));
+			}
+			set
+			{
+				var r4 = value >> 4;
+				data = (ushort)(data & ~RedMask);
+				data = (ushort)(data | (r4 << RedShift));
+			}
+		}
+
+		public byte G
+		{
+			readonly get
+			{
+				var g4 = (data & GreenMask) >> GreenShift;
+				return (byte)((g4 << 4) | (g4 >> 0));
+			}
+			set
+			{
+				var g4 = value >> 4;
+				data = (ushort)(data & ~GreenMask);
+				data = (ushort)(data | (g4 << GreenShift));
+			}
+		}
+
+		public byte B
+		{
+			readonly get
+			{
+				var b4 = data & BlueMask;
+				return (byte)((b4 << 4) | (b4 >> 0));
+			}
+			set
+			{
+				var b4 = value >> 4;
+				data = (ushort)(data & ~BlueMask);
+				data = (ushort)(data | b4);
+			}
+		}
+
+		public int RawA
+		{
+			readonly get => (data & AlphaMask) >> AlphaShift;
+			set
+			{
+				if (value > 15) value = 15;
+				if (value < 0) value = 0;
+				data = (ushort)(data & ~AlphaMask);
+				data = (ushort)(data | (value << AlphaShift));
+			}
+		}
+
+		public int RawR
+		{
+			readonly get => (data & RedMask) >> RedShift;
+			set
+			{
+				if (value > 15) value = 15;
+				if (value < 0) value = 0;
+				data = (ushort)(data & ~RedMask);
+				data = (ushort)(data | (value << RedShift));
+			}
+		}
+
+		public int RawG
+		{
+			readonly get => (data & GreenMask) >> GreenShift;
+			set
+			{
+				if (value > 15) value = 15;
+				if (value < 0) value = 0;
+				data = (ushort)(data & ~GreenMask);
+				data = (ushort)(data | (value << GreenShift));
+			}
+		}
+
+		public int RawB
+		{
+			readonly get => data & BlueMask;
+			set
+			{
+				if (value > 15) value = 15;
+				if (value < 0) value = 0;
+				data = (ushort)(data & ~BlueMask);
+				data = (ushort)(data | value);
+			}
+		}
+
+		public ColorRgb4444(ushort value)
+		{
+			data = value;
+		}
+
+		public ColorRgb4444(byte r, byte g, byte b, byte a)
+		{
+			data = 0;
+			R = r;
+			G = g;
+			B = b;
+			A = a;
+		}
+
+		public ColorRgb4444(Vector3 colorVector)
+		{
+			data = 0;
+			R = ByteHelper.ClampToByte(colorVector.X * 255);
+			G = ByteHelper.ClampToByte(colorVector.Y * 255);
+			B = ByteHelper.ClampToByte(colorVector.Z * 255);
+		}
+
+		public ColorRgb4444(ColorRgb24 color)
+		{
+			data = 0;
+			R = color.r;
+			G = color.g;
+			B = color.b;
+		}
+
+		public readonly ColorRgb24 ToColorRgb24()
+		{
+			return new ColorRgb24(R, G, B);
+		}
+
+		public override string ToString()
+		{
+			return $"r : {R} g : {G} b : {B} a : {A}";
+		}
+
+		public ColorRgba32 ToColorRgba32()
+		{
+			return new ColorRgba32(R, G, B, A);
+		}
+	}
+
 	internal struct ColorRgb555 : IEquatable<ColorRgb555>
 	{
 		public bool Equals(ColorRgb555 other)
@@ -728,6 +919,11 @@ namespace BCnEncoder.Shared
 				data = (ushort)(data & ~BlueMask);
 				data = (ushort)(data | value);
 			}
+		}
+
+		public ColorRgb555(ushort value)
+		{
+			data = value;
 		}
 
 		public ColorRgb555(byte r, byte g, byte b)
@@ -884,6 +1080,11 @@ namespace BCnEncoder.Shared
 				data = (ushort)(data & ~BlueMask);
 				data = (ushort)(data | value);
 			}
+		}
+
+		public ColorRgb565(ushort value)
+		{
+			data = value;
 		}
 
 		public ColorRgb565(byte r, byte g, byte b)
