@@ -311,7 +311,7 @@ namespace BCnEncoder.Shared
 		}
 
 	}
-	
+
 	public struct ColorRgbFloat : IEquatable<ColorRgbFloat>
 	{
 		public float r, g, b;
@@ -643,7 +643,7 @@ namespace BCnEncoder.Shared
 			}
 			set
 			{
-				var a4 = value;
+				var a4 = value >> 4;
 				data = (ushort)(data & ~AlphaMask);
 				data = (ushort)(data | (a4 << AlphaShift));
 			}
@@ -658,7 +658,7 @@ namespace BCnEncoder.Shared
 			}
 			set
 			{
-				var r4 = value >> 3;
+				var r4 = value >> 4;
 				data = (ushort)(data & ~RedMask);
 				data = (ushort)(data | (r4 << RedShift));
 			}
@@ -673,7 +673,7 @@ namespace BCnEncoder.Shared
 			}
 			set
 			{
-				var g4 = value >> 3;
+				var g4 = value >> 4;
 				data = (ushort)(data & ~GreenMask);
 				data = (ushort)(data | (g4 << GreenShift));
 			}
@@ -688,7 +688,7 @@ namespace BCnEncoder.Shared
 			}
 			set
 			{
-				var b4 = value >> 3;
+				var b4 = value >> 4;
 				data = (ushort)(data & ~BlueMask);
 				data = (ushort)(data | b4);
 			}
@@ -747,12 +747,13 @@ namespace BCnEncoder.Shared
 			data = value;
 		}
 
-		public ColorRgb4444(byte r, byte g, byte b)
+		public ColorRgb4444(byte r, byte g, byte b, byte a)
 		{
 			data = 0;
 			R = r;
 			G = g;
 			B = b;
+			A = a;
 		}
 
 		public ColorRgb4444(Vector3 colorVector)

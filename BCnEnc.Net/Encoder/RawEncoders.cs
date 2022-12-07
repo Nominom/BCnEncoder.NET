@@ -1,6 +1,8 @@
-using System;
 using BCnEncoder.Shared;
 using BCnEncoder.Shared.ImageFiles;
+
+using System;
+using System.Runtime.InteropServices;
 
 namespace BCnEncoder.Encoder
 {
@@ -261,6 +263,201 @@ namespace BCnEncoder.Encoder
 		public DxgiFormat GetDxgiFormat()
 		{
 			return DxgiFormat.DxgiFormatB8G8R8A8Unorm;
+		}
+	}
+
+	internal class RawBgrEncoder : IRawEncoder
+	{
+		public byte[] Encode(ReadOnlyMemory<ColorRgba32> pixels)
+		{
+			var span = pixels.Span;
+
+			var output = new byte[pixels.Length * 4];
+			for (var i = 0; i < pixels.Length; i++)
+			{
+				output[i * 4] = span[i].b;
+				output[i * 4 + 1] = span[i].g;
+				output[i * 4 + 2] = span[i].r;
+				output[i * 4 + 3] = 255;
+			}
+			return output;
+		}
+
+		public GlInternalFormat GetInternalFormat()
+		{
+			return GlInternalFormat.GlBgra8Extension;
+		}
+
+		public GlFormat GetBaseInternalFormat()
+		{
+			return GlFormat.GlBgra;
+		}
+
+		public GlFormat GetGlFormat()
+		{
+			return GlFormat.GlBgra;
+		}
+
+		public GlType GetGlType()
+		{
+			return GlType.GlByte;
+		}
+
+		public uint GetGlTypeSize()
+		{
+			return 1;
+		}
+
+		public DxgiFormat GetDxgiFormat()
+		{
+			return DxgiFormat.DxgiFormatB8G8R8X8Unorm;
+		}
+	}
+
+	internal class RawBgr565Encoder : IRawEncoder
+	{
+		public byte[] Encode(ReadOnlyMemory<ColorRgba32> pixels)
+		{
+			var span = pixels.Span;
+
+			var output = new byte[pixels.Length * 2];
+			var outputSpan = MemoryMarshal.Cast<byte, ushort>(output.AsSpan());
+			for (var i = 0; i < pixels.Length; i++)
+			{
+				var color565 = new ColorRgb565(span[i].r, span[i].g, span[i].b);
+				outputSpan[i] = color565.data;
+			}
+
+			return output;
+		}
+
+		public GlInternalFormat GetInternalFormat()
+		{
+			throw new NotSupportedException("Bgr565 is not supported in ktx");
+		}
+
+		public GlFormat GetBaseInternalFormat()
+		{
+			throw new NotSupportedException("Bgr565 is not supported in ktx");
+		}
+
+		public GlFormat GetGlFormat()
+		{
+			throw new NotSupportedException("Bgr565 is not supported in ktx");
+		}
+
+		public GlType GetGlType()
+		{
+			throw new NotSupportedException("Bgr565 is not supported in ktx");
+		}
+
+		public uint GetGlTypeSize()
+		{
+			throw new NotSupportedException("Bgr565 is not supported in ktx");
+		}
+
+		public DxgiFormat GetDxgiFormat()
+		{
+			return DxgiFormat.DxgiFormatB5G6R5Unorm;
+		}
+	}
+
+	internal class RawBgr4444Encoder : IRawEncoder
+	{
+		public byte[] Encode(ReadOnlyMemory<ColorRgba32> pixels)
+		{
+			var span = pixels.Span;
+
+			var output = new byte[pixels.Length * 2];
+			var outputSpan = MemoryMarshal.Cast<byte, ushort>(output.AsSpan());
+			for (var i = 0; i < pixels.Length; i++)
+			{
+				var color4444 = new ColorRgb4444(span[i].r, span[i].g, span[i].b, span[i].a);
+				outputSpan[i] = color4444.data;
+			}
+
+			return output;
+		}
+
+		public GlInternalFormat GetInternalFormat()
+		{
+			return GlInternalFormat.GlBgra8Extension;
+		}
+
+		public GlFormat GetBaseInternalFormat()
+		{
+			return GlFormat.GlBgra;
+		}
+
+		public GlFormat GetGlFormat()
+		{
+			return GlFormat.GlBgra;
+		}
+
+		public GlType GetGlType()
+		{
+			return GlType.GlByte;
+		}
+
+		public uint GetGlTypeSize()
+		{
+			return 1;
+		}
+
+		public DxgiFormat GetDxgiFormat()
+		{
+			return DxgiFormat.DxgiFormatB4G4R4A4Unorm;
+		}
+	}
+
+	internal class RawBgr5551Encoder : IRawEncoder
+	{
+		public byte[] Encode(ReadOnlyMemory<ColorRgba32> pixels)
+		{
+			var span = pixels.Span;
+
+			var output = new byte[pixels.Length * 2];
+			var outputSpan = MemoryMarshal.Cast<byte, ushort>(output.AsSpan());
+			for (var i = 0; i < pixels.Length; i++)
+			{
+				var color5551 = new ColorRgb555(span[i].r, span[i].g, span[i].b)
+				{
+					Mode = span[i].a != 0 ? (byte)1 : (byte)0,
+				};
+				outputSpan[i] = color5551.data;
+			}
+
+			return output;
+		}
+
+		public GlInternalFormat GetInternalFormat()
+		{
+			return GlInternalFormat.GlBgra8Extension;
+		}
+
+		public GlFormat GetBaseInternalFormat()
+		{
+			return GlFormat.GlBgra;
+		}
+
+		public GlFormat GetGlFormat()
+		{
+			return GlFormat.GlBgra;
+		}
+
+		public GlType GetGlType()
+		{
+			return GlType.GlByte;
+		}
+
+		public uint GetGlTypeSize()
+		{
+			return 1;
+		}
+
+		public DxgiFormat GetDxgiFormat()
+		{
+			return DxgiFormat.DxgiFormatB5G5R5A1Unorm;
 		}
 	}
 }

@@ -1,13 +1,15 @@
 using BCnEncoder.Decoder.Options;
 using BCnEncoder.Shared;
+using BCnEncoder.Shared.ImageFiles;
+
+using Microsoft.Toolkit.HighPerformance;
+
 using System;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using BCnEncoder.Shared.ImageFiles;
-using Microsoft.Toolkit.HighPerformance;
 
 namespace BCnEncoder.Decoder
 {
@@ -1160,7 +1162,7 @@ namespace BCnEncoder.Decoder
 		/// <returns>An array of decoded Rgba32 images.</returns>
 		private ColorRgba32[][] DecodeInternal(DdsFile file, bool allMipMaps, CancellationToken token)
 		{
-			var mipMaps = allMipMaps ? file.header.dwMipMapCount : 1;
+			var mipMaps = allMipMaps ? file.header.MipMapCount : 1;
 			var colors = new ColorRgba32[mipMaps][];
 
 			var context = new OperationContext
@@ -1795,7 +1797,7 @@ namespace BCnEncoder.Decoder
 
 				case CompressionFormat.Unknown:
 					return 0;
-				
+
 				default:
 					throw new ArgumentOutOfRangeException(nameof(format), format, null);
 			}

@@ -190,18 +190,20 @@ namespace BCnEncoder.Shared.ImageFiles
 		public uint dwCaps4;
 		public uint dwReserved2;
 
+		public uint MipMapCount => (dwFlags & HeaderFlags.DdsdMipmapcount) != 0u ? MipMapCount : 1u;
+
 		public static (DdsHeader, DdsHeaderDx10) InitializeCompressed(int width, int height, DxgiFormat format, bool preferDxt10Header)
 		{
 			var header = new DdsHeader();
 			var dxt10Header = new DdsHeaderDx10();
 
 			header.dwSize = 124;
-			header.dwFlags = HeaderFlags.Required;
+			header.dwFlags = HeaderFlags.Required | HeaderFlags.DdsdMipmapcount;
 			header.dwWidth = (uint)width;
 			header.dwHeight = (uint)height;
 			header.dwDepth = 1;
 			header.dwMipMapCount = 1;
-			header.dwCaps = HeaderCaps.DdscapsTexture;
+			header.dwCaps = HeaderCaps.DdscapsTexture | HeaderCaps.DdscapsMipmap;
 
 			if (preferDxt10Header)
 			{
@@ -346,12 +348,12 @@ namespace BCnEncoder.Shared.ImageFiles
 			var header = new DdsHeader();
 
 			header.dwSize = 124;
-			header.dwFlags = HeaderFlags.Required | HeaderFlags.DdsdPitch;
+			header.dwFlags = HeaderFlags.Required | HeaderFlags.DdsdPitch | HeaderFlags.DdsdMipmapcount;
 			header.dwWidth = (uint)width;
 			header.dwHeight = (uint)height;
 			header.dwDepth = 1;
 			header.dwMipMapCount = 1;
-			header.dwCaps = HeaderCaps.DdscapsTexture;
+			header.dwCaps = HeaderCaps.DdscapsTexture | HeaderCaps.DdscapsMipmap;
 
 			if (format == DxgiFormat.DxgiFormatR8Unorm)
 			{
@@ -390,6 +392,19 @@ namespace BCnEncoder.Shared.ImageFiles
 				};
 				header.dwPitchOrLinearSize = (uint)((width * 32 + 7) / 8);
 			}
+			else if (format == DxgiFormat.DxgiFormatB8G8R8X8Unorm)
+			{
+				header.ddsPixelFormat = new DdsPixelFormat()
+				{
+					dwSize = 32,
+					dwFlags = PixelFormatFlags.DdpfRgb,
+					dwRgbBitCount = 32,
+					dwRBitMask = 0b11111111_00000000_00000000,
+					dwGBitMask = 0b00000000_11111111_00000000,
+					dwBBitMask = 0b00000000_00000000_11111111,
+				};
+				header.dwPitchOrLinearSize = (uint)((width * 32 + 7) / 8);
+			}
 			else if (format == DxgiFormat.DxgiFormatB8G8R8A8Unorm)
 			{
 				header.ddsPixelFormat = new DdsPixelFormat()
@@ -404,6 +419,47 @@ namespace BCnEncoder.Shared.ImageFiles
 				};
 				header.dwPitchOrLinearSize = (uint)((width * 32 + 7) / 8);
 			}
+			else if (format == DxgiFormat.DxgiFormatB5G6R5Unorm)
+			{
+				header.ddsPixelFormat = new DdsPixelFormat()
+				{
+					dwSize = 32,
+					dwFlags = PixelFormatFlags.DdpfRgb,
+					dwRgbBitCount = 16,
+					dwRBitMask = 0b11111_000000_00000,
+					dwGBitMask = 0b00000_111111_00000,
+					dwBBitMask = 0b00000_000000_11111,
+				};
+				header.dwPitchOrLinearSize = (uint)((width * 16 + 7) / 8);
+			}
+			else if (format == DxgiFormat.DxgiFormatB5G5R5A1Unorm)
+			{
+				header.ddsPixelFormat = new DdsPixelFormat()
+				{
+					dwSize = 32,
+					dwFlags = PixelFormatFlags.DdpfRgb | PixelFormatFlags.DdpfAlphaPixels,
+					dwRgbBitCount = 16,
+					dwABitMask = 0b1_00000_00000_00000,
+					dwRBitMask = 0b0_11111_00000_00000,
+					dwGBitMask = 0b0_00000_11111_00000,
+					dwBBitMask = 0b0_00000_00000_11111,
+				};
+				header.dwPitchOrLinearSize = (uint)((width * 16 + 7) / 8);
+			}
+			else if (format == DxgiFormat.DxgiFormatB4G4R4A4Unorm)
+			{
+				header.ddsPixelFormat = new DdsPixelFormat()
+				{
+					dwSize = 32,
+					dwFlags = PixelFormatFlags.DdpfRgb | PixelFormatFlags.DdpfAlphaPixels,
+					dwRgbBitCount = 16,
+					dwABitMask = 0b1111_0000_0000_0000,
+					dwRBitMask = 0b0000_1111_0000_0000,
+					dwGBitMask = 0b0000_0000_1111_0000,
+					dwBBitMask = 0b0000_0000_0000_1111,
+				};
+				header.dwPitchOrLinearSize = (uint)((width * 16 + 7) / 8);
+			}
 			else
 			{
 				throw new NotImplementedException("This Format is not implemented in this method");
@@ -416,7 +472,7 @@ namespace BCnEncoder.Shared.ImageFiles
 	public struct DdsPixelFormat
 	{
 		public static readonly uint Dx10 = MakeFourCc('D', 'X', '1', '0');
-		
+
 		public static readonly uint Dxt1 = MakeFourCc('D', 'X', 'T', '1');
 		public static readonly uint Dxt2 = MakeFourCc('D', 'X', 'T', '2');
 		public static readonly uint Dxt3 = MakeFourCc('D', 'X', 'T', '3');
@@ -527,8 +583,8 @@ namespace BCnEncoder.Shared.ImageFiles
 								}
 
 								if (dwRBitMask == 0b11111_000000_00000 &&
-								    dwGBitMask == 0b00000_111111_00000 &&
-								    dwBBitMask == 0b00000_000000_11111)
+									dwGBitMask == 0b00000_111111_00000 &&
+									dwBBitMask == 0b00000_000000_11111)
 								{
 									return DxgiFormat.DxgiFormatB5G6R5Unorm;
 								}

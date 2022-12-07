@@ -1,14 +1,16 @@
+using BCnEncoder.Encoder.Bptc;
+using BCnEncoder.Encoder.Options;
+using BCnEncoder.Shared;
+using BCnEncoder.Shared.ImageFiles;
+
+using Microsoft.Toolkit.HighPerformance;
+
 using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using BCnEncoder.Encoder.Bptc;
-using BCnEncoder.Encoder.Options;
-using BCnEncoder.Shared;
-using BCnEncoder.Shared.ImageFiles;
-using Microsoft.Toolkit.HighPerformance;
 
 namespace BCnEncoder.Encoder
 {
@@ -610,7 +612,7 @@ namespace BCnEncoder.Encoder
 			if (compressedEncoder == null)
 			{
 				var hdrEncoder = GetFloatBlockEncoder(OutputOptions.Format);
-				
+
 				if (hdrEncoder == null)
 				{
 					throw new NotSupportedException($"This format is either not supported or does not use block compression: {OutputOptions.Format}");
@@ -1319,7 +1321,7 @@ namespace BCnEncoder.Encoder
 		{
 			DdsFile output;
 			IBcBlockEncoder<RawBlock4X4RgbFloat> compressedEncoder = null;
-			
+
 			var faces = new[] { right, left, top, down, back, front };
 
 			var width = right.Width;
@@ -1337,7 +1339,7 @@ namespace BCnEncoder.Encoder
 			output = new DdsFile(ddsHeader, dxt10Header);
 
 			if (OutputOptions.DdsBc1WriteAlphaFlag &&
-			    OutputOptions.Format == CompressionFormat.Bc1WithAlpha)
+				OutputOptions.Format == CompressionFormat.Bc1WithAlpha)
 			{
 				output.header.ddsPixelFormat.dwFlags |= PixelFormatFlags.DdpfAlphaPixels;
 			}
@@ -1373,7 +1375,7 @@ namespace BCnEncoder.Encoder
 				for (var mip = 0; mip < numMipMaps; mip++)
 				{
 					byte[] encoded;
-					
+
 					var blocks = ImageToBlocks.ImageTo4X4(mipChain[mip], out var blocksWidth, out var blocksHeight);
 					encoded = compressedEncoder.Encode(blocks, blocksWidth, blocksHeight, OutputOptions.Quality, context);
 
@@ -2172,6 +2174,19 @@ namespace BCnEncoder.Encoder
 
 				case CompressionFormat.Rgba:
 					return new RawRgbaEncoder();
+
+
+				case CompressionFormat.Bgr:
+					return new RawBgrEncoder();
+
+				case CompressionFormat.B5G6R5:
+					return new RawBgr565Encoder();
+
+				case CompressionFormat.B4G4R4A4:
+					return new RawBgr4444Encoder();
+
+				case CompressionFormat.B5G5R5A1:
+					return new RawBgr5551Encoder();
 
 				case CompressionFormat.Bgra:
 					return new RawBgraEncoder();
