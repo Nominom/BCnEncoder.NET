@@ -190,7 +190,7 @@ namespace BCnEncoder.Shared.ImageFiles
 		public uint dwCaps4;
 		public uint dwReserved2;
 
-		public uint MipMapCount => (dwFlags & HeaderFlags.DdsdMipmapcount) != 0u ? MipMapCount : 1u;
+		public uint MipMapCount => (dwFlags & HeaderFlags.DdsdMipmapcount) != 0u ? dwMipMapCount : 1u;
 
 		public static (DdsHeader, DdsHeaderDx10) InitializeCompressed(int width, int height, DxgiFormat format, bool preferDxt10Header)
 		{
