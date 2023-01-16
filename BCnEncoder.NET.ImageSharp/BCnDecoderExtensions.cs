@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using BCnEncoder.Decoder;
 using BCnEncoder.Shared;
 using BCnEncoder.Shared.ImageFiles;
-using Microsoft.Toolkit.HighPerformance;
+using CommunityToolkit.HighPerformance;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Advanced;
 using SixLabors.ImageSharp.PixelFormats;

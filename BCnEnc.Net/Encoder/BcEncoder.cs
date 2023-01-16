@@ -8,7 +8,7 @@ using BCnEncoder.Encoder.Bptc;
 using BCnEncoder.Encoder.Options;
 using BCnEncoder.Shared;
 using BCnEncoder.Shared.ImageFiles;
-using Microsoft.Toolkit.HighPerformance;
+using CommunityToolkit.HighPerformance;
 
 namespace BCnEncoder.Encoder
 {
