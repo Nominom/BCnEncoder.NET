@@ -1160,7 +1160,7 @@ namespace BCnEncoder.Decoder
 		/// <returns>An array of decoded Rgba32 images.</returns>
 		private ColorRgba32[][] DecodeInternal(DdsFile file, bool allMipMaps, CancellationToken token)
 		{
-			var mipMaps = allMipMaps ? file.header.dwMipMapCount : 1;
+			var mipMaps = allMipMaps ? Math.Max(1, file.header.dwMipMapCount) : 1;
 			var colors = new ColorRgba32[mipMaps][];
 
 			var context = new OperationContext
@@ -1414,7 +1414,7 @@ namespace BCnEncoder.Decoder
 		/// <returns>An array of decoded Rgba32 images.</returns>
 		private ColorRgbFloat[][] DecodeInternalHdr(DdsFile file, bool allMipMaps, CancellationToken token)
 		{
-			var mipMaps = allMipMaps ? file.header.dwMipMapCount : 1;
+			var mipMaps = allMipMaps ? Math.Max(1, file.header.dwMipMapCount) : 1;
 			var colors = new ColorRgbFloat[mipMaps][];
 
 			var context = new OperationContext
