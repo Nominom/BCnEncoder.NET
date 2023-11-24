@@ -29,5 +29,10 @@ namespace BCnEncoder.Decoder.Options
 		/// The color channel to populate with the values of the second BC5 block.
 		/// </summary>
 		public ColorComponent Bc5Component2 { get; set; } = ColorComponent.G;
+
+		/// <summary>
+		/// BC5 option to recalculate the blue channel
+		/// </summary>
+		public bool Bc5RecalculateBlueChannel { get; set; } = false;
 	}
 }

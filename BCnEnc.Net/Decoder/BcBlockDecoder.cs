@@ -127,16 +127,18 @@ namespace BCnEncoder.Decoder
 	{
 		private readonly ColorComponent component1;
 		private readonly ColorComponent component2;
+		private readonly bool recalculateBlueChannel;
 
-		public Bc5Decoder(ColorComponent component1, ColorComponent component2)
+		public Bc5Decoder(ColorComponent component1, ColorComponent component2, bool recalculateBlueChannel)
 		{
 			this.component1 = component1;
 			this.component2 = component2;
+			this.recalculateBlueChannel = recalculateBlueChannel;
 		}
 
 		protected override RawBlock4X4Rgba32 DecodeBlock(Bc5Block block)
 		{
-			return block.Decode(component1, component2);
+			return block.Decode(component1, component2, recalculateBlueChannel);
 		}
 	}
 
