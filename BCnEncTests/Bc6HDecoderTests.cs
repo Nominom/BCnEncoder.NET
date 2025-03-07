@@ -10,6 +10,7 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using Xunit;
 using Xunit.Abstractions;
+using Half = BCnEncoder.Shared.Half;
 
 namespace BCnEncTests
 {
