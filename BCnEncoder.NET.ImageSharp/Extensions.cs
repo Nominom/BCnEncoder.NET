@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using BCnEncoder.Encoder;
 using BCnEncoder.Shared;
 using BCnEncoder.TextureFormats;
-using Microsoft.Toolkit.HighPerformance;
+using CommunityToolkit.HighPerformance;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 

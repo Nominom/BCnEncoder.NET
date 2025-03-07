@@ -16,8 +16,8 @@ namespace BCnEncoder.Encoder.Bptc
 		/// </summary>
 		internal static int PreQuantize(float value, bool signed)
 		{
-			var half = new Half(value);
-			var bits = (int)Half.GetBits(half);
+			var half = (Half)value;
+			var bits = (int)BitConverter.HalfToUInt16Bits(half);
 			if (!signed)
 			{
 
@@ -27,7 +27,7 @@ namespace BCnEncoder.Encoder.Bptc
 			{
 				const int signMask = ~0x8000;
 
-				if (half < new Half(0))
+				if (half < (Half)0)
 				{
 					var component = -(bits & signMask);
 
@@ -154,7 +154,7 @@ namespace BCnEncoder.Encoder.Bptc
 			{
 				var interpolated = Bc6Block.InterpolateColor(unQuantizedEp0, unQuantizedEp1, i, indexPrecision);
 				var (r, g, b) = Bc6Block.FinishUnQuantize(interpolated, signed);
-				palette[i] = new ColorRgbFloat(r, g, b);
+				palette[i] = new ColorRgbFloat((float)r, (float)g, (float)b);
 			}
 		}
 

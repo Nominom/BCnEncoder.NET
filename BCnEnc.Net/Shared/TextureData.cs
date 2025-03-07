@@ -8,7 +8,7 @@ using System.Text;
 using BCnEncoder.Decoder;
 using BCnEncoder.Encoder;
 using BCnEncoder.TextureFormats;
-using Microsoft.Toolkit.HighPerformance;
+using CommunityToolkit.HighPerformance;
 
 namespace BCnEncoder.Shared
 {
@@ -39,7 +39,7 @@ namespace BCnEncoder.Shared
 		/// </summary>
 		ZNegative = 5
 	}
-	
+
 	public class BCnTextureData
 	{
 		public BCnTextureData(CompressionFormat format, int width, int height, int numMips, bool isCubeMap = false, bool allocateBuffers = false)
@@ -50,7 +50,7 @@ namespace BCnEncoder.Shared
 			NumFaces = isCubeMap ? 6 : 1;
 			NumMips = numMips;
 			Faces = new CubeMapFace[NumFaces];
-			
+
 			for (var f = 0; f < NumFaces; f++)
 			{
 				Faces[f] = new CubeMapFace

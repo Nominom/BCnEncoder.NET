@@ -8,7 +8,7 @@ using BCnEncoder.Decoder;
 using BCnEncoder.Encoder;
 using BCnEncoder.Encoder.Options;
 using BCnEncoder.Shared;
-using Microsoft.Toolkit.HighPerformance;
+using CommunityToolkit.HighPerformance;
 
 namespace BCnEncoder.TextureFormats
 {

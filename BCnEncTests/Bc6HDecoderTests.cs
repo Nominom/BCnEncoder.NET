@@ -9,7 +9,7 @@ using BCnEncoder.Encoder;
 using BCnEncoder.Shared;
 using BCnEncoder.TextureFormats;
 using BCnEncTests.Support;
-using Microsoft.Toolkit.HighPerformance;
+using CommunityToolkit.HighPerformance;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using Xunit;
@@ -20,7 +20,7 @@ namespace BCnEncTests
 	public class Bc6HDecoderTests
 	{
 		private ITestOutputHelper output;
-		
+
 		public Bc6HDecoderTests(ITestOutputHelper output) => this.output = output;
 
 
@@ -47,9 +47,9 @@ namespace BCnEncTests
 
 			for (var i = 0; i < decoded.Length; i++)
 			{
-				float r = halfs[i * 4 + 0];
-				float g = halfs[i * 4 + 1];
-				float b = halfs[i * 4 + 2];
+				float r = (float)halfs[i * 4 + 0];
+				float g = (float)halfs[i * 4 + 1];
+				float b = (float)halfs[i * 4 + 2];
 
 				Assert.Equal(r, decoded.Span[i].r);
 				Assert.Equal(g, decoded.Span[i].g);
@@ -69,7 +69,7 @@ namespace BCnEncTests
 
 			var bytes = hdr.Faces[0].MipMaps[0].Data;
 			var blocks = MemoryMarshal.Cast<byte, Bc6Block>(bytes);
-			
+
 			for (var i = 0; i < blocks.Length; i++)
 			{
 				var block = blocks[i];

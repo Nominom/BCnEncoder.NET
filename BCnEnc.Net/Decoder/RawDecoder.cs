@@ -1,7 +1,7 @@
 using System;
 using System.Runtime.CompilerServices;
 using BCnEncoder.Shared;
-using Microsoft.Toolkit.HighPerformance;
+using CommunityToolkit.HighPerformance;
 
 namespace BCnEncoder.Decoder
 {

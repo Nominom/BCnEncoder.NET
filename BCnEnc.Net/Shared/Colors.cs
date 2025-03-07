@@ -4,7 +4,7 @@ using System.Numerics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using Microsoft.Toolkit.HighPerformance;
+using CommunityToolkit.HighPerformance;
 
 namespace BCnEncoder.Shared
 {
@@ -140,7 +140,7 @@ namespace BCnEncoder.Shared
 				            x.GetParameters().Length == 1);
 
 			var genericMethod = method.MakeGenericMethod(inPixelType, outPixelType);
-			
+
 			return genericMethod.Invoke(null, new object[]{ fromBytes }) as byte[];
 		}
 
@@ -654,14 +654,14 @@ namespace BCnEncoder.Shared
 
 		internal void ClampToHalf()
 		{
-			if (r < Half.MinValue) r = Half.MinValue;
-			else if (g > Half.MaxValue) g = Half.MaxValue;
-			if (b < Half.MinValue) b = Half.MinValue;
-			else if (r > Half.MaxValue) r = Half.MaxValue;
-			if (g < Half.MinValue) g = Half.MinValue;
-			else if (b > Half.MaxValue) b = Half.MaxValue;
-			if (a < Half.MinValue) a = Half.MinValue;
-			else if (a > Half.MaxValue) a = Half.MaxValue;
+			if (r < (float)Half.MinValue) r = (float)Half.MinValue;
+			else if (g > (float)Half.MaxValue) g = (float)Half.MaxValue;
+			if (b < (float)Half.MinValue) b = (float)Half.MinValue;
+			else if (r > (float)Half.MaxValue) r = (float)Half.MaxValue;
+			if (g < (float)Half.MinValue) g = (float)Half.MinValue;
+			else if (b > (float)Half.MaxValue) b = (float)Half.MaxValue;
+			if (a < (float)Half.MinValue) a = (float)Half.MinValue;
+			else if (a > (float)Half.MaxValue) a = (float)Half.MaxValue;
 		}
 
 		/// <inheritdoc />
@@ -717,11 +717,11 @@ namespace BCnEncoder.Shared
 			return (n > 0.0031308f ? MathF.Pow(n, 1 / 2.4f) * 1.055f - 0.055f : n * 12.92f);
 		}
 	}
-	
+
 	internal struct ColorBgra32 : IColor<ColorBgra32>
 	{
 		public byte b, g, r, a;
-		
+
 		public ColorBgra32(byte b, byte g, byte r)
 		{
 			this.b = b;
@@ -970,12 +970,12 @@ namespace BCnEncoder.Shared
 
 		internal void ClampToHalf()
 		{
-			if (r < Half.MinValue) r = Half.MinValue;
-			else if (g > Half.MaxValue) g = Half.MaxValue;
-			if (b < Half.MinValue) b = Half.MinValue;
-			else if (r > Half.MaxValue) r = Half.MaxValue;
-			if (g < Half.MinValue) g = Half.MinValue;
-			else if (b > Half.MaxValue) b = Half.MaxValue;
+			if (r < (float)Half.MinValue) r = (float)Half.MinValue;
+			else if (g > (float)Half.MaxValue) g = (float)Half.MaxValue;
+			if (b < (float)Half.MinValue) b = (float)Half.MinValue;
+			else if (r > (float)Half.MaxValue) r = (float)Half.MaxValue;
+			if (g < (float)Half.MinValue) g = (float)Half.MinValue;
+			else if (b > (float)Half.MaxValue) b = (float)Half.MaxValue;
 		}
 
 		/// <inheritdoc />
@@ -999,9 +999,9 @@ namespace BCnEncoder.Shared
 
 		public ColorRgbHalf(float r, float g, float b)
 		{
-			this.r = new Half(r);
-			this.g = new Half(g);
-			this.b = new Half(b);
+			this.r = (Half)r;
+			this.g = (Half)g;
+			this.b = (Half)b;
 		}
 
 		public ColorRgbHalf(Half r, Half g, Half b)
@@ -1032,16 +1032,16 @@ namespace BCnEncoder.Shared
 		/// <inheritdoc />
 		public ColorRgbaFloat ToColorRgbaFloat()
 		{
-			return new ColorRgbaFloat(r, g, b);
+			return new ColorRgbaFloat((float)r, (float)g, (float)b);
 		}
 
 		/// <inheritdoc />
 		public void FromColorRgbaFloat(ColorRgbaFloat color)
 		{
 			color.ClampToHalf();
-			r = new Half(color.r);
-			g = new Half(color.g);
-			b = new Half(color.b);
+			r = (Half)(color.r);
+			g = (Half)(color.g);
+			b = (Half)(color.b);
 		}
 	}
 
@@ -1051,18 +1051,18 @@ namespace BCnEncoder.Shared
 
 		public ColorRgbaHalf(float r, float g, float b)
 		{
-			this.r = new Half(r);
-			this.g = new Half(g);
-			this.b = new Half(b);
-			a = 1;
+			this.r = (Half)r;
+			this.g = (Half)g;
+			this.b = (Half)b;
+			a = (Half)1;
 		}
 
 		public ColorRgbaHalf(float r, float g, float b, float a)
 		{
-			this.r = new Half(r);
-			this.g = new Half(g);
-			this.b = new Half(b);
-			this.a = new Half(a);
+			this.r = (Half)r;
+			this.g = (Half)g;
+			this.b = (Half)b;
+			this.a = (Half)a;
 		}
 
 		public ColorRgbaHalf(Half r, Half g, Half b)
@@ -1070,7 +1070,7 @@ namespace BCnEncoder.Shared
 			this.r = r;
 			this.g = g;
 			this.b = b;
-			a = 1;
+			a = (Half)1;
 		}
 
 		public ColorRgbaHalf(Half r, Half g, Half b, Half a)
@@ -1084,17 +1084,17 @@ namespace BCnEncoder.Shared
 		/// <inheritdoc />
 		public ColorRgbaFloat ToColorRgbaFloat()
 		{
-			return new ColorRgbaFloat(r, g, b, a);
+			return new ColorRgbaFloat((float)r, (float)g, (float)b, (float)a);
 		}
 
 		/// <inheritdoc />
 		public void FromColorRgbaFloat(ColorRgbaFloat color)
 		{
 			color.ClampToHalf();
-			r = new Half(color.r);
-			g = new Half(color.g);
-			b = new Half(color.b);
-			a = new Half(color.a);
+			r = (Half)color.r;
+			g = (Half)color.g;
+			b = (Half)color.b;
+			a = (Half)color.a;
 		}
 
 		/// <inheritdoc />
@@ -1706,7 +1706,7 @@ namespace BCnEncoder.Shared
 		{
 			return !left.Equals(right);
 		}
-		
+
 		public static ColorRgb24 operator +(ColorRgb24 left, ColorRgb24 right)
 		{
 			return new ColorRgb24(

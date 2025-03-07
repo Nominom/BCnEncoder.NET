@@ -13,6 +13,7 @@ namespace BCnEncoder.Encoder
 	/// </summary>
 	internal static class LeastSquares
 	{
+		private static readonly ushort HalfMaxUint16 = BitConverter.HalfToUInt16Bits(Half.MaxValue);
 
 		private static int ComputeIndex4(float texelPos, float endPoint0Pos, float endPoint1Pos)
 		{
@@ -28,7 +29,7 @@ namespace BCnEncoder.Encoder
 
 		private static uint F32ToF16(float f32)
 		{
-			return Half.GetBits(new Half(f32));
+			return BitConverter.HalfToUInt16Bits((Half)f32);
 		}
 
 		private static Vector3 F32ToF16(Vector3 f32)
@@ -42,7 +43,7 @@ namespace BCnEncoder.Encoder
 
 		private static float F16ToF32(uint f16)
 		{
-			return Half.ToHalf((ushort)f16);
+			return (float)BitConverter.UInt16BitsToHalf((ushort)f16);
 		}
 
 		private static Vector3 F16ToF32(Vector3 f16)
@@ -98,8 +99,8 @@ namespace BCnEncoder.Encoder
 				var detRcp = 1f / (det);
 				var ep0f16 = detRcp * (alphaTexelSum * betaSqSum - betaTexelSum * alphaBetaSum);
 				var ep1f16 = detRcp * (betaTexelSum * alphaSqSum - alphaTexelSum * alphaBetaSum);
-				ep0f16 = Vector3.Clamp(ep0f16, Vector3.Zero, new Vector3(Half.MaxValue.Value));
-				ep1f16 = Vector3.Clamp(ep1f16, Vector3.Zero, new Vector3(Half.MaxValue.Value));
+				ep0f16 = Vector3.Clamp(ep0f16, Vector3.Zero, new Vector3(HalfMaxUint16));
+				ep1f16 = Vector3.Clamp(ep1f16, Vector3.Zero, new Vector3(HalfMaxUint16));
 				ep0 = new ColorRgbFloat(F16ToF32(ep0f16));
 				ep1 = new ColorRgbFloat(F16ToF32(ep1f16));
 			}
@@ -152,8 +153,8 @@ namespace BCnEncoder.Encoder
 				var detRcp = 1f / (det);
 				var ep0f16 = detRcp * (alphaTexelSum * betaSqSum - betaTexelSum * alphaBetaSum);
 				var ep1f16 = detRcp * (betaTexelSum * alphaSqSum - alphaTexelSum * alphaBetaSum);
-				ep0f16 = Vector3.Clamp(ep0f16, Vector3.Zero, new Vector3(Half.MaxValue.Value));
-				ep1f16 = Vector3.Clamp(ep1f16, Vector3.Zero, new Vector3(Half.MaxValue.Value));
+				ep0f16 = Vector3.Clamp(ep0f16, Vector3.Zero, new Vector3(HalfMaxUint16));
+				ep1f16 = Vector3.Clamp(ep1f16, Vector3.Zero, new Vector3(HalfMaxUint16));
 				ep0 = new ColorRgbFloat(F16ToF32(ep0f16));
 				ep1 = new ColorRgbFloat(F16ToF32(ep1f16));
 			}

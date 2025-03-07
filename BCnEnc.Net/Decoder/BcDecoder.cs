@@ -2,11 +2,9 @@ using BCnEncoder.Decoder.Options;
 using BCnEncoder.Shared;
 using System;
 using System.IO;
-using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Toolkit.HighPerformance;
+using CommunityToolkit.HighPerformance;
 
 namespace BCnEncoder.Decoder
 {
@@ -263,7 +261,7 @@ namespace BCnEncoder.Decoder
 		}
 
 		#endregion
-		
+
 		#region Hdr Async Api
 
 		/// <summary>
@@ -499,8 +497,8 @@ namespace BCnEncoder.Decoder
 			return bytesRead;
 		}
 		#endregion
-		
-		
+
+
 		/// <summary>
 		/// Decode all faces and mipmaps of a <see cref="BCnTextureData"/> into <see cref="CompressionFormat.Rgba32"/> for ldr formats,
 		/// and <see cref="CompressionFormat.RgbaFloat"/> for hdr formats.
@@ -618,7 +616,7 @@ namespace BCnEncoder.Decoder
 			pixels.Slice(8, 4).CopyTo(outputSpan.GetRowSpan(2));
 			pixels.Slice(12, 4).CopyTo(outputSpan.GetRowSpan(3));
 		}
-		
+
 		/// <summary>
 		/// Decode raw encoded image asynchronously.
 		/// </summary>
@@ -658,7 +656,7 @@ namespace BCnEncoder.Decoder
 			{
 				throw new NotSupportedException($"This Format is not supported: {format}");
 			}
-			
+
 			return decoder.DecodeColor(input, pixelWidth, pixelHeight, context);
 		}
 
@@ -723,7 +721,7 @@ namespace BCnEncoder.Decoder
 
 				case CompressionFormat.Bgra32:
 					return new RawLdrDecoder<ColorBgra32>(false);
-					
+
 				case CompressionFormat.Bc1:
 					return new Bc1NoAlphaDecoder();
 
@@ -792,7 +790,7 @@ namespace BCnEncoder.Decoder
 		}
 
 		#endregion
-		
+
 		/// <summary>
 		/// Gets the number of total blocks in an image with the given pixel width and height.
 		/// </summary>

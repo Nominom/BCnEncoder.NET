@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using BCnEncoder.Shared;
-using Microsoft.Toolkit.HighPerformance;
+using CommunityToolkit.HighPerformance;
 
 namespace BCnEncoder.Encoder
 {
@@ -31,7 +31,7 @@ namespace BCnEncoder.Encoder
 		public byte[] EncodeBlocks(TRawBlock[] blocks, int blockWidth, int blockHeight, CompressionQuality quality, OperationContext context)
 		{
 			var outputData = new byte[blockWidth * blockHeight * Unsafe.SizeOf<TEncodedBlock>()];
-			
+
 			if (context.IsParallel)
 			{
 				var options = new ParallelOptions

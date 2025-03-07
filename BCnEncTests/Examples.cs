@@ -7,7 +7,7 @@ using BCnEncoder.Encoder;
 using BCnEncoder.ImageSharp;
 using BCnEncoder.Shared;
 using BCnEncoder.TextureFormats;
-using Microsoft.Toolkit.HighPerformance;
+using CommunityToolkit.HighPerformance;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Metadata.Profiles.Icc;
 using SixLabors.ImageSharp.PixelFormats;
@@ -18,13 +18,13 @@ namespace BCnEncTests
 {
 	public class Examples
 	{
-		
+
 		public void EncodeImageSharp()
 		{
 			using Image<Rgba32> image = Image.Load<Rgba32>("example.png");
 
 			BcEncoder encoder = new BcEncoder();
-			
+
 			encoder.OutputOptions.GenerateMipMaps = true;
 			encoder.OutputOptions.Quality = CompressionQuality.Balanced;
 			encoder.OutputOptions.Format = CompressionFormat.Bc1;
@@ -32,14 +32,14 @@ namespace BCnEncTests
 
 			encoder.EncodeToStream<KtxFile>(image, fs);
 		}
-		
+
 		public void DecodeImageSharp()
 		{
 			using FileStream fs = File.OpenRead("compressed_bc1.ktx");
 
 			BcDecoder decoder = new BcDecoder();
 			using Image<Rgba32> image = decoder.Decode<KtxFile>(fs).AsImageRgba32();
-			
+
 			using FileStream outFs = File.OpenWrite("decoding_test_bc1.png");
 			image.SaveAsPng(outFs);
 		}
@@ -48,7 +48,7 @@ namespace BCnEncTests
 		{
 			using FileStream ifs = File.OpenRead("example.hdr");
 			RadianceFile image = RadianceFile.Load(ifs);
-			
+
 
 			BcEncoder encoder = new BcEncoder();
 

@@ -1036,7 +1036,7 @@ namespace BCnEncoder.Shared
 			if (!signedBc6)
 			{
 				component = (component * 31) >> 6; // scale the magnitude by 31/64
-				return Half.ToHalf((ushort)component);
+				return BitConverter.UInt16BitsToHalf((ushort)component);
 			}
 			else // signed format
 			{
@@ -1047,7 +1047,7 @@ namespace BCnEncoder.Shared
 					s = 0x8000;
 					component = -component;
 				}
-				return Half.ToHalf((ushort)(s | component));
+				return BitConverter.UInt16BitsToHalf((ushort)(s | component));
 			}
 		}
 
@@ -1173,7 +1173,7 @@ namespace BCnEncoder.Shared
 
 				var (r, g, b) = FinishUnQuantize(InterpolateColor(endPointStart, endPointEnd, colorIndex, ColorIndexBitCount), signed);
 
-				pixels[i] = new ColorRgbFloat(r, g, b);
+				pixels[i] = new ColorRgbFloat((float)r, (float)g, (float)b);
 			}
 
 			return output;

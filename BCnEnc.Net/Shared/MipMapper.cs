@@ -1,5 +1,5 @@
 using System;
-using Microsoft.Toolkit.HighPerformance;
+using CommunityToolkit.HighPerformance;
 
 namespace BCnEncoder.Shared
 {
@@ -17,7 +17,7 @@ namespace BCnEncoder.Shared
 			numMipMaps = CalculateMipChainLength(input.Width, input.Height, numMipMaps);
 
 			input = input.ConvertTo(CompressionFormat.RgbaFloat);
-			
+
 			if (input.MipLevels.Length == numMipMaps)
 			{
 				return input;
@@ -120,7 +120,7 @@ namespace BCnEncoder.Shared
 			{
 				var mipWidth = Math.Max(1, width >> mipLevel);
 				var mipHeight = Math.Max(1, height >> mipLevel);
-				
+
 				var newMip = ResizeToHalf(result[mipLevel - 1].Span);
 				result[mipLevel] = newMip;
 
@@ -321,12 +321,12 @@ namespace BCnEncoder.Shared
 			var oldHeight = pixelsRgba.Height;
 			var newWidth = Math.Max(1, oldWidth >> 1);
 			var newHeight = Math.Max(1, oldHeight >> 1);
-			
+
 			var result = new ColorRgba32[newHeight, newWidth];
-			
+
 			int ClampW(int x) => Math.Max(0, Math.Min(oldWidth - 1, x));
 			int ClampH(int y) => Math.Max(0, Math.Min(oldHeight - 1, y));
-			
+
 			for (var y2 = 0; y2 < newHeight; y2++)
 			{
 				for (var x2 = 0; x2 < newWidth; x2++)

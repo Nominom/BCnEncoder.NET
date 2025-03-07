@@ -9,7 +9,7 @@ using BCnEncoder.Encoder;
 using BCnEncoder.ImageSharp;
 using BCnEncoder.Shared;
 using BCnEncoder.TextureFormats;
-using Microsoft.Toolkit.HighPerformance;
+using CommunityToolkit.HighPerformance;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using Xunit;
@@ -152,7 +152,7 @@ namespace BCnEncTests.Support
 
 			var decoder = new BcDecoder();
 			var decoded = decoder.Decode(texture.ToTextureData()).ConvertTo(CompressionFormat.Rgba32);
-			
+
 			using var imageDecoded = decoded.AsImageRgba32();
 
 			AssertImagesSimilar(original, imageDecoded, quality, format.SupportsAlpha(), output);
@@ -188,7 +188,7 @@ namespace BCnEncTests.Support
 		{
 			var pixels  = GetSinglePixelArrayAsColors(original);
 			var pixels2 = GetSinglePixelArrayAsColors(decoded);
-			
+
 			return ImageQuality.PeakSignalToNoiseRatio(pixels, pixels2, countAlpha);
 		}
 

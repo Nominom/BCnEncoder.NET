@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using BCnEncoder.Encoder.Bptc;
 using BCnEncoder.Encoder.Options;
 using BCnEncoder.Shared;
-using Microsoft.Toolkit.HighPerformance;
+using CommunityToolkit.HighPerformance;
 
 namespace BCnEncoder.Encoder
 {
@@ -332,7 +332,7 @@ namespace BCnEncoder.Encoder
 			if (compressedEncoder == null)
 			{
 				var hdrEncoder = GetFloatBlockEncoder(OutputOptions.Format);
-				
+
 				if (hdrEncoder == null)
 				{
 					throw new NotSupportedException($"This format is either not supported or does not use block compression: {OutputOptions.Format}");
@@ -634,7 +634,7 @@ namespace BCnEncoder.Encoder
 				TaskCount = Options.TaskCount,
 				Progress = new OperationProgress(Options.Progress, totalBlocks)
 			};
-			
+
 			if (OutputOptions.Format.IsHdrFormat())
 			{
 				ReadOnlyMemory<ColorRgbaFloat> floatData;
