@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.IO;
+using System.Threading.Tasks;
 using BCnEncoder.Decoder;
 using BCnEncoder.Encoder;
 using BCnEncoder.ImageSharp;
@@ -12,7 +13,7 @@ namespace BCnEncTests
 	public class DecodingAsyncTests
 	{
 		[Fact]
-		public async void DecodeAsync()
+		public async Task DecodeAsync()
 		{
 			var decoder = new BcDecoder();
 			var encoder = new BcEncoder();
@@ -26,7 +27,7 @@ namespace BCnEncTests
 		}
 
 		[Fact]
-		public async void DecodeAllMipMapsAsync()
+		public async Task DecodeAllMipMapsAsync()
 		{
 			var decoder = new BcDecoder();
 			var encoder = new BcEncoder();
@@ -41,16 +42,16 @@ namespace BCnEncTests
 		}
 
 		[Fact]
-		public async void DecodeRawAsync()
+		public async Task DecodeRawAsync()
 		{
 			var decoder = new BcDecoder();
 			var encoder = new BcEncoder();
 			var original = ImageLoader.TestGradient1;
 
 			var file = encoder.EncodeToKtx(original);
-			
+
 			var ms = new MemoryStream(file.MipMaps[0].Faces[0].Data);
-			
+
 			var image = await decoder.DecodeRawToImageRgba32Async(ms,
 				(int) file.MipMaps[0].Width, (int) file.MipMaps[0].Height, CompressionFormat.Bc1);
 

@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using BCnEncoder.Decoder;
 using BCnEncoder.Encoder;
 using BCnEncoder.ImageSharp;
@@ -25,7 +26,7 @@ namespace BCnEncTests
 		}
 
 		[Fact]
-		public async void EncodeToDdsAsync()
+		public async Task EncodeToDdsAsync()
 		{
 			var file = await encoder.EncodeToDdsAsync(originalImage);
 			var image = decoder.DecodeToImageRgba32(file);
@@ -35,7 +36,7 @@ namespace BCnEncTests
 		}
 
 		[Fact]
-		public async void EncodeToKtxAsync()
+		public async Task EncodeToKtxAsync()
 		{
 			var file = await encoder.EncodeToKtxAsync(originalImage);
 			var image = decoder.DecodeToImageRgba32(file);
@@ -45,7 +46,7 @@ namespace BCnEncTests
 		}
 
 		[Fact]
-		public async void EncodeCubemapToDdsAsync()
+		public async Task EncodeCubemapToDdsAsync()
 		{
 			var file = await encoder.EncodeCubeMapToDdsAsync(originalCubeMap[0], originalCubeMap[1], originalCubeMap[2],
 				originalCubeMap[3], originalCubeMap[4], originalCubeMap[5]);
@@ -60,7 +61,7 @@ namespace BCnEncTests
 		}
 
 		[Fact]
-		public async void EncodeCubemapToKtxAsync()
+		public async Task EncodeCubemapToKtxAsync()
 		{
 			var file = await encoder.EncodeCubeMapToKtxAsync(originalCubeMap[0], originalCubeMap[1], originalCubeMap[2],
 				originalCubeMap[3], originalCubeMap[4], originalCubeMap[5]);
@@ -75,7 +76,7 @@ namespace BCnEncTests
 		}
 
 		[Fact]
-		public async void EncodeToRawBytesAsync()
+		public async Task EncodeToRawBytesAsync()
 		{
 			var data = await encoder.EncodeToRawBytesAsync(originalImage);
 			var image = decoder.DecodeRawToImageRgba32(data[0], originalImage.Width, originalImage.Height, CompressionFormat.Bc1);

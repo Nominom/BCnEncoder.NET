@@ -99,7 +99,7 @@ namespace BCnEncTests
 		}
 
 		[Fact]
-		public async void DecodeProgressReportParallel()
+		public async Task DecodeProgressReportParallel()
 		{
 			var testImage = KtxLoader.TestDecompressBc1;
 			var decoder = new BcDecoder
@@ -118,7 +118,7 @@ namespace BCnEncTests
 		}
 
 		[Fact]
-		public async void DecodeProgressReportNonParallel()
+		public async Task DecodeProgressReportNonParallel()
 		{
 			var testImage = KtxLoader.TestDecompressBc1;
 			var decoder = new BcDecoder
@@ -137,7 +137,7 @@ namespace BCnEncTests
 		}
 
 		[Fact]
-		public async void DecodeProgressReportParallelOneMip()
+		public async Task DecodeProgressReportParallelOneMip()
 		{
 			var testImage = KtxLoader.TestDecompressBc1;
 			var decoder = new BcDecoder
@@ -151,7 +151,7 @@ namespace BCnEncTests
 		}
 
 		[Fact]
-		public async void DecodeProgressReportNonParallelOneMip()
+		public async Task DecodeProgressReportNonParallelOneMip()
 		{
 			var testImage = KtxLoader.TestDecompressBc1;
 			var decoder = new BcDecoder
@@ -165,7 +165,7 @@ namespace BCnEncTests
 		}
 
 		[Fact]
-		public async void DecodeProgressReportParallelDds()
+		public async Task DecodeProgressReportParallelDds()
 		{
 			var testImage = DdsLoader.TestDecompressBc1;
 			var decoder = new BcDecoder
@@ -184,7 +184,7 @@ namespace BCnEncTests
 		}
 
 		[Fact]
-		public async void DecodeProgressReportNonParallelDds()
+		public async Task DecodeProgressReportNonParallelDds()
 		{
 			var testImage = DdsLoader.TestDecompressBc1;
 			var decoder = new BcDecoder
@@ -203,7 +203,7 @@ namespace BCnEncTests
 		}
 
 		[Fact]
-		public async void DecodeProgressReportParallelOneMipDds()
+		public async Task DecodeProgressReportParallelOneMipDds()
 		{
 			var testImage = DdsLoader.TestDecompressBc1;
 			var decoder = new BcDecoder
@@ -217,7 +217,7 @@ namespace BCnEncTests
 		}
 
 		[Fact]
-		public async void DecodeProgressReportNonParallelOneMipDds()
+		public async Task DecodeProgressReportNonParallelOneMipDds()
 		{
 			var testImage = DdsLoader.TestDecompressBc1;
 			var decoder = new BcDecoder
@@ -231,7 +231,7 @@ namespace BCnEncTests
 		}
 
 		[Fact]
-		public async void EncodeProgressReportParallelKtx()
+		public async Task EncodeProgressReportParallelKtx()
 		{
 			var testImage = ImageLoader.TestBlur1;
 			var encoder = new BcEncoder
@@ -252,7 +252,7 @@ namespace BCnEncTests
 		}
 
 		[Fact]
-		public async void EncodeProgressReportNonParallelKtx()
+		public async Task EncodeProgressReportNonParallelKtx()
 		{
 			var testImage = ImageLoader.TestBlur1;
 			var encoder = new BcEncoder
@@ -273,7 +273,7 @@ namespace BCnEncTests
 		}
 
 		[Fact]
-		public async void EncodeProgressReportParallelOneMipKtx()
+		public async Task EncodeProgressReportParallelOneMipKtx()
 		{
 			var testImage = ImageLoader.TestBlur1;
 			var encoder = new BcEncoder
@@ -288,7 +288,7 @@ namespace BCnEncTests
 		}
 
 		[Fact]
-		public async void EncodeProgressReportNonParallelOneMipKtx()
+		public async Task EncodeProgressReportNonParallelOneMipKtx()
 		{
 			var testImage = ImageLoader.TestBlur1;
 			var encoder = new BcEncoder
@@ -303,7 +303,7 @@ namespace BCnEncTests
 		}
 
 		[Fact]
-		public async void EncodeProgressReportParallelDds()
+		public async Task EncodeProgressReportParallelDds()
 		{
 			var testImage = ImageLoader.TestBlur1;
 			var encoder = new BcEncoder
@@ -324,7 +324,7 @@ namespace BCnEncTests
 		}
 
 		[Fact]
-		public async void EncodeProgressReportNonParallelDds()
+		public async Task EncodeProgressReportNonParallelDds()
 		{
 			var testImage = ImageLoader.TestBlur1;
 			var encoder = new BcEncoder
@@ -345,7 +345,7 @@ namespace BCnEncTests
 		}
 
 		[Fact]
-		public async void EncodeProgressReportParallelOneMipDds()
+		public async Task EncodeProgressReportParallelOneMipDds()
 		{
 			var testImage = ImageLoader.TestBlur1;
 			var encoder = new BcEncoder
@@ -360,7 +360,7 @@ namespace BCnEncTests
 		}
 
 		[Fact]
-		public async void EncodeProgressReportNonParallelOneMipDds()
+		public async Task EncodeProgressReportNonParallelOneMipDds()
 		{
 			var testImage = ImageLoader.TestBlur1;
 			var encoder = new BcEncoder

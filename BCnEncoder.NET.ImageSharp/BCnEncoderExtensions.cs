@@ -192,7 +192,7 @@ namespace BCnEncoder.ImageSharp
 		/// <param name="mipLevel">The mipmap to encode.</param>
 		/// <param name="token">The cancellation token for this operation. Can be default, if the operation is not asynchronous.</param>
 		/// <returns>The raw encoded data.</returns>
-		/// <remarks>To get the width and height of the encoded mipLevel, see <see cref="CalculateMipMapSize(Image{Rgba32},int,out int,out int)"/>.</remarks>
+		/// <remarks>To get the width and height of the encoded mipLevel, see <see cref="CalculateMipMapSize"/>.</remarks>
 		public static Task<byte[]> EncodeToRawBytesAsync(this BcEncoder encoder, Image<Rgba32> inputImage, int mipLevel, CancellationToken token = default)
 		{
 			return encoder.EncodeToRawBytesAsync(ImageToMemory2D(inputImage), mipLevel, token);

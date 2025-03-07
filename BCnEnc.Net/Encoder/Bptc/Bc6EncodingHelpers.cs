@@ -39,7 +39,7 @@ namespace BCnEncoder.Encoder.Bptc
 		}
 
 		/// <summary>
-		/// Opposite of <see cref="Bc6Block.UnQuantize(int,bool)"/>
+		/// Opposite of <see cref="Bc6Block.UnQuantize(int,int,bool)"/>
 		/// </summary>
 		internal static int Quantize(int component, int endpointBits, bool signed)
 		{

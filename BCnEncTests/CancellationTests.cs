@@ -1,5 +1,6 @@
 using System;
 using System.Threading;
+using System.Threading.Tasks;
 using BCnEncoder.Decoder;
 using BCnEncTests.Support;
 using Xunit;
@@ -9,13 +10,13 @@ namespace BCnEncTests
 	public class CancellationTests
 	{
 		[Fact]
-		public async void EncodeParallelCancellation()
+		public async Task EncodeParallelCancellation()
 		{
 			await TestHelper.ExecuteCancellationTest(ImageLoader.TestAlphaGradient1, true);
 		}
 
 		[Fact]
-		public async void EncodeNonParallelCancellation()
+		public async Task EncodeNonParallelCancellation()
 		{
 			await TestHelper.ExecuteCancellationTest(ImageLoader.TestAlphaGradient1, false);
 		}
