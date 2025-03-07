@@ -1,4 +1,4 @@
-using BCnEncoder.Decoder.Options;
+﻿using BCnEncoder.Decoder.Options;
 using BCnEncoder.Shared;
 using System;
 using System.IO;
@@ -7,7 +7,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using BCnEncoder.Shared.ImageFiles;
-using Microsoft.Toolkit.HighPerformance;
+using CommunityToolkit.HighPerformance;
 
 namespace BCnEncoder.Decoder
 {

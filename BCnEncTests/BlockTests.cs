@@ -1,8 +1,6 @@
-using System;
+﻿using System;
 using BCnEncoder.Shared;
-using Microsoft.Toolkit.HighPerformance;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
+using CommunityToolkit.HighPerformance;
 using Xunit;
 
 namespace BCnEncTests
