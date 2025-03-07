@@ -75,7 +75,7 @@ namespace BCnEncoder.Shared
 			} while (c != (char)10);
 			return new string(buffer.AsSpan().Slice(0, i)).Trim();
 		}
-		
+
 		private static void WriteLineToStream(BinaryWriter br, string s)
 		{
 			foreach (var c in s)
@@ -115,7 +115,7 @@ namespace BCnEncoder.Shared
 			}
 
 			var colorSpace = ColorSpace.Rgbe;
-			
+
 			do
 			{
 				line = ReadFromStream(stream);
@@ -252,7 +252,7 @@ namespace BCnEncoder.Shared
 
 				var isRle = header[0] == 2 && header[1] == 2 &&
 				             (header[2] << 8) + header[3] == width; // whether the scanline is rle or not
-				
+
 				if (isRle)
 				{
 					// for each channel
@@ -312,10 +312,10 @@ namespace BCnEncoder.Shared
 			{
 				WriteLineToStream(br, "GAMMA=" + gamma.ToString(CultureInfo.InvariantCulture));
 			}
-			
+
 			WriteLineToStream(br, ""); // Start data with empty row
 			WriteLineToStream(br, $"-Y {height} +X {width}");
-			
+
 			WritePixels(br);
 		}
 
@@ -323,14 +323,14 @@ namespace BCnEncoder.Shared
 		{
 			var buffer = new byte[4];
 			var span = PixelSpan;
-			
+
 			for (var y = 0; y < height; y++)
 			{
 				for (var x = 0; x < width; x++)
 				{
 					var pixel = span[y, x];
 					var rgbe = new ColorRgbe(pixel);
-					
+
 					buffer[0] = rgbe.r;
 					buffer[1] = rgbe.g;
 					buffer[2] = rgbe.b;

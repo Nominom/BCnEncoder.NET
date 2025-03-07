@@ -40,8 +40,8 @@ namespace BCnEncTests
 			var colors = MemoryMarshal.Cast<Rgba32, ColorRgba32>(pixels)
 				.AsSpan2D(testImage.Height, testImage.Width);
 
-			var ms = new MemoryStream(); 
-			
+			var ms = new MemoryStream();
+
 			for (var y = 0; y < testImage.Height; y+=4)
 			{
 				for (var x = 0; x < testImage.Width; x+=4)
@@ -110,7 +110,7 @@ namespace BCnEncTests
 					blockIndex++;
 				}
 			}
-			
+
 			var decoder = new BcDecoder();
 
 			var decoded = new ColorRgba32[testImage.Height, testImage.Width];
@@ -120,7 +120,7 @@ namespace BCnEncTests
 			{
 				for (var x = 0; x < testImage.Width; x += 4)
 				{
-					
+
 					decoder.DecodeBlock(
 						buffer.Slice(
 							blockIndex * decoder.GetBlockSize(format),

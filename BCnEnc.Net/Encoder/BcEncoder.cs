@@ -610,7 +610,7 @@ namespace BCnEncoder.Encoder
 			if (compressedEncoder == null)
 			{
 				var hdrEncoder = GetFloatBlockEncoder(OutputOptions.Format);
-				
+
 				if (hdrEncoder == null)
 				{
 					throw new NotSupportedException($"This format is either not supported or does not use block compression: {OutputOptions.Format}");
@@ -1319,7 +1319,7 @@ namespace BCnEncoder.Encoder
 		{
 			DdsFile output;
 			IBcBlockEncoder<RawBlock4X4RgbFloat> compressedEncoder = null;
-			
+
 			var faces = new[] { right, left, top, down, back, front };
 
 			var width = right.Width;
@@ -1373,7 +1373,7 @@ namespace BCnEncoder.Encoder
 				for (var mip = 0; mip < numMipMaps; mip++)
 				{
 					byte[] encoded;
-					
+
 					var blocks = ImageToBlocks.ImageTo4X4(mipChain[mip], out var blocksWidth, out var blocksHeight);
 					encoded = compressedEncoder.Encode(blocks, blocksWidth, blocksHeight, OutputOptions.Quality, context);
 

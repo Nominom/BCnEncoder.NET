@@ -311,7 +311,7 @@ namespace BCnEncoder.Shared
 		}
 
 	}
-	
+
 	public struct ColorRgbFloat : IEquatable<ColorRgbFloat>
 	{
 		public float r, g, b;

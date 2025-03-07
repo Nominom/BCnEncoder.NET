@@ -1773,7 +1773,7 @@ namespace BCnEncoder.Decoder
 
 				case CompressionFormat.Unknown:
 					return 0;
-				
+
 				default:
 					throw new ArgumentOutOfRangeException(nameof(format), format, null);
 			}

@@ -15,7 +15,7 @@ namespace BCnEncTests
 {
 	public class Examples
 	{
-		
+
 		public void EncodeImageSharp()
 		{
 			using Image<Rgba32> image = Image.Load<Rgba32>("example.png");
@@ -30,14 +30,14 @@ namespace BCnEncTests
 			using FileStream fs = File.OpenWrite("example.ktx");
 			encoder.EncodeToStream(image, fs);
 		}
-		
+
 		public void DecodeImageSharp()
 		{
 			using FileStream fs = File.OpenRead("compressed_bc1.ktx");
 
 			BcDecoder decoder = new BcDecoder();
 			using Image<Rgba32> image = decoder.DecodeToImageRgba32(fs);
-			
+
 			using FileStream outFs = File.OpenWrite("decoding_test_bc1.png");
 			image.SaveAsPng(outFs);
 		}
@@ -45,7 +45,7 @@ namespace BCnEncTests
 		public void EncodeHdr()
 		{
 			HdrImage image = HdrImage.Read("example.hdr");
-			
+
 
 			BcEncoder encoder = new BcEncoder();
 

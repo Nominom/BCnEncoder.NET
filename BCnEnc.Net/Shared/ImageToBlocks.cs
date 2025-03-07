@@ -80,7 +80,7 @@ namespace BCnEncoder.Shared
 		{
 			blocksWidth = ((image.Width + 3) & ~3) >> 2;
 			blocksHeight = ((image.Height + 3) & ~3) >> 2;
-			
+
 			var output = new RawBlock4X4Rgba32[blocksWidth * blocksHeight];
 
 			var span = image.Span;

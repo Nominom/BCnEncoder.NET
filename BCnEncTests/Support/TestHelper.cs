@@ -151,7 +151,7 @@ namespace BCnEncTests.Support
 			var decoder = new BcDecoder()
 			{
 			};
-			
+
 			var decoded = decoder.DecodeHdr(ktx);
 
 			return ImageQuality.CalculateLogRMSE(original.pixels, decoded);
@@ -194,7 +194,7 @@ namespace BCnEncTests.Support
 		{
 			var pixels  = GetSinglePixelArrayAsColors(original);
 			var pixels2 = GetSinglePixelArrayAsColors(decoded);
-			
+
 			return ImageQuality.PeakSignalToNoiseRatio(pixels, pixels2, countAlpha);
 		}
 

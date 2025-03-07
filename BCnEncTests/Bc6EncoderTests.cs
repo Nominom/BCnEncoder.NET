@@ -16,9 +16,9 @@ namespace BCnEncTests
 	public class Bc6EncoderTests
 	{
 		private ITestOutputHelper output;
-		
+
 		public Bc6EncoderTests(ITestOutputHelper output) => this.output = output;
-		
+
 		[Theory]
 		[InlineData(0x7F, 8, false)]
 		[InlineData(0xFF, 8, false)]
@@ -102,7 +102,7 @@ namespace BCnEncTests
 			const int endpointPrecision = 10;
 			var random = new Random();
 			var rand = random.Next();
-			
+
 			var ep0 = (random.Next() & (1 << endpointPrecision) - 1,
 				random.Next() & (1 << endpointPrecision) - 1,
 				random.Next() & (1 << endpointPrecision) - 1);
@@ -117,7 +117,7 @@ namespace BCnEncTests
 			}
 
 			var block = Bc6Block.PackType3(ep0, ep1, indices);
-			
+
 			Assert.Equal(Bc6BlockType.Type3, block.Type);
 
 			var extracted0 = block.ExtractEp0();
@@ -133,7 +133,7 @@ namespace BCnEncTests
 			}
 		}
 
-		
+
 		[Theory]
 		[InlineData(Bc6BlockType.Type0)]
 		[InlineData(Bc6BlockType.Type1)]
@@ -172,7 +172,7 @@ namespace BCnEncTests
 			};
 			Bc6Block encoded;
 			var badTransform = false;
-			
+
 			if(type.HasSubsets())
 			{
 				var indexBlock = Bc6Encoder.CreateClusterIndexBlock(testBlock, out var numClusters, 2);
@@ -392,7 +392,7 @@ namespace BCnEncTests
 
 			Assert.True(allMips.Length > 1);
 			Assert.True(allMips.Length == ktx.MipMaps.Count);
-			
+
 			for (var i = 0; i < allMips.Length; i++)
 			{
 				var single = encoder.EncodeToRawBytesHdr(HdrLoader.TestHdrKiara.PixelMemory, i, out var mW, out var mH);

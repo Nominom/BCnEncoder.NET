@@ -16,7 +16,7 @@ namespace BCnEncTests
 	public class Bc6HDecoderTests
 	{
 		private ITestOutputHelper output;
-		
+
 		public Bc6HDecoderTests(ITestOutputHelper output) => this.output = output;
 
 		[Fact]
@@ -27,7 +27,7 @@ namespace BCnEncTests
 
 			var img = new Image<RgbaVector>((int)HdrLoader.TestHdrKiaraDds.header.dwWidth,
 				(int)HdrLoader.TestHdrKiaraDds.header.dwHeight);
-			
+
 			var pixels = TestHelper.GetSinglePixelArray(img);
 
 			for (var i = 0; i < decoded.Length; i++)
@@ -39,13 +39,13 @@ namespace BCnEncTests
 
 			var hdr = new HdrImage((int) HdrLoader.TestHdrKiaraDds.header.dwWidth,
 				(int) HdrLoader.TestHdrKiaraDds.header.dwHeight);
-			
+
 			Assert.Equal(hdr.pixels.Length, decoded.Length);
-			
+
 			hdr.pixels = decoded;
 			using var sfs = File.OpenWrite("decoding_test_dds_bc6h.hdr");
 			hdr.Write(sfs);
-			
+
 			img.SaveAsPng("decoding_test_dds_bc6h.png");
 
 			TestHelper.AssertPixelsEqual(HdrLoader.TestHdrKiara.pixels, decoded, CompressionQuality.Fast, output);
@@ -59,7 +59,7 @@ namespace BCnEncTests
 
 			var img = new Image<RgbaVector>((int)HdrLoader.TestHdrKiaraKtx.header.PixelWidth,
 				(int)HdrLoader.TestHdrKiaraKtx.header.PixelHeight);
-			
+
 			var pixels = TestHelper.GetSinglePixelArray(img);
 
 			for (var i = 0; i < decoded.Length; i++)
@@ -123,7 +123,7 @@ namespace BCnEncTests
 
 			var bytes = hdr.Faces[0].MipMaps[0].Data;
 			var blocks = MemoryMarshal.Cast<byte, Bc6Block>(bytes);
-			
+
 			for (var i = 0; i < blocks.Length; i++)
 			{
 				var block = blocks[i];

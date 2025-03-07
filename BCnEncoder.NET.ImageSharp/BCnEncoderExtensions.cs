@@ -300,7 +300,7 @@ namespace BCnEncoder.ImageSharp
 				mipLevel, out mipWidth, out mipHeight);
 		}
 
-		
+
 		private static Memory2D<ColorRgba32> ImageToMemory2D(Image<Rgba32> inputImage)
 		{
 			var pixels = inputImage.GetPixelMemoryGroup()[0];

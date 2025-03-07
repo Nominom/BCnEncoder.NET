@@ -37,7 +37,7 @@ namespace BCnEncTests
 			var testImage = new ColorRgba32[15, 11];
 
 			var pixels = testImage.AsSpan();
-			
+
 			for (var i = 0; i < pixels.Length; i++) {
 				pixels[i] = new ColorRgba32(0, 125, 125);
 			}
@@ -64,7 +64,7 @@ namespace BCnEncTests
 			var testImage = new ColorRgba32[16, 16];
 
 			var pixels = testImage.AsSpan();
-			
+
 			for (var i = 0; i < pixels.Length; i++) {
 				pixels[i] = new ColorRgba32(
 					(byte)r.Next(255),
