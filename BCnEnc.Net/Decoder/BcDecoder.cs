@@ -4,6 +4,7 @@ using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using BCnEncoder.Shared.Colors;
 using CommunityToolkit.HighPerformance;
 
 namespace BCnEncoder.Decoder

@@ -5,6 +5,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Text;
 using BCnEncoder.Shared;
+using BCnEncoder.Shared.Colors;
 
 namespace BCnEncoder.Encoder.Bptc
 {
@@ -321,7 +322,7 @@ namespace BCnEncoder.Encoder.Bptc
 			InternalUtils.Swap(ref unQuantizedEp0, ref unQuantizedEp1);
 			FindOptimalIndicesInt2Sub(block, unQuantizedEp0, unQuantizedEp1, indices, partitionSetId, subsetIndex, signed);
 		}
-		
+
 		public static void GetInitialUnscaledEndpointsForSubset(RawBlock4X4RgbFloat block, out ColorRgbFloat ep0,
 			out ColorRgbFloat ep1, int partitionSetId, int subsetIndex)
 		{

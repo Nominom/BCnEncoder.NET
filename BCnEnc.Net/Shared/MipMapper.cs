@@ -1,4 +1,5 @@
 using System;
+using BCnEncoder.Shared.Colors;
 using CommunityToolkit.HighPerformance;
 
 namespace BCnEncoder.Shared
@@ -336,7 +337,7 @@ namespace BCnEncoder.Shared
 					var ll = pixelsRgba[ClampH(y2 * 2 + 1), ClampW(x2 * 2)].ToColorRgbaFloat();
 					var lr = pixelsRgba[ClampH(y2 * 2 + 1), ClampW(x2 * 2 + 1)].ToColorRgbaFloat();
 
-					result[y2, x2] = ((ul + ur + ll + lr) / 4).ToRgba32();
+					result[y2, x2] = ((ul + ur + ll + lr) / 4).As<ColorRgba32>();
 				}
 			}
 

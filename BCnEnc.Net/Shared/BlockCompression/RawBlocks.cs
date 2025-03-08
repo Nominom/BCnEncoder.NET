@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 using BCnEncoder.Encoder.Bptc;
+using BCnEncoder.Shared.Colors;
 
 namespace BCnEncoder.Shared
 {
@@ -19,7 +20,7 @@ namespace BCnEncoder.Shared
 					p20 = p21 = p22 = p23 =
 						p30 = p31 = p32 = p33 = fillColor;
 		}
-		
+
 		public Span<ColorRgba32> AsSpan => MemoryMarshal.CreateSpan(ref p00, 16);
 
 		public ColorRgba32 this[int x, int y]
@@ -74,8 +75,8 @@ namespace BCnEncoder.Shared
 			var pix2 = other.AsSpan;
 			for (var i = 0; i < pix1.Length; i++)
 			{
-				var col1 = new ColorYCbCr(pix1[i]);
-				var col2 = new ColorYCbCr(pix2[i]);
+				var col1 = pix1[i].As<ColorYCbCr>();
+				var col2 = pix2[i].As<ColorYCbCr>();
 
 				var ye = col1.y - col2.y;
 				var cbe = col1.cb - col2.cb;
@@ -101,8 +102,8 @@ namespace BCnEncoder.Shared
 			var pix2 = other.AsSpan;
 			for (var i = 0; i < pix1.Length; i++)
 			{
-				var col1 = new ColorYCbCrAlpha(pix1[i]);
-				var col2 = new ColorYCbCrAlpha(pix2[i]);
+				var col1 = pix1[i].As<ColorYCbCrAlpha>();
+				var col2 = pix2[i].As<ColorYCbCrAlpha>();
 
 				var ye = (col1.y - col2.y) * yMultiplier;
 				var cbe = col1.cb - col2.cb;
@@ -156,7 +157,7 @@ namespace BCnEncoder.Shared
 					p20 = p21 = p22 = p23 =
 						p30 = p31 = p32 = p33 = fillColor;
 		}
-		
+
 		public Span<ColorRgbFloat> AsSpan => MemoryMarshal.CreateSpan(ref p00, 16);
 
 		public ColorRgbFloat this[int x, int y]
@@ -184,7 +185,7 @@ namespace BCnEncoder.Shared
 				var re = Math.Sign(col1.r) * MathF.Log( 1 + MathF.Abs(col1.r)) - Math.Sign(col2.r) * MathF.Log( 1 + MathF.Abs(col2.r));
 				var ge = Math.Sign(col1.g) * MathF.Log( 1 + MathF.Abs(col1.g)) - Math.Sign(col2.g) * MathF.Log( 1 + MathF.Abs(col2.g));
 				var be = Math.Sign(col1.b) * MathF.Log( 1 + MathF.Abs(col1.b)) - Math.Sign(col2.b) * MathF.Log( 1 + MathF.Abs(col2.b));
-																	   
+
 				error += re * re;
 				error += ge * ge;
 				error += be * be;
@@ -206,8 +207,8 @@ namespace BCnEncoder.Shared
 			var pix2 = other.AsSpan;
 			for (var i = 0; i < pix1.Length; i++)
 			{
-				var col1 = new ColorYCbCr(pix1[i]);
-				var col2 = new ColorYCbCr(pix2[i]);
+				var col1 = pix1[i].As<ColorYCbCr>();
+				var col2 = pix2[i].As<ColorYCbCr>();
 
 				var ye = col1.y - col2.y;
 				var cbe = col1.cb - col2.cb;
@@ -222,7 +223,7 @@ namespace BCnEncoder.Shared
 
 			return error;
 		}
-		
+
 
 		internal RawBlock4X4Ycbcr ToRawBlockYcbcr()
 		{
@@ -231,7 +232,7 @@ namespace BCnEncoder.Shared
 			var ycbcrPs = rawYcbcr.AsSpan;
 			for (var i = 0; i < pixels.Length; i++)
 			{
-				ycbcrPs[i] = new ColorYCbCr(pixels[i]);
+				ycbcrPs[i] = pixels[i].As<ColorYCbCr>();
 			}
 			return rawYcbcr;
 		}
@@ -297,7 +298,7 @@ namespace BCnEncoder.Shared
 			for (var i = 0; i < pix1.Length; i++)
 			{
 				var col1 = pix1[i];
-				var col2 = new ColorYCbCr(pix2[i]);
+				var col2 = pix2[i].As<ColorYCbCr>();
 
 				var ye = col1.y - col2.y;
 				var cbe = col1.cb - col2.cb;

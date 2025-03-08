@@ -42,9 +42,8 @@ namespace BCnEncTests.Support
 				{
 					var tPixel1 = pixels1[i / size];
 					var tPixel2 = pixels2[i / size];
-					throw new AssertActualExpectedException(tPixel1, tPixel2,
-						$"Pixels were not exactly equal within tolerance of {tolerance}!",
-						"Expected", "Actual");
+					throw NotEqualException.ForEqualValues(tPixel1.ToString()!, tPixel2.ToString()!,
+						$"Pixels were not exactly equal within tolerance of {tolerance}!");
 				}
 			}
 		}

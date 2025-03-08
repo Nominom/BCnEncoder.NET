@@ -1,4 +1,5 @@
-using BCnEncoder.Shared;
+using System;
+using BCnEncoder.Shared.Colors;
 using Xunit;
 
 namespace BCnEncTests

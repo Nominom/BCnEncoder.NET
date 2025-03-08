@@ -1,5 +1,6 @@
 using System;
 using System.Numerics;
+using BCnEncoder.Shared.Colors;
 
 namespace BCnEncoder.Shared
 {
@@ -70,19 +71,19 @@ namespace BCnEncoder.Shared
 				mat.M12 += values[i].X * values[i].Y;
 				mat.M13 += values[i].X * values[i].Z;
 				mat.M14 += values[i].X * values[i].W;
-				
+
 				mat.M22 += values[i].Y * values[i].Y;
 				mat.M23 += values[i].Y * values[i].Z;
 				mat.M24 += values[i].Y * values[i].W;
-				
+
 				mat.M33 += values[i].Z * values[i].Z;
 				mat.M34 += values[i].Z * values[i].W;
-				
+
 				mat.M44 += values[i].W * values[i].W;
 			}
 
 			mat = Matrix4x4.Multiply(mat, 1f / (values.Length - 1));
-			
+
 			mat.M21 = mat.M12;
 			mat.M31 = mat.M13;
 			mat.M32 = mat.M23;
@@ -124,7 +125,7 @@ namespace BCnEncoder.Shared
 		{
 			Span<Vector4> vectors = stackalloc Vector4[colors.Length];
 			ConvertToVector4(colors, vectors);
-			
+
 
 			var cov = CalculateCovariance(vectors, out var v4Mean);
 			mean = new Vector3(v4Mean.X, v4Mean.Y, v4Mean.Z);
@@ -166,7 +167,7 @@ namespace BCnEncoder.Shared
 		{
 			Span<Vector4> vectors = stackalloc Vector4[colors.Length];
 			ConvertToVector4(colors, vectors);
-			
+
 			var cov = CalculateCovariance(vectors, out mean);
 			principalAxis = CalculatePrincipalAxis(cov);
 		}
@@ -212,7 +213,7 @@ namespace BCnEncoder.Shared
 			max = new ColorRgb24((byte)maxR, (byte)maxG, (byte)maxB);
 		}
 
-		public static void GetMinMaxColor565(Span<ColorRgba32> colors, Vector3 mean, Vector3 principalAxis, 
+		public static void GetMinMaxColor565(Span<ColorRgba32> colors, Vector3 mean, Vector3 principalAxis,
 			out ColorRgb565 min, out ColorRgb565 max)
 		{
 

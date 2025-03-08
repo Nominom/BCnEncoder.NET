@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using BCnEncoder.Shared;
+using BCnEncoder.Shared.Colors;
 
 namespace BCnEncoder.Decoder
 {
@@ -71,7 +72,7 @@ namespace BCnEncoder.Decoder
 
 			var blockCount = data.Length / Unsafe.SizeOf<TEncodedBlock>();
 			var output = new TRawBlock[blockCount];
-			
+
 			if (context.IsParallel)
 			{
 				var options = new ParallelOptions

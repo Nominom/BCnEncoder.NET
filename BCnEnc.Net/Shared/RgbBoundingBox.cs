@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
+using BCnEncoder.Shared.Colors;
 
 namespace BCnEncoder.Shared
 {
@@ -212,14 +213,14 @@ namespace BCnEncoder.Shared
 				blockMin += offset;
 				blockMax += offset;
 			}
-			
+
 			float Select(ReadOnlySpan<float> span, int i)
 			{
 				return span[i * 3 + channel] + offset;
 			}
-			
+
 			var floats = MemoryMarshal.Cast<ColorRgbFloat, float>(colors);
-			
+
 			var refinedBlockMin = blockMax;
 			var refinedBlockMax = blockMin;
 

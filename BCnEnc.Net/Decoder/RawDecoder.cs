@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.CompilerServices;
 using BCnEncoder.Shared;
+using BCnEncoder.Shared.Colors;
 using CommunityToolkit.HighPerformance;
 
 namespace BCnEncoder.Decoder

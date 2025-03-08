@@ -47,7 +47,7 @@ namespace BCnEncTests
 			var inputData = ImageLoader.LoadTestData(name);
 
 			Assert.NotEqual(CompressionFormat.Unknown, inputData.Format);
-			
+
 			var cancelSource = new CancellationTokenSource();
 			// Test
 
@@ -72,7 +72,7 @@ namespace BCnEncTests
 			var inputData = ImageLoader.LoadTestData(name);
 
 			Assert.NotEqual(CompressionFormat.Unknown, inputData.Format);
-			
+
 			var cancelSource = new CancellationTokenSource();
 			// Test
 
@@ -90,7 +90,7 @@ namespace BCnEncTests
 		[InlineData(false, "bc1a_unorm")]
 		[InlineData(false, "bc7_unorm")]
 		[InlineData(false, "bc6h_ufloat")]
-		public async void TestDecodeRawBytesCancel(bool parallel, string name)
+		public async Task TestDecodeRawBytesCancel(bool parallel, string name)
 		{
 			var decoder = MakeDecoder(parallel);
 
@@ -101,6 +101,7 @@ namespace BCnEncTests
 			var cancelSource = new CancellationTokenSource();
 			Task<OperationCanceledException> task;
 			// Test
+			#pragma warning disable xUnit2021
 			if (inputData.Format.IsHdrFormat())
 			{
 				task = Assert.ThrowsAnyAsync<OperationCanceledException>(
@@ -121,7 +122,8 @@ namespace BCnEncTests
 						inputData.Format,
 						cancelSource.Token));
 			}
-			
+			#pragma warning restore xUnit2021
+
 			cancelSource.Cancel();
 			await task;
 		}

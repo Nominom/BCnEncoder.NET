@@ -338,3 +338,7 @@ ASALocalRun/
 
 # BeatPulse healthcheck temp database
 healthchecksdb
+
+# Rider DotSettings
+*.DotSettings.user
+*.DotSettings
