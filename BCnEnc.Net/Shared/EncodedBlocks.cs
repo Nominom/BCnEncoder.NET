@@ -251,7 +251,7 @@ namespace BCnEncoder.Shared
 
 		public void SetGreenIndex(int pixelIndex, byte greenIndex) => greenBlock.SetComponentIndex(pixelIndex, greenIndex);
 
-		public readonly RawBlock4X4Rgba32 Decode(ColorComponent component1 = ColorComponent.R, ColorComponent component2 = ColorComponent.G)
+		public readonly RawBlock4X4Rgba32 Decode(ColorComponent component1 = ColorComponent.R, ColorComponent component2 = ColorComponent.G, bool recalculateBlueChannel = false)
 		{
 			var output = new RawBlock4X4Rgba32();
 			var pixels = output.AsSpan;
@@ -259,10 +259,27 @@ namespace BCnEncoder.Shared
 			var reds = redBlock.Decode();
 			var greens = greenBlock.Decode();
 
+			var blues = new byte[pixels.Length];
+			if (recalculateBlueChannel)
+			{
+				for (var i = 0; i < pixels.Length; i++)
+				{
+					var red = (float) reds[i] / 255;
+					var green = (float) greens[i] / 255;
+
+					var blue = 1 - red * red - green * green;
+					blue = blue < 0 ? 0f : (float) Math.Sqrt(blue);
+					blue = Math.Clamp((blue + 1) / 2f, 0f, 1f);
+
+					blues[i] = (byte) (blue * 255);
+				}
+			}
+
 			for (var i = 0; i < pixels.Length; i++)
 			{
 				pixels[i] = ComponentHelper.ComponentToColor(component1, reds[i]);
 				pixels[i] = ComponentHelper.ComponentToColor(pixels[i], component2, greens[i]);
+				pixels[i] = ComponentHelper.ComponentToColor(pixels[i], ColorComponent.B, blues[i]);
 			}
 
 			return output;
