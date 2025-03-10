@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using BCnEncoder.Shared;
+using BCnEncoder.Shared.Colors;
 using BCnEncoder.TextureFormats;
 using Xunit;
 using Xunit.Abstractions;
@@ -29,18 +30,18 @@ namespace BCnEncTests
 			int testPrecision)
 		{
 			var testFloat = new ColorRgbaFloat(r, g, b);
-			var shared = ColorUtils.RgbToSharedExponent(testFloat, mantissaBits, exponentBias, exponentMax);
+			var shared = ColorUtils.RgbToSharedExponent(r, g, b, mantissaBits, exponentBias, exponentMax);
 
-			Assert.Equal(shared.Exponent & ((1 << exponentBits) - 1), shared.Exponent);
-			Assert.Equal(shared.Red & ((1 << mantissaBits) - 1), shared.Red);
-			Assert.Equal(shared.Green & ((1 << mantissaBits) - 1), shared.Green);
-			Assert.Equal(shared.Blue & ((1 << mantissaBits) - 1), shared.Blue);
+			Assert.Equal(shared.exponent & ((1 << exponentBits) - 1), shared.exponent);
+			Assert.Equal(shared.red & ((1 << mantissaBits) - 1), shared.red);
+			Assert.Equal(shared.green & ((1 << mantissaBits) - 1), shared.green);
+			Assert.Equal(shared.blue & ((1 << mantissaBits) - 1), shared.blue);
 
 			var outputFloat = ColorUtils.SharedExponentToRgb(shared, mantissaBits, exponentBias);
 
-			Assert.Equal(testFloat.r, outputFloat.r, testPrecision);
-			Assert.Equal(testFloat.g, outputFloat.g, testPrecision);
-			Assert.Equal(testFloat.b, outputFloat.b, testPrecision);
+			Assert.Equal(testFloat.r, outputFloat.red, testPrecision);
+			Assert.Equal(testFloat.g, outputFloat.green, testPrecision);
+			Assert.Equal(testFloat.b, outputFloat.blue, testPrecision);
 		}
 
 
@@ -54,17 +55,17 @@ namespace BCnEncTests
 			float r, float g, float b,
 			float resultWithin)
 		{
-			var testFloat = new ColorRgbaFloat(r, g, b).ToLRgb();
+			var testFloat = new ColorRgbaFloat(r, g, b);
 
-			var shared = ColorUtils.RgbToSharedExponent(testFloat,
+			var shared = ColorUtils.RgbToSharedExponent(r, g, b,
 				8, 128, 255);
 
-			Assert.Equal(shared.Exponent & 255, shared.Exponent);
-			Assert.Equal(shared.Red & 255, shared.Red);
-			Assert.Equal(shared.Green & 255, shared.Green);
-			Assert.Equal(shared.Blue & 255, shared.Blue);
+			Assert.Equal(shared.exponent & 255, shared.exponent);
+			Assert.Equal(shared.red & 255, shared.red);
+			Assert.Equal(shared.green & 255, shared.green);
+			Assert.Equal(shared.blue & 255, shared.blue);
 
-			var rgbe = new ColorRgbe((byte)shared.Red, (byte)shared.Green, (byte)shared.Blue, (byte)shared.Exponent);
+			var rgbe = new ColorRgbe((byte)shared.red, (byte)shared.green, (byte)shared.blue, (byte)shared.exponent);
 
 			var outputFloat = rgbe.ToColorRgbaFloat();
 

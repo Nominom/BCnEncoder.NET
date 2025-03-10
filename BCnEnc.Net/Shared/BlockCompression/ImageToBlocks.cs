@@ -1,3 +1,4 @@
+using BCnEncoder.Shared.Colors;
 using CommunityToolkit.HighPerformance;
 
 namespace BCnEncoder.Shared

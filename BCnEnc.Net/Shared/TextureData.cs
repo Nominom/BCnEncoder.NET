@@ -81,8 +81,6 @@ namespace BCnEncoder.Shared
 				set => textureData[(int)face * texture.NumArrayElements + arrayIndex] = value;
 			}
 
-			public TexData this [int arrayIndex] => textureData[arrayIndex];
-
 			public TexData First => textureData[0];
 
 			internal MipMapLevel(BCnTextureData texture, int level, int numFaces, int numArrayElements, bool allocateBuffers)
@@ -142,6 +140,7 @@ namespace BCnEncoder.Shared
 
 			public int Width => Mip.Width;
 			public int Height => Mip.Height;
+			public long SizeInBytes => Mip.SizeInBytes;
 
 			public TexData(CubeMapFaceDirection direction, int arrayIndex, MipMapLevel mip, byte[] data)
 			{
@@ -245,6 +244,20 @@ namespace BCnEncoder.Shared
 		/// True if the texture format is one of the block-compressed formats
 		/// </summary>
 		public bool IsBlockCompressed => Format.IsBlockCompressedFormat();
+
+		/// <summary>
+		/// True if the texture is a volume texture. (Z > 1)
+		/// </summary>
+		public bool IsVolumeTexture => Depth > 1;
+
+		/// <summary>
+		/// True if the texture is a texture array. (NumArrayElements > 1)
+		/// </summary>
+		public bool IsArrayTexture => NumArrayElements > 1;
+
+		public long TotalByteSize => Mips.Sum(m => m.SizeInBytes * NumFaces * NumArrayElements);
+
+
 
 		public TTexture AsTexture<TTexture>()
 			where TTexture : class, ITextureFileFormat, new()
@@ -485,7 +498,7 @@ namespace BCnEncoder.Shared
 		    var texture = new BCnTextureData(format, width, height, depth: 1, numMips: 1, slicesArray.Length, false, false);
 		    for (int i = 0; i < slicesArray.Length; i++)
 		    {
-		        texture.Mips[0][i].Data = slicesArray[i];
+		        texture.Mips[0][0, i].Data = slicesArray[i];
 		    }
 		    return texture;
 		}

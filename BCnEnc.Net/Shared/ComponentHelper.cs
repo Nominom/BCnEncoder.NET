@@ -1,5 +1,6 @@
 using System;
 using BCnEncoder.Encoder;
+using BCnEncoder.Shared.Colors;
 
 namespace BCnEncoder.Shared
 {
@@ -77,7 +78,7 @@ namespace BCnEncoder.Shared
 					return color.a;
 
 				case ColorComponent.Luminance:
-					return (byte)(new ColorYCbCr(color).y * 255);
+					return (byte)(color.As<ColorYCbCr>().y * 255);
 
 				default:
 					throw new InvalidOperationException("Unsupported component.");

@@ -3,6 +3,7 @@ using BCnEncoder.Decoder;
 using BCnEncoder.Encoder;
 using BCnEncoder.ImageSharp;
 using BCnEncoder.Shared;
+using BCnEncoder.Shared.Colors;
 using BCnEncTests.Support;
 using SixLabors.ImageSharp.Processing;
 using Xunit;
@@ -25,7 +26,7 @@ namespace BCnEncTests
 			var decodedImage = decoder.DecodeRawLdr(encodedRawBytes, inputImage.Width, inputImage.Height, CompressionFormat.Bc1);
 
 			var originalPixels = TestHelper.GetSinglePixelArray(inputImage);
-			var decodedPixels  = TestHelper.GetSinglePixelArray(decodedImage.AsBCnTextureData(inputImage.Width, inputImage.Height).AsImageRgba32());
+			var decodedPixels  = TestHelper.GetSinglePixelArray(decodedImage.AsBCnTextureData(inputImage.Width, inputImage.Height, false).AsImageRgba32());
 
 			TestHelper.AssertPixelsSimilar(originalPixels, decodedPixels, encoder.OutputOptions.Quality);
 		}
@@ -47,9 +48,9 @@ namespace BCnEncTests
 			Assert.Equal(0, ms.Position);
 
 			var decodedImage = decoder.DecodeRawLdr(ms, inputImage.Width, inputImage.Height, CompressionFormat.Bc1);
-			
+
 			var originalPixels = TestHelper.GetSinglePixelArray(inputImage);
-			var decodedPixels = TestHelper.GetSinglePixelArray(decodedImage.AsBCnTextureData(inputImage.Width, inputImage.Height).AsImageRgba32());
+			var decodedPixels = TestHelper.GetSinglePixelArray(decodedImage.AsBCnTextureData(inputImage.Width, inputImage.Height, false).AsImageRgba32());
 
 			TestHelper.AssertPixelsSimilar(originalPixels, decodedPixels, encoder.OutputOptions.Quality);
 		}

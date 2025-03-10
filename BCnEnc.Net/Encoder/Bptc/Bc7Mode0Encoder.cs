@@ -1,5 +1,6 @@
 using System;
 using BCnEncoder.Shared;
+using BCnEncoder.Shared.Colors;
 
 namespace BCnEncoder.Encoder.Bptc
 {
@@ -29,7 +30,7 @@ namespace BCnEncoder.Encoder.Bptc
 			};
 
 			for (var subset = 0; subset < 3; subset++) {
-				
+
 				Bc7EncodingHelpers.GetInitialUnscaledEndpointsForSubset(block, out var ep0, out var ep1,
 					partitionTable, subset);
 				var scaledEp0 =

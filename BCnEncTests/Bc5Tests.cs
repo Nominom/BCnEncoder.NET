@@ -1,6 +1,7 @@
 using BCnEncoder.Decoder;
 using BCnEncoder.ImageSharp;
 using BCnEncoder.Shared;
+using BCnEncoder.Shared.Colors;
 using BCnEncoder.TextureFormats;
 using BCnEncTests.Support;
 using Xunit;

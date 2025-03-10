@@ -127,7 +127,7 @@ namespace BCnEncoder.Shared
 			var ycbcrPs = rawYcbcr.AsSpan;
 			for (var i = 0; i < pixels.Length; i++)
 			{
-				ycbcrPs[i] = new ColorYCbCr(pixels[i]);
+				ycbcrPs[i] = pixels[i].As<ColorYCbCr>();
 			}
 			return rawYcbcr;
 		}

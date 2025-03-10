@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Runtime.InteropServices;
 using BCnEncoder.Shared;
+using BCnEncoder.Shared.Colors;
 
 namespace BCnEncoder.Encoder.Bptc
 {
@@ -10,13 +11,13 @@ namespace BCnEncoder.Encoder.Bptc
 	{
 		private static readonly int[] varPatternRAlpha = new int[] { 1, -1, 1, 0, 0, -1, 0, 0, 0, 0 };
 		private static readonly int[] varPatternRNoAlpha = new int[] { 1, -1, 1, 0, 0, -1, 0, 0 };
-			
+
 		private static readonly int[] varPatternGAlpha = new int[] { 1, -1, 0, 1, 0, 0, -1, 0, 0, 0 };
 		private static readonly int[] varPatternGNoAlpha = new int[] { 1, -1, 0, 1, 0, 0, -1, 0 };
-			
+
 		private static readonly int[] varPatternBAlpha = new int[] { 1, -1, 0, 0, 1, 0, 0, -1, 0, 0 };
 		private static readonly int[] varPatternBNoAlpha = new int[] { 1, -1, 0, 0, 1, 0, 0, -1 };
-			
+
 		private static readonly int[] varPatternAAlpha = new int[] { 0, 0, 0, 0, 0, 0, 0, 0, 1, -1 };
 		private static readonly int[] varPatternANoAlpha = new int[] { 0, 0, 0, 0, 0, 0, 0, 0 };
 
@@ -391,8 +392,8 @@ namespace BCnEncoder.Encoder.Bptc
 
 				for (var i = 0; i < colors.Length; i++)
 				{
-					colors[i] = new ColorYCbCr(InterpolateColor(ep0, ep1, i,
-						0, colorIndexPrecision, 0));
+					colors[i] = InterpolateColor(ep0, ep1, i,
+						0, colorIndexPrecision, 0).As<ColorYCbCr>();
 				}
 
 				for (var i = 0; i < alphas.Length; i++)
@@ -406,7 +407,7 @@ namespace BCnEncoder.Encoder.Bptc
 
 				for (var i = 0; i < 16; i++)
 				{
-					var pixelColor = new ColorYCbCr(pixels[i]);
+					var pixelColor = pixels[i].As<ColorYCbCr>();
 
 					FindClosestColorIndex(pixelColor, colors, out var ce);
 					FindClosestAlphaIndex(pixels[i].a, alphas, out var ae);
@@ -421,8 +422,8 @@ namespace BCnEncoder.Encoder.Bptc
 				Span<ColorYCbCrAlpha> colors = stackalloc ColorYCbCrAlpha[1 << colorIndexPrecision];
 				for (var i = 0; i < colors.Length; i++)
 				{
-					colors[i] = new ColorYCbCrAlpha(InterpolateColor(ep0, ep1, i,
-						i, colorIndexPrecision, alphaIndexPrecision));
+					colors[i] = InterpolateColor(ep0, ep1, i,
+						i, colorIndexPrecision, alphaIndexPrecision).As<ColorYCbCrAlpha>();
 				}
 
 				var pixels = raw.AsSpan;
@@ -433,7 +434,7 @@ namespace BCnEncoder.Encoder.Bptc
 				{
 					if (partitionTable[i] == subsetIndex)
 					{
-						var pixelColor = new ColorYCbCrAlpha(pixels[i]);
+						var pixelColor = pixels[i].As<ColorYCbCrAlpha>();
 
 						FindClosestColorIndex(pixelColor, colors, out var e);
 						error += e * e;
@@ -462,8 +463,8 @@ namespace BCnEncoder.Encoder.Bptc
 				Span<ColorYCbCrAlpha> colors = stackalloc ColorYCbCrAlpha[1 << colorIndexPrecision];
 				for (var i = 0; i < colors.Length; i++)
 				{
-					colors[i] = new ColorYCbCrAlpha(InterpolateColor(ep0, ep1, i,
-						i, colorIndexPrecision, alphaIndexPrecision));
+					colors[i] = InterpolateColor(ep0, ep1, i,
+						i, colorIndexPrecision, alphaIndexPrecision).As<ColorYCbCrAlpha>();
 				}
 
 				var pixels = raw.AsSpan;
@@ -472,7 +473,7 @@ namespace BCnEncoder.Encoder.Bptc
 				{
 					if (partitionTable[i] == subsetIndex)
 					{
-						var pixelColor = new ColorYCbCrAlpha(pixels[i]);
+						var pixelColor = pixels[i].As<ColorYCbCrAlpha>();
 
 						var index = FindClosestColorIndex(pixelColor, colors, out var e);
 						indicesToFill[i] = (byte)index;
@@ -497,8 +498,8 @@ namespace BCnEncoder.Encoder.Bptc
 
 				for (var i = 0; i < colors.Length; i++)
 				{
-					colors[i] = new ColorYCbCr(InterpolateColor(ep0, ep1, i,
-						0, colorIndexPrecision, 0));
+					colors[i] = InterpolateColor(ep0, ep1, i,
+						0, colorIndexPrecision, 0).As<ColorYCbCr>();
 				}
 
 				for (var i = 0; i < alphas.Length; i++)
@@ -511,7 +512,7 @@ namespace BCnEncoder.Encoder.Bptc
 
 				for (var i = 0; i < 16; i++)
 				{
-					var pixelColor = new ColorYCbCr(pixels[i]);
+					var pixelColor = pixels[i].As<ColorYCbCr>();
 
 					var index = FindClosestColorIndex(pixelColor, colors, out _);
 					colorIndicesToFill[i] = (byte)index;

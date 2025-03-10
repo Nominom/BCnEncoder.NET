@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using BCnEncoder.Decoder;
 using BCnEncoder.ImageSharp;
 using BCnEncoder.Shared;
+using BCnEncoder.Shared.Colors;
 using BCnEncoder.TextureFormats;
 using SixLabors.ImageSharp;
 using Xunit;
@@ -61,8 +62,8 @@ namespace BCnEncTests
 
 			output.MipMaps.Add(new KtxMipmap((uint)encoded.Length,
 				(uint)(8 * 4 * numWidthBlocks),
-				(uint)(8 * 4 * numHeightBlocks), 1));
-			output.MipMaps[0].Faces[0] = new KtxMipFace(encoded,
+				(uint)(8 * 4 * numHeightBlocks), 1, 1));
+			output.MipMaps[0].SurfaceArray[0] = new KtxMipSurface(encoded,
 				(uint)(8 * 4 * numWidthBlocks),
 				(uint)(8 * 4 * numHeightBlocks));
 
@@ -87,7 +88,7 @@ namespace BCnEncTests
 			Assert.Contains(new ColorRgba32(255, 0, 255), pixels);
 
 			using var fs = File.OpenWrite("test_decode_bc7_error.png");
-			pixels.AsBCnTextureData(width, height).AsImageRgba32().SaveAsPng(fs);
+			pixels.AsBCnTextureData(width, height, false).AsImageRgba32().SaveAsPng(fs);
 		}
 
 		#region Type Packs

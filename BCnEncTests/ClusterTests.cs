@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using BCnEncoder.Shared;
+using BCnEncoder.Shared.Colors;
 using BCnEncTests.Support;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
@@ -28,7 +29,7 @@ namespace BCnEncTests
 
 			for (var i = 0; i < pixels.Length; i++)
 			{
-				pixC[clusters[i]] += new ColorYCbCr(pixels[i]);
+				pixC[clusters[i]] += pixels[i].As<ColorYCbCr>();
 				counts[clusters[i]]++;
 			}
 
@@ -39,7 +40,7 @@ namespace BCnEncTests
 
 			for (var i = 0; i < pixels.Length; i++)
 			{
-				pixels[i] = pixC[clusters[i]].ToColorRgba32();
+				pixels[i] = pixC[clusters[i]].As<ColorRgba32>();
 				pix[i] = new Rgba32(pixels[i].r, pixels[i].g, pixels[i].b, pixels[i].a);
 			}
 

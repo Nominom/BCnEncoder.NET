@@ -25,8 +25,8 @@ namespace BCnEncTests
 			{
 				for (var m = 0; m < decompressedRgba.NumMips; m++)
 				{
-					var mip = decompressedRgba.Faces[f].Mips[m];
-					var mip2 = convertedBgra.Faces[f].Mips[m];
+					var mip = decompressedRgba.Mips[m][(CubeMapFaceDirection)f];
+					var mip2 = convertedBgra.Mips[m][(CubeMapFaceDirection)f];
 
 					Assert.Equal(mip2.SizeInBytes, mip.SizeInBytes);
 					Assert.Equal(mip2.Data.Length, mip2.SizeInBytes);
@@ -49,8 +49,8 @@ namespace BCnEncTests
 			{
 				for (var m = 0; m < convertedBgra.NumMips; m++)
 				{
-					var mip = convertedBgra.Faces[f].Mips[m];
-					var mip2 = convertedRg.Faces[f].Mips[m];
+					var mip = convertedBgra.Mips[m][(CubeMapFaceDirection)f];
+					var mip2 = convertedRg.Mips[m][(CubeMapFaceDirection)f];
 
 					Assert.Equal(mip2.SizeInBytes, mip.SizeInBytes / 2);
 					Assert.Equal(mip2.Data.Length, mip2.SizeInBytes);

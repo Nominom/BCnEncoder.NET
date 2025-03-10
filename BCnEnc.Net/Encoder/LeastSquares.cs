@@ -4,6 +4,7 @@ using System.Numerics;
 using System.Text;
 using BCnEncoder.Encoder.Bptc;
 using BCnEncoder.Shared;
+using BCnEncoder.Shared.Colors;
 
 namespace BCnEncoder.Encoder
 {

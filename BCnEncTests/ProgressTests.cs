@@ -24,7 +24,7 @@ namespace BCnEncTests
 		private async Task ExecuteEncodeProgressReport(BcEncoder encoder, Image<Rgba32> testImage)
 		{
 			var lastProgress = new ProgressElement(0, 1);
-			
+
 			encoder.Options.Progress = new SynchronousProgress<ProgressElement>(element =>
 			{
 				Assert.True(lastProgress.CurrentBlock < element.CurrentBlock);
@@ -55,7 +55,7 @@ namespace BCnEncTests
 			where T : ITextureFileFormat
 		{
 			var lastProgress = new ProgressElement(0, 1);
-			
+
 			decoder.Options.Progress = new SynchronousProgress<ProgressElement>(element =>
 			{
 				Assert.True(lastProgress.CurrentBlock < element.CurrentBlock);
@@ -64,7 +64,7 @@ namespace BCnEncTests
 
 			var bcnData = image.ToTextureData();
 
-			var expectedTotalBlocks = bcnData.MipLevels.Sum(m =>
+			var expectedTotalBlocks = bcnData.Mips.Sum(m =>
 				bcnData.Format.CalculateMipByteSize(m.Width, m.Height)) / bcnData.Format.BytesPerBlock();
 
 			await decoder.DecodeAsync(bcnData);
@@ -78,7 +78,7 @@ namespace BCnEncTests
 		private async Task ExecuteEncodeSingleMipProgressReport(BcEncoder encoder, Image<Rgba32> testImage, int mipLevel)
 		{
 			var lastProgress = new ProgressElement(0, 1);
-			
+
 			encoder.Options.Progress = new SynchronousProgress<ProgressElement>(element =>
 			{
 				Assert.True(lastProgress.CurrentBlock < element.CurrentBlock);
@@ -101,7 +101,7 @@ namespace BCnEncTests
 			where T : ITextureFileFormat
 		{
 			var lastProgress = new ProgressElement(0, 1);
-			
+
 			decoder.Options.Progress = new SynchronousProgress<ProgressElement>(element =>
 			{
 				Assert.True(lastProgress.CurrentBlock < element.CurrentBlock);
@@ -109,9 +109,9 @@ namespace BCnEncTests
 			});
 
 			var bcnData = image.ToTextureData();
-			var expectedTotalBlocks = bcnData.Format.CalculateMipByteSize(bcnData.MipLevels[mipLevel].Width, bcnData.MipLevels[mipLevel].Height) / bcnData.Format.BytesPerBlock();
+			var expectedTotalBlocks = bcnData.Format.CalculateMipByteSize(bcnData.Mips[mipLevel].Width, bcnData.Mips[mipLevel].Height) / bcnData.Format.BytesPerBlock();
 
-			await decoder.DecodeRawLdrAsync(bcnData.MipLevels[mipLevel].Data, bcnData.MipLevels[mipLevel].Width, bcnData.MipLevels[mipLevel].Height, bcnData.Format);
+			await decoder.DecodeRawLdrAsync(bcnData.Mips[mipLevel].First.Data, bcnData.Mips[mipLevel].Width, bcnData.Mips[mipLevel].Height, bcnData.Format);
 
 			output.WriteLine("LastProgress = " + lastProgress);
 
@@ -133,7 +133,7 @@ namespace BCnEncTests
 			{
 				Options = { IsParallel = parallel }
 			};
-			
+
 			await ExecuteDecodeProgressReport(decoder, testImage);
 			await ExecuteDecodeSingleMipProgressReport(decoder, testImage, 0);
 			await ExecuteDecodeSingleMipProgressReport(decoder, testImage, 1);
@@ -153,7 +153,7 @@ namespace BCnEncTests
 				Options = { IsParallel = parallel },
 				OutputOptions = { Quality = CompressionQuality.Fast }
 			};
-			
+
 			await ExecuteEncodeProgressReport(encoder, testImage);
 			await ExecuteEncodeSingleMipProgressReport(encoder, testImage, 0);
 			await ExecuteEncodeSingleMipProgressReport(encoder, testImage, 1);

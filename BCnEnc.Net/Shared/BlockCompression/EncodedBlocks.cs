@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 using BCnEncoder.Encoder;
+using BCnEncoder.Shared.Colors;
 
 namespace BCnEncoder.Shared
 {

@@ -519,9 +519,11 @@ namespace BCnEncoder.Decoder
 			var totalBlocks = 0L;
 			for (var m = 0; m < texture.NumMips; m++)
 			{
-				totalBlocks += texture.MipLevels[m].SizeInBytes / blockSize;
+				totalBlocks += texture.Mips[m].SizeInBytes / blockSize;
 			}
 			totalBlocks *= texture.NumFaces;
+			totalBlocks *= texture.NumArrayElements;
+
 			context.Progress = new OperationProgress(Options.Progress, totalBlocks);
 
 			var decoder = GetDecoder(texture.Format);
@@ -531,15 +533,19 @@ namespace BCnEncoder.Decoder
 				throw new NotSupportedException($"This Format is not supported: {texture.Format}");
 			}
 
-			var outputData = new BCnTextureData(decoder.DecodedFormat, texture.Width, texture.Height,
-				texture.NumMips, texture.IsCubeMap, false);
+			var outputData = new BCnTextureData(decoder.DecodedFormat, texture.Width, texture.Height, texture.Depth,
+				texture.NumMips, texture.NumArrayElements, texture.IsCubeMap, false);
 
-			for (var f = 0; f < texture.NumFaces; f++)
+			for (var m = 0; m < texture.NumMips; m++)
 			{
-				for (var m = 0; m < texture.NumMips; m++)
+				for (var f = 0; f < texture.NumFaces; f++)
 				{
-					var data = texture.Faces[f].Mips[m].Data;
-					outputData.Faces[f].Mips[m].Data = decoder.Decode(data, texture.Faces[f].Mips[m].Width, texture.Faces[f].Mips[m].Height, context);
+					for (var a = 0; a < texture.NumArrayElements; a++)
+					{
+						var data = texture.Mips[m][(CubeMapFaceDirection)f, a].Data;
+						outputData.Mips[m][(CubeMapFaceDirection)f, a].Data = decoder.Decode(data, texture.Mips[m].Width,
+							texture.Mips[m].Height, context);
+					}
 				}
 			}
 

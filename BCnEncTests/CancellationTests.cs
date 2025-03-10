@@ -106,7 +106,7 @@ namespace BCnEncTests
 			{
 				task = Assert.ThrowsAnyAsync<OperationCanceledException>(
 					() => decoder.DecodeRawHdrAsync(
-						inputData.MipLevels[0].Data,
+						inputData.First.Data,
 						inputData.Width,
 						inputData.Height,
 						inputData.Format,
@@ -116,7 +116,7 @@ namespace BCnEncTests
 			{
 				task = Assert.ThrowsAnyAsync<OperationCanceledException>(
 					() => decoder.DecodeRawLdrAsync(
-						inputData.MipLevels[0].Data,
+						inputData.First.Data,
 						inputData.Width,
 						inputData.Height,
 						inputData.Format,

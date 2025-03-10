@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
 using BCnEncoder.Shared;
+using BCnEncoder.Shared.Colors;
 
 namespace BCnEncoder.Encoder.Bptc
 {

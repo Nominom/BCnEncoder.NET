@@ -5,6 +5,7 @@ using BCnEncoder.Encoder;
 using BCnEncTests.Support;
 using Xunit;
 using BCnEncoder.ImageSharp;
+using BCnEncoder.Shared;
 using BCnEncoder.TextureFormats;
 
 namespace BCnEncTests
@@ -33,7 +34,7 @@ namespace BCnEncTests
 			var bcnData = encoder.Encode(testImage);
 
 			Assert.Equal(requestedMipMaps, bcnData.NumMips);
-			Assert.Equal(requestedMipMaps, bcnData.MipLevels.Length);
+			Assert.Equal(requestedMipMaps, bcnData.Mips.Length);
 
 			var ktx = encoder.EncodeToTexture<KtxFile>(testImage);
 
@@ -43,20 +44,23 @@ namespace BCnEncTests
 			var dds = encoder.EncodeToTexture<DdsFile>(testImage);
 
 			Assert.Equal(requestedMipMaps, (int)dds.header.dwMipMapCount);
-			Assert.Equal(requestedMipMaps, dds.Faces[0].MipMaps.Length);
+			Assert.Equal(requestedMipMaps, dds.ArrayElements[0].MipMaps.Length);
 		}
 
-		[Fact]
-		[System.Diagnostics.CodeAnalysis.SuppressMessage("Assertions", "xUnit2013:Do not use equality check to check for collection size.", Justification = "<Pending>")]
-		public void GenerateMipMaps()
+		[Theory]
+		[InlineData(true)]
+		[InlineData(false)]
+		public void GenerateMipMaps(bool generateMipMaps)
 		{
 			var testImage = ImageLoader.TestRawImages["rgba_1"];
-			const int requestedMipMaps = 1;
+			int requestedMipMaps = generateMipMaps ?
+				MipMapper.CalculateMipChainLength(testImage.Width, testImage.Height, 0) :
+				1;
 			var encoder = new BcEncoder()
 			{
 				OutputOptions =
 				{
-					GenerateMipMaps = false
+					GenerateMipMaps = generateMipMaps
 				}
 			};
 
@@ -65,7 +69,7 @@ namespace BCnEncTests
 			var bcnData = encoder.Encode(testImage);
 
 			Assert.Equal(requestedMipMaps, bcnData.NumMips);
-			Assert.Equal(requestedMipMaps, bcnData.MipLevels.Length);
+			Assert.Equal(requestedMipMaps, bcnData.Mips.Length);
 
 			var ktx = encoder.EncodeToTexture<KtxFile>(testImage);
 
@@ -75,7 +79,7 @@ namespace BCnEncTests
 			var dds = encoder.EncodeToTexture<DdsFile>(testImage);
 
 			Assert.Equal(requestedMipMaps, (int)dds.header.dwMipMapCount);
-			Assert.Equal(requestedMipMaps, dds.Faces[0].MipMaps.Length);
+			Assert.Equal(requestedMipMaps, dds.ArrayElements[0].MipMaps.Length);
 		}
 	}
 }

@@ -12,6 +12,7 @@ namespace BCnEncoder.TextureFormats
 		bool SupportsHdr { get; }
 		bool SupportsCubeMap { get; }
 		bool SupportsMipMaps { get; }
+		bool SupportsArrays { get; }
 
 		bool IsSupportedFormat(CompressionFormat format);
 		void FromTextureData(BCnTextureData textureData);

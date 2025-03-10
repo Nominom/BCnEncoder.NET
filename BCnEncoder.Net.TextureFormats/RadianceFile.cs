@@ -38,6 +38,9 @@ namespace BCnEncoder.TextureFormats
 		public bool SupportsMipMaps => false;
 
 		/// <inheritdoc />
+		public bool SupportsArrays => false;
+
+		/// <inheritdoc />
 		public bool IsSupportedFormat(CompressionFormat format)
 		{
 			return format == CompressionFormat.Rgbe || format == CompressionFormat.Xyze;
@@ -54,7 +57,7 @@ namespace BCnEncoder.TextureFormats
 			width = textureData.Width;
 			height = textureData.Height;
 			colorSpace = textureData.Format == CompressionFormat.Rgbe ? ColorSpace.Rgbe : ColorSpace.Xyze;
-			pixelData = textureData.MipLevels[0].Data;
+			pixelData = textureData.First.Data;
 			exposure = 1;
 			gamma = 1;
 		}
@@ -62,7 +65,7 @@ namespace BCnEncoder.TextureFormats
 		/// <inheritdoc />
 		public BCnTextureData ToTextureData()
 		{
-			return new BCnTextureData(
+			return BCnTextureData.FromSingle(
 				colorSpace == ColorSpace.Rgbe ? CompressionFormat.Rgbe : CompressionFormat.Xyze,
 				width,
 				height,
@@ -165,7 +168,7 @@ namespace BCnEncoder.TextureFormats
 			{
 				gamma = 1.0f;
 			}
-			
+
 			var imgSize = Regex.Replace(ReadLineFromStream(stream), @"\s+", " ").Split(' ');
 			var yStr = imgSize[0];
 			height = int.Parse(imgSize[1]);

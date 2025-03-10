@@ -78,13 +78,18 @@ public struct ColorRgbe : IColor<ColorRgbe>
 		}
 		else
 		{
-			(r, g, b, e) = ColorUtils.RgbToSharedExponent(
+			var (ri, gi, bi, ei) = ColorUtils.RgbToSharedExponent(
 				red: color.r,
 				green:color.g,
 				blue:color.b,
 				mantissaBits: 8,
 				bias: 128,
 				exponentMax: 255);
+
+			r = (byte)ri;
+			g = (byte)gi;
+			b = (byte)bi;
+			e = (byte)ei;
 		}
 	}
 }
@@ -150,6 +155,7 @@ public struct ColorXyze : IColor<ColorXyze>
 		}
 		else
 		{
+			// TODO: Do this as well.
 			var fexp = MathHelper.LdExp(1f, e - (128 + 8));
 
 			return new ColorXyz(

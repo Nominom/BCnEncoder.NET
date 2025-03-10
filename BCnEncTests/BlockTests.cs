@@ -1,5 +1,6 @@
 using System;
 using BCnEncoder.Shared;
+using BCnEncoder.Shared.Colors;
 using CommunityToolkit.HighPerformance;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;

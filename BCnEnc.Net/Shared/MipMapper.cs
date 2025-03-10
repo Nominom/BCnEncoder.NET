@@ -19,22 +19,29 @@ namespace BCnEncoder.Shared
 
 			input = input.ConvertTo(CompressionFormat.RgbaFloat);
 
-			if (input.MipLevels.Length == numMipMaps)
+			if (input.Mips.Length == numMipMaps)
 			{
 				return input;
 			}
 
-			var newData = new BCnTextureData(CompressionFormat.RgbaFloat, input.Width, input.Height, numMipMaps,
-				input.IsCubeMap, true);
+			if (input.Depth != 1)
+				throw new ArgumentException("Only 2D textures are supported!");
+
+			var newData = new BCnTextureData(CompressionFormat.RgbaFloat, input.Width, input.Height, input.Depth, numMipMaps,
+				input.NumArrayElements, input.IsCubeMap, true);
 
 			for (var f = 0; f < newData.NumFaces; f++)
 			{
-				var rgbaFloatMemory = input.Faces[f].Mips[0].AsMemory2D<ColorRgbaFloat>();
-				var chain = GenerateMipChain(rgbaFloatMemory, ref numMipMaps);
-
-				for (var i = 0; i < numMipMaps; i++)
+				for (var a = 0; a < newData.NumArrayElements; a++)
 				{
-					chain[i].CopyTo(newData.Faces[f].Mips[i].AsMemory2D<ColorRgbaFloat>());
+					var face = (CubeMapFaceDirection)f;
+					var rgbaFloatMemory = input.Mips[0][face, a].AsMemory2D<ColorRgbaFloat>();
+					var chain = GenerateMipChain(rgbaFloatMemory, ref numMipMaps);
+
+					for (var i = 0; i < numMipMaps; i++)
+					{
+						chain[i].CopyTo(newData.Mips[i][face, a].AsMemory2D<ColorRgbaFloat>());
+					}
 				}
 			}
 
@@ -54,22 +61,29 @@ namespace BCnEncoder.Shared
 
 			input = input.ConvertTo(CompressionFormat.Rgba32);
 
-			if (input.MipLevels.Length == numMipMaps)
+			if (input.Mips.Length == numMipMaps)
 			{
 				return input;
 			}
 
-			var newData = new BCnTextureData(CompressionFormat.Rgba32, input.Width, input.Height, numMipMaps,
-				input.IsCubeMap, true);
+			if (input.Depth != 1)
+				throw new ArgumentException("Only 2D textures are supported!");
+
+			var newData = new BCnTextureData(CompressionFormat.Rgba32, input.Width, input.Height, input.Depth, numMipMaps,
+				input.NumArrayElements, input.IsCubeMap, true);
 
 			for (var f = 0; f < newData.NumFaces; f++)
 			{
-				var rgbaMemory = input.Faces[f].Mips[0].AsMemory2D<ColorRgba32>();
-				var chain = GenerateMipChain(rgbaMemory, ref numMipMaps);
-
-				for (var i = 0; i < numMipMaps; i++)
+				for (var a = 0; a < newData.NumArrayElements; a++)
 				{
-					chain[i].CopyTo(newData.Faces[f].Mips[i].AsMemory2D<ColorRgba32>());
+					var face = (CubeMapFaceDirection)f;
+					var rgbaMemory = input.Mips[0][face, a].AsMemory2D<ColorRgba32>();
+					var chain = GenerateMipChain(rgbaMemory, ref numMipMaps);
+
+					for (var i = 0; i < numMipMaps; i++)
+					{
+						chain[i].CopyTo(newData.Mips[i][face, a].AsMemory2D<ColorRgba32>());
+					}
 				}
 			}
 

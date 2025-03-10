@@ -8,7 +8,7 @@ public class ColorUtils
 	/// <summary>
 	/// From: https://www.khronos.org/registry/vulkan/specs/1.2/html/chap16.html#_conversion_formulas
 	/// </summary>
-	public static (uint Red, uint Green, uint Blue, uint Exponent) RgbToSharedExponent(float red, float green, float blue, int mantissaBits, int bias, int exponentMax)
+	public static (uint red, uint green, uint blue, uint exponent) RgbToSharedExponent(float red, float green, float blue, int mantissaBits, int bias, int exponentMax)
 	{
 		var twoPowN = (float)(1 << mantissaBits);
 		var twoPowEmaxMinusB = MathF.Pow(2, exponentMax - bias);
@@ -37,16 +37,16 @@ public class ColorUtils
 		var bluShared = (uint)MathF.Floor((bluClamp / twoPowExpSharedMinusBMantissa) + 0.5f);
 
 		return (
-			Red: redShared,
-			Green: greShared,
-			Blue: bluShared,
-			Exponent: (uint)expShared);
+			red: redShared,
+			green: greShared,
+			blue: bluShared,
+			exponent: (uint)expShared);
 	}
 
 	/// <summary>
 	/// From: https://www.khronos.org/registry/vulkan/specs/1.2/html/chap16.html#_conversion_formulas
 	/// </summary>
-	public static (float Red, float Green, float Blue) SharedExponentToRgb((uint Red, uint Green, uint Blue, uint Exp) shared, int mantissaBits,
+	public static (float red, float green, float blue) SharedExponentToRgb((uint Red, uint Green, uint Blue, uint Exp) shared, int mantissaBits,
 		int bias)
 	{
 		var twoPowExp = MathF.Pow(2, shared.Exp - bias - mantissaBits);

@@ -541,8 +541,12 @@ namespace BCnEncoder.TextureFormats
 					return DxgiFormat.DxgiFormatR8G8Unorm;
 				case CompressionFormat.Rgba32:
 					return DxgiFormat.DxgiFormatR8G8B8A8Unorm;
+				case CompressionFormat.Rgba32_sRGB:
+					return DxgiFormat.DxgiFormatR8G8B8A8UnormSrgb;
 				case CompressionFormat.Bgra32:
 					return DxgiFormat.DxgiFormatB8G8R8A8Unorm;
+				case CompressionFormat.Bgra32_sRGB:
+					return DxgiFormat.DxgiFormatB8G8R8A8UnormSrgb;
 				case CompressionFormat.RgbaFloat:
 					return DxgiFormat.DxgiFormatR32G32B32A32Float;
 				case CompressionFormat.RgbaHalf:
@@ -552,12 +556,24 @@ namespace BCnEncoder.TextureFormats
 
 				case CompressionFormat.Bc1:
 					return DxgiFormat.DxgiFormatBc1Unorm;
+				case CompressionFormat.Bc1_sRGB:
+					return DxgiFormat.DxgiFormatBc1UnormSrgb;
+
 				case CompressionFormat.Bc1WithAlpha:
 					return DxgiFormat.DxgiFormatBc1Unorm;
+				case CompressionFormat.Bc1WithAlpha_sRGB:
+					return DxgiFormat.DxgiFormatBc1UnormSrgb;
+
 				case CompressionFormat.Bc2:
 					return DxgiFormat.DxgiFormatBc2Unorm;
+				case CompressionFormat.Bc2_sRGB:
+					return DxgiFormat.DxgiFormatBc2UnormSrgb;
+
 				case CompressionFormat.Bc3:
 					return DxgiFormat.DxgiFormatBc3Unorm;
+				case CompressionFormat.Bc3_sRGB:
+					return DxgiFormat.DxgiFormatBc3UnormSrgb;
+
 				case CompressionFormat.Bc4:
 					return DxgiFormat.DxgiFormatBc4Unorm;
 				case CompressionFormat.Bc5:
@@ -566,8 +582,12 @@ namespace BCnEncoder.TextureFormats
 					return DxgiFormat.DxgiFormatBc6HUf16;
 				case CompressionFormat.Bc6S:
 					return DxgiFormat.DxgiFormatBc6HSf16;
+
 				case CompressionFormat.Bc7:
 					return DxgiFormat.DxgiFormatBc7Unorm;
+				case CompressionFormat.Bc7_sRGB:
+					return DxgiFormat.DxgiFormatBc7UnormSrgb;
+
 				case CompressionFormat.Atc:
 					return DxgiFormat.DxgiFormatAtcExt;
 				case CompressionFormat.AtcExplicitAlpha:

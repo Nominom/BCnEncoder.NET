@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using BCnEncoder.Encoder;
 using BCnEncoder.Shared;
+using BCnEncoder.Shared.Colors;
 using BCnEncoder.TextureFormats;
 using CommunityToolkit.HighPerformance;
 using SixLabors.ImageSharp;
@@ -21,8 +22,8 @@ namespace BCnEncoder.ImageSharp
 		/// The owner of the pixel memory is still <paramref name="data"/>,
 		/// so modifying the data in the <see cref="Image{TPixel}"/> affects the original <see cref="BCnTextureData"/>.
 		/// </summary>
-		public static Image<Rgba32> AsImageRgba32(this BCnTextureData data, int mipLevel = 0, CubeMapFaceDirection faceDirection = CubeMapFaceDirection.XPositive)
-			=> AsImage<Rgba32>(data, CompressionFormat.Rgba32, faceDirection, mipLevel);
+		public static Image<Rgba32> AsImageRgba32(this BCnTextureData data, int mipLevel = 0, int arrayIndex = 0, CubeMapFaceDirection faceDirection = CubeMapFaceDirection.XPositive)
+			=> AsImage<Rgba32>(data, CompressionFormat.Rgba32_sRGB, faceDirection, mipLevel, arrayIndex);
 
 		/// <summary>
 		/// Wrap a <see cref="BCnTextureData"/> single face and mipLevel as a <see cref="Image{TPixel}"/> of <see cref="RgbaVector"/>.
@@ -31,11 +32,11 @@ namespace BCnEncoder.ImageSharp
 		/// so modifying the data in the <see cref="Image{TPixel}"/> affects the original <see cref="BCnTextureData"/>.
 		/// </summary>
 		public static Image<RgbaVector> AsImageRgbaVector(this BCnTextureData data, int mipLevel = 0,
-			CubeMapFaceDirection faceDirection = CubeMapFaceDirection.XPositive)
-			=> AsImage<RgbaVector>(data, CompressionFormat.RgbaFloat, faceDirection, mipLevel);
+			int arrayIndex = 0, CubeMapFaceDirection faceDirection = CubeMapFaceDirection.XPositive)
+			=> AsImage<RgbaVector>(data, CompressionFormat.RgbaFloat, faceDirection, mipLevel, arrayIndex);
 
 		private static Image<TPixel> AsImage<TPixel>(this BCnTextureData data, CompressionFormat expectedFormat,
-			CubeMapFaceDirection faceDirection, int mipLevel)
+			CubeMapFaceDirection faceDirection, int mipLevel, int arrayElement)
 			where TPixel : unmanaged, IPixel<TPixel>
 		{
 			if (data.Format != expectedFormat)
@@ -57,7 +58,7 @@ namespace BCnEncoder.ImageSharp
 					nameof(mipLevel));
 			}
 
-			var mip = data[faceDirection].Mips[mipLevel];
+			var mip = data.Mips[mipLevel][faceDirection, arrayElement];
 
 			return Image.WrapMemory<TPixel>(Configuration.Default, mip.AsMemory<TPixel>(), mip.Width, mip.Height);
 		}
@@ -69,11 +70,11 @@ namespace BCnEncoder.ImageSharp
 		/// Copy the contents of a <see cref="Image{TPixel}"/> of type <see cref="Rgba32"/> into <see cref="BCnTextureData"/>.
 		/// The format of the data will be <see cref="CompressionFormat.Rgba32"/>.
 		/// </summary>
-		public static BCnTextureData ToBCnTextureData(this Image<Rgba32> image)
+		public static BCnTextureData ToBCnTextureData(this Image<Rgba32> image, bool srgb = true)
 		{
 			var bytes = new byte[image.Width * image.Height * 4L];
 			image.CopyPixelDataTo(bytes);
-			return new BCnTextureData(CompressionFormat.Rgba32, image.Width, image.Height, bytes);
+			return BCnTextureData.FromSingle(srgb ? CompressionFormat.Rgba32_sRGB : CompressionFormat.Rgba32, image.Width, image.Height, bytes);
 		}
 
 		/// <summary>
@@ -84,18 +85,18 @@ namespace BCnEncoder.ImageSharp
 		{
 			var bytes = new byte[image.Width * image.Height * 16L];
 			image.CopyPixelDataTo(bytes);
-			return new BCnTextureData(CompressionFormat.RgbaFloat, image.Width, image.Height, bytes);
+			return BCnTextureData.FromSingle(CompressionFormat.RgbaFloat, image.Width, image.Height, bytes);
 		}
 
 		/// <summary>
 		/// Copy the contents of a <see cref="Image{TPixel}"/> of type <see cref="Rgb24"/> into <see cref="BCnTextureData"/>.
 		/// The format of the data will be <see cref="CompressionFormat.Rgb24"/>.
 		/// </summary>
-		public static BCnTextureData ToBCnTextureData(this Image<Rgb24> image)
+		public static BCnTextureData ToBCnTextureData(this Image<Rgb24> image, bool srgb = true)
 		{
 			var bytes = new byte[image.Width * image.Height * 3L];
 			image.CopyPixelDataTo(bytes);
-			return new BCnTextureData(CompressionFormat.Rgb24, image.Width, image.Height, bytes);
+			return BCnTextureData.FromSingle(srgb ? CompressionFormat.Rgb24_sRGB : CompressionFormat.Rgb24, image.Width, image.Height, bytes);
 		}
 	}
 
@@ -122,7 +123,7 @@ namespace BCnEncoder.ImageSharp
 		public static byte[] EncodeToRawBytes(this BcEncoder encoder, Image<Rgba32> input, int mipLevel,
 			out int mipWidth, out int mipHeight)
 			=> encoder.EncodeToRawBytes(
-				input.ToBCnTextureData().MipLevels[0].AsMemory2D<ColorRgba32>(),
+				input.ToBCnTextureData().First.AsMemory2D<ColorRgba32>(),
 				mipLevel,
 				out mipWidth,
 				out mipHeight);
@@ -131,7 +132,7 @@ namespace BCnEncoder.ImageSharp
 		public static byte[] EncodeToRawBytesHdr(this BcEncoder encoder, Image<RgbaVector> input, int mipLevel,
 			out int mipWidth, out int mipHeight)
 			=> encoder.EncodeToRawBytesHdr(
-				input.ToBCnTextureData().MipLevels[0].AsMemory2D<ColorRgbaFloat>(),
+				input.ToBCnTextureData().First.AsMemory2D<ColorRgbaFloat>(),
 				mipLevel,
 				out mipWidth,
 				out mipHeight);
@@ -140,7 +141,7 @@ namespace BCnEncoder.ImageSharp
 		public static Task<byte[]> EncodeToRawBytesAsync(this BcEncoder encoder, Image<Rgba32> input, int mipLevel,
 			CancellationToken token = default)
 			=> encoder.EncodeToRawBytesAsync(
-				input.ToBCnTextureData().MipLevels[0].AsMemory2D<ColorRgba32>(),
+				input.ToBCnTextureData().First.AsMemory2D<ColorRgba32>(),
 				mipLevel, token);
 
 
@@ -148,7 +149,7 @@ namespace BCnEncoder.ImageSharp
 		public static Task<byte[]> EncodeToRawBytesHdrAsync(this BcEncoder encoder, Image<RgbaVector> input, int mipLevel,
 			CancellationToken token = default)
 			=> encoder.EncodeToRawBytesHdrAsync(
-				input.ToBCnTextureData().MipLevels[0].AsMemory2D<ColorRgbaFloat>(),
+				input.ToBCnTextureData().First.AsMemory2D<ColorRgbaFloat>(),
 				mipLevel, token);
 
 		/// <summary>
@@ -624,7 +625,7 @@ namespace BCnEncoder.ImageSharp
 			Image<Rgba32> top, Image<Rgba32> down,
 			Image<Rgba32> back, Image<Rgba32> front)
 		{
-			var data = new BCnTextureData(CompressionFormat.Rgba32, right.Width, right.Height, 1, true, true);
+			var data = new BCnTextureData(CompressionFormat.Rgba32, right.Width, right.Height, 1, 1, 1, true, true);
 
 			if (
 				right.Width != left.Width || right.Height != left.Height ||
@@ -637,12 +638,12 @@ namespace BCnEncoder.ImageSharp
 				throw new ArgumentException("All faces of a cubeMap must be of equal width and height!");
 			}
 
-			right.CopyPixelDataTo(data.Faces[0].Mips[0].Data);
-			left.CopyPixelDataTo(data.Faces[1].Mips[0].Data);
-			top.CopyPixelDataTo(data.Faces[2].Mips[0].Data);
-			down.CopyPixelDataTo(data.Faces[3].Mips[0].Data);
-			back.CopyPixelDataTo(data.Faces[4].Mips[0].Data);
-			front.CopyPixelDataTo(data.Faces[5].Mips[0].Data);
+			right.CopyPixelDataTo(data.Mips[0][CubeMapFaceDirection.XPositive].Data);
+			left.CopyPixelDataTo(data.Mips[0][CubeMapFaceDirection.XNegative].Data);
+			top.CopyPixelDataTo(data.Mips[0][CubeMapFaceDirection.YPositive].Data);
+			down.CopyPixelDataTo(data.Mips[0][CubeMapFaceDirection.YNegative].Data);
+			back.CopyPixelDataTo(data.Mips[0][CubeMapFaceDirection.ZPositive].Data);
+			front.CopyPixelDataTo(data.Mips[0][CubeMapFaceDirection.ZNegative].Data);
 
 			return data;
 		}
@@ -652,7 +653,7 @@ namespace BCnEncoder.ImageSharp
 			Image<RgbaVector> top,   Image<RgbaVector> down,
 			Image<RgbaVector> back,  Image<RgbaVector> front)
 		{
-			var data = new BCnTextureData(CompressionFormat.RgbaFloat, right.Width, right.Height, 1, true, true);
+			var data = new BCnTextureData(CompressionFormat.RgbaFloat, right.Width, right.Height, 1, 1, 1, true, true);
 
 			if (
 				right.Width != left.Width || right.Height != left.Height ||
@@ -665,12 +666,13 @@ namespace BCnEncoder.ImageSharp
 				throw new ArgumentException("All faces of a cubeMap must be of equal width and height!");
 			}
 
-			right.CopyPixelDataTo(data.Faces[0].Mips[0].Data);
-			left.CopyPixelDataTo(data.Faces[1].Mips[0].Data);
-			top.CopyPixelDataTo(data.Faces[2].Mips[0].Data);
-			down.CopyPixelDataTo(data.Faces[3].Mips[0].Data);
-			back.CopyPixelDataTo(data.Faces[4].Mips[0].Data);
-			front.CopyPixelDataTo(data.Faces[5].Mips[0].Data);
+			right.CopyPixelDataTo(data.Mips[0][CubeMapFaceDirection.XPositive].Data);
+			left.CopyPixelDataTo(data.Mips[0][CubeMapFaceDirection.XNegative].Data);
+			top.CopyPixelDataTo(data.Mips[0][CubeMapFaceDirection.YPositive].Data);
+			down.CopyPixelDataTo(data.Mips[0][CubeMapFaceDirection.YNegative].Data);
+			back.CopyPixelDataTo(data.Mips[0][CubeMapFaceDirection.ZPositive].Data);
+			front.CopyPixelDataTo(data.Mips[0][CubeMapFaceDirection.ZNegative].Data);
+
 
 			return data;
 		}

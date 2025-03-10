@@ -32,6 +32,9 @@ namespace BCnEncoder.TextureFormats
 		public bool SupportsMipMaps => true;
 
 		/// <inheritdoc />
+		public bool SupportsArrays => true;
+
+		/// <inheritdoc />
 		public bool IsSupportedFormat(CompressionFormat format)
 		{
 			var (_, internalFormat, _) = format.GetGlFormat();
@@ -66,39 +69,46 @@ namespace BCnEncoder.TextureFormats
 
 			header.NumberOfMipmapLevels = (uint)textureData.NumMips;
 			header.NumberOfFaces = (uint)textureData.NumFaces;
-			header.NumberOfArrayElements = 0;
+			header.NumberOfArrayElements = textureData.IsArrayTexture ? (uint)textureData.NumArrayElements : 0;
 
 			MipMaps.Clear();
 
 			for (var m = 0; m < textureData.NumMips; m++)
 			{
 				MipMaps.Add(new KtxMipmap(
-					(uint)textureData.MipLevels[m].Data.Length,
-					(uint)textureData.MipLevels[m].Width,
-					(uint)textureData.MipLevels[m].Height,
+					(uint)textureData.Mips[m].SizeInBytes,
+					(uint)textureData.Mips[m].Width,
+					(uint)textureData.Mips[m].Height,
+					(uint)textureData.NumArrayElements,
 					(uint)textureData.NumFaces));
 
-				for (var f = 0; f < textureData.NumFaces; f++)
+				for (var a = 0; a < textureData.NumArrayElements; a++)
 				{
-					var data = textureData.Faces[f].Mips[m].Data;
-					if (!textureData.IsBlockCompressed)
+					for (var f = 0; f < textureData.NumFaces; f++)
 					{
-						data = TextureUnPacker.UnPackTexture(
-							data,
-							textureData.Faces[f].Mips[m].Width,
-							textureData.Faces[f].Mips[m].Height,
-							textureData.Format,
-							4);
-					}
+						var index = a * textureData.NumFaces + f;
+						var face = (CubeMapFaceDirection)f;
 
-					MipMaps[m].SizeInBytes = (uint)data.Length;
-					MipMaps[m].Faces[f] = new KtxMipFace(
-						data,
-						(uint)textureData.Faces[f].Mips[m].Width,
-						(uint)textureData.Faces[f].Mips[m].Height);
+						var data = textureData.Mips[m][face, a].Data;
+						if (!textureData.IsBlockCompressed)
+						{
+							data = TextureUnPacker.UnPackTexture(
+								data,
+								textureData.Mips[m].Width,
+								textureData.Mips[m].Height,
+								textureData.Format,
+								4);
+						}
+
+						MipMaps[m].SizeInBytes = (uint)data.Length;
+						MipMaps[m].SurfaceArray[index] = new KtxMipSurface(
+							data,
+							(uint)textureData.Mips[m].Width,
+							(uint)textureData.Mips[m].Height);
+					}
 				}
 			}
-			
+
 		}
 
 		/// <inheritdoc />
@@ -109,30 +119,40 @@ namespace BCnEncoder.TextureFormats
 				format,
 				(int)header.PixelWidth,
 				(int)header.PixelHeight,
-				(int)header.NumberOfMipmapLevels,
-				header.NumberOfFaces > 1);
+				depth: 1,
+				numMips:(int)header.NumberOfMipmapLevels,
+				numArrayElements: (int) header.NumberOfArrayElements,
+				isCubeMap: header.NumberOfFaces > 1,
+				allocateBuffers: false);
 
-			for (var f = 0; f < textureData.NumFaces; f++)
+			for (var m = 0; m < textureData.NumMips; m++)
 			{
-				for (var m = 0; m < textureData.NumMips; m++)
+				for (var a = 0; a < textureData.NumArrayElements; a++)
 				{
-					var data = MipMaps[m].Faces[f].Data;
-					if (!textureData.IsBlockCompressed)
+					for (var f = 0; f < textureData.NumFaces; f++)
 					{
-						data = TextureUnPacker.PackTexture(
-							data,
-							textureData.Faces[f].Mips[m].Width,
-							textureData.Faces[f].Mips[m].Height,
-							textureData.Format,
-							4);
-					}
+						var index = a * textureData.NumFaces + f;
+						var face = (CubeMapFaceDirection)f;
 
-					if (data.Length != textureData.Faces[f].Mips[m].SizeInBytes)
-					{
-						throw new TextureFormatException("KtxFile mipmap size different from expected!");
+						var data = MipMaps[m].SurfaceArray[index].Data;
+
+						if (!textureData.IsBlockCompressed)
+						{
+							data = TextureUnPacker.PackTexture(
+								data,
+								textureData.Mips[m].Width,
+								textureData.Mips[m].Height,
+								textureData.Format,
+								4);
+						}
+
+						if (data.Length != textureData.Mips[m].SizeInBytes)
+						{
+							throw new TextureFormatException("KtxFile mipmap size different from expected!");
+						}
+
+						textureData.Mips[m][face, a].Data = data;
 					}
-					
-					textureData.Faces[f].Mips[m].Data = data;
 				}
 			}
 
@@ -144,15 +164,10 @@ namespace BCnEncoder.TextureFormats
 		{
 			KeyValuePairs.Clear();
 			MipMaps.Clear();
-			
+
 			using (var br = new BinaryReader(inputStream, Encoding.UTF8, true))
 			{
 				header = br.ReadStruct<KtxHeader>();
-
-				if (header.NumberOfArrayElements > 0)
-				{
-					throw new NotSupportedException("KTX files with arrays are not supported.");
-				}
 
 				var keyValuePairBytesRead = 0;
 				while (keyValuePairBytesRead < header.BytesOfKeyValueData)
@@ -163,21 +178,28 @@ namespace BCnEncoder.TextureFormats
 				}
 
 				var numberOfFaces = Math.Max(1, header.NumberOfFaces);
+				var numberOfArrayElements = Math.Max(1, header.NumberOfArrayElements);
+
+				var totalAmountOfFaces = numberOfFaces * numberOfArrayElements;
+
 				MipMaps.Capacity = (int)header.NumberOfMipmapLevels;
 				for (uint mipLevel = 0; mipLevel < header.NumberOfMipmapLevels; mipLevel++)
 				{
+					var isNonArrayCubemap = header.NumberOfFaces > 1 && header.NumberOfArrayElements == 0;
+
 					var imageSize = br.ReadUInt32();
 					var mipWidth = header.PixelWidth / (uint)Math.Pow(2, mipLevel);
 					var mipHeight = header.PixelHeight / (uint)Math.Pow(2, mipLevel);
 
-					MipMaps.Add(new KtxMipmap(imageSize, mipWidth, mipHeight, numberOfFaces));
+					var faceSize = isNonArrayCubemap ? imageSize : imageSize / totalAmountOfFaces;
 
-					var cubemap = header.NumberOfFaces > 1 && header.NumberOfArrayElements == 0;
-					for (uint face = 0; face < numberOfFaces; face++)
+					MipMaps.Add(new KtxMipmap(faceSize, mipWidth, mipHeight, numberOfArrayElements, numberOfFaces));
+
+					for (uint face = 0; face < totalAmountOfFaces; face++)
 					{
-						var faceData = br.ReadBytes((int)imageSize);
-						MipMaps[(int)mipLevel].Faces[(int)face] = new KtxMipFace(faceData, mipWidth, mipHeight);
-						if (cubemap)
+						var faceData = br.ReadBytes((int)faceSize);
+						MipMaps[(int)mipLevel].SurfaceArray[(int)face] = new KtxMipSurface(faceData, mipWidth, mipHeight);
+						if (isNonArrayCubemap)
 						{
 							var cubePadding = 3 - (imageSize + 3) % 4;
 							br.SkipPadding(cubePadding);
@@ -205,7 +227,8 @@ namespace BCnEncoder.TextureFormats
 				header.BytesOfKeyValueData = bytesOfKeyValueData;
 				header.NumberOfFaces = MipMaps[0].NumberOfFaces;
 				header.NumberOfMipmapLevels = (uint)MipMaps.Count;
-				header.NumberOfArrayElements = 0;
+				header.NumberOfArrayElements = MipMaps[0].NumberOfArrayElements > 1 ?
+					MipMaps[0].NumberOfArrayElements : 0;
 
 				if (!header.VerifyHeader())
 				{
@@ -222,17 +245,36 @@ namespace BCnEncoder.TextureFormats
 				for (var mip = 0; mip < header.NumberOfMipmapLevels; mip++)
 				{
 					var imageSize = MipMaps[mip].SizeInBytes;
-					bw.Write(imageSize);
-					var isCubemap = header.NumberOfFaces == 6 && header.NumberOfArrayElements == 0;
-					for (var f = 0; f < header.NumberOfFaces; f++)
+					var isNonArrayCubemap = header.NumberOfFaces == 6 && header.NumberOfArrayElements == 0;
+					var numArrayElements = Math.Max(header.NumberOfArrayElements, 1);
+
+					// From https://registry.khronos.org/KTX/specs/1.0/ktxspec.v1.html
+					//
+					// For most textures imageSize is the number of bytes of pixel data in the current LOD level.
+					// This includes all array layers, all z slices, all faces, all rows and all pixelsin each row for the mipmap level.
+					// It does not include any bytes in mipPadding.
+					//
+					// The exception is non-array cubemap textures
+					// (any texture where numberOfFaces is 6 and numberOfArrayElements is 0).
+					// For these textures imageSize is the number of bytes in each face of the texture for the current LOD level,
+					// not including bytes in cubePadding or mipPadding.
+
+					if (isNonArrayCubemap)
 					{
-						bw.Write(MipMaps[mip].Faces[f].Data);
-						var cubePadding = 0u;
-						if (isCubemap)
+						imageSize *= numArrayElements * header.NumberOfFaces;
+					}
+
+					bw.Write(imageSize);
+
+					for (var f = 0; f < header.NumberOfFaces * numArrayElements; f++)
+					{
+						bw.Write(MipMaps[mip].SurfaceArray[f].Data);
+
+						if (isNonArrayCubemap)
 						{
-							cubePadding = 3 - (imageSize + 3) % 4;
+							var cubePadding = 3 - (imageSize + 3) % 4;
+							bw.AddPadding(cubePadding);
 						}
-						bw.AddPadding(cubePadding);
 					}
 
 					if (mip < header.NumberOfMipmapLevels - 1)
@@ -397,14 +439,14 @@ namespace BCnEncoder.TextureFormats
 		}
 	}
 
-	public class KtxMipFace
+	public class KtxMipSurface
 	{
 		public uint Width { get; set; }
 		public uint Height { get; set; }
 		public uint SizeInBytes { get; set; }
 		public byte[] Data { get; set; }
 
-		public KtxMipFace(byte[] data, uint width, uint height)
+		public KtxMipSurface(byte[] data, uint width, uint height)
 		{
 			Width = width;
 			Height = height;
@@ -415,18 +457,30 @@ namespace BCnEncoder.TextureFormats
 
 	public class KtxMipmap
 	{
+		/// <summary>
+		/// Size of a single face in bytes.
+		/// </summary>
 		public uint SizeInBytes { get; set; }
-		public uint Width { get; set; }
-		public uint Height { get; set; }
-		public uint NumberOfFaces { get; set; }
-		public KtxMipFace[] Faces { get; set; }
-		public KtxMipmap(uint sizeInBytes, uint width, uint height, uint numberOfFaces)
+		public uint Width { get; init; }
+		public uint Height { get; init; }
+		public uint NumberOfFaces { get; init; }
+		public uint NumberOfArrayElements { get; init; }
+
+		/// <summary>
+		/// Length will be Number of Faces * Number of Array Elements
+		/// Index with (arrayIndex * NumFaces + faceIndex)
+		/// </summary>
+		public KtxMipSurface[] SurfaceArray { get; init; }
+
+
+		public KtxMipmap(uint sizeInBytes, uint width, uint height, uint numArrayElements, uint numberOfFaces)
 		{
 			SizeInBytes = sizeInBytes;
 			Width = Math.Max(1, width);
 			Height = Math.Max(1, height);
-			NumberOfFaces = numberOfFaces;
-			Faces = new KtxMipFace[numberOfFaces];
+			NumberOfArrayElements = Math.Max(1, numArrayElements);
+			NumberOfFaces = Math.Max(1, numberOfFaces);
+			SurfaceArray = new KtxMipSurface[numArrayElements * numberOfFaces];
 		}
 	}
 }

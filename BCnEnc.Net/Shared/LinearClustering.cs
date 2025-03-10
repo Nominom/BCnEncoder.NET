@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using BCnEncoder.Shared.Colors;
 
 namespace BCnEncoder.Shared
 {
@@ -194,7 +195,7 @@ namespace BCnEncoder.Shared
 			if (enforceConnectivity) {
 				clusterIndices = EnforceConnectivity(clusterIndices, width, height, clusters);
 			}
-			
+
 			return clusterIndices;
 		}
 
@@ -384,7 +385,7 @@ namespace BCnEncoder.Shared
 				for (var y = 0; y < height; y++)
 				{
 					var i = x + y * width;
-					var lab = new ColorLab(pixels[i]);
+					var lab = pixels[i].As<ColorLab>();
 					labXys[i] = new LabXy
 					{
 						l = lab.l,
@@ -408,7 +409,7 @@ namespace BCnEncoder.Shared
 				for (var y = 0; y < height; y++)
 				{
 					var i = x + y * width;
-					var lab = new ColorLab(pixels[i]);
+					var lab = pixels[i].As<ColorLab>();
 					labXys[i] = new LabXy
 					{
 						l = lab.l,
@@ -427,7 +428,7 @@ namespace BCnEncoder.Shared
 		{
 			ReadOnlySpan<int> neighborX = new[] { -1, 0, 1, 0 };
 			ReadOnlySpan<int> neighborY = new[] { 0, -1, 0, 1 };
-			
+
 			var sSquared = width * height / clusters;
 
 			var clusterX = new List<int>(sSquared);

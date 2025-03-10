@@ -2,12 +2,13 @@ using BCnEncoder.Shared;
 using SixLabors.ImageSharp.PixelFormats;
 using Xunit;
 using BCnEncoder.ImageSharp;
+using BCnEncoder.Shared.Colors;
 
 namespace BCnEncTests
 {
 	public class Bc1Tests
 	{
-		
+
 		[Fact]
 		public void Decode() {
 			var block = new Bc1Block

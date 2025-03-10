@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using BCnEncoder.Encoder.Bptc;
 using BCnEncoder.Encoder.Options;
 using BCnEncoder.Shared;
+using BCnEncoder.Shared.Colors;
 using CommunityToolkit.HighPerformance;
 
 namespace BCnEncoder.Encoder
@@ -72,7 +73,7 @@ namespace BCnEncoder.Encoder
 			ReadOnlyMemory2D<ColorRgba32> top, ReadOnlyMemory2D<ColorRgba32> down,
 			ReadOnlyMemory2D<ColorRgba32> back, ReadOnlyMemory2D<ColorRgba32> front)
 		{
-			var inputData = new BCnTextureData(CompressionFormat.Rgba32, right.Width, right.Height, 1, true, false);
+			var inputData = new BCnTextureData(CompressionFormat.Rgba32, right.Width, right.Height, 1, 1, 1, true, false);
 
 			if (
 				right.Width != left.Width || right.Height != left.Height ||
@@ -85,12 +86,12 @@ namespace BCnEncoder.Encoder
 				throw new ArgumentException("All faces of a cubeMap must be of equal width and height!");
 			}
 
-			inputData[CubeMapFaceDirection.XPositive].Mips[0].Data = right.CopyAsBytes();
-			inputData[CubeMapFaceDirection.XNegative].Mips[0].Data = left.CopyAsBytes();
-			inputData[CubeMapFaceDirection.YPositive].Mips[0].Data = top.CopyAsBytes();
-			inputData[CubeMapFaceDirection.YNegative].Mips[0].Data = down.CopyAsBytes();
-			inputData[CubeMapFaceDirection.ZPositive].Mips[0].Data = back.CopyAsBytes();
-			inputData[CubeMapFaceDirection.ZNegative].Mips[0].Data = front.CopyAsBytes();
+			inputData.Mips[0][CubeMapFaceDirection.XPositive].Data = right.CopyAsBytes();
+			inputData.Mips[0][CubeMapFaceDirection.XNegative].Data = left.CopyAsBytes();
+			inputData.Mips[0][CubeMapFaceDirection.YPositive].Data = top.CopyAsBytes();
+			inputData.Mips[0][CubeMapFaceDirection.YNegative].Data = down.CopyAsBytes();
+			inputData.Mips[0][CubeMapFaceDirection.ZPositive].Data = back.CopyAsBytes();
+			inputData.Mips[0][CubeMapFaceDirection.ZNegative].Data = front.CopyAsBytes();
 
 			return EncodeInternal(inputData, default);
 		}
@@ -105,7 +106,7 @@ namespace BCnEncoder.Encoder
 			ReadOnlyMemory2D<ColorRgba32> top, ReadOnlyMemory2D<ColorRgba32> down,
 			ReadOnlyMemory2D<ColorRgba32> back, ReadOnlyMemory2D<ColorRgba32> front, CancellationToken token = default)
 		{
-			var inputData = new BCnTextureData(CompressionFormat.Rgba32, right.Width, right.Height, 1, true, false);
+			var inputData = new BCnTextureData(CompressionFormat.Rgba32, right.Width, right.Height, 1, 1, 1, true, false);
 
 			if (
 				right.Width != left.Width || right.Height != left.Height ||
@@ -118,12 +119,12 @@ namespace BCnEncoder.Encoder
 				throw new ArgumentException("All faces of a cubeMap must be of equal width and height!");
 			}
 
-			inputData[CubeMapFaceDirection.XPositive].Mips[0].Data = right.CopyAsBytes();
-			inputData[CubeMapFaceDirection.XNegative].Mips[0].Data = left.CopyAsBytes();
-			inputData[CubeMapFaceDirection.YPositive].Mips[0].Data = top.CopyAsBytes();
-			inputData[CubeMapFaceDirection.YNegative].Mips[0].Data = down.CopyAsBytes();
-			inputData[CubeMapFaceDirection.ZPositive].Mips[0].Data = back.CopyAsBytes();
-			inputData[CubeMapFaceDirection.ZNegative].Mips[0].Data = front.CopyAsBytes();
+			inputData.Mips[0][CubeMapFaceDirection.XPositive].Data = right.CopyAsBytes();
+			inputData.Mips[0][CubeMapFaceDirection.XNegative].Data = left.CopyAsBytes();
+			inputData.Mips[0][CubeMapFaceDirection.YPositive].Data = top.CopyAsBytes();
+			inputData.Mips[0][CubeMapFaceDirection.YNegative].Data = down.CopyAsBytes();
+			inputData.Mips[0][CubeMapFaceDirection.ZPositive].Data = back.CopyAsBytes();
+			inputData.Mips[0][CubeMapFaceDirection.ZNegative].Data = front.CopyAsBytes();
 
 			return Task.Run(() => EncodeInternal(inputData, token), token);
 		}
@@ -135,7 +136,7 @@ namespace BCnEncoder.Encoder
 		/// <returns>A <see cref="BCnTextureData"/> containing the encoded texture data.</returns>
 		public BCnTextureData Encode(ReadOnlyMemory2D<ColorRgba32> input)
 		{
-			var inputData = new BCnTextureData(CompressionFormat.Rgba32, input.Width, input.Height, input.CopyAsBytes());
+			var inputData = BCnTextureData.FromSingle(CompressionFormat.Rgba32, input.Width, input.Height, input.CopyAsBytes());
 			return EncodeInternal(inputData, default);
 		}
 
@@ -146,7 +147,7 @@ namespace BCnEncoder.Encoder
 		/// <returns>A <see cref="BCnTextureData"/> containing the encoded texture data.</returns>
 		public Task<BCnTextureData> EncodeAsync(ReadOnlyMemory2D<ColorRgba32> input, CancellationToken token = default)
 		{
-			var inputData = new BCnTextureData(CompressionFormat.Rgba32, input.Width, input.Height, input.CopyAsBytes());
+			var inputData = BCnTextureData.FromSingle(CompressionFormat.Rgba32, input.Width, input.Height, input.CopyAsBytes());
 			return Task.Run(() => EncodeInternal(inputData, token), token);
 		}
 
@@ -174,7 +175,7 @@ namespace BCnEncoder.Encoder
 		/// <remarks>To get the width and height of the encoded mip level, see <see cref="CalculateMipMapSize"/>.</remarks>
 		public Task<byte[]> EncodeToRawBytesAsync(BCnTextureData input, int mipLevel, CancellationToken token = default)
 		{
-			return Task.Run(() => EncodeSingleInternal(input.MipLevels[0].Data, input.Format, input.Width, input.Height, mipLevel, token), token);
+			return Task.Run(() => EncodeSingleInternal(input.First.Data, input.Format, input.Width, input.Height, mipLevel, token), token);
 		}
 
 		/// <summary>
@@ -187,7 +188,7 @@ namespace BCnEncoder.Encoder
 		/// <returns>A <see cref="BCnTextureData"/> containing the encoded texture data.</returns>
 		public Task<BCnTextureData> EncodeBytesAsync(byte[] input, int width, int height, CompressionFormat inputFormat, CancellationToken token = default)
 		{
-			var inputData = new BCnTextureData(inputFormat, width, height, input);
+			var inputData = BCnTextureData.FromSingle(inputFormat, width, height, input);
 			return Task.Run(() => EncodeInternal(inputData, token), token);
 		}
 
@@ -216,7 +217,7 @@ namespace BCnEncoder.Encoder
 		/// <returns>A <see cref="BCnTextureData"/> containing the encoded texture data.</returns>
 		public BCnTextureData EncodeBytes(byte[] input, int width, int height, CompressionFormat inputFormat)
 		{
-			var inputData = new BCnTextureData(inputFormat, width, height, input);
+			var inputData = BCnTextureData.FromSingle(inputFormat, width, height, input);
 			return EncodeInternal(inputData, default);
 		}
 
@@ -263,7 +264,7 @@ namespace BCnEncoder.Encoder
 		public byte[] EncodeToRawBytes(BCnTextureData input, int mipLevel, out int mipWidth, out int mipHeight)
 		{
 			CalculateMipMapSize(input.Width, input.Height, mipLevel, out mipWidth, out mipHeight);
-			return EncodeSingleInternal(input.MipLevels[0].Data, input.Format, input.Width, input.Height, mipLevel, default);
+			return EncodeSingleInternal(input.First.Data, input.Format, input.Width, input.Height, mipLevel, default);
 		}
 
 		/// <summary>
@@ -380,7 +381,7 @@ namespace BCnEncoder.Encoder
 			ReadOnlyMemory2D<ColorRgbaFloat> top, ReadOnlyMemory2D<ColorRgbaFloat> down,
 			ReadOnlyMemory2D<ColorRgbaFloat> back, ReadOnlyMemory2D<ColorRgbaFloat> front)
 		{
-			var inputData = new BCnTextureData(CompressionFormat.RgbaFloat, right.Width, right.Height, 1, true, false);
+			var inputData = new BCnTextureData(CompressionFormat.RgbaFloat, right.Width, right.Height, 1, 1, 1, true, false);
 
 			if (
 				right.Width != left.Width || right.Height != left.Height ||
@@ -393,12 +394,12 @@ namespace BCnEncoder.Encoder
 				throw new ArgumentException("All faces of a cubeMap must be of equal width and height!");
 			}
 
-			inputData[CubeMapFaceDirection.XPositive].Mips[0].Data = right.CopyAsBytes();
-			inputData[CubeMapFaceDirection.XNegative].Mips[0].Data = left.CopyAsBytes();
-			inputData[CubeMapFaceDirection.YPositive].Mips[0].Data = top.CopyAsBytes();
-			inputData[CubeMapFaceDirection.YNegative].Mips[0].Data = down.CopyAsBytes();
-			inputData[CubeMapFaceDirection.ZPositive].Mips[0].Data = back.CopyAsBytes();
-			inputData[CubeMapFaceDirection.ZNegative].Mips[0].Data = front.CopyAsBytes();
+			inputData.Mips[0][CubeMapFaceDirection.XPositive].Data = right.CopyAsBytes();
+			inputData.Mips[0][CubeMapFaceDirection.XNegative].Data = left.CopyAsBytes();
+			inputData.Mips[0][CubeMapFaceDirection.YPositive].Data = top.CopyAsBytes();
+			inputData.Mips[0][CubeMapFaceDirection.YNegative].Data = down.CopyAsBytes();
+			inputData.Mips[0][CubeMapFaceDirection.ZPositive].Data = back.CopyAsBytes();
+			inputData.Mips[0][CubeMapFaceDirection.ZNegative].Data = front.CopyAsBytes();
 
 			return EncodeInternal(inputData, default);
 		}
@@ -413,7 +414,7 @@ namespace BCnEncoder.Encoder
 			ReadOnlyMemory2D<ColorRgbaFloat> top, ReadOnlyMemory2D<ColorRgbaFloat> down,
 			ReadOnlyMemory2D<ColorRgbaFloat> back, ReadOnlyMemory2D<ColorRgbaFloat> front, CancellationToken token = default)
 		{
-			var inputData = new BCnTextureData(CompressionFormat.RgbaFloat, right.Width, right.Height, 1, true, false);
+			var inputData = new BCnTextureData(CompressionFormat.RgbaFloat, right.Width, right.Height, 1, 1, 1, true, false);
 
 			if (
 				right.Width != left.Width || right.Height != left.Height ||
@@ -426,12 +427,12 @@ namespace BCnEncoder.Encoder
 				throw new ArgumentException("All faces of a cubeMap must be of equal width and height!");
 			}
 
-			inputData[CubeMapFaceDirection.XPositive].Mips[0].Data = right.CopyAsBytes();
-			inputData[CubeMapFaceDirection.XNegative].Mips[0].Data = left.CopyAsBytes();
-			inputData[CubeMapFaceDirection.YPositive].Mips[0].Data = top.CopyAsBytes();
-			inputData[CubeMapFaceDirection.YNegative].Mips[0].Data = down.CopyAsBytes();
-			inputData[CubeMapFaceDirection.ZPositive].Mips[0].Data = back.CopyAsBytes();
-			inputData[CubeMapFaceDirection.ZNegative].Mips[0].Data = front.CopyAsBytes();
+			inputData.Mips[0][CubeMapFaceDirection.XPositive].Data = right.CopyAsBytes();
+			inputData.Mips[0][CubeMapFaceDirection.XNegative].Data = left.CopyAsBytes();
+			inputData.Mips[0][CubeMapFaceDirection.YPositive].Data = top.CopyAsBytes();
+			inputData.Mips[0][CubeMapFaceDirection.YNegative].Data = down.CopyAsBytes();
+			inputData.Mips[0][CubeMapFaceDirection.ZPositive].Data = back.CopyAsBytes();
+			inputData.Mips[0][CubeMapFaceDirection.ZNegative].Data = front.CopyAsBytes();
 
 			return Task.Run(() => EncodeInternal(inputData, token), token);
 		}
@@ -442,7 +443,7 @@ namespace BCnEncoder.Encoder
 		/// <param name="input">The input to encode represented by a <see cref="ReadOnlyMemory2D{T}"/>.</param>
 		public Task<BCnTextureData> EncodeHdrAsync(ReadOnlyMemory2D<ColorRgbaFloat> input, CancellationToken token = default)
 		{
-			var inputData = new BCnTextureData(
+			var inputData = BCnTextureData.FromSingle(
 				CompressionFormat.RgbaFloat,
 				input.Width,
 				input.Height,
@@ -469,7 +470,7 @@ namespace BCnEncoder.Encoder
 		/// <param name="input">The input to encode represented by a <see cref="ReadOnlyMemory2D{T}"/>.</param>
 		public BCnTextureData EncodeHdr(ReadOnlyMemory2D<ColorRgbaFloat> input)
 		{
-			var inputData = new BCnTextureData(
+			var inputData = BCnTextureData.FromSingle(
 				CompressionFormat.RgbaFloat,
 				input.Width,
 				input.Height,
@@ -706,10 +707,12 @@ namespace BCnEncoder.Encoder
 				encoder.EncodedFormat,
 				textureData.Width,
 				textureData.Height,
+				1,
 				numMipMaps,
+				textureData.NumArrayElements,
 				textureData.IsCubeMap, false);
 
-			var totalBlocks = newData.TotalSize / encoder.EncodedFormat.BytesPerBlock();
+			var totalBlocks = newData.TotalByteSize / encoder.EncodedFormat.BytesPerBlock();
 
 			var context = new OperationContext
 			{
@@ -719,37 +722,42 @@ namespace BCnEncoder.Encoder
 				Progress = new OperationProgress(Options.Progress, totalBlocks)
 			};
 
-			for (var f = 0; f < newData.NumFaces; f++)
+			for (var m = 0; m < newData.NumMips; m++)
 			{
-				for (var m = 0; m < newData.NumMips; m++)
+				for (var f = 0; f < newData.NumFaces; f++)
 				{
-					if (isLdr)
+					for (var a = 0; a < newData.NumArrayElements; a++)
 					{
-						var mipWidth = textureData.Faces[f].Mips[m].Width;
-						var mipHeight = textureData.Faces[f].Mips[m].Height;
-						var colorMemory = textureData.Faces[f].Mips[m].AsMemory<ColorRgba32>();
-						var encoded = ldrEncoder.Encode(colorMemory, mipWidth, mipHeight, OutputOptions.Quality, context);
-
-						if (newData.Faces[f].Mips[m].SizeInBytes != encoded.Length)
+						if (isLdr)
 						{
-							throw new InvalidOperationException("Encoded size does not match expected!");
+							var mipWidth = textureData.Mips[m].Width;
+							var mipHeight = textureData.Mips[m].Height;
+							var colorMemory = textureData.Mips[m][(CubeMapFaceDirection)f, a].AsMemory<ColorRgba32>();
+							var encoded = ldrEncoder.Encode(colorMemory, mipWidth, mipHeight, OutputOptions.Quality,
+								context);
+
+							if (newData.Mips[m].SizeInBytes != encoded.Length)
+							{
+								throw new InvalidOperationException("Encoded size does not match expected!");
+							}
+
+							newData.Mips[m][(CubeMapFaceDirection)f, a].Data = encoded;
 						}
-
-						newData.Faces[f].Mips[m].Data = encoded;
-					}
-					else
-					{
-						var mipWidth = textureData.Faces[f].Mips[m].Width;
-						var mipHeight = textureData.Faces[f].Mips[m].Height;
-						var colorMemory = textureData.Faces[f].Mips[m].AsMemory<ColorRgbaFloat>();
-						var encoded = encoder.Encode(colorMemory, mipWidth, mipHeight, OutputOptions.Quality, context);
-
-						if (newData.Faces[f].Mips[m].SizeInBytes != encoded.Length)
+						else
 						{
-							throw new InvalidOperationException("Encoded size does not match expected!");
-						}
+							var mipWidth = textureData.Mips[m].Width;
+							var mipHeight = textureData.Mips[m].Height;
+							var colorMemory = textureData.Mips[m][(CubeMapFaceDirection)f, a].AsMemory<ColorRgbaFloat>();
+							var encoded = encoder.Encode(colorMemory, mipWidth, mipHeight, OutputOptions.Quality,
+								context);
 
-						newData.Faces[f].Mips[m].Data = encoded;
+							if (newData.Mips[m].SizeInBytes != encoded.Length)
+							{
+								throw new InvalidOperationException("Encoded size does not match expected!");
+							}
+
+							newData.Mips[m][(CubeMapFaceDirection)f, a].Data = encoded;
+						}
 					}
 				}
 			}

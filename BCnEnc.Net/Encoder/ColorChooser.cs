@@ -1,5 +1,6 @@
 using System;
 using BCnEncoder.Shared;
+using BCnEncoder.Shared.Colors;
 
 namespace BCnEncoder.Encoder
 {
@@ -182,6 +183,6 @@ namespace BCnEncoder.Encoder
 		}
 
 		public static int ChooseClosestColor(Span<ColorYCbCr> colors, ColorRgba32 color, float luminanceMultiplier = 4)
-			=> ChooseClosestColor(colors, new ColorYCbCr(color), luminanceMultiplier);
+			=> ChooseClosestColor(colors, color.As<ColorYCbCr>(), luminanceMultiplier);
 	}
 }

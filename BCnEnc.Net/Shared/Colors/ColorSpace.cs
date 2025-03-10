@@ -72,28 +72,28 @@ public static class ColorSpace
 	public static void LrgbToXyz(float r, float g, float b, out float x, out float y, out float z)
 	{
 		// Observer. = 2°, Illuminant = D65
-		x = 0.4124f * r + 0.3576f * g + 0.1805f * b;
-		y = 0.2126f * r + 0.7152f * g + 0.0722f * b;
-		z = 0.0193f * r + 0.1192f * g + 0.9505f * b;
+		// x = 0.4124f * r + 0.3576f * g + 0.1805f * b;
+		// y = 0.2126f * r + 0.7152f * g + 0.0722f * b;
+		// z = 0.0193f * r + 0.1192f * g + 0.9505f * b;
 
 		// Which one???
 
-		// x = 0.5142f * r + 0.3240f * g + 0.1618f * b;
-		// y = 0.2652f * r + 0.6702f * g + 0.0646f * b;
-		// z = 0.0240f * r + 0.1229f * g + 0.8531f * b;
+		x = 0.5142f * r + 0.3240f * g + 0.1618f * b;
+		y = 0.2652f * r + 0.6702f * g + 0.0646f * b;
+		z = 0.0240f * r + 0.1229f * g + 0.8531f * b;
 	}
 
 	public static void XyzToLrgb(float x, float y, float z, out float r, out float g, out float b)
 	{
 		// Observer. = 2°, Illuminant = D65
-		r = 3.2406f * x - 1.5372f * y - 0.4986f * z;
-		g = -0.9689f * x + 1.8758f * y + 0.0415f * z;
-		b = 0.0557f * x - 0.2040f * y + 1.0570f * z;
+		// r = 3.2406f * x - 1.5372f * y - 0.4986f * z;
+		// g = -0.9689f * x + 1.8758f * y + 0.0415f * z;
+		// b = 0.0557f * x - 0.2040f * y + 1.0570f * z;
 
 		// Which one????
 
-		// r = 2.565f * x - 1.167f * y - 0.398f * z;
-		// g = -1.022f * x + 1.978f * y + 0.044f * z;
-		// b = 0.075f * x - 0.252f * y + 1.177f * z;
+		r = 2.565f * x - 1.167f * y - 0.398f * z;
+		g = -1.022f * x + 1.978f * y + 0.044f * z;
+		b = 0.075f * x - 0.252f * y + 1.177f * z;
 	}
 }

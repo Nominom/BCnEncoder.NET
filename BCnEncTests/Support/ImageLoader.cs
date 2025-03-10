@@ -6,6 +6,9 @@ using BCnEncoder.ImageSharp;
 using BCnEncoder.Shared;
 using BCnEncoder.TextureFormats;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.ColorSpaces;
+using SixLabors.ImageSharp.ColorSpaces.Conversion;
+using SixLabors.ImageSharp.Formats;
 using SixLabors.ImageSharp.PixelFormats;
 
 namespace BCnEncTests.Support
@@ -46,6 +49,7 @@ namespace BCnEncTests.Support
 				try
 				{
 					var img = Image.Load<Rgba32>(file);
+
 					var name = Path.GetFileNameWithoutExtension(file);
 					rawImages.Add(name, img);
 				}

@@ -7,6 +7,7 @@ using System.Text;
 using BCnEncoder.Decoder;
 using BCnEncoder.Encoder;
 using BCnEncoder.Shared;
+using BCnEncoder.Shared.Colors;
 using BCnEncoder.TextureFormats;
 using BCnEncTests.Support;
 using CommunityToolkit.HighPerformance;
@@ -34,7 +35,7 @@ namespace BCnEncTests
 			using var fs1 = File.OpenRead("../../../testImages/bc6h_alltypes.dds");
 
 			var ddsFile = DdsFile.Load(fs1);
-			var decoded = decoder.Decode(ddsFile).MipLevels[0].AsMemory<ColorRgbaFloat>();
+			var decoded = decoder.Decode(ddsFile).First.AsMemory<ColorRgbaFloat>();
 
 			using var fs = File.OpenRead("../../../testImages/bc6h_alltypes.bin");
 			using var ms = new MemoryStream();
@@ -67,7 +68,7 @@ namespace BCnEncTests
 
 			var hdr = DdsFile.Load(fs1);
 
-			var bytes = hdr.Faces[0].MipMaps[0].Data;
+			var bytes = hdr.ArrayElements[0].MipMaps[0].Data;
 			var blocks = MemoryMarshal.Cast<byte, Bc6Block>(bytes);
 
 			for (var i = 0; i < blocks.Length; i++)
@@ -114,7 +115,7 @@ namespace BCnEncTests
 			var decoded = decoder.DecodeRawHdr(buffer, width * 4, height * 4, CompressionFormat.Bc6U);
 			Assert.Contains(new ColorRgbaFloat(1, 0, 1), decoded);
 
-			var image = decoded.AsBCnTextureData(width * 4, height * 4).AsTexture<RadianceFile>();
+			var image = decoded.AsBCnTextureData(width * 4, height * 4, false).AsTexture<RadianceFile>();
 			using var fs = File.OpenWrite("test_decode_bc6h_error.hdr");
 			image.WriteToStream(fs);
 		}

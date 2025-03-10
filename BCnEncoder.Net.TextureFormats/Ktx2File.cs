@@ -22,6 +22,9 @@ namespace BCnEncoder.TextureFormats
 		public bool SupportsMipMaps { get; }
 
 		/// <inheritdoc />
+		public bool SupportsArrays { get; }
+
+		/// <inheritdoc />
 		public bool IsSupportedFormat(CompressionFormat format)
 		{
 			return false;

@@ -1,3 +1,5 @@
+using BCnEncoder.Shared.Colors;
+
 namespace BCnEncoder.Shared
 {
 	internal static class Interpolation

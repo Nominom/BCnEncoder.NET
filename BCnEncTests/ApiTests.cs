@@ -5,6 +5,7 @@ using System.Text;
 using BCnEncoder.Encoder;
 using BCnEncoder.ImageSharp;
 using BCnEncoder.Shared;
+using BCnEncoder.Shared.Colors;
 using BCnEncTests.Support;
 using Xunit;
 
@@ -39,11 +40,11 @@ namespace BCnEncTests
 
 			for (var f = 0; f < outputData.NumFaces; f++)
 			{
-				Assert.Equal((CubeMapFaceDirection)f, outputData.Faces[f].Direction);
-
 				for (var m = 0; m < outputData.NumMips; m++)
 				{
-					var mip = outputData.Faces[f].Mips[m];
+					Assert.Equal((CubeMapFaceDirection)f, outputData.Mips[m][(CubeMapFaceDirection)f].Direction);
+
+					var mip = outputData.Mips[m][(CubeMapFaceDirection)f];
 					encoder.CalculateMipMapSize(inputWidth, inputHeight, m, out var mW, out var mH);
 					var byteSize = encoder.CalculateMipMapByteSize(inputWidth, inputHeight, m);
 					Assert.Equal(mW, mip.Width);
@@ -63,7 +64,7 @@ namespace BCnEncTests
 			Assert.Equal(inputData.Width, outputData.Width);
 			Assert.Equal(inputData.Height, outputData.Height);
 			Assert.True(outputData.NumMips > 1);
-			Assert.Equal(outputData.NumMips, outputData.MipLevels.Length);
+			Assert.Equal(outputData.NumMips, outputData.Mips.Length);
 		}
 
 		[Theory]
@@ -82,7 +83,7 @@ namespace BCnEncTests
 			var encoder = MakeEncoder(format);
 
 			var inputData = LoadTestFile(raw, name);
-			
+
 			Assert.True(inputData.Format != CompressionFormat.Unknown);
 
 			// Test
@@ -112,8 +113,8 @@ namespace BCnEncTests
 			Assert.True(inputData.Format != CompressionFormat.Unknown);
 
 			// Test
-			var outputData = encoder.EncodeBytes(inputData.MipLevels[0].Data, inputData.Width, inputData.Height, inputData.Format);
-			
+			var outputData = encoder.EncodeBytes(inputData.First.Data, inputData.Width, inputData.Height, inputData.Format);
+
 			AssertNonCube(format, outputData, inputData);
 			ValidateData(encoder, inputData.Width, inputData.Height, outputData);
 		}
@@ -130,7 +131,7 @@ namespace BCnEncTests
 			Assert.Equal(CompressionFormat.Rgba32, inputData.Format);
 
 			// Test
-			var outputData = encoder.Encode(inputData.MipLevels[0].AsMemory2D<ColorRgba32>());
+			var outputData = encoder.Encode(inputData.First.AsMemory2D<ColorRgba32>());
 
 			AssertNonCube(format, outputData, inputData);
 			ValidateData(encoder, inputData.Width, inputData.Height, outputData);
@@ -149,7 +150,7 @@ namespace BCnEncTests
 			Assert.Equal(CompressionFormat.RgbaFloat, inputData.Format);
 
 			// Test
-			var outputData = encoder.EncodeHdr(inputData.MipLevels[0].AsMemory2D<ColorRgbaFloat>());
+			var outputData = encoder.EncodeHdr(inputData.First.AsMemory2D<ColorRgbaFloat>());
 
 			AssertNonCube(format, outputData, inputData);
 
@@ -178,13 +179,13 @@ namespace BCnEncTests
 			// Test
 			for (var m = 0; m < outputData.NumMips; m++)
 			{
-				outputData.MipLevels[m].Data =
+				outputData.Mips[m].First.Data =
 					encoder.EncodeToRawBytes(inputData, m, out var mipWidth, out var mipHeight);
 
-				Assert.Equal(outputData.MipLevels[m].Width, mipWidth);
-				Assert.Equal(outputData.MipLevels[m].Height, mipHeight);
+				Assert.Equal(outputData.Mips[m].Width, mipWidth);
+				Assert.Equal(outputData.Mips[m].Height, mipHeight);
 			}
-			
+
 			AssertNonCube(format, outputData, inputData);
 			ValidateData(encoder, inputData.Width, inputData.Height, outputData);
 		}
@@ -211,11 +212,11 @@ namespace BCnEncTests
 			// Test
 			for (var m = 0; m < outputData.NumMips; m++)
 			{
-				outputData.MipLevels[m].Data =
-					encoder.EncodeBytesToRawBytes(inputData.MipLevels[0].Data, inputData.Width, inputData.Height, inputData.Format, m, out var mipWidth, out var mipHeight);
+				outputData.Mips[m].First.Data =
+					encoder.EncodeBytesToRawBytes(inputData.First.Data, inputData.Width, inputData.Height, inputData.Format, m, out var mipWidth, out var mipHeight);
 
-				Assert.Equal(outputData.MipLevels[m].Width, mipWidth);
-				Assert.Equal(outputData.MipLevels[m].Height, mipHeight);
+				Assert.Equal(outputData.Mips[m].Width, mipWidth);
+				Assert.Equal(outputData.Mips[m].Height, mipHeight);
 			}
 
 			AssertNonCube(format, outputData, inputData);
@@ -239,11 +240,11 @@ namespace BCnEncTests
 			// Test
 			for (var m = 0; m < outputData.NumMips; m++)
 			{
-				outputData.MipLevels[m].Data =
-					encoder.EncodeToRawBytes(inputData.MipLevels[0].AsMemory2D<ColorRgba32>(), m, out var mipWidth, out var mipHeight);
+				outputData.Mips[m].First.Data =
+					encoder.EncodeToRawBytes(inputData.First.AsMemory2D<ColorRgba32>(), m, out var mipWidth, out var mipHeight);
 
-				Assert.Equal(outputData.MipLevels[m].Width, mipWidth);
-				Assert.Equal(outputData.MipLevels[m].Height, mipHeight);
+				Assert.Equal(outputData.Mips[m].Width, mipWidth);
+				Assert.Equal(outputData.Mips[m].Height, mipHeight);
 			}
 
 			AssertNonCube(format, outputData, inputData);
@@ -268,11 +269,11 @@ namespace BCnEncTests
 			// Test
 			for (var m = 0; m < outputData.NumMips; m++)
 			{
-				outputData.MipLevels[m].Data =
-					encoder.EncodeToRawBytesHdr(inputData.MipLevels[0].AsMemory2D<ColorRgbaFloat>(), m, out var mipWidth, out var mipHeight);
+				outputData.Mips[m].First.Data =
+					encoder.EncodeToRawBytesHdr(inputData.First.AsMemory2D<ColorRgbaFloat>(), m, out var mipWidth, out var mipHeight);
 
-				Assert.Equal(outputData.MipLevels[m].Width, mipWidth);
-				Assert.Equal(outputData.MipLevels[m].Height, mipHeight);
+				Assert.Equal(outputData.Mips[m].Width, mipWidth);
+				Assert.Equal(outputData.Mips[m].Height, mipHeight);
 			}
 
 			AssertNonCube(format, outputData, inputData);

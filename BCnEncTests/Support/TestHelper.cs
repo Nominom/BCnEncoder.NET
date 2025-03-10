@@ -8,6 +8,7 @@ using BCnEncoder.Decoder;
 using BCnEncoder.Encoder;
 using BCnEncoder.ImageSharp;
 using BCnEncoder.Shared;
+using BCnEncoder.Shared.Colors;
 using BCnEncoder.TextureFormats;
 using CommunityToolkit.HighPerformance;
 using SixLabors.ImageSharp;

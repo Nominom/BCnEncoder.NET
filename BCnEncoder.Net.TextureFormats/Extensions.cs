@@ -8,6 +8,7 @@ using BCnEncoder.Decoder;
 using BCnEncoder.Encoder;
 using BCnEncoder.Encoder.Options;
 using BCnEncoder.Shared;
+using BCnEncoder.Shared.Colors;
 using CommunityToolkit.HighPerformance;
 
 namespace BCnEncoder.TextureFormats
@@ -654,9 +655,9 @@ namespace BCnEncoder.TextureFormats
 
 			var encoded = textureFile.ToTextureData();
 			return decoder.DecodeRawLdr2D(
-				encoded.MipLevels[0].Data,
-				encoded.MipLevels[0].Width,
-				encoded.MipLevels[0].Height,
+				encoded.First.Data,
+				encoded.First.Width,
+				encoded.First.Height,
 				encoded.Format);
 		}
 
@@ -670,9 +671,9 @@ namespace BCnEncoder.TextureFormats
 
 			var encoded = textureFile.ToTextureData();
 			return decoder.DecodeRawHdr2D(
-				encoded.MipLevels[0].Data,
-				encoded.MipLevels[0].Width,
-				encoded.MipLevels[0].Height,
+				encoded.First.Data,
+				encoded.First.Width,
+				encoded.First.Height,
 				encoded.Format);
 		}
 
@@ -694,9 +695,9 @@ namespace BCnEncoder.TextureFormats
 
 			var encoded = textureFile.ToTextureData();
 			return decoder.DecodeRawLdr2DAsync(
-				encoded.MipLevels[0].Data,
-				encoded.MipLevels[0].Width,
-				encoded.MipLevels[0].Height,
+				encoded.First.Data,
+				encoded.First.Width,
+				encoded.First.Height,
 				encoded.Format, token);
 		}
 
@@ -710,9 +711,9 @@ namespace BCnEncoder.TextureFormats
 
 			var encoded = textureFile.ToTextureData();
 			return decoder.DecodeRawHdr2DAsync(
-				encoded.MipLevels[0].Data,
-				encoded.MipLevels[0].Width,
-				encoded.MipLevels[0].Height,
+				encoded.First.Data,
+				encoded.First.Width,
+				encoded.First.Height,
 				encoded.Format, token);
 		}
 	}

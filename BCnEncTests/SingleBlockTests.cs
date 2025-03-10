@@ -6,6 +6,7 @@ using System.Text;
 using BCnEncoder.Decoder;
 using BCnEncoder.Encoder;
 using BCnEncoder.Shared;
+using BCnEncoder.Shared.Colors;
 using BCnEncTests.Support;
 using CommunityToolkit.HighPerformance;
 using SixLabors.ImageSharp.Advanced;

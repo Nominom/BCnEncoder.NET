@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using BCnEncoder.Encoder.Bptc;
+using BCnEncoder.Shared.Colors;
 
 namespace BCnEncoder.Shared
 {
@@ -853,12 +854,12 @@ namespace BCnEncoder.Shared
 			var colorBitCount = ColorIndexBitCount;
 			var indexBegin = GetIndexBegin(Bc7BlockType.Type0, colorBitCount, false);
 			for (var i = 0; i < 16; i++) {
-				var indexOffset = GetIndexOffset(Bc7BlockType.Type0, NumSubsets, 
+				var indexOffset = GetIndexOffset(Bc7BlockType.Type0, NumSubsets,
 					partitionIndex4Bit, colorBitCount, i);
-				var indexBitCount = GetIndexBitCount(NumSubsets, 
+				var indexBitCount = GetIndexBitCount(NumSubsets,
 					partitionIndex4Bit, colorBitCount, i);
-				
-				(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 
+
+				(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits,
 					indexBegin + indexOffset, indexBitCount, indices[i]);
 			}
 		}
@@ -895,12 +896,12 @@ namespace BCnEncoder.Shared
 			var colorBitCount = ColorIndexBitCount;
 			var indexBegin = GetIndexBegin(Bc7BlockType.Type1, colorBitCount, false);
 			for (var i = 0; i < 16; i++) {
-				var indexOffset = GetIndexOffset(Bc7BlockType.Type1, NumSubsets, 
+				var indexOffset = GetIndexOffset(Bc7BlockType.Type1, NumSubsets,
 					partitionIndex6Bit, colorBitCount, i);
-				var indexBitCount = GetIndexBitCount(NumSubsets, 
+				var indexBitCount = GetIndexBitCount(NumSubsets,
 					partitionIndex6Bit, colorBitCount, i);
-				
-				(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 
+
+				(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits,
 					indexBegin + indexOffset, indexBitCount, indices[i]);
 			}
 		}
@@ -922,7 +923,7 @@ namespace BCnEncoder.Shared
 			//Store endpoints
 			for (var i = 0; i < subsetEndpoints[0].Length; i++) {
 				for (var j = 0; j < subsetEndpoints.Length; j++) {
-					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 
+					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits,
 						nextIdx, 5, subsetEndpoints[j][i]);
 					nextIdx += 5;
 				}
@@ -932,12 +933,12 @@ namespace BCnEncoder.Shared
 			var colorBitCount = ColorIndexBitCount;
 			var indexBegin = GetIndexBegin(Bc7BlockType.Type2, colorBitCount, false);
 			for (var i = 0; i < 16; i++) {
-				var indexOffset = GetIndexOffset(Bc7BlockType.Type2, NumSubsets, 
+				var indexOffset = GetIndexOffset(Bc7BlockType.Type2, NumSubsets,
 					partitionIndex6Bit, colorBitCount, i);
-				var indexBitCount = GetIndexBitCount(NumSubsets, 
+				var indexBitCount = GetIndexBitCount(NumSubsets,
 					partitionIndex6Bit, colorBitCount, i);
-				
-				(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 
+
+				(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits,
 					indexBegin + indexOffset, indexBitCount, indices[i]);
 			}
 		}
@@ -960,14 +961,14 @@ namespace BCnEncoder.Shared
 			//Store endpoints
 			for (var i = 0; i < subsetEndpoints[0].Length; i++) {
 				for (var j = 0; j < subsetEndpoints.Length; j++) {
-					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 
+					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits,
 						nextIdx, 7, subsetEndpoints[j][i]);
 					nextIdx += 7;
 				}
 			}
 			//Store pBits
 			for (var i = 0; i < pBits.Length; i++) {
-				(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, nextIdx, 
+				(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, nextIdx,
 					1, pBits[i]);
 				nextIdx++;
 			}
@@ -976,12 +977,12 @@ namespace BCnEncoder.Shared
 			var colorBitCount = ColorIndexBitCount;
 			var indexBegin = GetIndexBegin(Bc7BlockType.Type3, colorBitCount, false);
 			for (var i = 0; i < 16; i++) {
-				var indexOffset = GetIndexOffset(Bc7BlockType.Type3, NumSubsets, 
+				var indexOffset = GetIndexOffset(Bc7BlockType.Type3, NumSubsets,
 					partitionIndex6Bit, colorBitCount, i);
-				var indexBitCount = GetIndexBitCount(NumSubsets, 
+				var indexBitCount = GetIndexBitCount(NumSubsets,
 					partitionIndex6Bit, colorBitCount, i);
-				
-				(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 
+
+				(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits,
 					indexBegin + indexOffset, indexBitCount, indices[i]);
 			}
 		}
@@ -1010,14 +1011,14 @@ namespace BCnEncoder.Shared
 			//Store color endpoints
 			for (var i = 0; i < colorEndPoints[0].Length; i++) {
 				for (var j = 0; j < colorEndPoints.Length; j++) {
-					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 
+					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits,
 						nextIdx, 5, colorEndPoints[j][i]);
 					nextIdx += 5;
 				}
 			}
 			//Store alpha endpoints
 			for (var i = 0; i < alphaEndPoints.Length; i++) {
-				(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, nextIdx, 
+				(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, nextIdx,
 					6, alphaEndPoints[i]);
 				nextIdx+=6;
 			}
@@ -1026,17 +1027,17 @@ namespace BCnEncoder.Shared
 			var colorBitCount = ColorIndexBitCount;
 			var colorIndexBegin = GetIndexBegin(Bc7BlockType.Type4, colorBitCount, false);
 			for (var i = 0; i < 16; i++) {
-				var indexOffset = GetIndexOffset(Bc7BlockType.Type4, NumSubsets, 
+				var indexOffset = GetIndexOffset(Bc7BlockType.Type4, NumSubsets,
 					0, colorBitCount, i);
-				var indexBitCount = GetIndexBitCount(NumSubsets, 
+				var indexBitCount = GetIndexBitCount(NumSubsets,
 					0, colorBitCount, i);
 
 				if (idxMode == 0) {
-					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 
+					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits,
 						colorIndexBegin + indexOffset, indexBitCount, indices2Bit[i]);
 				}
 				else {
-					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 
+					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits,
 						colorIndexBegin + indexOffset, indexBitCount, indices3Bit[i]);
 				}
 			}
@@ -1044,17 +1045,17 @@ namespace BCnEncoder.Shared
 			var alphaBitCount = AlphaIndexBitCount;
 			var alphaIndexBegin = GetIndexBegin(Bc7BlockType.Type4, alphaBitCount, true);
 			for (var i = 0; i < 16; i++) {
-				var indexOffset = GetIndexOffset(Bc7BlockType.Type4, NumSubsets, 
+				var indexOffset = GetIndexOffset(Bc7BlockType.Type4, NumSubsets,
 					0, alphaBitCount, i);
-				var indexBitCount = GetIndexBitCount(NumSubsets, 
+				var indexBitCount = GetIndexBitCount(NumSubsets,
 					0, alphaBitCount, i);
 
 				if (idxMode == 0) {
-					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 
+					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits,
 						alphaIndexBegin + indexOffset, indexBitCount, indices3Bit[i]);
 				}
 				else {
-					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 
+					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits,
 						alphaIndexBegin + indexOffset, indexBitCount, indices2Bit[i]);
 				}
 			}
@@ -1081,14 +1082,14 @@ namespace BCnEncoder.Shared
 			//Store color endpoints
 			for (var i = 0; i < colorEndPoints[0].Length; i++) {
 				for (var j = 0; j < colorEndPoints.Length; j++) {
-					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 
+					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits,
 						nextIdx, 7, colorEndPoints[j][i]);
 					nextIdx += 7;
 				}
 			}
 			//Store alpha endpoints
 			for (var i = 0; i < alphaEndPoints.Length; i++) {
-				(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, nextIdx, 
+				(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, nextIdx,
 					8, alphaEndPoints[i]);
 				nextIdx+=8;
 			}
@@ -1097,42 +1098,42 @@ namespace BCnEncoder.Shared
 			var colorBitCount = ColorIndexBitCount;
 			var colorIndexBegin = GetIndexBegin(Bc7BlockType.Type5, colorBitCount, false);
 			for (var i = 0; i < 16; i++) {
-				var indexOffset = GetIndexOffset(Bc7BlockType.Type5, NumSubsets, 
+				var indexOffset = GetIndexOffset(Bc7BlockType.Type5, NumSubsets,
 					0, colorBitCount, i);
-				var indexBitCount = GetIndexBitCount(NumSubsets, 
+				var indexBitCount = GetIndexBitCount(NumSubsets,
 					0, colorBitCount, i);
 
-					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 
+					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits,
 						colorIndexBegin + indexOffset, indexBitCount, colorIndices[i]);
-				
+
 			}
 
 			var alphaBitCount = AlphaIndexBitCount;
 			var alphaIndexBegin = GetIndexBegin(Bc7BlockType.Type5, alphaBitCount, true);
 			for (var i = 0; i < 16; i++) {
-				var indexOffset = GetIndexOffset(Bc7BlockType.Type5, NumSubsets, 
+				var indexOffset = GetIndexOffset(Bc7BlockType.Type5, NumSubsets,
 					0, alphaBitCount, i);
-				var indexBitCount = GetIndexBitCount(NumSubsets, 
+				var indexBitCount = GetIndexBitCount(NumSubsets,
 					0, alphaBitCount, i);
 
-				
-				(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 
+
+				(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits,
 					alphaIndexBegin + indexOffset, indexBitCount, alphaIndices[i]);
 
 			}
 		}
 
 		public void PackType6(byte[][] colorAlphaEndPoints, byte[] pBits, byte[] indices) {
-			Debug.Assert(colorAlphaEndPoints.Length == 2, 
+			Debug.Assert(colorAlphaEndPoints.Length == 2,
 				"Mode 6 should have 2 endpoints");
-			Debug.Assert(colorAlphaEndPoints.All(x => x.Length == 4) , 
+			Debug.Assert(colorAlphaEndPoints.All(x => x.Length == 4) ,
 				"Mode 6 should have RGBA color endpoints");
-			Debug.Assert(colorAlphaEndPoints.All(x => x.All(y => y < 1 << 7)) , 
+			Debug.Assert(colorAlphaEndPoints.All(x => x.All(y => y < 1 << 7)) ,
 				"Mode 6 should have 7bit color and alpha endpoints");
 			Debug.Assert(pBits.Length == 2, "Mode 6 should have 2 pBits");
 			Debug.Assert(indices.Length == 16, "Provide 16 indices");
 			Debug.Assert(indices.All(x => x < 1 << 4) , "Mode 6 should have 4bit color indices");
-			
+
 			lowBits = 0b1000000; // Set Mode 6
 			highBits = 0;
 
@@ -1140,14 +1141,14 @@ namespace BCnEncoder.Shared
 			//Store color and alpha endpoints
 			for (var i = 0; i < colorAlphaEndPoints[0].Length; i++) {
 				for (var j = 0; j < colorAlphaEndPoints.Length; j++) {
-					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 
+					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits,
 						nextIdx, 7, colorAlphaEndPoints[j][i]);
 					nextIdx += 7;
 				}
 			}
 			//Store pBits
 			for (var i = 0; i < pBits.Length; i++) {
-				(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, nextIdx, 
+				(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, nextIdx,
 					1, pBits[i]);
 				nextIdx++;
 			}
@@ -1156,12 +1157,12 @@ namespace BCnEncoder.Shared
 			var colorBitCount = ColorIndexBitCount;
 			var colorIndexBegin = GetIndexBegin(Bc7BlockType.Type6, colorBitCount, false);
 			for (var i = 0; i < 16; i++) {
-				var indexOffset = GetIndexOffset(Bc7BlockType.Type6, NumSubsets, 
+				var indexOffset = GetIndexOffset(Bc7BlockType.Type6, NumSubsets,
 					0, colorBitCount, i);
-				var indexBitCount = GetIndexBitCount(NumSubsets, 
+				var indexBitCount = GetIndexBitCount(NumSubsets,
 					0, colorBitCount, i);
 
-					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 
+					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits,
 						colorIndexBegin + indexOffset, indexBitCount, indices[i]);
 			}
 		}
@@ -1184,14 +1185,14 @@ namespace BCnEncoder.Shared
 			//Store endpoints
 			for (var i = 0; i < subsetEndpoints[0].Length; i++) {
 				for (var j = 0; j < subsetEndpoints.Length; j++) {
-					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 
+					(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits,
 						nextIdx, 5, subsetEndpoints[j][i]);
 					nextIdx += 5;
 				}
 			}
 			//Store pBits
 			for (var i = 0; i < pBits.Length; i++) {
-				(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, nextIdx, 
+				(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, nextIdx,
 					1, pBits[i]);
 				nextIdx++;
 			}
@@ -1200,12 +1201,12 @@ namespace BCnEncoder.Shared
 			var colorBitCount = ColorIndexBitCount;
 			var indexBegin = GetIndexBegin(Bc7BlockType.Type7, colorBitCount, false);
 			for (var i = 0; i < 16; i++) {
-				var indexOffset = GetIndexOffset(Bc7BlockType.Type7, NumSubsets, 
+				var indexOffset = GetIndexOffset(Bc7BlockType.Type7, NumSubsets,
 					partitionIndex6Bit, colorBitCount, i);
-				var indexBitCount = GetIndexBitCount(NumSubsets, 
+				var indexBitCount = GetIndexBitCount(NumSubsets,
 					partitionIndex6Bit, colorBitCount, i);
-				
-				(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits, 
+
+				(lowBits, highBits) = ByteHelper.StoreTo128(lowBits, highBits,
 					indexBegin + indexOffset, indexBitCount, indices[i]);
 			}
 		}
