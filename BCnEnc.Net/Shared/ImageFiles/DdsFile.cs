@@ -54,7 +54,7 @@ namespace BCnEncoder.Shared.ImageFiles
 					output = new DdsFile(header);
 				}
 
-				var mipMapCount = (header.dwCaps & HeaderCaps.DdscapsMipmap) != 0 ? header.dwMipMapCount : 1;
+				var mipMapCount = Math.Max(1, header.dwMipMapCount);
 				var faceCount = (header.dwCaps2 & HeaderCaps2.Ddscaps2Cubemap) != 0 ? 6u : 1u;
 				var width = header.dwWidth;
 				var height = header.dwHeight;
