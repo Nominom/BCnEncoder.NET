@@ -84,11 +84,11 @@ namespace BCnEncTests
 			Random r = new Random(50);
 			r.NextBytes(buffer);
 
-			var pixels = decoder.DecodeRawLdr(buffer, width * 4, height * 4, CompressionFormat.Bc7);
+			var pixels = decoder.DecodeRaw<ColorRgba32>(buffer, width * 4, height * 4, CompressionFormat.Bc7, CompressionFormat.Rgba32);
 			Assert.Contains(new ColorRgba32(255, 0, 255), pixels);
 
 			using var fs = File.OpenWrite("test_decode_bc7_error.png");
-			pixels.AsBCnTextureData(width, height, false).AsImageRgba32().SaveAsPng(fs);
+			pixels.AsBCnTextureData(width, height, true).AsImageRgba32().SaveAsPng(fs);
 		}
 
 		#region Type Packs

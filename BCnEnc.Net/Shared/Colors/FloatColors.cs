@@ -39,6 +39,14 @@ public struct ColorRgbaFloat : IColor<ColorRgbaFloat>
 		this.a = 1;
 	}
 
+	public ColorRgbaFloat(Vector4 other)
+	{
+		this.r = other.X;
+		this.g = other.Y;
+		this.b = other.Z;
+		this.a = other.W;
+	}
+
 	public bool Equals(ColorRgbaFloat other)
 	{
 		return r == other.r && g == other.g && b == other.b && a == other.a;
@@ -150,6 +158,18 @@ public struct ColorRgbaFloat : IColor<ColorRgbaFloat>
 		b = color.b;
 		a = color.a;
 	}
+
+	public Vector3 ToVector3()
+	{
+		return new Vector3(r, g, b);
+	}
+
+	public Vector4 ToVector4()
+	{
+		return new Vector4(r, g, b, a);
+	}
+
+	public static implicit operator ColorRgbFloat(ColorRgbaFloat c) => new(c.r, c.g, c.b);
 }
 
 public struct ColorRgbFloat : IColor<ColorRgbFloat>
@@ -320,5 +340,7 @@ public struct ColorRgbFloat : IColor<ColorRgbFloat>
 		this.g = color.g;
 		this.b = color.b;
 	}
+
+	public static implicit operator ColorRgbaFloat(ColorRgbFloat c) => c.ToColorRgbaFloat();
 }
 

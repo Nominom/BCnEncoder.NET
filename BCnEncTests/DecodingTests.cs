@@ -29,9 +29,9 @@ namespace BCnEncTests
 		[InlineData("bc7_unorm", 0)]
 		[InlineData("bc7_unorm_alltypes", 0)]
 		[InlineData("bc6h_ufloat", 1)]
-		[InlineData("hdr_1_rgbe", 1)]
-		[InlineData("hdr_1_xyze", 5)] // Need high tolerance for xyze :/ ?
-		[InlineData("hdr_2_rgbe", 1)]
+		[InlineData("hdr_1_rgbe", 2)]
+		[InlineData("hdr_1_xyze", 2)] // Need high tolerance for xyze :/ ?
+		[InlineData("hdr_2_rgbe", 2)]
 		[InlineData("raw_r8_unorm", 0)]
 		[InlineData("raw_r8g8_unorm", 0)]
 		[InlineData("raw_r8g8b8_unorm", 0)]
@@ -40,7 +40,6 @@ namespace BCnEncTests
 		public void TestDecoding(string testImage, int tolerance)
 		{
 			var decoder = new BcDecoder();
-			decoder.OutputOptions.Bc4Component = ColorComponent.Luminance;
 
 			var encodedFile = ImageLoader.TestEncodedImages[testImage];
 			var bcnData = encodedFile.Item1.ToTextureData();

@@ -10,7 +10,7 @@ namespace BCnEncoder.Encoder.Bptc
 	internal static class Bc6ModeEncoder
 	{
 
-		public static Bc6Block EncodeBlock1Sub(Bc6BlockType type, RawBlock4X4RgbFloat block, ColorRgbFloat initialEndpoint0,
+		public static Bc6Block EncodeBlock1Sub(Bc6BlockType type, RawBlock4X4RgbaFloat block, ColorRgbFloat initialEndpoint0,
 			ColorRgbFloat initialEndpoint1, bool signed, out bool badTransform)
 		{
 			var endpointBits = type.EndpointBits();
@@ -75,7 +75,7 @@ namespace BCnEncoder.Encoder.Bptc
 			}
 		}
 
-		public static Bc6Block EncodeBlock2Sub(Bc6BlockType type, RawBlock4X4RgbFloat block, ColorRgbFloat initialEndpoint0,
+		public static Bc6Block EncodeBlock2Sub(Bc6BlockType type, RawBlock4X4RgbaFloat block, ColorRgbFloat initialEndpoint0,
 			ColorRgbFloat initialEndpoint1, ColorRgbFloat initialEndpoint2,
 			ColorRgbFloat initialEndpoint3, int partitionSetId, bool signed, out bool badTransform)
 		{

@@ -9,25 +9,14 @@ namespace BCnEncoder.Shared
 		private const int C565_5Mask = 0xF8;
 		private const int C565_6Mask = 0xFC;
 
-		private static void ConvertToVector4(ReadOnlySpan<ColorRgba32> colors, Span<Vector4> vectors)
-		{
-			for (var i = 0; i < colors.Length; i++)
-			{
-				vectors[i].X += colors[i].r / 255f;
-				vectors[i].Y += colors[i].g / 255f;
-				vectors[i].Z += colors[i].b / 255f;
-				vectors[i].W += colors[i].a / 255f;
-			}
-		}
-
-		private static void ConvertToVector4(ReadOnlySpan<ColorRgbFloat> colors, Span<Vector4> vectors)
+		private static void ConvertToVector4(ReadOnlySpan<ColorRgbaFloat> colors, Span<Vector4> vectors)
 		{
 			for (var i = 0; i < colors.Length; i++)
 			{
 				vectors[i].X += colors[i].r;
 				vectors[i].Y += colors[i].g;
 				vectors[i].Z += colors[i].b;
-				vectors[i].W = 0;
+				vectors[i].W += colors[i].a;
 			}
 		}
 
@@ -121,99 +110,29 @@ namespace BCnEncoder.Shared
 			return lastDa;
 		}
 
-		public static void Create(Span<ColorRgba32> colors, out Vector3 mean, out Vector3 principalAxis)
+		public static void Create(Span<ColorRgbaFloat> colors, out Vector4 mean, out Vector4 principalAxis)
 		{
 			Span<Vector4> vectors = stackalloc Vector4[colors.Length];
 			ConvertToVector4(colors, vectors);
 
 
 			var cov = CalculateCovariance(vectors, out var v4Mean);
-			mean = new Vector3(v4Mean.X, v4Mean.Y, v4Mean.Z);
+			mean = new Vector4(v4Mean.X, v4Mean.Y, v4Mean.Z, v4Mean.W);
 
 			var pa = CalculatePrincipalAxis(cov);
-			principalAxis = new Vector3(pa.X, pa.Y, pa.Z);
-			if (principalAxis.LengthSquared() == 0) {
-				principalAxis = Vector3.UnitY;
-			}
-			else {
-				principalAxis = Vector3.Normalize(principalAxis);
-			}
-
-		}
-
-		public static void Create(Span<ColorRgbFloat> colors, out Vector3 mean, out Vector3 principalAxis)
-		{
-			Span<Vector4> vectors = stackalloc Vector4[colors.Length];
-			ConvertToVector4(colors, vectors);
-
-
-			var cov = CalculateCovariance(vectors, out var v4Mean);
-			mean = new Vector3(v4Mean.X, v4Mean.Y, v4Mean.Z);
-
-			var pa = CalculatePrincipalAxis(cov);
-			principalAxis = new Vector3(pa.X, pa.Y, pa.Z);
+			principalAxis = new Vector4(pa.X, pa.Y, pa.Z, pa.W);
 			if (principalAxis.LengthSquared() == 0)
 			{
-				principalAxis = Vector3.UnitY;
+				principalAxis = Vector4.UnitY;
 			}
 			else
 			{
-				principalAxis = Vector3.Normalize(principalAxis);
+				principalAxis = Vector4.Normalize(principalAxis);
 			}
 
 		}
 
-		public static void CreateWithAlpha(Span<ColorRgba32> colors, out Vector4 mean, out Vector4 principalAxis)
-		{
-			Span<Vector4> vectors = stackalloc Vector4[colors.Length];
-			ConvertToVector4(colors, vectors);
-
-			var cov = CalculateCovariance(vectors, out mean);
-			principalAxis = CalculatePrincipalAxis(cov);
-		}
-
-
-		public static void GetExtremePoints(Span<ColorRgba32> colors, Vector3 mean, Vector3 principalAxis, out ColorRgb24 min,
-			out ColorRgb24 max)
-		{
-
-			float minD = 0;
-			float maxD = 0;
-
-			for (var i = 0; i < colors.Length; i++)
-			{
-				var colorVec = new Vector3(colors[i].r / 255f, colors[i].g / 255f, colors[i].b / 255f);
-
-				var v = colorVec - mean;
-				var d = Vector3.Dot(v, principalAxis);
-				if (d < minD) minD = d;
-				if (d > maxD) maxD = d;
-			}
-
-			var minVec = mean + principalAxis * minD;
-			var maxVec = mean + principalAxis * maxD;
-
-			var minR = (int) (minVec.X * 255);
-			var minG = (int) (minVec.Y * 255);
-			var minB = (int) (minVec.Z * 255);
-
-			var maxR = (int) (maxVec.X * 255);
-			var maxG = (int) (maxVec.Y * 255);
-			var maxB = (int) (maxVec.Z * 255);
-
-			minR = minR >= 0 ? minR : 0;
-			minG = minG >= 0 ? minG : 0;
-			minB = minB >= 0 ? minB : 0;
-
-			maxR = maxR <= 255 ? maxR : 255;
-			maxG = maxG <= 255 ? maxG : 255;
-			maxB = maxB <= 255 ? maxB : 255;
-
-			min = new ColorRgb24((byte)minR, (byte)minG, (byte)minB);
-			max = new ColorRgb24((byte)maxR, (byte)maxG, (byte)maxB);
-		}
-
-		public static void GetMinMaxColor565(Span<ColorRgba32> colors, Vector3 mean, Vector3 principalAxis,
+		public static void GetMinMaxColor565(Span<ColorRgbaFloat> colors, Vector4 mean, Vector4 principalAxis,
 			out ColorRgb565 min, out ColorRgb565 max)
 		{
 
@@ -222,10 +141,10 @@ namespace BCnEncoder.Shared
 
 			for (var i = 0; i < colors.Length; i++)
 			{
-				var colorVec = new Vector3(colors[i].r / 255f, colors[i].g / 255f, colors[i].b / 255f);
+				var colorVec = new Vector4(colors[i].r, colors[i].g, colors[i].b, colors[i].a);
 
 				var v = colorVec - mean;
-				var d = Vector3.Dot(v, principalAxis);
+				var d = Vector4.Dot(v, principalAxis);
 				if (d < minD) minD = d;
 				if (d > maxD) maxD = d;
 			}
@@ -267,7 +186,7 @@ namespace BCnEncoder.Shared
 
 		}
 
-		public static void GetExtremePointsWithAlpha(Span<ColorRgba32> colors, Vector4 mean, Vector4 principalAxis, out Vector4 min,
+		public static void GetExtremePoints(Span<ColorRgbaFloat> colors, Vector4 mean, Vector4 principalAxis, out Vector4 min,
 			out Vector4 max)
 		{
 
@@ -276,7 +195,7 @@ namespace BCnEncoder.Shared
 
 			for (var i = 0; i < colors.Length; i++)
 			{
-				var colorVec = new Vector4(colors[i].r / 255f, colors[i].g / 255f, colors[i].b / 255f, colors[i].a / 255f);
+				var colorVec = new Vector4(colors[i].r, colors[i].g, colors[i].b, colors[i].a);
 
 				var v = colorVec - mean;
 				var d = Vector4.Dot(v, principalAxis);
@@ -284,27 +203,7 @@ namespace BCnEncoder.Shared
 				if (d > maxD) maxD = d;
 			}
 
-			min = mean + principalAxis * minD;
-			max = mean + principalAxis * maxD;
-		}
-
-		public static void GetExtremePoints(Span<ColorRgbFloat> colors, Vector3 mean, Vector3 principalAxis, out Vector3 min,
-			out Vector3 max)
-		{
-
-			float minD = 0;
-			float maxD = 0;
-
-			for (var i = 0; i < colors.Length; i++)
-			{
-				var colorVec = new Vector3(colors[i].r, colors[i].g, colors[i].b);
-
-				var v = colorVec - mean;
-				var d = Vector3.Dot(v, principalAxis);
-				if (d < minD) minD = d;
-				if (d > maxD) maxD = d;
-			}
-
+			// Inset
 			minD *= 15 / 16f;
 			maxD *= 15 / 16f;
 

@@ -2,6 +2,7 @@ using BCnEncoder.Decoder.Options;
 using BCnEncoder.Shared;
 using System;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using BCnEncoder.Shared.Colors;
@@ -26,55 +27,15 @@ namespace BCnEncoder.Decoder
 
 
 		/// <inheritdoc cref="DecodeInternal"/>
-		public Task<BCnTextureData> DecodeAsync(BCnTextureData texture, CancellationToken token = default)
+		public Task<BCnTextureData> DecodeAsync(BCnTextureData texture, CompressionFormat outputFormat, CancellationToken token = default)
 		{
-			return Task.Run(() => DecodeInternal(texture, token), token);
+			return Task.Run(() => DecodeInternal(texture, outputFormat, token), token);
 		}
 
 		/// <inheritdoc cref="DecodeInternal"/>
-		public BCnTextureData Decode(BCnTextureData texture)
+		public BCnTextureData Decode(BCnTextureData texture, CompressionFormat outputFormat)
 		{
-			return DecodeInternal(texture, CancellationToken.None);
-		}
-
-		#region Ldr Async Api
-
-		/// <summary>
-		/// Decode a single encoded image from raw bytes.
-		/// This method will read the expected amount of bytes from the given input stream and decode it.
-		/// Make sure there is no file header information left in the stream before the encoded data.
-		/// </summary>
-		/// <param name="inputStream">The stream containing the encoded data.</param>
-		/// <param name="format">The Format the encoded data is in.</param>
-		/// <param name="pixelWidth">The pixelWidth of the image.</param>
-		/// <param name="pixelHeight">The pixelHeight of the image.</param>
-		/// <param name="token">The cancellation token for this asynchronous operation.</param>
-		/// <returns>The awaitable operation to retrieve the decoded image.</returns>
-		public Task<ColorRgba32[]> DecodeRawLdrAsync(Stream inputStream, int pixelWidth, int pixelHeight, CompressionFormat format, CancellationToken token = default)
-		{
-			var dataArray = new byte[GetBufferSize(format, pixelWidth, pixelHeight)];
-			var readBytes = inputStream.Read(dataArray, 0, dataArray.Length);
-
-			if (readBytes < dataArray.Length)
-			{
-				throw new InvalidOperationException("Not enough bytes available in stream to read whole Image!");
-			}
-
-			return Task.Run(() => DecodeRawInternal(dataArray, pixelWidth, pixelHeight, format, token), token);
-		}
-
-		/// <summary>
-		/// Decode a single encoded image from raw bytes.
-		/// </summary>
-		/// <param name="input">The <see cref="Memory{T}"/> containing the encoded data.</param>
-		/// <param name="format">The Format the encoded data is in.</param>
-		/// <param name="pixelWidth">The pixelWidth of the image.</param>
-		/// <param name="pixelHeight">The pixelHeight of the image.</param>
-		/// <param name="token">The cancellation token for this asynchronous operation.</param>
-		/// <returns>The awaitable operation to retrieve the decoded image.</returns>
-		public Task<ColorRgba32[]> DecodeRawLdrAsync(ReadOnlyMemory<byte> input, int pixelWidth, int pixelHeight, CompressionFormat format, CancellationToken token = default)
-		{
-			return Task.Run(() => DecodeRawInternal(input, pixelWidth, pixelHeight, format, token), token);
+			return DecodeInternal(texture, outputFormat, CancellationToken.None);
 		}
 
 		/// <summary>
@@ -82,131 +43,79 @@ namespace BCnEncoder.Decoder
 		/// This method will read the expected amount of bytes from the given input stream and decode it.
 		/// Make sure there is no file header information left in the stream before the encoded data.
 		/// </summary>
-		/// <param name="inputStream">The stream containing the raw encoded data.</param>
-		/// <param name="format">The Format the encoded data is in.</param>
-		/// <param name="pixelWidth">The pixelWidth of the image.</param>
-		/// <param name="pixelHeight">The pixelHeight of the image.</param>
-		/// <param name="token">The cancellation token for this asynchronous operation.</param>
-		/// <returns>The awaitable operation to retrieve the decoded image.</returns>
-		public Task<Memory2D<ColorRgba32>> DecodeRawLdr2DAsync(Stream inputStream, int pixelWidth, int pixelHeight, CompressionFormat format, CancellationToken token = default)
+		public async Task DecodeRawAsync<TOut>(Stream inputStream, Memory<TOut> output, int pixelWidth, int pixelHeight, CompressionFormat inputFormat, CompressionFormat outputFormat, CancellationToken token = default)
+			where TOut : unmanaged
 		{
-			var dataArray = new byte[GetBufferSize(format, pixelWidth, pixelHeight)];
-			var readBytes = inputStream.Read(dataArray, 0, dataArray.Length);
+			var dataArray = new byte[GetBufferSize(inputFormat, pixelWidth, pixelHeight)];
+			await inputStream.ReadExactlyAsync(dataArray, 0, dataArray.Length, token);
 
-			if (readBytes < dataArray.Length)
-			{
-				throw new InvalidOperationException("Not enough bytes available in stream to read whole Image!");
-			}
-
-			return Task.Run(() => DecodeRawInternal(dataArray, pixelWidth, pixelHeight, format, token)
-				.AsMemory().AsMemory2D(pixelHeight, pixelWidth), token);
+			await Task.Run(() => DecodeRawInternal(dataArray, output.Cast<TOut, byte>(), pixelWidth, pixelHeight, inputFormat, outputFormat, token), token);
 		}
 
-		/// <summary>
-		/// Decode a single encoded image from raw bytes.
-		/// </summary>
-		/// <param name="input">The <see cref="Memory{T}"/> containing the encoded data.</param>
-		/// <param name="format">The Format the encoded data is in.</param>
-		/// <param name="pixelWidth">The pixelWidth of the image.</param>
-		/// <param name="pixelHeight">The pixelHeight of the image.</param>
-		/// <param name="token">The cancellation token for this asynchronous operation.</param>
-		/// <returns>The awaitable operation to retrieve the decoded image.</returns>
-		public Task<Memory2D<ColorRgba32>> DecodeRawLdr2DAsync(ReadOnlyMemory<byte> input, int pixelWidth, int pixelHeight, CompressionFormat format, CancellationToken token = default)
+		public Task DecodeRawAsync<TOut>(ReadOnlyMemory<byte> input, Memory<TOut> output, int pixelWidth, int pixelHeight, CompressionFormat inputFormat, CompressionFormat outputFormat, CancellationToken token = default)
+			where TOut : unmanaged
 		{
-			return Task.Run(() => DecodeRawInternal(input, pixelWidth, pixelHeight, format, token)
-				.AsMemory().AsMemory2D(pixelHeight, pixelWidth), token);
+			return Task.Run(() => DecodeRawInternal(input, output.Cast<TOut, byte>(), pixelWidth, pixelHeight, inputFormat, outputFormat, token), token);
 		}
 
-		#endregion
-
-		#region Ldr Sync API
-
-		/// <summary>
-		/// Decode a single encoded image from raw bytes.
-		/// This method will read the expected amount of bytes from the given input stream and decode it.
-		/// Make sure there is no file header information left in the stream before the encoded data.
-		/// </summary>
-		/// <param name="inputStream">The stream containing the raw encoded data.</param>
-		/// <param name="pixelWidth">The pixelWidth of the image.</param>
-		/// <param name="pixelHeight">The pixelHeight of the image.</param>
-		/// <param name="format">The Format the encoded data is in.</param>
-		/// <returns>The decoded image.</returns>
-		public ColorRgba32[] DecodeRawLdr(Stream inputStream, int pixelWidth, int pixelHeight, CompressionFormat format)
+		public async Task<TOut[]> DecodeRawAsync<TOut>(Stream inputStream, int pixelWidth, int pixelHeight, CompressionFormat inputFormat, CompressionFormat outputFormat, CancellationToken token = default)
+			where TOut : unmanaged
 		{
-			var dataArray = new byte[GetBufferSize(format, pixelWidth, pixelHeight)];
-			var readBytes = inputStream.Read(dataArray, 0, dataArray.Length);
+			var dataArray = new byte[GetBufferSize(inputFormat, pixelWidth, pixelHeight)];
+			await inputStream.ReadExactlyAsync(dataArray, 0, dataArray.Length, token);
 
-			if (readBytes < dataArray.Length)
-			{
-				throw new InvalidOperationException("Not enough bytes available in stream to read whole Image!");
-			}
+			var output = AllocateOutputBuffer<TOut>(pixelWidth, pixelHeight, outputFormat);
 
-			return DecodeRawLdr(dataArray, pixelWidth, pixelHeight, format);
+			await Task.Run(() => DecodeRawInternal(dataArray, output.AsMemory().Cast<TOut, byte>(), pixelWidth, pixelHeight, inputFormat, outputFormat, token), token);
+
+			return output;
 		}
 
-		/// <summary>
-		/// Decode a single encoded image from raw bytes.
-		/// </summary>
-		/// <param name="input">The byte array containing the raw encoded data.</param>
-		/// <param name="pixelWidth">The pixelWidth of the image.</param>
-		/// <param name="pixelHeight">The pixelHeight of the image.</param>
-		/// <param name="format">The Format the encoded data is in.</param>
-		/// <returns>The decoded image.</returns>
-		public ColorRgba32[] DecodeRawLdr(byte[] input, int pixelWidth, int pixelHeight, CompressionFormat format)
+		public async Task<TOut[]> DecodeRawAsync<TOut>(ReadOnlyMemory<byte> input, int pixelWidth, int pixelHeight, CompressionFormat inputFormat, CompressionFormat outputFormat, CancellationToken token = default)
+			where TOut : unmanaged
 		{
-			return DecodeRawInternal(input, pixelWidth, pixelHeight, format, default);
+			var output = AllocateOutputBuffer<TOut>(pixelWidth, pixelHeight, outputFormat);
+
+			await Task.Run(() => DecodeRawInternal(input, output.AsMemory().Cast<TOut, byte>(), pixelWidth, pixelHeight, inputFormat, outputFormat, token), token);
+
+			return output;
 		}
 
-		/// <summary>
-		/// Decode a single encoded image from raw bytes.
-		/// This method will read the expected amount of bytes from the given input stream and decode it.
-		/// Make sure there is no file header information left in the stream before the encoded data.
-		/// </summary>
-		/// <param name="inputStream">The stream containing the encoded data.</param>
-		/// <param name="pixelWidth">The pixelWidth of the image.</param>
-		/// <param name="pixelHeight">The pixelHeight of the image.</param>
-		/// <param name="format">The Format the encoded data is in.</param>
-		/// <returns>The decoded image.</returns>
-		public Memory2D<ColorRgba32> DecodeRawLdr2D(Stream inputStream, int pixelWidth, int pixelHeight, CompressionFormat format)
+		public void DecodeRaw<TOut>(Stream inputStream, Memory<TOut> output, int pixelWidth, int pixelHeight, CompressionFormat inputFormat, CompressionFormat outputFormat)
+			where TOut : unmanaged
 		{
-			var dataArray = new byte[GetBufferSize(format, pixelWidth, pixelHeight)];
-			var readBytes = inputStream.Read(dataArray, 0, dataArray.Length);
+			var dataArray = new byte[GetBufferSize(inputFormat, pixelWidth, pixelHeight)];
+			inputStream.ReadExactly(dataArray, 0, dataArray.Length);
 
-			if (readBytes < dataArray.Length)
-			{
-				throw new InvalidOperationException("Not enough bytes available in stream to read whole Image!");
-			}
-
-			var decoded = DecodeRawLdr(dataArray, pixelWidth, pixelHeight, format);
-			return decoded.AsMemory().AsMemory2D(pixelHeight, pixelWidth);
+			DecodeRawInternal(dataArray, output.Cast<TOut, byte>(), pixelWidth, pixelHeight, inputFormat, outputFormat, CancellationToken.None);
 		}
 
-		/// <summary>
-		/// Decode a single encoded image from raw bytes.
-		/// </summary>
-		/// <param name="input">The byte array containing the raw encoded data.</param>
-		/// <param name="pixelWidth">The pixelWidth of the image.</param>
-		/// <param name="pixelHeight">The pixelHeight of the image.</param>
-		/// <param name="format">The Format the encoded data is in.</param>
-		/// <returns>The decoded image.</returns>
-		public Memory2D<ColorRgba32> DecodeRawLdr2D(byte[] input, int pixelWidth, int pixelHeight, CompressionFormat format)
+		public void DecodeRaw<TOut>(ReadOnlyMemory<byte> input, Memory<TOut> output, int pixelWidth, int pixelHeight, CompressionFormat inputFormat, CompressionFormat outputFormat)
+			where TOut : unmanaged
 		{
-			var decoded = DecodeRawInternal(input, pixelWidth, pixelHeight, format, default);
-			return decoded.AsMemory().AsMemory2D(pixelHeight, pixelWidth);
+			DecodeRawInternal(input, output.Cast<TOut, byte>(), pixelWidth, pixelHeight, inputFormat, outputFormat, CancellationToken.None);
 		}
 
-		/// <summary>
-		/// Decode a single block from raw bytes and return it as a <see cref="Memory2D{T}"/>.
-		/// Input Span size needs to equal the block size.
-		/// To get the block size (in bytes) of the compression format used, see <see cref="GetBlockSize(BCnEncoder.Shared.CompressionFormat)"/>.
-		/// </summary>
-		/// <param name="blockData">The encoded block in bytes.</param>
-		/// <param name="format">The compression format used.</param>
-		/// <returns>The decoded 4x4 block.</returns>
-		public Memory2D<ColorRgba32> DecodeBlockLdr(ReadOnlySpan<byte> blockData, CompressionFormat format)
+		public TOut[] DecodeRaw<TOut>(Stream inputStream, int pixelWidth, int pixelHeight, CompressionFormat inputFormat, CompressionFormat outputFormat)
+			where TOut : unmanaged
 		{
-			var output = new ColorRgba32[4, 4];
-			DecodeBlockInternal(blockData, format, output);
+			var dataArray = new byte[GetBufferSize(inputFormat, pixelWidth, pixelHeight)];
+			inputStream.ReadExactly(dataArray, 0, dataArray.Length);
+
+			var output = AllocateOutputBuffer<TOut>(pixelWidth, pixelHeight, outputFormat);
+
+			DecodeRawInternal(dataArray, output.AsMemory().Cast<TOut, byte>(), pixelWidth, pixelHeight, inputFormat, outputFormat, CancellationToken.None);
+
+			return output;
+		}
+
+		public TOut[] DecodeRaw<TOut>(ReadOnlyMemory<byte> input, int pixelWidth, int pixelHeight, CompressionFormat inputFormat, CompressionFormat outputFormat)
+			where TOut : unmanaged
+		{
+			var output = AllocateOutputBuffer<TOut>(pixelWidth, pixelHeight, outputFormat);
+
+			DecodeRawInternal(input, output.AsMemory().Cast<TOut, byte>(), pixelWidth, pixelHeight, inputFormat, outputFormat, CancellationToken.None);
+
 			return output;
 		}
 
@@ -216,15 +125,16 @@ namespace BCnEncoder.Decoder
 		/// To get the block size (in bytes) of the compression format used, see <see cref="GetBlockSize(BCnEncoder.Shared.CompressionFormat)"/>.
 		/// </summary>
 		/// <param name="blockData">The encoded block in bytes.</param>
-		/// <param name="format">The compression format used.</param>
+		/// <param name="inputFormat">The compression format used.</param>
 		/// <param name="outputSpan">The destination span of the decoded data.</param>
-		public void DecodeBlockLdr(ReadOnlySpan<byte> blockData, CompressionFormat format, Span2D<ColorRgba32> outputSpan)
+		public void DecodeBlock<TOut>(ReadOnlySpan<byte> blockData, Memory2D<TOut> output, CompressionFormat inputFormat, CompressionFormat outputFormat)
+			where TOut : unmanaged
 		{
-			if (outputSpan.Width != 4 || outputSpan.Height != 4)
+			if (output.Width != 4 || output.Height != 4)
 			{
 				throw new ArgumentException($"Single block decoding needs an output span of exactly 4x4");
 			}
-			DecodeBlockInternal(blockData, format, outputSpan);
+			DecodeBlockInternal(blockData, output, inputFormat, outputFormat);
 		}
 
 		/// <summary>
@@ -232,18 +142,19 @@ namespace BCnEncoder.Decoder
 		/// Output span size must be exactly 4x4.
 		/// </summary>
 		/// <param name="inputStream">The stream to read encoded blocks from.</param>
-		/// <param name="format">The compression format used.</param>
-		/// <param name="outputSpan">The destination span of the decoded data.</param>
+		/// <param name="inputFormat">The compression format used.</param>
+		/// <param name="output">The destination span of the decoded data.</param>
 		/// <returns>The number of bytes read from the stream. Zero (0) if reached the end of stream.</returns>
-		public int DecodeBlockLdr(Stream inputStream, CompressionFormat format, Span2D<ColorRgba32> outputSpan)
+		public int DecodeBlock<TOut>(Stream inputStream, Memory2D<TOut> output, CompressionFormat inputFormat, CompressionFormat outputFormat)
+			where TOut : unmanaged
 		{
-			if (outputSpan.Width != 4 || outputSpan.Height != 4)
+			if (output.Width != 4 || output.Height != 4)
 			{
 				throw new ArgumentException($"Single block decoding needs an output span of exactly 4x4");
 			}
 
 			Span<byte> input = stackalloc byte[16];
-			input = input.Slice(0, GetBlockSize(format));
+			input = input.Slice(0, GetBlockSize(inputFormat));
 
 			var bytesRead = inputStream.Read(input);
 
@@ -257,265 +168,34 @@ namespace BCnEncoder.Decoder
 				throw new Exception("Input stream does not have enough data available for a full block.");
 			}
 
-			DecodeBlockInternal(input, format, outputSpan);
+			DecodeBlockInternal(input, output, inputFormat, outputFormat);
 			return bytesRead;
 		}
-
-		#endregion
-
-		#region Hdr Async Api
-
-		/// <summary>
-		/// Decode a single encoded image from raw bytes.
-		/// This method will read the expected amount of bytes from the given input stream and decode it.
-		/// Make sure there is no file header information left in the stream before the encoded data.
-		/// This method is only for compressed Hdr formats. Please use the non-Hdr methods for other formats.
-		/// </summary>
-		/// <param name="inputStream">The stream containing the encoded data.</param>
-		/// <param name="format">The Format the encoded data is in.</param>
-		/// <param name="pixelWidth">The pixelWidth of the image.</param>
-		/// <param name="pixelHeight">The pixelHeight of the image.</param>
-		/// <param name="token">The cancellation token for this asynchronous operation.</param>
-		/// <returns>The awaitable operation to retrieve the decoded image.</returns>
-		public Task<ColorRgbaFloat[]> DecodeRawHdrAsync(Stream inputStream, int pixelWidth, int pixelHeight, CompressionFormat format, CancellationToken token = default)
-		{
-			var dataArray = new byte[GetBufferSize(format, pixelWidth, pixelHeight)];
-			var readBytes = inputStream.Read(dataArray, 0, dataArray.Length);
-
-			if (readBytes < dataArray.Length)
-			{
-				throw new InvalidOperationException("Not enough bytes available in stream to read whole Image!");
-			}
-
-			return Task.Run(() => DecodeRawInternalHdr(dataArray, pixelWidth, pixelHeight, format, token), token);
-		}
-
-		/// <summary>
-		/// Decode a single encoded image from raw bytes.
-		/// This method is only for compressed Hdr formats. Please use the non-Hdr methods for other formats.
-		/// </summary>
-		/// <param name="input">The <see cref="Memory{T}"/> containing the encoded data.</param>
-		/// <param name="format">The Format the encoded data is in.</param>
-		/// <param name="pixelWidth">The pixelWidth of the image.</param>
-		/// <param name="pixelHeight">The pixelHeight of the image.</param>
-		/// <param name="token">The cancellation token for this asynchronous operation.</param>
-		/// <returns>The awaitable operation to retrieve the decoded image.</returns>
-		public Task<ColorRgbaFloat[]> DecodeRawHdrAsync(ReadOnlyMemory<byte> input, int pixelWidth, int pixelHeight, CompressionFormat format, CancellationToken token = default)
-		{
-			return Task.Run(() => DecodeRawInternalHdr(input, pixelWidth, pixelHeight, format, token), token);
-		}
-
-		/// <summary>
-		/// Decode a single encoded image from raw bytes.
-		/// This method will read the expected amount of bytes from the given input stream and decode it.
-		/// Make sure there is no file header information left in the stream before the encoded data.
-		/// This method is only for compressed Hdr formats. Please use the non-Hdr methods for other formats.
-		/// </summary>
-		/// <param name="inputStream">The stream containing the raw encoded data.</param>
-		/// <param name="format">The Format the encoded data is in.</param>
-		/// <param name="pixelWidth">The pixelWidth of the image.</param>
-		/// <param name="pixelHeight">The pixelHeight of the image.</param>
-		/// <param name="token">The cancellation token for this asynchronous operation.</param>
-		/// <returns>The awaitable operation to retrieve the decoded image.</returns>
-		public Task<Memory2D<ColorRgbaFloat>> DecodeRawHdr2DAsync(Stream inputStream, int pixelWidth, int pixelHeight, CompressionFormat format, CancellationToken token = default)
-		{
-			var dataArray = new byte[GetBufferSize(format, pixelWidth, pixelHeight)];
-			var readBytes = inputStream.Read(dataArray, 0, dataArray.Length);
-
-			if (readBytes < dataArray.Length)
-			{
-				throw new InvalidOperationException("Not enough bytes available in stream to read whole Image!");
-			}
-
-			return Task.Run(() => DecodeRawInternalHdr(dataArray, pixelWidth, pixelHeight, format, token)
-				.AsMemory().AsMemory2D(pixelHeight, pixelWidth), token);
-		}
-
-		/// <summary>
-		/// Decode a single encoded image from raw bytes.
-		/// This method is only for compressed Hdr formats. Please use the non-Hdr methods for other formats.
-		/// </summary>
-		/// <param name="input">The <see cref="Memory{T}"/> containing the encoded data.</param>
-		/// <param name="format">The Format the encoded data is in.</param>
-		/// <param name="pixelWidth">The pixelWidth of the image.</param>
-		/// <param name="pixelHeight">The pixelHeight of the image.</param>
-		/// <param name="token">The cancellation token for this asynchronous operation.</param>
-		/// <returns>The awaitable operation to retrieve the decoded image.</returns>
-		public Task<Memory2D<ColorRgbaFloat>> DecodeRawHdr2DAsync(ReadOnlyMemory<byte> input, int pixelWidth, int pixelHeight, CompressionFormat format, CancellationToken token = default)
-		{
-			return Task.Run(() => DecodeRawInternalHdr(input, pixelWidth, pixelHeight, format, token)
-				.AsMemory().AsMemory2D(pixelHeight, pixelWidth), token);
-		}
-
-		#endregion
-
-		#region Hdr Sync API
-
-		/// <summary>
-		/// Decode a single encoded image from raw bytes.
-		/// This method will read the expected amount of bytes from the given input stream and decode it.
-		/// Make sure there is no file header information left in the stream before the encoded data.
-		/// This method is only for compressed Hdr formats. Please use the non-Hdr methods for other formats.
-		/// </summary>
-		/// <param name="inputStream">The stream containing the raw encoded data.</param>
-		/// <param name="pixelWidth">The pixelWidth of the image.</param>
-		/// <param name="pixelHeight">The pixelHeight of the image.</param>
-		/// <param name="format">The Format the encoded data is in.</param>
-		/// <returns>The decoded image.</returns>
-		public ColorRgbaFloat[] DecodeRawHdr(Stream inputStream, int pixelWidth, int pixelHeight, CompressionFormat format)
-		{
-			var dataArray = new byte[GetBufferSize(format, pixelWidth, pixelHeight)];
-			var readBytes = inputStream.Read(dataArray, 0, dataArray.Length);
-
-			if (readBytes < dataArray.Length)
-			{
-				throw new InvalidOperationException("Not enough bytes available in stream to read whole Image!");
-			}
-
-			return DecodeRawHdr(dataArray, pixelWidth, pixelHeight, format);
-		}
-
-		/// <summary>
-		/// Decode a single encoded image from raw bytes.
-		/// This method is only for compressed Hdr formats. Please use the non-Hdr methods for other formats.
-		/// </summary>
-		/// <param name="input">The byte array containing the raw encoded data.</param>
-		/// <param name="pixelWidth">The pixelWidth of the image.</param>
-		/// <param name="pixelHeight">The pixelHeight of the image.</param>
-		/// <param name="format">The Format the encoded data is in.</param>
-		/// <returns>The decoded image.</returns>
-		public ColorRgbaFloat[] DecodeRawHdr(ReadOnlyMemory<byte> input, int pixelWidth, int pixelHeight, CompressionFormat format)
-		{
-			return DecodeRawInternalHdr(input, pixelWidth, pixelHeight, format, default);
-		}
-
-		/// <summary>
-		/// Decode a single encoded image from raw bytes.
-		/// This method will read the expected amount of bytes from the given input stream and decode it.
-		/// Make sure there is no file header information left in the stream before the encoded data.
-		/// This method is only for compressed Hdr formats. Please use the non-Hdr methods for other formats.
-		/// </summary>
-		/// <param name="inputStream">The stream containing the encoded data.</param>
-		/// <param name="pixelWidth">The pixelWidth of the image.</param>
-		/// <param name="pixelHeight">The pixelHeight of the image.</param>
-		/// <param name="format">The Format the encoded data is in.</param>
-		/// <returns>The decoded image.</returns>
-		public Memory2D<ColorRgbaFloat> DecodeRawHdr2D(Stream inputStream, int pixelWidth, int pixelHeight, CompressionFormat format)
-		{
-			var dataArray = new byte[GetBufferSize(format, pixelWidth, pixelHeight)];
-			var readBytes = inputStream.Read(dataArray, 0, dataArray.Length);
-
-			if (readBytes < dataArray.Length)
-			{
-				throw new InvalidOperationException("Not enough bytes available in stream to read whole Image!");
-			}
-
-			var decoded = DecodeRawHdr(dataArray, pixelWidth, pixelHeight, format);
-			return decoded.AsMemory().AsMemory2D(pixelHeight, pixelWidth);
-		}
-
-		/// <summary>
-		/// Decode a single encoded image from raw bytes.
-		/// This method is only for compressed Hdr formats. Please use the non-Hdr methods for other formats.
-		/// </summary>
-		/// <param name="input">The byte array containing the raw encoded data.</param>
-		/// <param name="pixelWidth">The pixelWidth of the image.</param>
-		/// <param name="pixelHeight">The pixelHeight of the image.</param>
-		/// <param name="format">The Format the encoded data is in.</param>
-		/// <returns>The decoded image.</returns>
-		public Memory2D<ColorRgbaFloat> DecodeRawHdr2D(ReadOnlyMemory<byte> input, int pixelWidth, int pixelHeight, CompressionFormat format)
-		{
-			var decoded = DecodeRawInternalHdr(input, pixelWidth, pixelHeight, format, default);
-			return decoded.AsMemory().AsMemory2D(pixelHeight, pixelWidth);
-		}
-
-		/// <summary>
-		/// Decode a single block from raw bytes and return it as a <see cref="Memory2D{T}"/>.
-		/// Input Span size needs to equal the block size.
-		/// To get the block size (in bytes) of the compression format used, see <see cref="GetBlockSize(BCnEncoder.Shared.CompressionFormat)"/>.
-		/// This method is only for compressed Hdr formats. Please use the non-Hdr methods for other formats.
-		/// </summary>
-		/// <param name="blockData">The encoded block in bytes.</param>
-		/// <param name="format">The compression format used.</param>
-		/// <returns>The decoded 4x4 block.</returns>
-		public Memory2D<ColorRgbFloat> DecodeBlockHdr(ReadOnlySpan<byte> blockData, CompressionFormat format)
-		{
-			var output = new ColorRgbFloat[4, 4];
-			DecodeBlockInternalHdr(blockData, format, output);
-			return output;
-		}
-
-		/// <summary>
-		/// Decode a single block from raw bytes and write it to the given output span.
-		/// Output span size must be exactly 4x4 and input Span size needs to equal the block size.
-		/// To get the block size (in bytes) of the compression format used, see <see cref="GetBlockSize(BCnEncoder.Shared.CompressionFormat)"/>.
-		/// This method is only for compressed Hdr formats. Please use the non-Hdr methods for other formats.
-		/// </summary>
-		/// <param name="blockData">The encoded block in bytes.</param>
-		/// <param name="format">The compression format used.</param>
-		/// <param name="outputSpan">The destination span of the decoded data.</param>
-		public void DecodeBlockHdr(ReadOnlySpan<byte> blockData, CompressionFormat format, Span2D<ColorRgbFloat> outputSpan)
-		{
-			if (outputSpan.Width != 4 || outputSpan.Height != 4)
-			{
-				throw new ArgumentException($"Single block decoding needs an output span of exactly 4x4");
-			}
-			DecodeBlockInternalHdr(blockData, format, outputSpan);
-		}
-
-		/// <summary>
-		/// Decode a single block from a stream and write it to the given output span.
-		/// Output span size must be exactly 4x4.
-		/// This method is only for compressed Hdr formats. Please use the non-Hdr methods for other formats.
-		/// </summary>
-		/// <param name="inputStream">The stream to read encoded blocks from.</param>
-		/// <param name="format">The compression format used.</param>
-		/// <param name="outputSpan">The destination span of the decoded data.</param>
-		/// <returns>The number of bytes read from the stream. Zero (0) if reached the end of stream.</returns>
-		public int DecodeBlockHdr(Stream inputStream, CompressionFormat format, Span2D<ColorRgbFloat> outputSpan)
-		{
-			if (outputSpan.Width != 4 || outputSpan.Height != 4)
-			{
-				throw new ArgumentException($"Single block decoding needs an output span of exactly 4x4");
-			}
-
-			Span<byte> input = stackalloc byte[16];
-			input = input.Slice(0, GetBlockSize(format));
-
-			var bytesRead = inputStream.Read(input);
-
-			if (bytesRead == 0)
-			{
-				return 0; //End of stream
-			}
-
-			if (bytesRead != input.Length)
-			{
-				throw new Exception("Input stream does not have enough data available for a full block.");
-			}
-
-			DecodeBlockInternalHdr(input, format, outputSpan);
-			return bytesRead;
-		}
-		#endregion
-
 
 		/// <summary>
 		/// Decode all faces and mipmaps of a <see cref="BCnTextureData"/> into <see cref="CompressionFormat.Rgba32"/> for ldr formats,
 		/// and <see cref="CompressionFormat.RgbaFloat"/> for hdr formats.
 		/// </summary>
 		/// <param name="texture">The texture data to decode.</param>
+		/// <param name="outputFormat">The output format.</param>
 		/// <param name="token">The cancellation token for this operation. Can be default, if the operation is not asynchronous.</param>
 		/// <returns>A new <see cref="BCnTextureData"/> containing the decoded data.</returns>
-		private BCnTextureData DecodeInternal(BCnTextureData texture, CancellationToken token)
+		private BCnTextureData DecodeInternal(BCnTextureData texture, CompressionFormat outputFormat, CancellationToken token)
 		{
+			if (!outputFormat.IsRawPixelFormat())
+			{
+				throw new NotSupportedException($"The given output format is not a raw pixel format: {outputFormat}");
+			}
+
 			var context = new OperationContext
 			{
 				CancellationToken = token,
 				IsParallel = Options.IsParallel,
-				TaskCount = Options.TaskCount
+				TaskCount = Options.TaskCount,
+				ColorConversionMode = GetColorConversion(texture.Format, outputFormat)
 			};
-			var blockSize = texture.Format.BytesPerBlock();
+
+			var blockSize = texture.Format.GetBytesPerBlock();
 			var totalBlocks = 0L;
 			for (var m = 0; m < texture.NumMips; m++)
 			{
@@ -533,8 +213,8 @@ namespace BCnEncoder.Decoder
 				throw new NotSupportedException($"This Format is not supported: {texture.Format}");
 			}
 
-			var outputData = new BCnTextureData(decoder.DecodedFormat, texture.Width, texture.Height, texture.Depth,
-				texture.NumMips, texture.NumArrayElements, texture.IsCubeMap, false);
+			var outputData = new BCnTextureData(outputFormat, texture.Width, texture.Height, texture.Depth,
+				texture.NumMips, texture.NumArrayElements, texture.IsCubeMap, true);
 
 			for (var m = 0; m < texture.NumMips; m++)
 			{
@@ -543,8 +223,12 @@ namespace BCnEncoder.Decoder
 					for (var a = 0; a < texture.NumArrayElements; a++)
 					{
 						var data = texture.Mips[m][(CubeMapFaceDirection)f, a].Data;
-						outputData.Mips[m][(CubeMapFaceDirection)f, a].Data = decoder.Decode(data, texture.Mips[m].Width,
+
+						var decoded = decoder.Decode(data, texture.Mips[m].Width,
 							texture.Mips[m].Height, context);
+
+						ColorExtensions.InternalConvertToAsBytesFromBytes(decoded, outputData.Mips[m][(CubeMapFaceDirection)f, a].Data, CompressionFormat.RgbaFloat,
+							outputFormat, ColorConversionMode.None);
 					}
 				}
 			}
@@ -553,202 +237,182 @@ namespace BCnEncoder.Decoder
 		}
 
 		/// <summary>
-		/// Decode raw encoded image asynchronously.
+		/// Decode raw encoded image.
 		/// </summary>
 		/// <param name="input">The <see cref="Memory{T}"/> containing the encoded data.</param>
 		/// <param name="pixelWidth">The width of the image.</param>
 		/// <param name="pixelHeight">The height of the image.</param>
-		/// <param name="format">The Format the encoded data is in.</param>
+		/// <param name="inputFormat">The Format the encoded data is in.</param>
 		/// <param name="token">The cancellation token for this operation. May be default, if the operation is not asynchronous.</param>
 		/// <returns>The decoded Rgba32 image.</returns>
-		private ColorRgba32[] DecodeRawInternal(ReadOnlyMemory<byte> input, int pixelWidth, int pixelHeight, CompressionFormat format, CancellationToken token)
+		private void DecodeRawInternal(ReadOnlyMemory<byte> input, Memory<byte> output, int pixelWidth, int pixelHeight, CompressionFormat inputFormat, CompressionFormat outputFormat, CancellationToken token)
 		{
-			if (input.Length % GetBlockSize(format) != 0)
+			if (input.Length != GetBufferSize(inputFormat, pixelWidth, pixelHeight))
 			{
-				throw new ArgumentException("The size of the input buffer does not align with the compression format.");
+				throw new ArgumentException("The size of the input buffer does not align with the compression format. Expected: " + GetBufferSize(inputFormat, pixelWidth, pixelHeight) + ", Actual: " + input.Length);
+			}
+			if (output.Length != GetBufferSize(outputFormat, pixelWidth, pixelHeight))
+			{
+				throw new ArgumentException("The size of the output buffer does not align with the output format. Expected: " + GetBufferSize(outputFormat, pixelWidth, pixelHeight) + ", Actual: " + output.Length);
+			}
+			if (!outputFormat.IsRawPixelFormat())
+			{
+				throw new NotSupportedException($"The given output format is not a raw pixel format: {outputFormat}");
 			}
 
 			var context = new OperationContext
 			{
 				CancellationToken = token,
 				IsParallel = Options.IsParallel,
-				TaskCount = Options.TaskCount
+				TaskCount = Options.TaskCount,
+				ColorConversionMode = GetColorConversion(inputFormat, outputFormat)
 			};
 
 			// Calculate total blocks
-			var blockSize = GetBlockSize(format);
+			var blockSize = GetBlockSize(inputFormat);
 			var totalBlocks = input.Length / blockSize;
 
 			context.Progress = new OperationProgress(Options.Progress, totalBlocks);
 
+			var decoder = GetDecoder(inputFormat);
 
-			// DecodeInternal as compressed data
-			var decoder = GetLdrDecoder(format);
-
-			if (format.IsHdrFormat())
-			{
-				throw new NotSupportedException($"This Format is not an RGBA32 compatible format: {format}, please use the HDR versions of the decode methods.");
-			}
 			if (decoder == null)
 			{
-				throw new NotSupportedException($"This Format is not supported: {format}");
+				throw new NotSupportedException($"This Format is not supported: {inputFormat}");
 			}
 
-			return decoder.DecodeColor(input, pixelWidth, pixelHeight, context);
+			var result = decoder.Decode(input, pixelWidth, pixelHeight, context);
+
+			ColorExtensions.InternalConvertToAsBytesFromBytes(result, output, CompressionFormat.RgbaFloat,
+				outputFormat, ColorConversionMode.None);
 		}
 
-		private void DecodeBlockInternal(ReadOnlySpan<byte> blockData, CompressionFormat format, Span2D<ColorRgba32> outputSpan)
+		private void DecodeBlockInternal<TOut>(ReadOnlySpan<byte> blockData, Memory2D<TOut> output, CompressionFormat inputFormat, CompressionFormat outputFormat)
+			where TOut: unmanaged
 		{
-			if (format.IsHdrFormat())
+			if (!inputFormat.IsBlockCompressedFormat())
 			{
-				throw new NotSupportedException($"This Format is not an RGBA32 compatible format: {format}, please use the HDR versions of the decode methods.");
+				throw new NotSupportedException($"This Format is not a block-compressed format: {inputFormat}.");
 			}
-
-			var decoder = GetLdrDecoder(format) as IBcLdrBlockDecoder;
-
+			var decoder = GetDecoder(inputFormat) as IBcBlockDecoder;
 			if (decoder == null)
 			{
-				throw new NotSupportedException($"This Format is not supported: {format}");
+				throw new NotSupportedException($"This Format is not supported: {inputFormat}");
 			}
-			if (blockData.Length != GetBlockSize(format))
+			if (blockData.Length != GetBlockSize(inputFormat))
 			{
 				throw new ArgumentException("The size of the input buffer does not align with the compression format.");
+			}
+			if (output.Height != 4 || output.Width != 4)
+			{
+				throw new ArgumentException("The output memory must be 4x4.");
+			}
+			if (Unsafe.SizeOf<TOut>() != outputFormat.GetBytesPerBlock())
+			{
+				throw new ArgumentException($"The size of {typeof(TOut).Name} does not match the output format!");
+			}
+			if (!outputFormat.IsRawPixelFormat())
+			{
+				throw new NotSupportedException($"The given output format is not a raw pixel format: {outputFormat}");
 			}
 
 			var rawBlock = decoder.DecodeBlock(blockData);
-			var pixels = rawBlock.AsSpan;
+			var pixels = rawBlock.AsSpan.Cast<ColorRgbaFloat, byte>();
 
-			pixels.Slice(0, 4).CopyTo(outputSpan.GetRowSpan(0));
-			pixels.Slice(4, 4).CopyTo(outputSpan.GetRowSpan(1));
-			pixels.Slice(8, 4).CopyTo(outputSpan.GetRowSpan(2));
-			pixels.Slice(12, 4).CopyTo(outputSpan.GetRowSpan(3));
-		}
+			byte[] floatBytes = new byte[16 * Unsafe.SizeOf<ColorRgbaFloat>()];
+			pixels.CopyTo(floatBytes);
 
-		/// <summary>
-		/// Decode raw encoded image asynchronously.
-		/// </summary>
-		/// <param name="input">The <see cref="Memory{T}"/> containing the encoded data.</param>
-		/// <param name="pixelWidth">The width of the image.</param>
-		/// <param name="pixelHeight">The height of the image.</param>
-		/// <param name="format">The Format the encoded data is in.</param>
-		/// <param name="token">The cancellation token for this operation. May be default, if the operation is not asynchronous.</param>
-		/// <returns>The decoded Rgba32 image.</returns>
-		private ColorRgbaFloat[] DecodeRawInternalHdr(ReadOnlyMemory<byte> input, int pixelWidth, int pixelHeight, CompressionFormat format, CancellationToken token)
-		{
-			if (input.Length % GetBlockSize(format) != 0)
-			{
-				throw new ArgumentException("The size of the input buffer does not align with the compression format.");
-			}
+			byte [] outputBytes = new byte[16 * Unsafe.SizeOf<TOut>()];
 
-			var context = new OperationContext
-			{
-				CancellationToken = token,
-				IsParallel = Options.IsParallel,
-				TaskCount = Options.TaskCount
-			};
+			ColorExtensions.InternalConvertToAsBytesFromBytes(floatBytes, outputBytes, CompressionFormat.RgbaFloat,
+				outputFormat, GetColorConversion(inputFormat, outputFormat));
 
-			// Calculate total blocks
-			var blockSize = GetBlockSize(format);
-			var totalBlocks = input.Length / blockSize;
+			Span<TOut> outSpan = outputBytes.AsSpan().Cast<byte, TOut>();
 
-			context.Progress = new OperationProgress(Options.Progress, totalBlocks);
-
-			var decoder = GetHdrDecoder(format);
-
-			if (!format.IsHdrFormat())
-			{
-				throw new NotSupportedException($"This Format is not an HDR format: {format}, please use the non-HDR versions of the decode methods.");
-			}
-			if (decoder == null)
-			{
-				throw new NotSupportedException($"This Format is not supported: {format}");
-			}
-
-			return decoder.DecodeColor(input, pixelWidth, pixelHeight, context);
-		}
-
-		private void DecodeBlockInternalHdr(ReadOnlySpan<byte> blockData, CompressionFormat format, Span2D<ColorRgbFloat> outputSpan)
-		{
-			if (!format.IsBlockCompressedFormat())
-			{
-				throw new NotSupportedException($"This Format is not a block-compressed format: {format}.");
-			}
-			var decoder = GetHdrDecoder(format) as IBcHdrBlockDecoder;
-
-			if (!format.IsHdrFormat())
-			{
-				throw new NotSupportedException($"This Format is not an HDR format: {format}, please use the non-HDR versions of the decode methods.");
-			}
-			if (decoder == null)
-			{
-				throw new NotSupportedException($"This Format is not supported: {format}");
-			}
-			if (blockData.Length != GetBlockSize(format))
-			{
-				throw new ArgumentException("The size of the input buffer does not align with the compression format.");
-			}
-
-			var rawBlock = decoder.DecodeBlock(blockData);
-			var pixels = rawBlock.AsSpan;
-
-			pixels.Slice(0, 4).CopyTo(outputSpan.GetRowSpan(0));
-			pixels.Slice(4, 4).CopyTo(outputSpan.GetRowSpan(1));
-			pixels.Slice(8, 4).CopyTo(outputSpan.GetRowSpan(2));
-			pixels.Slice(12, 4).CopyTo(outputSpan.GetRowSpan(3));
+			outSpan.Slice(0, 4).CopyTo(output.Span.GetRowSpan(0));
+			outSpan.Slice(4, 4).CopyTo(output.Span.GetRowSpan(1));
+			outSpan.Slice(8, 4).CopyTo(output.Span.GetRowSpan(2));
+			outSpan.Slice(12, 4).CopyTo(output.Span.GetRowSpan(3));
 		}
 
 		#region Support
 
 		#region Get decoder
-
 		private IBcDecoder GetDecoder(CompressionFormat format)
-		{
-			return (IBcDecoder)GetLdrDecoder(format) ??
-			       GetHdrDecoder(format);
-		}
-
-		private IBcLdrDecoder GetLdrDecoder(CompressionFormat format)
 		{
 			switch (format)
 			{
 				case CompressionFormat.R8:
-					return new RawLdrDecoder<ColorR8>(OutputOptions.RedAsLuminance);
+					return new RawDecoder<ColorR8>();
 
 				case CompressionFormat.R8G8:
-					return new RawLdrDecoder<ColorR8G8>(false);
+					return new RawDecoder<ColorR8G8>();
 
 				case CompressionFormat.Rgb24:
-					return new RawLdrDecoder<ColorRgb24>(false);
+				case CompressionFormat.Rgb24_sRGB:
+					return new RawDecoder<ColorRgb24>();
 
 				case CompressionFormat.Bgr24:
-					return new RawLdrDecoder<ColorBgr24>(false);
+				case CompressionFormat.Bgr24_sRGB:
+					return new RawDecoder<ColorBgr24>();
 
 				case CompressionFormat.Rgba32:
-					return new RawLdrDecoder<ColorRgba32>(false);
+				case CompressionFormat.Rgba32_sRGB:
+					return new RawDecoder<ColorRgba32>();
 
 				case CompressionFormat.Bgra32:
-					return new RawLdrDecoder<ColorBgra32>(false);
+				case CompressionFormat.Bgra32_sRGB:
+					return new RawDecoder<ColorBgra32>();
+
+				case CompressionFormat.RgbaFloat:
+					return new RawDecoder<ColorRgbaFloat>();
+
+				case CompressionFormat.RgbaHalf:
+					return new RawDecoder<ColorRgbaHalf>();
+
+				case CompressionFormat.RgbFloat:
+					return new RawDecoder<ColorRgbFloat>();
+
+				case CompressionFormat.RgbHalf:
+					return new RawDecoder<ColorRgbHalf>();
+
+				case CompressionFormat.Rgbe:
+					return new RawDecoder<ColorRgbe>();
+
+				case CompressionFormat.Xyze:
+					return new RawDecoder<ColorXyze>();
 
 				case CompressionFormat.Bc1:
+				case CompressionFormat.Bc1_sRGB:
 					return new Bc1NoAlphaDecoder();
 
 				case CompressionFormat.Bc1WithAlpha:
+				case CompressionFormat.Bc1WithAlpha_sRGB:
 					return new Bc1ADecoder();
 
 				case CompressionFormat.Bc2:
+				case CompressionFormat.Bc2_sRGB:
 					return new Bc2Decoder();
 
 				case CompressionFormat.Bc3:
+				case CompressionFormat.Bc3_sRGB:
 					return new Bc3Decoder();
 
 				case CompressionFormat.Bc4:
 					return new Bc4Decoder(OutputOptions.Bc4Component);
 
 				case CompressionFormat.Bc5:
-					return new Bc5Decoder(OutputOptions.Bc5Component1, OutputOptions.Bc5Component2);
+					return new Bc5Decoder(OutputOptions.Bc5Component1, OutputOptions.Bc5Component2, OutputOptions.Bc5ComponentCalculated);
 
 				case CompressionFormat.Bc7:
+				case CompressionFormat.Bc7_sRGB:
 					return new Bc7Decoder();
+
+				case CompressionFormat.Bc6S:
+					return new Bc6SDecoder();
+
+				case CompressionFormat.Bc6U:
+					return new Bc6UDecoder();
 
 				case CompressionFormat.Atc:
 					return new AtcDecoder();
@@ -762,41 +426,15 @@ namespace BCnEncoder.Decoder
 					return null;
 			}
 		}
-
-		private IBcHdrDecoder GetHdrDecoder(CompressionFormat format)
-		{
-			switch (format)
-			{
-				case CompressionFormat.Bc6S:
-					return new Bc6SDecoder();
-
-				case CompressionFormat.Bc6U:
-					return new Bc6UDecoder();
-
-				case CompressionFormat.RgbaFloat:
-					return new RawHdrDecoder<ColorRgbaFloat>();
-
-				case CompressionFormat.RgbaHalf:
-					return new RawHdrDecoder<ColorRgbaHalf>();
-
-				case CompressionFormat.RgbFloat:
-					return new RawHdrDecoder<ColorRgbFloat>();
-
-				case CompressionFormat.RgbHalf:
-					return new RawHdrDecoder<ColorRgbHalf>();
-
-				case CompressionFormat.Rgbe:
-					return new RawHdrDecoder<ColorRgbe>();
-
-				case CompressionFormat.Xyze:
-					return new RawHdrDecoder<ColorXyze>();
-
-				default:
-					return null;
-			}
-		}
-
 		#endregion
+
+		private ColorConversionMode GetColorConversion(CompressionFormat sourceFormat, CompressionFormat targetFormat)
+		{
+			if (!OutputOptions.DoColorspaceConversion)
+				return ColorConversionMode.None;
+
+			return sourceFormat.GetColorConversionMode(targetFormat);
+		}
 
 		/// <summary>
 		/// Gets the number of total blocks in an image with the given pixel width and height.
@@ -828,12 +466,33 @@ namespace BCnEncoder.Decoder
 		/// <returns>The size of a single block in bytes.</returns>
 		public int GetBlockSize(CompressionFormat format)
 		{
-			return format.BytesPerBlock();
+			return format.GetBytesPerBlock();
 		}
 
 		private long GetBufferSize(CompressionFormat format, int pixelWidth, int pixelHeight)
 		{
 			return format.CalculateMipByteSize(pixelWidth, pixelHeight);
+		}
+
+		private static TOut[] AllocateOutputBuffer<TOut>(int pixelWidth, int pixelHeight, CompressionFormat outputFormat)
+			where TOut : unmanaged
+		{
+			var tOutSize = Unsafe.SizeOf<TOut>();
+			var realTOutSize = outputFormat.GetBytesPerBlock();
+
+			if (tOutSize > realTOutSize)
+			{
+				throw new ArgumentException($"SizeOf<TOut> must be smaller than or equal to {realTOutSize} bytes in size.");
+			}
+			if (realTOutSize % tOutSize != 0)
+			{
+				throw new ArgumentException($"SizeOf<TOut> must be a multiple of {realTOutSize} bytes in size.");
+			}
+
+			var tOutMultiplier = realTOutSize / tOutSize;
+
+			var output = new TOut[pixelWidth * pixelHeight * tOutMultiplier];
+			return output;
 		}
 
 		#endregion

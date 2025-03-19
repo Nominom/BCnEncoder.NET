@@ -22,15 +22,18 @@ namespace BCnEncoder.Shared
 				case ColorComponent.A:
 					return new ColorRgba32(0, 0, 0, componentValue);
 
-				case ColorComponent.Luminance:
+				case ColorComponent.RGB:
 					return new ColorRgba32(componentValue, componentValue, componentValue, 255);
+
+				case ColorComponent.None:
+					return new ColorRgba32(0, 0, 0, 0);
 
 				default:
 					throw new InvalidOperationException("Unsupported component.");
 			}
 		}
 
-		public static ColorRgba32 ComponentToColor(ColorRgba32 existingColor, ColorComponent component, byte componentValue)
+		public static void ComponentToColor(ref ColorRgba32 existingColor, ColorComponent component, byte componentValue)
 		{
 			switch (component)
 			{
@@ -50,15 +53,18 @@ namespace BCnEncoder.Shared
 					existingColor.a = componentValue;
 					break;
 
-				case ColorComponent.Luminance:
-					existingColor.r = existingColor.g = existingColor.b = componentValue;
+				case ColorComponent.RGB:
+					existingColor.r = componentValue;
+					existingColor.g = componentValue;
+					existingColor.b = componentValue;
+					break;
+
+				case ColorComponent.None:
 					break;
 
 				default:
 					throw new InvalidOperationException("Unsupported component.");
 			}
-
-			return existingColor;
 		}
 
 		public static byte ColorToComponent(ColorRgba32 color, ColorComponent component)
@@ -76,9 +82,6 @@ namespace BCnEncoder.Shared
 
 				case ColorComponent.A:
 					return color.a;
-
-				case ColorComponent.Luminance:
-					return (byte)(color.As<ColorYCbCr>().y * 255);
 
 				default:
 					throw new InvalidOperationException("Unsupported component.");

@@ -9,13 +9,6 @@ namespace BCnEncoder.Decoder.Options
 	public class DecoderOutputOptions
 	{
 		/// <summary>
-		/// If true, when decoding from R8 raw format,
-		/// output pixels will have all colors set to the same value (greyscale).
-		/// Default is true. (Does not apply to BC4 format.)
-		/// </summary>
-		public bool RedAsLuminance { get; set; } = true;
-
-		/// <summary>
 		/// The color channel to populate with the values of a BC4 block.
 		/// </summary>
 		public ColorComponent Bc4Component { get; set; } = ColorComponent.R;
@@ -29,5 +22,16 @@ namespace BCnEncoder.Decoder.Options
 		/// The color channel to populate with the values of the second BC5 block.
 		/// </summary>
 		public ColorComponent Bc5Component2 { get; set; } = ColorComponent.G;
+
+		/// <summary>
+		/// <para>The color channel to populate with the values calculated from the first and second BC5 blocks.</para>
+		/// <para>z = Sqrt(1 - x^2 - y^2)</para>
+		/// </summary>
+		public ColorComponent Bc5ComponentCalculated { get; set; } = ColorComponent.None;
+
+		/// <summary>
+		/// Whether to do automatic colorspace conversion when the source colorspace does not match the target colorspace.
+		/// </summary>
+		public bool DoColorspaceConversion { get; set; } = true;
 	}
 }

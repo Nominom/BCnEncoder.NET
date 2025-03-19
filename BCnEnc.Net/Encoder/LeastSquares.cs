@@ -56,7 +56,7 @@ namespace BCnEncoder.Encoder
 			);
 		}
 
-		public static void OptimizeEndpoints1Sub(RawBlock4X4RgbFloat block, ref ColorRgbFloat ep0, ref ColorRgbFloat ep1)
+		public static void OptimizeEndpoints1Sub(RawBlock4X4RgbaFloat block, ref ColorRgbFloat ep0, ref ColorRgbFloat ep1)
 		{
 			var ep0v = ep0.ToVector3();
 			var ep1v = ep1.ToVector3();
@@ -107,7 +107,7 @@ namespace BCnEncoder.Encoder
 			}
 		}
 
-		public static void OptimizeEndpoints2Sub(RawBlock4X4RgbFloat block, ref ColorRgbFloat ep0, ref ColorRgbFloat ep1, int partitionSetId, int subsetIndex)
+		public static void OptimizeEndpoints2Sub(RawBlock4X4RgbaFloat block, ref ColorRgbFloat ep0, ref ColorRgbFloat ep1, int partitionSetId, int subsetIndex)
 		{
 			var ep0v = ep0.ToVector3();
 			var ep1v = ep1.ToVector3();

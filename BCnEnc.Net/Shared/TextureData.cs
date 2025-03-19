@@ -541,9 +541,10 @@ namespace BCnEncoder.Shared
 		/// </summary>
 		/// <param name="data"></param>
 		/// <param name="format"></param>
+		/// <param name="convertColorspace">Whether to do colorspace conversion when the source format does not match the target format</param>
 		/// <returns>Returns self if already desired format. New data is created otherwise.</returns>
 		/// <exception cref="ArgumentException"></exception>
-		public static BCnTextureData ConvertTo(this BCnTextureData data, CompressionFormat format)
+		public static BCnTextureData ConvertTo(this BCnTextureData data, CompressionFormat format, bool convertColorspace = true)
 		{
 			if (data.Format == format)
 				return data;
@@ -563,10 +564,14 @@ namespace BCnEncoder.Shared
 					Options =
 					{
 						IsParallel = false
+					},
+					OutputOptions =
+					{
+						DoColorspaceConversion = convertColorspace
 					}
 				};
 
-				decoded = decoder.Decode(data);
+				decoded = decoder.Decode(data, format);
 			}
 
 			if (decoded.Format == format)
@@ -574,10 +579,10 @@ namespace BCnEncoder.Shared
 				return decoded;
 			}
 
-			return ConvertPixelFormat(decoded, format);
+			return ConvertPixelFormat(decoded, format, convertColorspace);
 		}
 
-		private static BCnTextureData ConvertPixelFormat(BCnTextureData data, CompressionFormat newFormat)
+		private static BCnTextureData ConvertPixelFormat(BCnTextureData data, CompressionFormat newFormat, bool convertColorspace)
 		{
 			var newData = new BCnTextureData(newFormat, data.Width, data.Height, data.Depth, data.NumMips, data.NumArrayElements, data.IsCubeMap, false);
 			for (var m = 0; m < data.NumMips; m++)
@@ -590,7 +595,8 @@ namespace BCnEncoder.Shared
 							ColorExtensions.InternalConvertToAsBytesFromBytes(
 								data.Mips[m][(CubeMapFaceDirection)f, a].Data,
 								data.Format,
-								newFormat);
+								newFormat,
+								convertColorspace ? data.Format.GetColorConversionMode(newFormat) : ColorConversionMode.None);
 
 						newData.Mips[m][(CubeMapFaceDirection)f, a].Data = converted;
 					}

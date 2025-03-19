@@ -4,10 +4,13 @@ using BCnEncoder.Shared.Colors;
 
 namespace BCnEncoder.Encoder
 {
-	internal class Bc2BlockEncoder : BaseBcLdrBlockEncoder<Bc2Block>
+	internal class Bc2BlockEncoder : BaseBcBlockEncoder<Bc2Block>
 	{
-		public override Bc2Block EncodeBlock(RawBlock4X4Rgba32 block, CompressionQuality quality)
+		public override Bc2Block EncodeBlock(RawBlock4X4RgbaFloat block, CompressionQuality quality, ColorConversionMode colorConversionMode)
 		{
+			// TODO: Do better.
+			block.ColorConvert(colorConversionMode);
+
 			switch (quality)
 			{
 				case CompressionQuality.Fast:
@@ -22,12 +25,9 @@ namespace BCnEncoder.Encoder
 			}
 		}
 
-		/// <inheritdoc />
-		public override CompressionFormat EncodedFormat => CompressionFormat.Bc2;
-
 		#region Encoding private stuff
 
-		private static Bc2Block TryColors(RawBlock4X4Rgba32 rawBlock, ColorRgb565 color0, ColorRgb565 color1, out float error, float rWeight = 0.3f, float gWeight = 0.6f, float bWeight = 0.1f)
+		private static Bc2Block TryColors(RawBlock4X4RgbaFloat rawBlock, ColorRgb565 color0, ColorRgb565 color1, out float error, float rWeight = 0.3f, float gWeight = 0.6f, float bWeight = 0.1f)
 		{
 			var output = new Bc2Block();
 
@@ -36,10 +36,10 @@ namespace BCnEncoder.Encoder
 			output.color0 = color0;
 			output.color1 = color1;
 
-			var c0 = color0.ToColorRgb24();
-			var c1 = color1.ToColorRgb24();
+			var c0 = color0.ToColorRgbaFloat();
+			var c1 = color1.ToColorRgbaFloat();
 
-			ReadOnlySpan<ColorRgb24> colors = stackalloc ColorRgb24[] {
+			ReadOnlySpan<ColorRgbaFloat> colors = stackalloc ColorRgbaFloat[] {
 				c0,
 				c1,
 				c0.InterpolateThird(c1, 1),
@@ -50,8 +50,8 @@ namespace BCnEncoder.Encoder
 			for (var i = 0; i < 16; i++)
 			{
 				var color = pixels[i];
-				output.SetAlpha(i, color.a);
-				output[i] = ColorChooser.ChooseClosestColor4(colors, color, rWeight, gWeight, bWeight, out var e);
+				output.SetAlpha(i, ByteHelper.FloatToByte(color.a));
+				output[i] = ColorChooser.ChooseClosestRgbColor4(colors, color, rWeight, gWeight, bWeight, out var e);
 				error += e;
 			}
 
@@ -66,7 +66,7 @@ namespace BCnEncoder.Encoder
 		private static class Bc2BlockEncoderFast
 		{
 
-			internal static Bc2Block EncodeBlock(RawBlock4X4Rgba32 rawBlock)
+			internal static Bc2Block EncodeBlock(RawBlock4X4RgbaFloat rawBlock)
 			{
 				var pixels = rawBlock.AsSpan;
 
@@ -87,7 +87,7 @@ namespace BCnEncoder.Encoder
 			private const int MaxTries = 24 * 2;
 			private const float ErrorThreshold = 0.05f;
 
-			internal static Bc2Block EncodeBlock(RawBlock4X4Rgba32 rawBlock)
+			internal static Bc2Block EncodeBlock(RawBlock4X4RgbaFloat rawBlock)
 			{
 				var pixels = rawBlock.AsSpan;
 
@@ -129,7 +129,7 @@ namespace BCnEncoder.Encoder
 			private const float ErrorThreshold = 0.01f;
 
 
-			internal static Bc2Block EncodeBlock(RawBlock4X4Rgba32 rawBlock)
+			internal static Bc2Block EncodeBlock(RawBlock4X4RgbaFloat rawBlock)
 			{
 				var pixels = rawBlock.AsSpan;
 

@@ -1,20 +1,12 @@
 using System;
 using BCnEncoder.Shared;
+using BCnEncoder.Shared.Colors;
 
 namespace BCnEncoder.Encoder
 {
-	internal interface IBcBlockEncoder<TRawBlock> : IBcEncoder
-		where TRawBlock : unmanaged
+	internal interface IBcBlockEncoder : IBcEncoder
 	{
-		void EncodeBlock(TRawBlock block, CompressionQuality quality, Span<byte> output);
+		void EncodeBlocks(ReadOnlySpan<RawBlock4X4RgbaFloat> blocks, Span<byte> output, CompressionQuality quality, ColorConversionMode colorConversionMode);
 		int GetBlockSize();
-	}
-
-	internal interface IBcLdrBlockEncoder : IBcBlockEncoder<RawBlock4X4Rgba32>, IBcLdrEncoder
-	{
-	}
-
-	internal interface IBcHdrBlockEncoder : IBcBlockEncoder<RawBlock4X4RgbFloat>
-	{
 	}
 }

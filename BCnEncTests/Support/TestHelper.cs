@@ -93,10 +93,9 @@ namespace BCnEncTests.Support
 			}
 
 			decoder ??= new BcDecoder();
-			var decoded = decoder.Decode(bcnData)
-				.ConvertTo(CompressionFormat.Rgba32);
+			var decoded = decoder.Decode(bcnData, CompressionFormat.Rgba32_sRGB);
 
-			Assert.Equal(CompressionFormat.Rgba32, decoded.Format);
+			Assert.Equal(CompressionFormat.Rgba32_sRGB, decoded.Format);
 
 			if (!string.IsNullOrEmpty(outMipFileFormat))
 			{
@@ -116,7 +115,7 @@ namespace BCnEncTests.Support
 			where TTexture : ITextureFileFormat
 		{
 			decoder ??= new BcDecoder();
-			var decoded = decoder.Decode(texture.ToTextureData());
+			var decoded = decoder.Decode(texture.ToTextureData(), CompressionFormat.RgbaFloat);
 
 			Assert.Equal(CompressionFormat.RgbaFloat, decoded.Format);
 
@@ -151,7 +150,7 @@ namespace BCnEncTests.Support
 			texture.WriteToStream(fs);
 
 			var decoder = new BcDecoder();
-			var decoded = decoder.Decode(texture.ToTextureData()).ConvertTo(CompressionFormat.Rgba32);
+			var decoded = decoder.Decode(texture.ToTextureData(), CompressionFormat.Rgba32_sRGB);
 
 			using var imageDecoded = decoded.AsImageRgba32();
 
@@ -175,7 +174,7 @@ namespace BCnEncTests.Support
 			texture.WriteToStream(fs);
 
 			var decoder = new BcDecoder();
-			var decoded = decoder.Decode(texture.ToTextureData());
+			var decoded = decoder.Decode(texture.ToTextureData(), CompressionFormat.RgbaFloat);
 
 			Assert.Equal(CompressionFormat.RgbaFloat, decoded.Format);
 

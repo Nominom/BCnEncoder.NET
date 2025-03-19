@@ -151,18 +151,19 @@ namespace BCnEncoder.Encoder
 			return Task.Run(() => EncodeInternal(inputData, token), token);
 		}
 
-		/// <summary>
-		/// Encodes a single mip level of the input image to a byte buffer asynchronously. This data does not contain any file headers, just the raw encoded pixel data.
-		/// </summary>
-		/// <param name="input">The input to encode represented by a <see cref="ReadOnlyMemory2D{T}"/>.</param>
-		/// <param name="mipLevel">The mipmap to encode.</param>
-		/// <param name="token">The cancellation token for this operation. Can be default if cancellation is not needed.</param>
-		/// <returns>The raw encoded input.</returns>
-		/// <remarks>To get the width and height of the encoded mip level, see <see cref="CalculateMipMapSize"/>.</remarks>
-		public Task<byte[]> EncodeToRawBytesAsync(ReadOnlyMemory2D<ColorRgba32> input, int mipLevel, CancellationToken token = default)
-		{
-			return Task.Run(() => EncodeSingleLdrInternal(input.Flatten(), input.Width, input.Height, mipLevel, token), token);
-		}
+		// /// <summary>
+		// /// Encodes a single mip level of the input image to a byte buffer asynchronously. This data does not contain any file headers, just the raw encoded pixel data.
+		// /// </summary>
+		// /// <param name="input">The input to encode represented by a <see cref="ReadOnlyMemory2D{T}"/>.</param>
+		// /// <param name="mipLevel">The mipmap to encode.</param>
+		// /// <param name="token">The cancellation token for this operation. Can be default if cancellation is not needed.</param>
+		// /// <returns>The raw encoded input.</returns>
+		// /// <remarks>To get the width and height of the encoded mip level, see <see cref="CalculateMipMapSize"/>.</remarks>
+		// public Task<byte[]> EncodeToRawBytesAsync(ReadOnlyMemory2D<ColorRgba32> input, int mipLevel, CancellationToken token = default)
+		// {
+		// 	return Task.Run(() => EncodeSingleLdrInternal(input.Flatten(), input.Width, input.Height, mipLevel, token), token);
+		// }
+		//
 
 		/// <summary>
 		/// Encodes a single mip level of the input image to a byte buffer asynchronously. This data does not contain any file headers, just the raw encoded pixel data.
@@ -173,9 +174,15 @@ namespace BCnEncoder.Encoder
 		/// <param name="token">The cancellation token for this operation. Can be default if cancellation is not needed.</param>
 		/// <returns>The raw encoded input.</returns>
 		/// <remarks>To get the width and height of the encoded mip level, see <see cref="CalculateMipMapSize"/>.</remarks>
-		public Task<byte[]> EncodeToRawBytesAsync(BCnTextureData input, int mipLevel, CancellationToken token = default)
+		public async Task<byte[]> EncodeToRawBytesAsync(BCnTextureData input, int mipLevel, CancellationToken token = default)
 		{
-			return Task.Run(() => EncodeSingleInternal(input.First.Data, input.Format, input.Width, input.Height, mipLevel, token), token);
+			CalculateMipMapSize(input.Width, input.Height, mipLevel, out int mipWidth, out int mipHeight);
+
+			var output = AllocateOutputBuffer(mipWidth, mipHeight);
+
+			await Task.Run(() => EncodeSingleInternal(input.First.Data, output, input.Format, input.Width, input.Height, mipLevel, token), token);
+
+			return output;
 		}
 
 		/// <summary>
@@ -190,21 +197,6 @@ namespace BCnEncoder.Encoder
 		{
 			var inputData = BCnTextureData.FromSingle(inputFormat, width, height, input);
 			return Task.Run(() => EncodeInternal(inputData, token), token);
-		}
-
-		/// <summary>
-		/// Encodes a single mip level of the input image to a byte buffer. This data does not contain any file headers, just the raw encoded pixel data.
-		/// </summary>
-		/// <param name="input">The input data to encode. This can be in any supported format.</param>
-		/// <param name="width">The width of the image.</param>
-		/// <param name="height">The height of the image.</param>
-		/// <param name="inputFormat">The pixel format the input data is in.</param>
-		/// <param name="mipLevel">The mipmap to encode.</param>
-		/// <returns>A byte buffer containing the encoded data of the requested mip-level.</returns>
-		/// <remarks>To get the width and height of the encoded mip level, see <see cref="CalculateMipMapSize"/>.</remarks>
-		public Task<byte[]> EncodeBytesToRawBytesAsync(byte[] input, int width, int height, CompressionFormat inputFormat, int mipLevel, CancellationToken token = default)
-		{
-			return Task.Run(() => EncodeSingleInternal(input, inputFormat, width, height, mipLevel, token), token);
 		}
 
 		/// <summary>
@@ -224,32 +216,17 @@ namespace BCnEncoder.Encoder
 		/// <summary>
 		/// Encodes a single mip level of the input image to a byte buffer. This data does not contain any file headers, just the raw encoded pixel data.
 		/// </summary>
-		/// <param name="input">The input data to encode. This can be in any supported format.</param>
-		/// <param name="width">The width of the image.</param>
-		/// <param name="height">The height of the image.</param>
-		/// <param name="inputFormat">The pixel format the input data is in.</param>
-		/// <param name="mipLevel">The mipmap to encode.</param>
-		/// <param name="mipWidth">The width of the mipmap.</param>
-		/// <param name="mipHeight">The height of the mipmap.</param>
-		/// <returns>A byte buffer containing the encoded data of the requested mip-level.</returns>
-		public byte[] EncodeBytesToRawBytes(byte[] input, int width, int height, CompressionFormat inputFormat, int mipLevel, out int mipWidth, out int mipHeight)
+		public byte[] EncodeToRawBytes<TIn>(ReadOnlyMemory<TIn> input, int width, int height, CompressionFormat inputFormat, int mipLevel, out int mipWidth, out int mipHeight)
+			where TIn : unmanaged
 		{
 			CalculateMipMapSize(width, height, mipLevel, out mipWidth, out mipHeight);
-			return EncodeSingleInternal(input, inputFormat, width, height, mipLevel, default);
-		}
 
-		/// <summary>
-		/// Encodes a single mip level of the input image to a byte buffer. This data does not contain any file headers, just the raw encoded pixel data.
-		/// </summary>
-		/// <param name="input">The input to encode represented by a <see cref="ReadOnlyMemory2D{T}"/>.</param>
-		/// <param name="mipLevel">The mipmap to encode.</param>
-		/// <param name="mipWidth">The width of the mipmap.</param>
-		/// <param name="mipHeight">The height of the mipmap.</param>
-		/// <returns>A byte buffer containing the encoded data of the requested mip-level.</returns>
-		public byte[] EncodeToRawBytes(ReadOnlyMemory2D<ColorRgba32> input, int mipLevel, out int mipWidth, out int mipHeight)
-		{
-			CalculateMipMapSize(input.Width, input.Height, mipLevel, out mipWidth, out mipHeight);
-			return EncodeSingleLdrInternal(input.Flatten(), input.Width, input.Height, mipLevel, default);
+			var inputBytes = PrepareInputBuffer(input, width, height, inputFormat);
+			var output = AllocateOutputBuffer(mipWidth, mipHeight);
+
+			EncodeSingleInternal(inputBytes, output, inputFormat, width, height, mipLevel, default);
+
+			return output;
 		}
 
 		/// <summary>
@@ -264,64 +241,69 @@ namespace BCnEncoder.Encoder
 		public byte[] EncodeToRawBytes(BCnTextureData input, int mipLevel, out int mipWidth, out int mipHeight)
 		{
 			CalculateMipMapSize(input.Width, input.Height, mipLevel, out mipWidth, out mipHeight);
-			return EncodeSingleInternal(input.First.Data, input.Format, input.Width, input.Height, mipLevel, default);
+
+			var output = AllocateOutputBuffer(mipWidth, mipHeight);
+
+			EncodeSingleInternal(input.First.Data, output, input.Format, input.Width, input.Height, mipLevel, default);
+
+			return output;
 		}
 
-		/// <summary>
-		/// Encodes a single 4x4 block to raw encoded bytes. Input Span length must be exactly 16.
-		/// </summary>
-		/// <param name="inputBlock">Input 4x4 color block</param>
-		/// <returns>Raw encoded data</returns>
-		public byte[] EncodeBlock(ReadOnlySpan<ColorRgba32> inputBlock)
-		{
-			if (inputBlock.Length != 16)
-			{
-				throw new ArgumentException($"Single block encoding can only encode blocks of 4x4");
-			}
-			return EncodeBlockLdrInternal(inputBlock.AsSpan2D(4, 4));
-		}
-
-		/// <summary>
-		/// Encodes a single 4x4 block to raw encoded bytes. Input Span width and height must be exactly 4.
-		/// </summary>
-		/// <param name="inputBlock">Input 4x4 color block</param>
-		/// <returns>Raw encoded data</returns>
-		public byte[] EncodeBlock(ReadOnlySpan2D<ColorRgba32> inputBlock)
-		{
-			if (inputBlock.Width != 4 || inputBlock.Height != 4)
-			{
-				throw new ArgumentException($"Single block encoding can only encode blocks of 4x4");
-			}
-			return EncodeBlockLdrInternal(inputBlock);
-		}
-
-		/// <summary>
-		/// Encodes a single 4x4 block and writes the encoded block to a stream. Input Span length must be exactly 16.
-		/// </summary>
-		/// <param name="inputBlock">Input 4x4 color block</param>
-		/// <param name="outputStream">Output stream where the encoded block will be written to.</param>
-		public void EncodeBlock(ReadOnlySpan<ColorRgba32> inputBlock, Stream outputStream)
-		{
-			if (inputBlock.Length != 16)
-			{
-				throw new ArgumentException($"Single block encoding can only encode blocks of 4x4");
-			}
-			EncodeBlockLdrInternal(inputBlock.AsSpan2D(4, 4), outputStream);
-		}
-
-		/// <summary>
-		/// Encodes a single 4x4 block and writes the encoded block to a stream. Input Span width and height must be exactly 4.
-		/// </summary>
-		/// <param name="inputBlock">Input 4x4 color block</param>
-		/// <param name="outputStream">Output stream where the encoded block will be written to.</param>
-		public void EncodeBlock(ReadOnlySpan2D<ColorRgba32> inputBlock, Stream outputStream)
-		{
-			if (inputBlock.Width != 4 || inputBlock.Height != 4)
-			{
-				throw new ArgumentException($"Single block encoding can only encode blocks of 4x4");
-			}
-			EncodeBlockLdrInternal(inputBlock, outputStream);
-		}
+		// /// <summary>
+		// /// Encodes a single 4x4 block to raw encoded bytes. Input Span length must be exactly 16.
+		// /// </summary>
+		// /// <param name="inputBlock">Input 4x4 color block</param>
+		// /// <returns>Raw encoded data</returns>
+		// public byte[] EncodeBlock(ReadOnlySpan<ColorRgba32> inputBlock)
+		// {
+		// 	if (inputBlock.Length != 16)
+		// 	{
+		// 		throw new ArgumentException($"Single block encoding can only encode blocks of 4x4");
+		// 	}
+		// 	return EncodeBlockLdrInternal(inputBlock.AsSpan2D(4, 4));
+		// }
+		//
+		// /// <summary>
+		// /// Encodes a single 4x4 block to raw encoded bytes. Input Span width and height must be exactly 4.
+		// /// </summary>
+		// /// <param name="inputBlock">Input 4x4 color block</param>
+		// /// <returns>Raw encoded data</returns>
+		// public byte[] EncodeBlock(ReadOnlySpan2D<ColorRgba32> inputBlock)
+		// {
+		// 	if (inputBlock.Width != 4 || inputBlock.Height != 4)
+		// 	{
+		// 		throw new ArgumentException($"Single block encoding can only encode blocks of 4x4");
+		// 	}
+		// 	return EncodeBlockLdrInternal(inputBlock);
+		// }
+		//
+		// /// <summary>
+		// /// Encodes a single 4x4 block and writes the encoded block to a stream. Input Span length must be exactly 16.
+		// /// </summary>
+		// /// <param name="inputBlock">Input 4x4 color block</param>
+		// /// <param name="outputStream">Output stream where the encoded block will be written to.</param>
+		// public void EncodeBlock(ReadOnlySpan<ColorRgba32> inputBlock, Stream outputStream)
+		// {
+		// 	if (inputBlock.Length != 16)
+		// 	{
+		// 		throw new ArgumentException($"Single block encoding can only encode blocks of 4x4");
+		// 	}
+		// 	EncodeBlockLdrInternal(inputBlock.AsSpan2D(4, 4), outputStream);
+		// }
+		//
+		// /// <summary>
+		// /// Encodes a single 4x4 block and writes the encoded block to a stream. Input Span width and height must be exactly 4.
+		// /// </summary>
+		// /// <param name="inputBlock">Input 4x4 color block</param>
+		// /// <param name="outputStream">Output stream where the encoded block will be written to.</param>
+		// public void EncodeBlock(ReadOnlySpan2D<ColorRgba32> inputBlock, Stream outputStream)
+		// {
+		// 	if (inputBlock.Width != 4 || inputBlock.Height != 4)
+		// 	{
+		// 		throw new ArgumentException($"Single block encoding can only encode blocks of 4x4");
+		// 	}
+		// 	EncodeBlockLdrInternal(inputBlock, outputStream);
+		// }
 
 		/// <summary>
 		/// Gets the block size of the currently selected compression format in bytes.
@@ -329,19 +311,7 @@ namespace BCnEncoder.Encoder
 		/// <returns>The size of a single 4x4 block in bytes</returns>
 		public int GetBlockSize()
 		{
-			var compressedEncoder = GetRgba32BlockEncoder(OutputOptions.Format);
-			if (compressedEncoder == null)
-			{
-				var hdrEncoder = GetFloatBlockEncoder(OutputOptions.Format);
-
-				if (hdrEncoder == null)
-				{
-					throw new NotSupportedException($"This format is either not supported or does not use block compression: {OutputOptions.Format}");
-				}
-
-				return hdrEncoder.GetBlockSize();
-			}
-			return compressedEncoder.GetBlockSize();
+			return GetBlockEncoder(OutputOptions.Format).GetBlockSize();
 		}
 
 		/// <summary>
@@ -451,18 +421,18 @@ namespace BCnEncoder.Encoder
 			return Task.Run(() => EncodeInternal(inputData, token), token);
 		}
 
-		/// <summary>
-		/// Encodes a single mip level of the input HDR image to a byte buffer asynchronously. This data does not contain any file headers, just the raw encoded pixel data.
-		/// </summary>
-		/// <param name="input">The input to encode represented by a <see cref="ReadOnlyMemory2D{T}"/>.</param>
-		/// <param name="mipLevel">The mipmap to encode.</param>
-		/// <param name="token">The cancellation token for this operation. Can be default if cancellation is not needed.</param>
-		/// <returns>The raw encoded input.</returns>
-		/// <remarks>To get the width and height of the encoded mip level, see <see cref="CalculateMipMapSize"/>.</remarks>
-		public Task<byte[]> EncodeToRawBytesHdrAsync(ReadOnlyMemory2D<ColorRgbaFloat> input, int mipLevel, CancellationToken token = default)
-		{
-			return Task.Run(() => EncodeSingleHdrInternal(input.Flatten(), input.Width, input.Height, mipLevel, token), token);
-		}
+		// /// <summary>
+		// /// Encodes a single mip level of the input HDR image to a byte buffer asynchronously. This data does not contain any file headers, just the raw encoded pixel data.
+		// /// </summary>
+		// /// <param name="input">The input to encode represented by a <see cref="ReadOnlyMemory2D{T}"/>.</param>
+		// /// <param name="mipLevel">The mipmap to encode.</param>
+		// /// <param name="token">The cancellation token for this operation. Can be default if cancellation is not needed.</param>
+		// /// <returns>The raw encoded input.</returns>
+		// /// <remarks>To get the width and height of the encoded mip level, see <see cref="CalculateMipMapSize"/>.</remarks>
+		// public Task<byte[]> EncodeToRawBytesHdrAsync(ReadOnlyMemory2D<ColorRgbaFloat> input, int mipLevel, CancellationToken token = default)
+		// {
+		// 	return Task.Run(() => EncodeSingleHdrInternal(input.Flatten(), input.Width, input.Height, mipLevel, token), token);
+		// }
 
 		/// <summary>
 		/// Encodes all mipmap levels of a HDR image into <see cref="BCnTextureData"/>. This data does not contain any file headers, just the raw encoded pixel data.
@@ -478,75 +448,75 @@ namespace BCnEncoder.Encoder
 			return EncodeInternal(inputData, default);
 		}
 
-		/// <summary>
-		/// Encodes a single mip level of the HDR input image to a byte buffer. This data does not contain any file headers, just the raw encoded pixel data.
-		/// </summary>
-		/// <param name="input">The input to encode represented by a <see cref="ReadOnlyMemory2D{T}"/>.</param>
-		/// <param name="mipLevel">The mipmap to encode.</param>
-		/// <param name="mipWidth">The width of the mipmap.</param>
-		/// <param name="mipHeight">The height of the mipmap.</param>
-		/// <returns>A byte buffer containing the encoded data of the requested mip-level.</returns>
-		public byte[] EncodeToRawBytesHdr(ReadOnlyMemory2D<ColorRgbaFloat> input, int mipLevel, out int mipWidth, out int mipHeight)
-		{
-			CalculateMipMapSize(input.Width, input.Height, mipLevel, out mipWidth, out mipHeight);
-			return EncodeSingleHdrInternal(input.Flatten(), input.Width, input.Height, mipLevel, default);
-		}
+		// /// <summary>
+		// /// Encodes a single mip level of the HDR input image to a byte buffer. This data does not contain any file headers, just the raw encoded pixel data.
+		// /// </summary>
+		// /// <param name="input">The input to encode represented by a <see cref="ReadOnlyMemory2D{T}"/>.</param>
+		// /// <param name="mipLevel">The mipmap to encode.</param>
+		// /// <param name="mipWidth">The width of the mipmap.</param>
+		// /// <param name="mipHeight">The height of the mipmap.</param>
+		// /// <returns>A byte buffer containing the encoded data of the requested mip-level.</returns>
+		// public byte[] EncodeToRawBytesHdr(ReadOnlyMemory2D<ColorRgbaFloat> input, int mipLevel, out int mipWidth, out int mipHeight)
+		// {
+		// 	CalculateMipMapSize(input.Width, input.Height, mipLevel, out mipWidth, out mipHeight);
+		// 	return EncodeSingleHdrInternal(input.Flatten(), input.Width, input.Height, mipLevel, default);
+		// }
 
-		/// <summary>
-		/// Encodes a single 4x4 HDR block to raw encoded bytes. Input Span length must be exactly 16.
-		/// </summary>
-		/// <param name="inputBlock">Input 4x4 color block</param>
-		/// <returns>Raw encoded data</returns>
-		public byte[] EncodeBlockHdr(ReadOnlySpan<ColorRgbFloat> inputBlock)
-		{
-			if (inputBlock.Length != 16)
-			{
-				throw new ArgumentException($"Single block encoding can only encode blocks of 4x4");
-			}
-			return EncodeBlockHdrInternal(inputBlock.AsSpan2D(4, 4));
-		}
-
-		/// <summary>
-		/// Encodes a single 4x4 HDR block to raw encoded bytes. Input Span width and height must be exactly 4.
-		/// </summary>
-		/// <param name="inputBlock">Input 4x4 color block</param>
-		/// <returns>Raw encoded data</returns>
-		public byte[] EncodeBlockHdr(ReadOnlySpan2D<ColorRgbFloat> inputBlock)
-		{
-			if (inputBlock.Width != 4 || inputBlock.Height != 4)
-			{
-				throw new ArgumentException($"Single block encoding can only encode blocks of 4x4");
-			}
-			return EncodeBlockHdrInternal(inputBlock);
-		}
-
-		/// <summary>
-		/// Encodes a single 4x4 HDR block and writes the encoded block to a stream. Input Span length must be exactly 16.
-		/// </summary>
-		/// <param name="inputBlock">Input 4x4 color block</param>
-		/// <param name="outputStream">Output stream where the encoded block will be written to.</param>
-		public void EncodeBlockHdr(ReadOnlySpan<ColorRgbFloat> inputBlock, Stream outputStream)
-		{
-			if (inputBlock.Length != 16)
-			{
-				throw new ArgumentException($"Single block encoding can only encode blocks of 4x4");
-			}
-			EncodeBlockHdrInternal(inputBlock.AsSpan2D(4, 4), outputStream);
-		}
-
-		/// <summary>
-		/// Encodes a single 4x4 HDR block and writes the encoded block to a stream. Input Span width and height must be exactly 4.
-		/// </summary>
-		/// <param name="inputBlock">Input 4x4 color block</param>
-		/// <param name="outputStream">Output stream where the encoded block will be written to.</param>
-		public void EncodeBlockHdr(ReadOnlySpan2D<ColorRgbFloat> inputBlock, Stream outputStream)
-		{
-			if (inputBlock.Width != 4 || inputBlock.Height != 4)
-			{
-				throw new ArgumentException($"Single block encoding can only encode blocks of 4x4");
-			}
-			EncodeBlockHdrInternal(inputBlock, outputStream);
-		}
+		// /// <summary>
+		// /// Encodes a single 4x4 HDR block to raw encoded bytes. Input Span length must be exactly 16.
+		// /// </summary>
+		// /// <param name="inputBlock">Input 4x4 color block</param>
+		// /// <returns>Raw encoded data</returns>
+		// public byte[] EncodeBlockHdr(ReadOnlySpan<ColorRgbFloat> inputBlock)
+		// {
+		// 	if (inputBlock.Length != 16)
+		// 	{
+		// 		throw new ArgumentException($"Single block encoding can only encode blocks of 4x4");
+		// 	}
+		// 	return EncodeBlockHdrInternal(inputBlock.AsSpan2D(4, 4));
+		// }
+		//
+		// /// <summary>
+		// /// Encodes a single 4x4 HDR block to raw encoded bytes. Input Span width and height must be exactly 4.
+		// /// </summary>
+		// /// <param name="inputBlock">Input 4x4 color block</param>
+		// /// <returns>Raw encoded data</returns>
+		// public byte[] EncodeBlockHdr(ReadOnlySpan2D<ColorRgbFloat> inputBlock)
+		// {
+		// 	if (inputBlock.Width != 4 || inputBlock.Height != 4)
+		// 	{
+		// 		throw new ArgumentException($"Single block encoding can only encode blocks of 4x4");
+		// 	}
+		// 	return EncodeBlockHdrInternal(inputBlock);
+		// }
+		//
+		// /// <summary>
+		// /// Encodes a single 4x4 HDR block and writes the encoded block to a stream. Input Span length must be exactly 16.
+		// /// </summary>
+		// /// <param name="inputBlock">Input 4x4 color block</param>
+		// /// <param name="outputStream">Output stream where the encoded block will be written to.</param>
+		// public void EncodeBlockHdr(ReadOnlySpan<ColorRgbFloat> inputBlock, Stream outputStream)
+		// {
+		// 	if (inputBlock.Length != 16)
+		// 	{
+		// 		throw new ArgumentException($"Single block encoding can only encode blocks of 4x4");
+		// 	}
+		// 	EncodeBlockHdrInternal(inputBlock.AsSpan2D(4, 4), outputStream);
+		// }
+		//
+		// /// <summary>
+		// /// Encodes a single 4x4 HDR block and writes the encoded block to a stream. Input Span width and height must be exactly 4.
+		// /// </summary>
+		// /// <param name="inputBlock">Input 4x4 color block</param>
+		// /// <param name="outputStream">Output stream where the encoded block will be written to.</param>
+		// public void EncodeBlockHdr(ReadOnlySpan2D<ColorRgbFloat> inputBlock, Stream outputStream)
+		// {
+		// 	if (inputBlock.Width != 4 || inputBlock.Height != 4)
+		// 	{
+		// 		throw new ArgumentException($"Single block encoding can only encode blocks of 4x4");
+		// 	}
+		// 	EncodeBlockHdrInternal(inputBlock, outputStream);
+		// }
 
 		#endregion
 		#region MipMap operations
@@ -597,26 +567,15 @@ namespace BCnEncoder.Encoder
 
 		#region Private
 
-		private byte[] EncodeSingleHdrInternal(ReadOnlyMemory<ColorRgbaFloat> inputData, int width, int height, int mipLevel, CancellationToken token)
-			=> EncodeSingleInternal(inputData.AsBytes(), CompressionFormat.RgbaFloat, width, height, mipLevel, token);
-
-		private byte[] EncodeSingleLdrInternal(ReadOnlyMemory<ColorRgba32> inputData, int width, int height, int mipLevel,
-			CancellationToken token)
-			=> EncodeSingleInternal(inputData.AsBytes(), CompressionFormat.Rgba32, width, height, mipLevel, token);
-
-		private byte[] EncodeSingleInternal(ReadOnlyMemory<byte> input, CompressionFormat inputFormat, int width,
+		private void EncodeSingleInternal(ReadOnlyMemory<byte> input, Memory<byte> output, CompressionFormat inputFormat, int width,
 			int height, int mipLevel, CancellationToken token)
 		{
-			var encoder = GetEncoder(OutputOptions.Format);
+			var outputFormat = OutputOptions.Format;
+			var encoder = GetEncoder(outputFormat);
 
 			if (encoder == null)
 			{
 				throw new NotSupportedException($"This format is not supported for this method: {OutputOptions.Format}");
-			}
-
-			if (encoder.EncodedFormat != OutputOptions.Format)
-			{
-				throw new InvalidOperationException("Encoder format did not match expected format!");
 			}
 
 			if (inputFormat.IsBlockCompressedFormat())
@@ -626,85 +585,46 @@ namespace BCnEncoder.Encoder
 
 			MipMapper.CalculateMipLevelSize(width, height, mipLevel, out var mipWidth, out var mipHeight);
 
-			var totalBlocks = encoder.EncodedFormat.CalculateMipByteSize(mipWidth, mipHeight) / encoder.EncodedFormat.BytesPerBlock();
+			var totalBlocks = outputFormat.CalculateMipByteSize(mipWidth, mipHeight) / outputFormat.GetBytesPerBlock();
 
 			var context = new OperationContext
 			{
 				CancellationToken = token,
 				IsParallel = !Debugger.IsAttached && Options.IsParallel,
 				TaskCount = Options.TaskCount,
-				Progress = new OperationProgress(Options.Progress, totalBlocks)
+				Progress = new OperationProgress(Options.Progress, totalBlocks),
+				ColorConversionMode = CompressionFormat.RgbaFloat.GetColorConversionMode(outputFormat)
 			};
 
-			if (OutputOptions.Format.IsHdrFormat())
+			ReadOnlyMemory<ColorRgbaFloat> floatData;
+			if (inputFormat != CompressionFormat.RgbaFloat)
 			{
-				ReadOnlyMemory<ColorRgbaFloat> floatData;
-				if (inputFormat != CompressionFormat.RgbaFloat)
-				{
-					floatData = ColorExtensions.InternalConvertToAsBytesFromBytes(input, inputFormat, CompressionFormat.RgbaFloat)
-						.AsMemory().Cast<byte, ColorRgbaFloat>();
-				}
-				else
-				{
-					floatData = input.Cast<byte, ColorRgbaFloat>();
-				}
-				MipMapper.GenerateSingleMip(floatData.AsMemory2D(height, width), mipLevel).TryGetMemory(out floatData);
-
-				return encoder.Encode(floatData, mipWidth, mipHeight, OutputOptions.Quality, context);
+				floatData = ColorExtensions.InternalConvertToAsBytesFromBytes(input, inputFormat, CompressionFormat.RgbaFloat,
+						inputFormat.GetColorConversionMode(CompressionFormat.RgbaFloat))
+					.AsMemory().Cast<byte, ColorRgbaFloat>();
 			}
 			else
 			{
-				var ldrEncoder = encoder as IBcLdrEncoder;
-				if (ldrEncoder == null)
-				{
-					throw new InvalidOperationException($"No LDR encoder found for supposedly ldr format: {OutputOptions.Format}.");
-				}
-				ReadOnlyMemory<ColorRgba32> rgbaData;
-				if (inputFormat != CompressionFormat.Rgba32)
-				{
-					rgbaData = ColorExtensions.InternalConvertToAsBytesFromBytes(input, inputFormat, CompressionFormat.Rgba32)
-						.AsMemory().Cast<byte, ColorRgba32>();
-				}
-				else
-				{
-					rgbaData = input.Cast<byte, ColorRgba32>();
-				}
-				MipMapper.GenerateSingleMip(rgbaData.AsMemory2D(height, width), mipLevel).TryGetMemory(out rgbaData);
-
-				return ldrEncoder.Encode(rgbaData, mipWidth, mipHeight, OutputOptions.Quality, context);
+				floatData = input.Cast<byte, ColorRgbaFloat>();
 			}
+
+			MipMapper.GenerateSingleMip(floatData.AsMemory2D(height, width), mipLevel).TryGetMemory(out floatData);
+
+			var result = encoder.Encode(floatData, mipWidth, mipHeight, OutputOptions.Quality, context);
+
+			result.CopyTo(output);
 		}
 
 		private BCnTextureData EncodeInternal(BCnTextureData textureData, CancellationToken token)
 		{
 			var encoder = GetEncoder(OutputOptions.Format);
 
-			if (encoder.EncodedFormat != OutputOptions.Format)
-			{
-				throw new InvalidOperationException("Encoder format did not match expected format!");
-			}
-
-			var isLdr = !OutputOptions.Format.IsHdrFormat();
-			var ldrEncoder = encoder as IBcLdrEncoder;
-
-			if (isLdr && ldrEncoder == null)
-			{
-				throw new InvalidOperationException($"No LDR encoder found for supposedly ldr format: {OutputOptions.Format}.");
-			}
-
 			var numMipMaps = OutputOptions.GenerateMipMaps ? OutputOptions.MaxMipMapLevel : 1;
 
-			if (isLdr)
-			{
-				textureData = MipMapper.GenerateMipChainLdr(textureData, ref numMipMaps);
-			}
-			else
-			{
-				textureData = MipMapper.GenerateMipChainHdr(textureData, ref numMipMaps);
-			}
+			textureData = MipMapper.GenerateMipChain(textureData, ref numMipMaps);
 
 			var newData = new BCnTextureData(
-				encoder.EncodedFormat,
+				OutputOptions.Format,
 				textureData.Width,
 				textureData.Height,
 				1,
@@ -712,14 +632,15 @@ namespace BCnEncoder.Encoder
 				textureData.NumArrayElements,
 				textureData.IsCubeMap, false);
 
-			var totalBlocks = newData.TotalByteSize / encoder.EncodedFormat.BytesPerBlock();
+			var totalBlocks = newData.TotalByteSize / OutputOptions.Format.GetBytesPerBlock();
 
 			var context = new OperationContext
 			{
 				CancellationToken = token,
 				IsParallel = !Debugger.IsAttached && Options.IsParallel,
 				TaskCount = Options.TaskCount,
-				Progress = new OperationProgress(Options.Progress, totalBlocks)
+				Progress = new OperationProgress(Options.Progress, totalBlocks),
+				ColorConversionMode = CompressionFormat.RgbaFloat.GetColorConversionMode(OutputOptions.Format)
 			};
 
 			for (var m = 0; m < newData.NumMips; m++)
@@ -728,36 +649,18 @@ namespace BCnEncoder.Encoder
 				{
 					for (var a = 0; a < newData.NumArrayElements; a++)
 					{
-						if (isLdr)
+						var mipWidth = textureData.Mips[m].Width;
+						var mipHeight = textureData.Mips[m].Height;
+						var colorMemory = textureData.Mips[m][(CubeMapFaceDirection)f, a].AsMemory<ColorRgbaFloat>();
+						var encoded = encoder.Encode(colorMemory, mipWidth, mipHeight, OutputOptions.Quality,
+							context);
+
+						if (newData.Mips[m].SizeInBytes != encoded.Length)
 						{
-							var mipWidth = textureData.Mips[m].Width;
-							var mipHeight = textureData.Mips[m].Height;
-							var colorMemory = textureData.Mips[m][(CubeMapFaceDirection)f, a].AsMemory<ColorRgba32>();
-							var encoded = ldrEncoder.Encode(colorMemory, mipWidth, mipHeight, OutputOptions.Quality,
-								context);
-
-							if (newData.Mips[m].SizeInBytes != encoded.Length)
-							{
-								throw new InvalidOperationException("Encoded size does not match expected!");
-							}
-
-							newData.Mips[m][(CubeMapFaceDirection)f, a].Data = encoded;
+							throw new InvalidOperationException("Encoded size does not match expected!");
 						}
-						else
-						{
-							var mipWidth = textureData.Mips[m].Width;
-							var mipHeight = textureData.Mips[m].Height;
-							var colorMemory = textureData.Mips[m][(CubeMapFaceDirection)f, a].AsMemory<ColorRgbaFloat>();
-							var encoded = encoder.Encode(colorMemory, mipWidth, mipHeight, OutputOptions.Quality,
-								context);
 
-							if (newData.Mips[m].SizeInBytes != encoded.Length)
-							{
-								throw new InvalidOperationException("Encoded size does not match expected!");
-							}
-
-							newData.Mips[m][(CubeMapFaceDirection)f, a].Data = encoded;
-						}
+						newData.Mips[m][(CubeMapFaceDirection)f, a].Data = encoded;
 					}
 				}
 			}
@@ -765,124 +668,119 @@ namespace BCnEncoder.Encoder
 			return newData;
 		}
 
-		private byte[] EncodeBlockHdrInternal(ReadOnlySpan2D<ColorRgbFloat> input)
-		{
-			var compressedEncoder = GetFloatBlockEncoder(OutputOptions.Format);
-			if (compressedEncoder == null)
-			{
-				throw new NotSupportedException($"This Format is not supported for hdr single block encoding: {OutputOptions.Format}");
-			}
-
-			var output = new byte[compressedEncoder.GetBlockSize()];
-
-			var rawBlock = new RawBlock4X4RgbFloat();
-
-			var pixels = rawBlock.AsSpan;
-
-			input.GetRowSpan(0).CopyTo(pixels);
-			input.GetRowSpan(1).CopyTo(pixels.Slice(4));
-			input.GetRowSpan(2).CopyTo(pixels.Slice(8));
-			input.GetRowSpan(3).CopyTo(pixels.Slice(12));
-
-			compressedEncoder.EncodeBlock(rawBlock, OutputOptions.Quality, output);
-
-			return output;
-		}
-
-		private void EncodeBlockHdrInternal(ReadOnlySpan2D<ColorRgbFloat> input, Stream outputStream)
-		{
-			var compressedEncoder = GetFloatBlockEncoder(OutputOptions.Format);
-			if (compressedEncoder == null)
-			{
-				throw new NotSupportedException($"This Format is not supported for hdr single block encoding: {OutputOptions.Format}");
-			}
-			if (input.Width != 4 || input.Height != 4)
-			{
-				throw new ArgumentException($"Single block encoding can only encode blocks of 4x4");
-			}
-
-			Span<byte> output = stackalloc byte[16];
-			output = output.Slice(0, compressedEncoder.GetBlockSize());
-
-			var rawBlock = new RawBlock4X4RgbFloat();
-
-			var pixels = rawBlock.AsSpan;
-
-			input.GetRowSpan(0).CopyTo(pixels);
-			input.GetRowSpan(1).CopyTo(pixels.Slice(4));
-			input.GetRowSpan(2).CopyTo(pixels.Slice(8));
-			input.GetRowSpan(3).CopyTo(pixels.Slice(12));
-
-			compressedEncoder.EncodeBlock(rawBlock, OutputOptions.Quality, output);
-
-			outputStream.Write(output);
-		}
-
-		private byte[] EncodeBlockLdrInternal(ReadOnlySpan2D<ColorRgba32> input)
-		{
-			var compressedEncoder = GetRgba32BlockEncoder(OutputOptions.Format);
-			if (compressedEncoder == null)
-			{
-				throw new NotSupportedException($"This Format is not supported for ldr single block encoding: {OutputOptions.Format}");
-			}
-
-			var output = new byte[compressedEncoder.GetBlockSize()];
-
-			var rawBlock = new RawBlock4X4Rgba32();
-
-			var pixels = rawBlock.AsSpan;
-
-			input.GetRowSpan(0).CopyTo(pixels);
-			input.GetRowSpan(1).CopyTo(pixels.Slice(4));
-			input.GetRowSpan(2).CopyTo(pixels.Slice(8));
-			input.GetRowSpan(3).CopyTo(pixels.Slice(12));
-
-			compressedEncoder.EncodeBlock(rawBlock, OutputOptions.Quality, output);
-
-			return output;
-		}
-
-		private void EncodeBlockLdrInternal(ReadOnlySpan2D<ColorRgba32> input, Stream outputStream)
-		{
-			var compressedEncoder = GetRgba32BlockEncoder(OutputOptions.Format);
-			if (compressedEncoder == null)
-			{
-				throw new NotSupportedException($"This Format is not supported for ldr single block encoding: {OutputOptions.Format}");
-			}
-			if (input.Width != 4 || input.Height != 4)
-			{
-				throw new ArgumentException($"Single block encoding can only encode blocks of 4x4");
-			}
-
-			Span<byte> output = stackalloc byte[16];
-			output = output.Slice(0, compressedEncoder.GetBlockSize());
-
-			var rawBlock = new RawBlock4X4Rgba32();
-
-			var pixels = rawBlock.AsSpan;
-
-			input.GetRowSpan(0).CopyTo(pixels);
-			input.GetRowSpan(1).CopyTo(pixels.Slice(4));
-			input.GetRowSpan(2).CopyTo(pixels.Slice(8));
-			input.GetRowSpan(3).CopyTo(pixels.Slice(12));
-
-			compressedEncoder.EncodeBlock(rawBlock, OutputOptions.Quality, output);
-
-			outputStream.Write(output);
-		}
+		// private byte[] EncodeBlockHdrInternal(ReadOnlySpan2D<ColorRgbFloat> input)
+		// {
+		// 	var compressedEncoder = GetFloatBlockEncoder(OutputOptions.Format);
+		// 	if (compressedEncoder == null)
+		// 	{
+		// 		throw new NotSupportedException($"This Format is not supported for hdr single block encoding: {OutputOptions.Format}");
+		// 	}
+		//
+		// 	var output = new byte[compressedEncoder.GetBlockSize()];
+		//
+		// 	var rawBlock = new RawBlock4X4RgbFloat();
+		//
+		// 	var pixels = rawBlock.AsSpan;
+		//
+		// 	input.GetRowSpan(0).CopyTo(pixels);
+		// 	input.GetRowSpan(1).CopyTo(pixels.Slice(4));
+		// 	input.GetRowSpan(2).CopyTo(pixels.Slice(8));
+		// 	input.GetRowSpan(3).CopyTo(pixels.Slice(12));
+		//
+		// 	compressedEncoder.EncodeBlock(rawBlock, OutputOptions.Quality, output);
+		//
+		// 	return output;
+		// }
+		//
+		// private void EncodeBlockHdrInternal(ReadOnlySpan2D<ColorRgbFloat> input, Stream outputStream)
+		// {
+		// 	var compressedEncoder = GetFloatBlockEncoder(OutputOptions.Format);
+		// 	if (compressedEncoder == null)
+		// 	{
+		// 		throw new NotSupportedException($"This Format is not supported for hdr single block encoding: {OutputOptions.Format}");
+		// 	}
+		// 	if (input.Width != 4 || input.Height != 4)
+		// 	{
+		// 		throw new ArgumentException($"Single block encoding can only encode blocks of 4x4");
+		// 	}
+		//
+		// 	Span<byte> output = stackalloc byte[16];
+		// 	output = output.Slice(0, compressedEncoder.GetBlockSize());
+		//
+		// 	var rawBlock = new RawBlock4X4RgbFloat();
+		//
+		// 	var pixels = rawBlock.AsSpan;
+		//
+		// 	input.GetRowSpan(0).CopyTo(pixels);
+		// 	input.GetRowSpan(1).CopyTo(pixels.Slice(4));
+		// 	input.GetRowSpan(2).CopyTo(pixels.Slice(8));
+		// 	input.GetRowSpan(3).CopyTo(pixels.Slice(12));
+		//
+		// 	compressedEncoder.EncodeBlock(rawBlock, OutputOptions.Quality, output);
+		//
+		// 	outputStream.Write(output);
+		// }
+		//
+		// private byte[] EncodeBlockLdrInternal(ReadOnlySpan2D<ColorRgba32> input)
+		// {
+		// 	var compressedEncoder = GetRgba32BlockEncoder(OutputOptions.Format);
+		// 	if (compressedEncoder == null)
+		// 	{
+		// 		throw new NotSupportedException($"This Format is not supported for ldr single block encoding: {OutputOptions.Format}");
+		// 	}
+		//
+		// 	var output = new byte[compressedEncoder.GetBlockSize()];
+		//
+		// 	var rawBlock = new RawBlock4X4Rgba32();
+		//
+		// 	var pixels = rawBlock.AsSpan;
+		//
+		// 	input.GetRowSpan(0).CopyTo(pixels);
+		// 	input.GetRowSpan(1).CopyTo(pixels.Slice(4));
+		// 	input.GetRowSpan(2).CopyTo(pixels.Slice(8));
+		// 	input.GetRowSpan(3).CopyTo(pixels.Slice(12));
+		//
+		// 	compressedEncoder.EncodeBlock(rawBlock, OutputOptions.Quality, output);
+		//
+		// 	return output;
+		// }
+		//
+		// private void EncodeBlockLdrInternal(ReadOnlySpan2D<ColorRgba32> input, Stream outputStream)
+		// {
+		// 	var compressedEncoder = GetRgba32BlockEncoder(OutputOptions.Format);
+		// 	if (compressedEncoder == null)
+		// 	{
+		// 		throw new NotSupportedException($"This Format is not supported for ldr single block encoding: {OutputOptions.Format}");
+		// 	}
+		// 	if (input.Width != 4 || input.Height != 4)
+		// 	{
+		// 		throw new ArgumentException($"Single block encoding can only encode blocks of 4x4");
+		// 	}
+		//
+		// 	Span<byte> output = stackalloc byte[16];
+		// 	output = output.Slice(0, compressedEncoder.GetBlockSize());
+		//
+		// 	var rawBlock = new RawBlock4X4Rgba32();
+		//
+		// 	var pixels = rawBlock.AsSpan;
+		//
+		// 	input.GetRowSpan(0).CopyTo(pixels);
+		// 	input.GetRowSpan(1).CopyTo(pixels.Slice(4));
+		// 	input.GetRowSpan(2).CopyTo(pixels.Slice(8));
+		// 	input.GetRowSpan(3).CopyTo(pixels.Slice(12));
+		//
+		// 	compressedEncoder.EncodeBlock(rawBlock, OutputOptions.Quality, output);
+		//
+		// 	outputStream.Write(output);
+		// }
 
 		#endregion
 
 		#region Support
 
-		private IBcBlockEncoder<RawBlock4X4Rgba32> GetRgba32BlockEncoder(CompressionFormat format)
+		private IBcBlockEncoder GetBlockEncoder(CompressionFormat format)
 		{
-			return GetEncoder(format) as IBcBlockEncoder<RawBlock4X4Rgba32>;
-		}
-
-		private IBcBlockEncoder<RawBlock4X4RgbFloat> GetFloatBlockEncoder(CompressionFormat format)
-		{
-			return GetEncoder(format) as IBcBlockEncoder<RawBlock4X4RgbFloat>;
+			return GetEncoder(format) as IBcBlockEncoder;
 		}
 
 		private IBcEncoder GetEncoder(CompressionFormat format)
@@ -890,36 +788,44 @@ namespace BCnEncoder.Encoder
 			switch (format)
 			{
 				case CompressionFormat.R8:
-					return new RawPixelLdrEncoder<ColorR8>(format);
+					return new RawPixelEncoder<ColorR8>();
 				case CompressionFormat.R8G8:
-					return new RawPixelLdrEncoder<ColorR8G8>(format);
+					return new RawPixelEncoder<ColorR8G8>();
 				case CompressionFormat.Rgb24:
-					return new RawPixelLdrEncoder<ColorRgb24>(format);
+				case CompressionFormat.Rgb24_sRGB:
+					return new RawPixelEncoder<ColorRgb24>();
 				case CompressionFormat.Bgr24:
-					return new RawPixelLdrEncoder<ColorBgr24>(format);
+				case CompressionFormat.Bgr24_sRGB:
+					return new RawPixelEncoder<ColorBgr24>();
 				case CompressionFormat.Rgba32:
-					return new RawPixelLdrEncoder<ColorRgba32>(format);
+				case CompressionFormat.Rgba32_sRGB:
+					return new RawPixelEncoder<ColorRgba32>();
 				case CompressionFormat.Bgra32:
-					return new RawPixelLdrEncoder<ColorBgra32>(format);
+				case CompressionFormat.Bgra32_sRGB:
+					return new RawPixelEncoder<ColorBgra32>();
 				case CompressionFormat.RgbaFloat:
-					return new RawPixelEncoder<ColorRgbaFloat>(format);
+					return new RawPixelEncoder<ColorRgbaFloat>();
 				case CompressionFormat.RgbaHalf:
-					return new RawPixelEncoder<ColorRgbaHalf>(format);
+					return new RawPixelEncoder<ColorRgbaHalf>();
 				case CompressionFormat.RgbFloat:
-					return new RawPixelEncoder<ColorRgbFloat>(format);
+					return new RawPixelEncoder<ColorRgbFloat>();
 				case CompressionFormat.RgbHalf:
-					return new RawPixelEncoder<ColorRgbHalf>(format);
+					return new RawPixelEncoder<ColorRgbHalf>();
 				case CompressionFormat.Rgbe:
-					return new RawPixelEncoder<ColorRgbe>(format);
+					return new RawPixelEncoder<ColorRgbe>();
 				case CompressionFormat.Xyze:
-					return new RawPixelEncoder<ColorXyze>(format);
+					return new RawPixelEncoder<ColorXyze>();
 				case CompressionFormat.Bc1:
+				case CompressionFormat.Bc1_sRGB:
 					return new Bc1BlockEncoder();
 				case CompressionFormat.Bc1WithAlpha:
+				case CompressionFormat.Bc1WithAlpha_sRGB:
 					return new Bc1AlphaBlockEncoder();
 				case CompressionFormat.Bc2:
+				case CompressionFormat.Bc2_sRGB:
 					return new Bc2BlockEncoder();
 				case CompressionFormat.Bc3:
+				case CompressionFormat.Bc3_sRGB:
 					return new Bc3BlockEncoder();
 				case CompressionFormat.Bc4:
 					return new Bc4BlockEncoder(InputOptions.Bc4Component);
@@ -930,6 +836,7 @@ namespace BCnEncoder.Encoder
 				case CompressionFormat.Bc6S:
 					return new Bc6Encoder(true);
 				case CompressionFormat.Bc7:
+				case CompressionFormat.Bc7_sRGB:
 					return new Bc7Encoder();
 				case CompressionFormat.Atc:
 					return new AtcBlockEncoder();
@@ -940,6 +847,25 @@ namespace BCnEncoder.Encoder
 				default:
 					throw new ArgumentOutOfRangeException(nameof(format), format, null);
 			}
+		}
+
+		private byte[] AllocateOutputBuffer(int pixelWidth, int pixelHeight)
+		{
+			var output = new byte[OutputOptions.Format.CalculateMipByteSize(pixelWidth, pixelHeight)];
+			return output;
+		}
+
+		private ReadOnlyMemory<byte> PrepareInputBuffer<TIn>(ReadOnlyMemory<TIn> input, int pixelWidth, int pixelHeight, CompressionFormat inputFormat)
+			where TIn : unmanaged
+		{
+			var bytes = input.Cast<TIn, byte>();
+
+			if (bytes.Length != inputFormat.CalculateMipByteSize(pixelWidth, pixelHeight))
+			{
+				throw new ArgumentException($"Invalid input size. Expected {inputFormat.CalculateMipByteSize(pixelWidth, pixelHeight)} bytes, but got {bytes.Length} bytes.", nameof(input));
+			}
+
+			return bytes;
 		}
 		#endregion
 	}

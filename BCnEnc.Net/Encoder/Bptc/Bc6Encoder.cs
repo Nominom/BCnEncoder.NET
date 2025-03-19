@@ -1,10 +1,11 @@
 using System;
 using System.Collections.Generic;
 using BCnEncoder.Shared;
+using BCnEncoder.Shared.Colors;
 
 namespace BCnEncoder.Encoder.Bptc
 {
-	internal class Bc6Encoder : BaseBcHdrBlockEncoder<Bc6Block>
+	internal class Bc6Encoder : BaseBcBlockEncoder<Bc6Block>
 	{
 		private readonly bool signed;
 
@@ -13,8 +14,11 @@ namespace BCnEncoder.Encoder.Bptc
 			this.signed = signed;
 		}
 
-		public override Bc6Block EncodeBlock(RawBlock4X4RgbFloat block, CompressionQuality quality)
+		public override Bc6Block EncodeBlock(RawBlock4X4RgbaFloat block, CompressionQuality quality, ColorConversionMode colorConversionMode)
 		{
+			// TODO: Do better.
+			block.ColorConvert(colorConversionMode);
+
 			switch (quality)
 			{
 				case CompressionQuality.Fast:
@@ -28,10 +32,7 @@ namespace BCnEncoder.Encoder.Bptc
 			}
 		}
 
-		/// <inheritdoc />
-		public override CompressionFormat EncodedFormat => signed ? CompressionFormat.Bc6S : CompressionFormat.Bc6U;
-
-		internal static ClusterIndices4X4 CreateClusterIndexBlock(RawBlock4X4RgbFloat raw, out int outputNumClusters,
+		internal static ClusterIndices4X4 CreateClusterIndexBlock(RawBlock4X4RgbaFloat raw, out int outputNumClusters,
 			int numClusters = 2)
 		{
 
@@ -58,11 +59,12 @@ namespace BCnEncoder.Encoder.Bptc
 
 		internal static class Bc6EncoderFast
 		{
-			internal static Bc6Block EncodeBlock(RawBlock4X4RgbFloat block, bool signed)
+			internal static Bc6Block EncodeBlock(RawBlock4X4RgbaFloat block, bool signed)
 			{
 				RgbBoundingBox.CreateFloat(block.AsSpan, out var min, out var max);
+				ColorRgbFloat minRgb = min, maxRgb = max;
 
-				LeastSquares.OptimizeEndpoints1Sub(block, ref min, ref max);
+				LeastSquares.OptimizeEndpoints1Sub(block, ref minRgb, ref maxRgb);
 
 				return Bc6ModeEncoder.EncodeBlock1Sub(Bc6BlockType.Type3, block, min, max, signed, out _);
 			}
@@ -74,7 +76,7 @@ namespace BCnEncoder.Encoder.Bptc
 			private const float TargetError = 0.001f;
 			private const int MaxTries = 10;
 
-			private static IEnumerable<Bc6Block> GenerateCandidates(RawBlock4X4RgbFloat block, bool signed)
+			private static IEnumerable<Bc6Block> GenerateCandidates(RawBlock4X4RgbaFloat block, bool signed)
 			{
 				var candidates = 0;
 				Bc6EncodingHelpers.GetInitialUnscaledEndpoints(block, out var ep0Sub1, out var ep1Sub1);
@@ -92,7 +94,7 @@ namespace BCnEncoder.Encoder.Bptc
 					ep0Sub1.ClampToPositive();
 					ep1Sub1.ClampToPositive();
 				}
-				
+
 				//Type3 Always ok!
 				yield return Bc6ModeEncoder.EncodeBlock1Sub(Bc6BlockType.Type3, block, ep0Sub1, ep1Sub1,
 					signed, out _);
@@ -133,7 +135,7 @@ namespace BCnEncoder.Encoder.Bptc
 							ep2.ClampToPositive();
 							ep3.ClampToPositive();
 						}
-						
+
 						{
 							var type1Block = Bc6ModeEncoder.EncodeBlock2Sub(Bc6BlockType.Type1, block, ep0, ep1, ep2, ep3,
 								subsetPartition, signed, out var badType1);
@@ -169,7 +171,7 @@ namespace BCnEncoder.Encoder.Bptc
 				}
 			}
 
-			internal static Bc6Block EncodeBlock(RawBlock4X4RgbFloat block, bool signed)
+			internal static Bc6Block EncodeBlock(RawBlock4X4RgbaFloat block, bool signed)
 			{
 				var result = new Bc6Block();
 				var bestError = 9999999f;
@@ -199,7 +201,7 @@ namespace BCnEncoder.Encoder.Bptc
 			private const float TargetError = 0.0005f;
 			private const int MaxTries = 500;
 
-			private static IEnumerable<Bc6Block> GenerateCandidates(RawBlock4X4RgbFloat block, bool signed)
+			private static IEnumerable<Bc6Block> GenerateCandidates(RawBlock4X4RgbaFloat block, bool signed)
 			{
 				var candidates = 0;
 				Bc6EncodingHelpers.GetInitialUnscaledEndpoints(block, out var ep0Sub1, out var ep1Sub1);
@@ -285,7 +287,7 @@ namespace BCnEncoder.Encoder.Bptc
 						var sub2Block = Bc6ModeEncoder.EncodeBlock2Sub(type, block, ep0, ep1, ep2, ep3,
 							subsetPartition, signed, out var badTransform);
 						candidates++;
-						
+
 						if (!badTransform)
 						{
 							yield return sub2Block;
@@ -298,12 +300,12 @@ namespace BCnEncoder.Encoder.Bptc
 					}
 				}
 			}
-			
-			internal static Bc6Block EncodeBlock(RawBlock4X4RgbFloat block, bool signed)
+
+			internal static Bc6Block EncodeBlock(RawBlock4X4RgbaFloat block, bool signed)
 			{
 				var result = new Bc6Block();
 				float bestError = 9999999;
-				
+
 				foreach (var candidate in GenerateCandidates(block, signed))
 				{
 					var error = block.CalculateError(candidate.Decode(signed));

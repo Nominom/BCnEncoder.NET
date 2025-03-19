@@ -1,5 +1,6 @@
 using System;
 using System.Threading;
+using BCnEncoder.Shared.Colors;
 
 namespace BCnEncoder.Shared
 {
@@ -27,5 +28,7 @@ namespace BCnEncoder.Shared
 		/// The progress context for the operation.
 		/// </summary>
 		public OperationProgress Progress { get; set; }
+
+		public ColorConversionMode ColorConversionMode { get; set; }
 	}
 }

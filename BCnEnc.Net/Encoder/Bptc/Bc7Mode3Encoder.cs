@@ -7,7 +7,7 @@ namespace BCnEncoder.Encoder.Bptc
 	internal static class Bc7Mode3Encoder
 	{
 
-		public static Bc7Block EncodeBlock(RawBlock4X4Rgba32 block, int startingVariation, int bestPartition)
+		public static Bc7Block EncodeBlock(RawBlock4X4RgbaFloat block, int startingVariation, int bestPartition)
 		{
 			var output = new Bc7Block();
 			const Bc7BlockType type = Bc7BlockType.Type3;

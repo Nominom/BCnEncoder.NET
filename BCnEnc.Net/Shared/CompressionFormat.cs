@@ -203,6 +203,7 @@ namespace BCnEncoder.Shared
 				case CompressionFormat.RgbHalf:
 				case CompressionFormat.Rgbe:
 				case CompressionFormat.Xyze:
+				case CompressionFormat.Unknown:
 					return false;
 
 				default:
@@ -210,10 +211,15 @@ namespace BCnEncoder.Shared
 			}
 		}
 
+		public static bool IsRawPixelFormat(this CompressionFormat format)
+		{
+			return !IsBlockCompressedFormat(format);
+		}
+
 		/// <summary>
 		/// Return bytes per block (or per pixel if not block compressed format)
 		/// </summary>
-		public static int BytesPerBlock(this CompressionFormat format)
+		public static int GetBytesPerBlock(this CompressionFormat format)
 		{
 			switch (format)
 			{
@@ -348,10 +354,10 @@ namespace BCnEncoder.Shared
 		{
 			if (format.IsBlockCompressedFormat())
 			{
-				return ImageToBlocks.CalculateNumOfBlocks(width, height) * (long)format.BytesPerBlock();
+				return ImageToBlocks.CalculateNumOfBlocks(width, height) * (long)format.GetBytesPerBlock();
 			}
 
-			return (long)format.BytesPerBlock() * width * height;
+			return (long)format.GetBytesPerBlock() * width * height;
 		}
 
 		internal static System.Type GetPixelType(this CompressionFormat format)
@@ -389,6 +395,48 @@ namespace BCnEncoder.Shared
 				default:
 					throw new ArgumentOutOfRangeException(nameof(format));
 			}
+		}
+
+		public static CompressionFormat ToNonSrgbFormat(this CompressionFormat format)
+		{
+			switch (format)
+			{
+				case CompressionFormat.Rgb24_sRGB:
+					return CompressionFormat.Rgb24;
+				case CompressionFormat.Bgr24_sRGB:
+					return CompressionFormat.Bgr24;
+				case CompressionFormat.Rgba32_sRGB:
+					return CompressionFormat.Rgba32;
+				case CompressionFormat.Bgra32_sRGB:
+					return CompressionFormat.Bgra32;
+				case CompressionFormat.Bc1_sRGB:
+					return CompressionFormat.Bc1;
+				case CompressionFormat.Bc1WithAlpha_sRGB:
+					return CompressionFormat.Bc1WithAlpha;
+				case CompressionFormat.Bc2_sRGB:
+					return CompressionFormat.Bc2;
+				case CompressionFormat.Bc3_sRGB:
+					return CompressionFormat.Bc3;
+				case CompressionFormat.Bc7_sRGB:
+					return CompressionFormat.Bc7;
+				default:
+					return format;
+			}
+		}
+
+		internal static ColorConversionMode GetColorConversionMode(this CompressionFormat sourceFormat,
+			CompressionFormat targetFormat)
+		{
+			var sourceIsSrgb = sourceFormat.IsSRGBFormat();
+			var targetIsSrgb = targetFormat.IsSRGBFormat();
+
+			return (sourceIsSrgb, targetIsSrgb) switch
+			{
+				(false, false) or
+					(true, true) => ColorConversionMode.None,
+				(false, true) => ColorConversionMode.LinearToSrgb,
+				(true, false) => ColorConversionMode.SrgbToLinear
+			};
 		}
 	}
 }

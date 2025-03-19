@@ -19,14 +19,18 @@ namespace BCnEncTests
 			var decoder = new BcDecoder();
 			var encoder = new BcEncoder
 			{
-				OutputOptions = { Quality = CompressionQuality.BestQuality }
+				OutputOptions =
+				{
+					Format  = CompressionFormat.Bc1,
+					Quality = CompressionQuality.BestQuality
+				}
 			};
 
 			var encodedRawBytes = encoder.EncodeToRawBytes(inputImage, 0, out _, out _);
-			var decodedImage = decoder.DecodeRawLdr(encodedRawBytes, inputImage.Width, inputImage.Height, CompressionFormat.Bc1);
+			var decodedImage = decoder.DecodeRaw<ColorRgba32>(encodedRawBytes, inputImage.Width, inputImage.Height, CompressionFormat.Bc1, CompressionFormat.Rgba32_sRGB);
 
 			var originalPixels = TestHelper.GetSinglePixelArray(inputImage);
-			var decodedPixels  = TestHelper.GetSinglePixelArray(decodedImage.AsBCnTextureData(inputImage.Width, inputImage.Height, false).AsImageRgba32());
+			var decodedPixels  = TestHelper.GetSinglePixelArray(decodedImage.AsBCnTextureData(inputImage.Width, inputImage.Height, true).AsImageRgba32());
 
 			TestHelper.AssertPixelsSimilar(originalPixels, decodedPixels, encoder.OutputOptions.Quality);
 		}
@@ -38,7 +42,11 @@ namespace BCnEncTests
 			var decoder = new BcDecoder();
 			var encoder = new BcEncoder
 			{
-				OutputOptions = { Quality = CompressionQuality.BestQuality }
+				OutputOptions =
+				{
+					Format  = CompressionFormat.Bc1,
+					Quality = CompressionQuality.BestQuality
+				}
 			};
 
 			var encodedRawBytes = encoder.EncodeToRawBytes(inputImage, 0, out _, out _);
@@ -47,10 +55,10 @@ namespace BCnEncTests
 
 			Assert.Equal(0, ms.Position);
 
-			var decodedImage = decoder.DecodeRawLdr(ms, inputImage.Width, inputImage.Height, CompressionFormat.Bc1);
+			var decodedImage = decoder.DecodeRaw<ColorRgba32>(ms, inputImage.Width, inputImage.Height, CompressionFormat.Bc1, CompressionFormat.Rgba32_sRGB);
 
 			var originalPixels = TestHelper.GetSinglePixelArray(inputImage);
-			var decodedPixels = TestHelper.GetSinglePixelArray(decodedImage.AsBCnTextureData(inputImage.Width, inputImage.Height, false).AsImageRgba32());
+			var decodedPixels = TestHelper.GetSinglePixelArray(decodedImage.AsBCnTextureData(inputImage.Width, inputImage.Height, true).AsImageRgba32());
 
 			TestHelper.AssertPixelsSimilar(originalPixels, decodedPixels, encoder.OutputOptions.Quality);
 		}

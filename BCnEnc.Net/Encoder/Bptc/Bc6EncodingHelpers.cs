@@ -99,6 +99,10 @@ namespace BCnEncoder.Encoder.Bptc
 			);
 		}
 
+		public static (int, int, int) PreQuantizeRawEndpoint(ColorRgbaFloat endpoint, bool signed)
+			=> PreQuantizeRawEndpoint(new ColorRgbFloat(endpoint.r, endpoint.g, endpoint.b), signed);
+
+
 		public static (int, int, int) FinishQuantizeEndpoint((int, int, int) endpoint, int endpointBits, bool signed)
 		{
 			return (
@@ -215,7 +219,7 @@ namespace BCnEncoder.Encoder.Bptc
 			return bestIndex;
 		}
 
-		public static float FindOptimalIndicesInt1Sub(RawBlock4X4RgbFloat block, (int, int, int) unQuantizedEp0, (int, int, int) unQuantizedEp1,
+		public static float FindOptimalIndicesInt1Sub(RawBlock4X4RgbaFloat block, (int, int, int) unQuantizedEp0, (int, int, int) unQuantizedEp1,
 			Span<byte> indices, bool signed)
 		{
 			const int paletteSize = 1 << 4;
@@ -234,7 +238,7 @@ namespace BCnEncoder.Encoder.Bptc
 		}
 
 
-		public static float FindOptimalIndices1Sub(RawBlock4X4RgbFloat block, (int, int, int) unQuantizedEp0, (int, int, int) unQuantizedEp1,
+		public static float FindOptimalIndices1Sub(RawBlock4X4RgbaFloat block, (int, int, int) unQuantizedEp0, (int, int, int) unQuantizedEp1,
 			Span<byte> indices, bool signed)
 		{
 			const int paletteSize = 1 << 4;
@@ -252,7 +256,7 @@ namespace BCnEncoder.Encoder.Bptc
 			return error;
 		}
 
-		public static float FindOptimalIndicesInt2Sub(RawBlock4X4RgbFloat block, (int, int, int) unQuantizedEp0, (int, int, int) unQuantizedEp1,
+		public static float FindOptimalIndicesInt2Sub(RawBlock4X4RgbaFloat block, (int, int, int) unQuantizedEp0, (int, int, int) unQuantizedEp1,
 			Span<byte> indices, int partitionSetId, int subsetIndex, bool signed)
 		{
 			const int paletteSize = 1 << 3;
@@ -273,7 +277,7 @@ namespace BCnEncoder.Encoder.Bptc
 			return error;
 		}
 
-		public static float FindOptimalIndices2Sub(RawBlock4X4RgbFloat block, (int, int, int) unQuantizedEp0, (int, int, int) unQuantizedEp1,
+		public static float FindOptimalIndices2Sub(RawBlock4X4RgbaFloat block, (int, int, int) unQuantizedEp0, (int, int, int) unQuantizedEp1,
 			Span<byte> indices, int partitionSetId, int subsetIndex, bool signed)
 		{
 			const int paletteSize = 1 << 3;
@@ -293,7 +297,7 @@ namespace BCnEncoder.Encoder.Bptc
 			return error;
 		}
 
-		public static void SwapIndicesIfNecessary1Sub(RawBlock4X4RgbFloat block, ref (int, int, int) unQuantizedEp0, ref (int, int, int) unQuantizedEp1,
+		public static void SwapIndicesIfNecessary1Sub(RawBlock4X4RgbaFloat block, ref (int, int, int) unQuantizedEp0, ref (int, int, int) unQuantizedEp1,
 			Span<byte> indices, bool signed)
 		{
 			const int msb = 1 << (3);
@@ -307,7 +311,7 @@ namespace BCnEncoder.Encoder.Bptc
 			FindOptimalIndicesInt1Sub(block, unQuantizedEp0, unQuantizedEp1, indices, signed);
 		}
 
-		public static void SwapIndicesIfNecessary2Sub(RawBlock4X4RgbFloat block, ref (int, int, int) unQuantizedEp0, ref (int, int, int) unQuantizedEp1,
+		public static void SwapIndicesIfNecessary2Sub(RawBlock4X4RgbaFloat block, ref (int, int, int) unQuantizedEp0, ref (int, int, int) unQuantizedEp1,
 			Span<byte> indices, int partitionSetId, int subsetIndex, bool signed)
 		{
 			const int msb = 1 << (2);
@@ -323,7 +327,7 @@ namespace BCnEncoder.Encoder.Bptc
 			FindOptimalIndicesInt2Sub(block, unQuantizedEp0, unQuantizedEp1, indices, partitionSetId, subsetIndex, signed);
 		}
 
-		public static void GetInitialUnscaledEndpointsForSubset(RawBlock4X4RgbFloat block, out ColorRgbFloat ep0,
+		public static void GetInitialUnscaledEndpointsForSubset(RawBlock4X4RgbaFloat block, out ColorRgbFloat ep0,
 			out ColorRgbFloat ep1, int partitionSetId, int subsetIndex)
 		{
 
@@ -338,7 +342,7 @@ namespace BCnEncoder.Encoder.Bptc
 				}
 			}
 
-			Span<ColorRgbFloat> subsetColors = stackalloc ColorRgbFloat[count];
+			Span<ColorRgbaFloat> subsetColors = stackalloc ColorRgbaFloat[count];
 			var next = 0;
 			for (var i = 0; i < 16; i++)
 			{
@@ -351,11 +355,11 @@ namespace BCnEncoder.Encoder.Bptc
 			PcaVectors.Create(subsetColors, out var mean, out var pa);
 			PcaVectors.GetExtremePoints(subsetColors, mean, pa, out var min, out var max);
 
-			ep0 = new ColorRgbFloat(min);
-			ep1 = new ColorRgbFloat(max);
+			ep0 = new ColorRgbaFloat(min);
+			ep1 = new ColorRgbaFloat(max);
 		}
 
-		public static void GetInitialUnscaledEndpoints(RawBlock4X4RgbFloat block, out ColorRgbFloat ep0,
+		public static void GetInitialUnscaledEndpoints(RawBlock4X4RgbaFloat block, out ColorRgbFloat ep0,
 			out ColorRgbFloat ep1)
 		{
 
@@ -364,8 +368,8 @@ namespace BCnEncoder.Encoder.Bptc
 			PcaVectors.Create(originalPixels, out var mean, out var pa);
 			PcaVectors.GetExtremePoints(originalPixels, mean, pa, out var min, out var max);
 
-			ep0 = new ColorRgbFloat(min);
-			ep1 = new ColorRgbFloat(max);
+			ep0 = new ColorRgbaFloat(min);
+			ep1 = new ColorRgbaFloat(max);
 		}
 
 

@@ -7,8 +7,8 @@ namespace BCnEncoder.Encoder.Bptc
 
 		private static ReadOnlySpan<int> PartitionTable => new int[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 		const int Subset = 0;
-		
-		public static Bc7Block EncodeBlock(RawBlock4X4Rgba32 block, int startingVariation)
+
+		public static Bc7Block EncodeBlock(RawBlock4X4RgbaFloat block, int startingVariation)
 		{
 			var type = Bc7BlockType.Type5;
 
@@ -100,7 +100,7 @@ namespace BCnEncoder.Encoder.Bptc
 					bestIndex = i;
 				}
 			}
-				
+
 			return outputs[bestIndex];
 		}
 	}

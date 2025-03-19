@@ -629,92 +629,44 @@ namespace BCnEncoder.TextureFormats
 	public static class DecoderExtensions
 	{
 		/// <inheritdoc cref="BcDecoder.Decode"/>
-		public static BCnTextureData Decode<T>(this BcDecoder decoder, T textureFile)
+		public static BCnTextureData Decode<T>(this BcDecoder decoder, T textureFile, CompressionFormat outputFormat = CompressionFormat.RgbaFloat)
 			where T : class, ITextureFileFormat, new()
 		{
 			var encoded = textureFile.ToTextureData();
-			return decoder.Decode(encoded);
+			return decoder.Decode(encoded, outputFormat);
 		}
 
 		/// <inheritdoc cref="BcDecoder.Decode"/>
-		public static BCnTextureData Decode<T>(this BcDecoder decoder, Stream inputStream)
+		public static BCnTextureData Decode<T>(this BcDecoder decoder, Stream inputStream, CompressionFormat outputFormat = CompressionFormat.RgbaFloat)
 			where T : class, ITextureFileFormat, new()
 		{
 			var tex = new T();
 			tex.ReadFromStream(inputStream);
-			return Decode(decoder, tex);
-		}
-
-		/// <summary>
-		/// Decode the first mip level of a textureFile into a <see cref="Memory2D{T}"/> of <see cref="ColorRgba32"/>.
-		/// </summary>
-		/// <returns></returns>
-		public static Memory2D<ColorRgba32> DecodeToColorRgba2D<T>(this BcDecoder decoder, T textureFile)
-			where T : ITextureFileFormat
-		{
-
-			var encoded = textureFile.ToTextureData();
-			return decoder.DecodeRawLdr2D(
-				encoded.First.Data,
-				encoded.First.Width,
-				encoded.First.Height,
-				encoded.Format);
+			return Decode(decoder, tex, outputFormat);
 		}
 
 		/// <summary>
 		/// Decode the first mip level of a textureFile into a <see cref="Memory2D{T}"/> of <see cref="ColorRgbaFloat"/>.
 		/// </summary>
 		/// <returns></returns>
-		public static Memory2D<ColorRgbaFloat> DecodeToColorRgbaHdr2D<T>(this BcDecoder decoder, T textureFile)
+		public static TOut[] DecodeFirst<T, TOut>(this BcDecoder decoder, T textureFile, CompressionFormat outputFormat, out int pixelWidth, out int pixelHeight)
 			where T : ITextureFileFormat
+			where TOut : unmanaged
 		{
-
 			var encoded = textureFile.ToTextureData();
-			return decoder.DecodeRawHdr2D(
-				encoded.First.Data,
-				encoded.First.Width,
-				encoded.First.Height,
-				encoded.Format);
+
+			pixelWidth = encoded.First.Width;
+			pixelHeight = encoded.First.Height;
+
+			return decoder.DecodeRaw<TOut>(encoded.First.Data, pixelWidth, pixelHeight, encoded.Format, outputFormat);
 		}
 
 		/// <inheritdoc cref="BcDecoder.Decode"/>
-		public static Task<BCnTextureData> DecodeAsync<T>(this BcDecoder decoder, T textureFile, CancellationToken token = default)
+		public static Task<BCnTextureData> DecodeAsync<T>(this BcDecoder decoder, T textureFile, CompressionFormat outputFormat, CancellationToken token = default)
 			where T : ITextureFileFormat
 		{
 			var encoded = textureFile.ToTextureData();
-			return decoder.DecodeAsync(encoded, token);
-		}
-
-		/// <summary>
-		/// Decode the first mip level of a textureFile into a <see cref="Memory2D{T}"/> of <see cref="ColorRgba32"/>.
-		/// </summary>
-		/// <returns></returns>
-		public static Task<Memory2D<ColorRgba32>> DecodeToColorRgba2DAsync<T>(this BcDecoder decoder, T textureFile, CancellationToken token = default)
-			where T : ITextureFileFormat
-		{
-
-			var encoded = textureFile.ToTextureData();
-			return decoder.DecodeRawLdr2DAsync(
-				encoded.First.Data,
-				encoded.First.Width,
-				encoded.First.Height,
-				encoded.Format, token);
-		}
-
-		/// <summary>
-		/// Decode the first mip level of a textureFile into a <see cref="Memory2D{T}"/> of <see cref="ColorRgbaFloat"/>.
-		/// </summary>
-		/// <returns></returns>
-		public static Task<Memory2D<ColorRgbaFloat>> DecodeToColorRgbaHdr2DAsync<T>(this BcDecoder decoder, T textureFile, CancellationToken token = default)
-			where T : ITextureFileFormat
-		{
-
-			var encoded = textureFile.ToTextureData();
-			return decoder.DecodeRawHdr2DAsync(
-				encoded.First.Data,
-				encoded.First.Width,
-				encoded.First.Height,
-				encoded.Format, token);
+			return decoder.DecodeAsync(encoded, outputFormat, token);
 		}
 	}
 }

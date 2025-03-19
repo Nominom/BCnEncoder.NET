@@ -133,7 +133,7 @@ namespace BCnEncoder.Shared
 			15, 15, 15, 15, 15, 2, 2, 15
 		};
 
-		public static readonly RawBlock4X4RgbFloat ErrorBlock = new RawBlock4X4RgbFloat(new ColorRgbFloat(1, 0, 1));
+		public static readonly RawBlock4X4RgbaFloat ErrorBlock = new RawBlock4X4RgbaFloat(new ColorRgbaFloat(1, 0, 1));
 
 		public static readonly Bc6BlockType[] Subsets1Types =
 		{
@@ -1138,9 +1138,9 @@ namespace BCnEncoder.Shared
 			return result;
 		}
 
-		public readonly RawBlock4X4RgbFloat Decode(bool signed)
+		public readonly RawBlock4X4RgbaFloat Decode(bool signed)
 		{
-			var output = new RawBlock4X4RgbFloat();
+			var output = new RawBlock4X4RgbaFloat();
 			var pixels = output.AsSpan;
 
 			if (Type == Bc6BlockType.Unknown)
@@ -1174,7 +1174,8 @@ namespace BCnEncoder.Shared
 
 				var (r, g, b) = FinishUnQuantize(InterpolateColor(endPointStart, endPointEnd, colorIndex, ColorIndexBitCount), signed);
 
-				pixels[i] = new ColorRgbFloat((float)r, (float)g, (float)b);
+
+				pixels[i] = new ColorRgbaFloat((float)r, (float)g, (float)b, 1);
 			}
 
 			return output;

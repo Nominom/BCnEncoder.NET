@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 
 namespace BCnEncoder.Shared.Colors;
 
@@ -11,11 +12,11 @@ public static class ColorSpace
 	/// The sRGB -> linear RGB conversion is based on the sRGB spec:
 	/// http://www.w3.org/Graphics/Color/sRGB.html
 	/// </remarks>
-	/// <param name="srgbByte">A byte value between 0 and 255, representing the sRGB value.</param>
+	/// <param name="srgb">A sRGB float value.</param>
 	/// <returns>The linear RGB value.</returns>
-	public static float SrgbToLrgb(byte srgbByte)
+	[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+	public static float SrgbToLrgb(float srgb)
 	{
-		float srgb = srgbByte / 255.0f;
 		float lrgb;
 
 		if (srgb <= 0.04045f)
@@ -38,8 +39,9 @@ public static class ColorSpace
 	/// http://www.w3.org/Graphics/Color/sRGB.html
 	/// </remarks>
 	/// <param name="lrgb">A linear RGB value.</param>
-	/// <returns>The sRGB byte value.</returns>
-	public static byte LrgbToSrgb(float lrgb)
+	/// <returns>The sRGB float value.</returns>
+	[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+	public static float LrgbToSrgb(float lrgb)
 	{
 		float srgb;
 
@@ -52,8 +54,30 @@ public static class ColorSpace
 			srgb = 1.055f * MathF.Pow(lrgb, 1 / 2.4f) - 0.055f;
 		}
 
-		return (byte)MathF.Round(srgb * 255);
+		return srgb;
 	}
+
+	[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+	public static ColorRgbaFloat SrgbToLrgb(ColorRgbaFloat lrgb)
+	{
+		return new ColorRgbaFloat(
+			SrgbToLrgb(lrgb.r),
+			SrgbToLrgb(lrgb.g),
+			SrgbToLrgb(lrgb.b),
+			lrgb.a);
+	}
+
+	[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+	public static ColorRgbaFloat LrgbToSrgb(ColorRgbaFloat lrgb)
+	{
+		return new ColorRgbaFloat(
+			LrgbToSrgb(lrgb.r),
+			LrgbToSrgb(lrgb.g),
+			LrgbToSrgb(lrgb.b),
+			lrgb.a);
+	}
+
+
 
 	public static void LrgbToYCbCr(float r, float g, float b, out float y, out float cb, out float cr)
 	{

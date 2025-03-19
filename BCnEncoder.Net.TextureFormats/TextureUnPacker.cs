@@ -14,7 +14,7 @@ namespace BCnEncoder.TextureFormats
 				throw new ArgumentException("Format must be a non-block-compressed format", nameof(format));
 			}
 
-			var lineBytes = format.BytesPerBlock() * width;
+			var lineBytes = format.GetBytesPerBlock() * width;
 
 			if (texData.Length != lineBytes * height)
 			{
@@ -45,7 +45,7 @@ namespace BCnEncoder.TextureFormats
 				throw new ArgumentException("Format must be a non-block-compressed format", nameof(format));
 			}
 
-			var lineBytes = format.BytesPerBlock() * width;
+			var lineBytes = format.GetBytesPerBlock() * width;
 			var alignedLineBytes = ((lineBytes + (byteAlignment - 1)) / byteAlignment) * byteAlignment;
 
 			if (lineBytes == alignedLineBytes && lineBytes == texData.Length)

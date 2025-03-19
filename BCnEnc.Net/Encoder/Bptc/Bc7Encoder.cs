@@ -1,14 +1,18 @@
 using System;
 using System.Collections.Generic;
 using BCnEncoder.Shared;
+using BCnEncoder.Shared.Colors;
 
 namespace BCnEncoder.Encoder.Bptc
 {
-	internal class Bc7Encoder : BaseBcLdrBlockEncoder<Bc7Block>
+	internal class Bc7Encoder : BaseBcBlockEncoder<Bc7Block>
 	{
 
-		public override Bc7Block EncodeBlock(RawBlock4X4Rgba32 rawBlock, CompressionQuality quality)
+		public override Bc7Block EncodeBlock(RawBlock4X4RgbaFloat rawBlock, CompressionQuality quality, ColorConversionMode colorConversionMode)
 		{
+			// TODO: Do better.
+			rawBlock.ColorConvert(colorConversionMode);
+
 			switch (quality)
 			{
 				case CompressionQuality.Fast:
@@ -22,10 +26,7 @@ namespace BCnEncoder.Encoder.Bptc
 			}
 		}
 
-		/// <inheritdoc />
-		public override CompressionFormat EncodedFormat => CompressionFormat.Bc7;
-
-		private static ClusterIndices4X4 CreateClusterIndexBlock(RawBlock4X4Rgba32 raw, out int outputNumClusters, 
+		private static ClusterIndices4X4 CreateClusterIndexBlock(RawBlock4X4RgbaFloat raw, out int outputNumClusters,
 			int numClusters = 3)
 		{
 
@@ -55,7 +56,7 @@ namespace BCnEncoder.Encoder.Bptc
 			private const float ErrorThreshold = 0.005f;
 			private const int MaxTries = 5;
 
-			private static IEnumerable<Bc7Block> TryMethods(RawBlock4X4Rgba32 rawBlock, int[] best2SubsetPartitions, int[] best3SubsetPartitions, bool alpha)
+			private static IEnumerable<Bc7Block> TryMethods(RawBlock4X4RgbaFloat rawBlock, int[] best2SubsetPartitions, int[] best3SubsetPartitions, bool alpha)
 			{
 				if (alpha)
 				{
@@ -69,14 +70,14 @@ namespace BCnEncoder.Encoder.Bptc
 						if(best3SubsetPartitions[i] < 16) {
 							yield return Bc7Mode0Encoder.EncodeBlock(rawBlock, 3, best3SubsetPartitions[i]);
 						}
-						
+
 						yield return Bc7Mode1Encoder.EncodeBlock(rawBlock, 4, best2SubsetPartitions[i]);
-						
+
 					}
 				}
 			}
 
-			public static Bc7Block EncodeBlock(RawBlock4X4Rgba32 rawBlock)
+			public static Bc7Block EncodeBlock(RawBlock4X4RgbaFloat rawBlock)
 			{
 				var hasAlpha = rawBlock.HasTransparentPixels();
 
@@ -119,7 +120,7 @@ namespace BCnEncoder.Encoder.Bptc
 			private const float ErrorThreshold = 0.005f;
 			private const int MaxTries = 25;
 
-			private static IEnumerable<Bc7Block> TryMethods(RawBlock4X4Rgba32 rawBlock, int[] best2SubsetPartitions, int[] best3SubsetPartitions, bool alpha)
+			private static IEnumerable<Bc7Block> TryMethods(RawBlock4X4RgbaFloat rawBlock, int[] best2SubsetPartitions, int[] best3SubsetPartitions, bool alpha)
 			{
 				if (alpha)
 				{
@@ -149,7 +150,7 @@ namespace BCnEncoder.Encoder.Bptc
 				}
 			}
 
-			public static Bc7Block EncodeBlock(RawBlock4X4Rgba32 rawBlock)
+			public static Bc7Block EncodeBlock(RawBlock4X4RgbaFloat rawBlock)
 			{
 				var hasAlpha = rawBlock.HasTransparentPixels();
 
@@ -193,7 +194,7 @@ namespace BCnEncoder.Encoder.Bptc
 			private const float ErrorThreshold = 0.001f;
 			private const int MaxTries = 40;
 
-			private static IEnumerable<Bc7Block> TryMethods(RawBlock4X4Rgba32 rawBlock, int[] best2SubsetPartitions, int[] best3SubsetPartitions, bool alpha)
+			private static IEnumerable<Bc7Block> TryMethods(RawBlock4X4RgbaFloat rawBlock, int[] best2SubsetPartitions, int[] best3SubsetPartitions, bool alpha)
 			{
 				if (alpha)
 				{
@@ -224,7 +225,7 @@ namespace BCnEncoder.Encoder.Bptc
 				}
 			}
 
-			public static Bc7Block EncodeBlock(RawBlock4X4Rgba32 rawBlock)
+			public static Bc7Block EncodeBlock(RawBlock4X4RgbaFloat rawBlock)
 			{
 				var hasAlpha = rawBlock.HasTransparentPixels();
 

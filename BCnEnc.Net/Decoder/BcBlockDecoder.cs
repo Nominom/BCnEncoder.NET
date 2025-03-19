@@ -9,69 +9,26 @@ using BCnEncoder.Shared.Colors;
 
 namespace BCnEncoder.Decoder
 {
-	internal interface IBcBlockDecoder<TRawBlock> where TRawBlock : unmanaged
+	internal interface IBcBlockDecoder : IBcDecoder
 	{
-		TRawBlock[] Decode(ReadOnlyMemory<byte> data, OperationContext context);
-		TRawBlock DecodeBlock(ReadOnlySpan<byte> data);
+		RawBlock4X4RgbaFloat[] Decode(ReadOnlyMemory<byte> data, OperationContext context);
+		RawBlock4X4RgbaFloat DecodeBlock(ReadOnlySpan<byte> data);
 	}
 
-	internal interface IBcLdrBlockDecoder : IBcBlockDecoder<RawBlock4X4Rgba32>, IBcLdrDecoder {}
-	internal interface IBcHdrBlockDecoder : IBcBlockDecoder<RawBlock4X4RgbFloat>, IBcHdrDecoder {}
-
-	internal abstract class BaseLdrBlockDecoder<TEncodedBlock> : BaseBcBlockDecoder<TEncodedBlock, RawBlock4X4Rgba32>, IBcLdrBlockDecoder
+	internal abstract class BaseBcBlockDecoder<TEncodedBlock> : IBcBlockDecoder
 		where TEncodedBlock : unmanaged
-	{
-
-		/// <inheritdoc />
-		public byte[] Decode(ReadOnlyMemory<byte> data, int width, int height, OperationContext context)
-		{
-			var blocks = Decode(data, context);
-			return ImageToBlocks.ColorsFromRawBlocks(blocks, width, height).CopyAsBytes();
-		}
-
-		/// <inheritdoc />
-		public ColorRgba32[] DecodeColor(ReadOnlyMemory<byte> data, int width, int height, OperationContext context)
-		{
-			var blocks = Decode(data, context);
-			return ImageToBlocks.ColorsFromRawBlocks(blocks, width, height);
-		}
-	}
-
-	internal abstract class BaseHdrBlockDecoder<TEncodedBlock> : BaseBcBlockDecoder<TEncodedBlock, RawBlock4X4RgbFloat>, IBcHdrBlockDecoder
-		where TEncodedBlock : unmanaged
-	{
-
-		/// <inheritdoc />
-		public byte[] Decode(ReadOnlyMemory<byte> data, int width, int height, OperationContext context)
-		{
-			var blocks = Decode(data, context);
-			return ImageToBlocks.ColorsFromRawBlocks(blocks, width, height).ConvertTo<ColorRgbFloat, ColorRgbaFloat>().CopyAsBytes();
-		}
-
-		/// <inheritdoc />
-		public ColorRgbaFloat[] DecodeColor(ReadOnlyMemory<byte> data, int width, int height, OperationContext context)
-		{
-			var blocks = Decode(data, context);
-			return ImageToBlocks.ColorsFromRawBlocks(blocks, width, height).ConvertTo<ColorRgbFloat, ColorRgbaFloat>();
-		}
-	}
-
-	internal abstract class BaseBcBlockDecoder<TEncodedBlock, TRawBlock> : IBcBlockDecoder<TRawBlock>
-		where TEncodedBlock : unmanaged
-		where TRawBlock : unmanaged
 	{
 		private static readonly object lockObj = new object();
 
-		public TRawBlock[] Decode(ReadOnlyMemory<byte> data, OperationContext context)
+		public RawBlock4X4RgbaFloat[] Decode(ReadOnlyMemory<byte> data, OperationContext context)
 		{
-
 			if (data.Length % Unsafe.SizeOf<TEncodedBlock>() != 0)
 			{
 				throw new InvalidDataException("Given data does not align with the block length.");
 			}
 
 			var blockCount = data.Length / Unsafe.SizeOf<TEncodedBlock>();
-			var output = new TRawBlock[blockCount];
+			var output = new RawBlock4X4RgbaFloat[blockCount];
 
 			if (context.IsParallel)
 			{
@@ -84,6 +41,7 @@ namespace BCnEncoder.Decoder
 				{
 					var encodedBlocks = MemoryMarshal.Cast<byte, TEncodedBlock>(data.Span);
 					output[i] = DecodeBlock(encodedBlocks[i]);
+					output[i].ColorConvert(context.ColorConversionMode);
 
 					if (context.Progress != null)
 					{
@@ -102,56 +60,78 @@ namespace BCnEncoder.Decoder
 					context.CancellationToken.ThrowIfCancellationRequested();
 
 					output[i] = DecodeBlock(encodedBlocks[i]);
+					output[i].ColorConvert(context.ColorConversionMode);
 
 					context.Progress?.Report(1);
 				}
 			}
 
+
+
 			return output;
 		}
 
-		public TRawBlock DecodeBlock(ReadOnlySpan<byte> data)
+		public RawBlock4X4RgbaFloat DecodeBlock(ReadOnlySpan<byte> data)
 		{
 			var encodedBlock = MemoryMarshal.Cast<byte, TEncodedBlock>(data)[0];
 			return DecodeBlock(encodedBlock);
 		}
 
-		protected abstract TRawBlock DecodeBlock(TEncodedBlock block);
+		protected abstract RawBlock4X4RgbaFloat DecodeBlock(TEncodedBlock block);
+
+		public byte[] Decode(ReadOnlyMemory<byte> data, int width, int height, OperationContext context)
+		{
+			byte[] output = new byte[width * height * Unsafe.SizeOf<ColorRgbaFloat>()];
+			Span<ColorRgbaFloat> colors = MemoryMarshal.Cast<byte, ColorRgbaFloat>(output);
+
+			ImageToBlocks.ColorsFromRawBlocks(Decode(data, context), colors, width, height);
+
+			return output;
+		}
+
+		public ColorRgbaFloat[] DecodeColor(ReadOnlyMemory<byte> data, int width, int height, OperationContext context)
+		{
+			ColorRgbaFloat[] output = new ColorRgbaFloat[width * height];
+
+			ImageToBlocks.ColorsFromRawBlocks(Decode(data, context), output, width, height);
+
+			return output;
+		}
 	}
 
-	internal class Bc1NoAlphaDecoder : BaseLdrBlockDecoder<Bc1Block>
+	internal class Bc1NoAlphaDecoder : BaseBcBlockDecoder<Bc1Block>
 	{
-		protected override RawBlock4X4Rgba32 DecodeBlock(Bc1Block block)
+		protected override RawBlock4X4RgbaFloat DecodeBlock(Bc1Block block)
 		{
 			return block.Decode(false);
 		}
 	}
 
-	internal class Bc1ADecoder : BaseLdrBlockDecoder<Bc1Block>
+	internal class Bc1ADecoder : BaseBcBlockDecoder<Bc1Block>
 	{
-		protected override RawBlock4X4Rgba32 DecodeBlock(Bc1Block block)
+		protected override RawBlock4X4RgbaFloat DecodeBlock(Bc1Block block)
 		{
 			return block.Decode(true);
 		}
 	}
 
-	internal class Bc2Decoder : BaseLdrBlockDecoder<Bc2Block>
+	internal class Bc2Decoder : BaseBcBlockDecoder<Bc2Block>
 	{
-		protected override RawBlock4X4Rgba32 DecodeBlock(Bc2Block block)
+		protected override RawBlock4X4RgbaFloat DecodeBlock(Bc2Block block)
 		{
 			return block.Decode();
 		}
 	}
 
-	internal class Bc3Decoder : BaseLdrBlockDecoder<Bc3Block>
+	internal class Bc3Decoder : BaseBcBlockDecoder<Bc3Block>
 	{
-		protected override RawBlock4X4Rgba32 DecodeBlock(Bc3Block block)
+		protected override RawBlock4X4RgbaFloat DecodeBlock(Bc3Block block)
 		{
 			return block.Decode();
 		}
 	}
 
-	internal class Bc4Decoder : BaseLdrBlockDecoder<Bc4Block>
+	internal class Bc4Decoder : BaseBcBlockDecoder<Bc4Block>
 	{
 		private readonly ColorComponent component;
 
@@ -160,72 +140,74 @@ namespace BCnEncoder.Decoder
 			this.component = component;
 		}
 
-		protected override RawBlock4X4Rgba32 DecodeBlock(Bc4Block block)
+		protected override RawBlock4X4RgbaFloat DecodeBlock(Bc4Block block)
 		{
 			return block.Decode(component);
 		}
 	}
 
-	internal class Bc5Decoder : BaseLdrBlockDecoder<Bc5Block>
+	internal class Bc5Decoder : BaseBcBlockDecoder<Bc5Block>
 	{
 		private readonly ColorComponent component1;
 		private readonly ColorComponent component2;
+		private readonly ColorComponent componentCalculated;
 
-		public Bc5Decoder(ColorComponent component1, ColorComponent component2)
+		public Bc5Decoder(ColorComponent component1, ColorComponent component2, ColorComponent componentCalculated)
 		{
 			this.component1 = component1;
 			this.component2 = component2;
+			this.componentCalculated = componentCalculated;
 		}
 
-		protected override RawBlock4X4Rgba32 DecodeBlock(Bc5Block block)
+		protected override RawBlock4X4RgbaFloat DecodeBlock(Bc5Block block)
 		{
-			return block.Decode(component1, component2);
+			return block.Decode(component1, component2, componentCalculated);
 		}
 	}
 
-	internal class Bc6UDecoder : BaseHdrBlockDecoder<Bc6Block>
+	internal class Bc6UDecoder : BaseBcBlockDecoder<Bc6Block>
 	{
-		protected override RawBlock4X4RgbFloat DecodeBlock(Bc6Block block)
+		protected override RawBlock4X4RgbaFloat DecodeBlock(Bc6Block block)
 		{
 			return block.Decode(false);
 		}
 	}
 
-	internal class Bc6SDecoder : BaseHdrBlockDecoder<Bc6Block>
+	internal class Bc6SDecoder : BaseBcBlockDecoder<Bc6Block>
 	{
-		protected override RawBlock4X4RgbFloat DecodeBlock(Bc6Block block)
+		protected override RawBlock4X4RgbaFloat DecodeBlock(Bc6Block block)
 		{
 			return block.Decode(true);
 		}
 	}
 
-	internal class Bc7Decoder : BaseLdrBlockDecoder<Bc7Block>
+	internal class Bc7Decoder : BaseBcBlockDecoder<Bc7Block>
 	{
-		protected override RawBlock4X4Rgba32 DecodeBlock(Bc7Block block)
+		protected override RawBlock4X4RgbaFloat DecodeBlock(Bc7Block block)
 		{
 			return block.Decode();
 		}
 	}
 
-	internal class AtcDecoder : BaseLdrBlockDecoder<AtcBlock>
+	internal class AtcDecoder : BaseBcBlockDecoder<AtcBlock>
 	{
-		protected override RawBlock4X4Rgba32 DecodeBlock(AtcBlock block)
+		protected override RawBlock4X4RgbaFloat DecodeBlock(AtcBlock block)
 		{
 			return block.Decode();
 		}
 	}
 
-	internal class AtcExplicitAlphaDecoder : BaseLdrBlockDecoder<AtcExplicitAlphaBlock>
+	internal class AtcExplicitAlphaDecoder : BaseBcBlockDecoder<AtcExplicitAlphaBlock>
 	{
-		protected override RawBlock4X4Rgba32 DecodeBlock(AtcExplicitAlphaBlock block)
+		protected override RawBlock4X4RgbaFloat DecodeBlock(AtcExplicitAlphaBlock block)
 		{
 			return block.Decode();
 		}
 	}
 
-	internal class AtcInterpolatedAlphaDecoder : BaseLdrBlockDecoder<AtcInterpolatedAlphaBlock>
+	internal class AtcInterpolatedAlphaDecoder : BaseBcBlockDecoder<AtcInterpolatedAlphaBlock>
 	{
-		protected override RawBlock4X4Rgba32 DecodeBlock(AtcInterpolatedAlphaBlock block)
+		protected override RawBlock4X4RgbaFloat DecodeBlock(AtcInterpolatedAlphaBlock block)
 		{
 			return block.Decode();
 		}

@@ -1,10 +1,11 @@
 using System;
 using System.Diagnostics;
 using BCnEncoder.Shared;
+using BCnEncoder.Shared.Colors;
 
 namespace BCnEncoder.Encoder
 {
-	internal class Bc4BlockEncoder : BaseBcLdrBlockEncoder<Bc4Block>
+	internal class Bc4BlockEncoder : BaseBcBlockEncoder<Bc4Block>
 	{
 		private readonly Bc4ComponentBlockEncoder bc4Encoder;
 
@@ -13,7 +14,7 @@ namespace BCnEncoder.Encoder
 			bc4Encoder = new Bc4ComponentBlockEncoder(component);
 		}
 
-		public override Bc4Block EncodeBlock(RawBlock4X4Rgba32 block, CompressionQuality quality)
+		public override Bc4Block EncodeBlock(RawBlock4X4RgbaFloat block, CompressionQuality quality, ColorConversionMode _)
 		{
 			var output = new Bc4Block
 			{
@@ -22,9 +23,6 @@ namespace BCnEncoder.Encoder
 
 			return output;
 		}
-
-		/// <inheritdoc />
-		public override CompressionFormat EncodedFormat => CompressionFormat.Bc4;
 	}
 
 	internal class Bc4ComponentBlockEncoder
@@ -36,7 +34,7 @@ namespace BCnEncoder.Encoder
 			this.component = component;
 		}
 
-		public Bc4ComponentBlock EncodeBlock(RawBlock4X4Rgba32 block, CompressionQuality quality)
+		public Bc4ComponentBlock EncodeBlock(RawBlock4X4RgbaFloat block, CompressionQuality quality)
 		{
 			var output = new Bc4ComponentBlock();
 
@@ -44,7 +42,7 @@ namespace BCnEncoder.Encoder
 			var colors = new byte[pixels.Length];
 
 			for (var i = 0; i < pixels.Length; i++)
-				colors[i] = ComponentHelper.ColorToComponent(pixels[i], component);
+				colors[i] = ComponentHelper.ColorToComponent(pixels[i].As<ColorRgba32>(), component);
 
 			switch (quality)
 			{

@@ -1,9 +1,10 @@
+using System;
 using BCnEncoder.Shared;
 using BCnEncoder.Shared.Colors;
 
 namespace BCnEncoder.Encoder
 {
-	internal unsafe class AtcBlockEncoder : BaseBcLdrBlockEncoder<AtcBlock>
+	internal unsafe class AtcBlockEncoder : BaseBcBlockEncoder<AtcBlock>
 	{
 		private readonly Bc1BlockEncoder bc1BlockEncoder;
 
@@ -12,12 +13,12 @@ namespace BCnEncoder.Encoder
 			bc1BlockEncoder = new Bc1BlockEncoder();
 		}
 
-		public override AtcBlock EncodeBlock(RawBlock4X4Rgba32 block, CompressionQuality quality)
+		public override AtcBlock EncodeBlock(RawBlock4X4RgbaFloat block, CompressionQuality quality, ColorConversionMode colorConversionMode)
 		{
 			var atcBlock = new AtcBlock();
 
 			// EncodeBlock with BC1 first
-			var bc1Block = bc1BlockEncoder.EncodeBlock(block, quality);
+			var bc1Block = bc1BlockEncoder.EncodeBlock(block, quality, colorConversionMode);
 
 			// Atc specific modifications to BC1
 			// According to http://www.guildsoftware.com/papers/2012.Converting.DXTC.to.Atc.pdf
@@ -36,11 +37,17 @@ namespace BCnEncoder.Encoder
 			return atcBlock;
 		}
 
-		/// <inheritdoc />
-		public override CompressionFormat EncodedFormat => CompressionFormat.Atc;
+		public override void EncodeBlocks(ReadOnlySpan<RawBlock4X4RgbaFloat> blocks, Span<AtcBlock> outputBlocks, CompressionQuality quality,
+			ColorConversionMode colorConversionMode)
+		{
+			for (var i = 0; i < blocks.Length; i++)
+			{
+				outputBlocks[i] = EncodeBlock(blocks[i], quality, colorConversionMode);
+			}
+		}
 	}
 
-	internal class AtcExplicitAlphaBlockEncoder : BaseBcLdrBlockEncoder<AtcExplicitAlphaBlock>
+	internal class AtcExplicitAlphaBlockEncoder : BaseBcBlockEncoder<AtcExplicitAlphaBlock>
 	{
 		private readonly AtcBlockEncoder atcBlockEncoder;
 
@@ -49,15 +56,15 @@ namespace BCnEncoder.Encoder
 			atcBlockEncoder = new AtcBlockEncoder();
 		}
 
-		public override AtcExplicitAlphaBlock EncodeBlock(RawBlock4X4Rgba32 block, CompressionQuality quality)
+		public override AtcExplicitAlphaBlock EncodeBlock(RawBlock4X4RgbaFloat block, CompressionQuality quality, ColorConversionMode colorConversionMode)
 		{
-			var atcBlock = atcBlockEncoder.EncodeBlock(block, quality);
+			var atcBlock = atcBlockEncoder.EncodeBlock(block, quality, colorConversionMode);
 
 			// EncodeBlock alpha
 			var bc2AlphaBlock = new Bc2AlphaBlock();
 			for (var i = 0; i < 16; i++)
 			{
-				bc2AlphaBlock.SetAlpha(i, block[i].a);
+				bc2AlphaBlock.SetAlpha(i, ByteHelper.FloatToByte(block[i].a));
 			}
 
 			return new AtcExplicitAlphaBlock
@@ -67,11 +74,17 @@ namespace BCnEncoder.Encoder
 			};
 		}
 
-		/// <inheritdoc />
-		public override CompressionFormat EncodedFormat => CompressionFormat.AtcExplicitAlpha;
+		public override void EncodeBlocks(ReadOnlySpan<RawBlock4X4RgbaFloat> blocks, Span<AtcExplicitAlphaBlock> outputBlocks, CompressionQuality quality,
+			ColorConversionMode colorConversionMode)
+		{
+			for (var i = 0; i < blocks.Length; i++)
+			{
+				outputBlocks[i] = EncodeBlock(blocks[i], quality, colorConversionMode);
+			}
+		}
 	}
 
-	internal class AtcInterpolatedAlphaBlockEncoder : BaseBcLdrBlockEncoder<AtcInterpolatedAlphaBlock>
+	internal class AtcInterpolatedAlphaBlockEncoder : BaseBcBlockEncoder<AtcInterpolatedAlphaBlock>
 	{
 		private readonly Bc4ComponentBlockEncoder bc4BlockEncoder;
 		private readonly AtcBlockEncoder atcBlockEncoder;
@@ -82,10 +95,10 @@ namespace BCnEncoder.Encoder
 			atcBlockEncoder = new AtcBlockEncoder();
 		}
 
-		public override AtcInterpolatedAlphaBlock EncodeBlock(RawBlock4X4Rgba32 block, CompressionQuality quality)
+		public override AtcInterpolatedAlphaBlock EncodeBlock(RawBlock4X4RgbaFloat block, CompressionQuality quality, ColorConversionMode colorConversionMode)
 		{
 			var bc4Block = bc4BlockEncoder.EncodeBlock(block, quality);
-			var atcBlock = atcBlockEncoder.EncodeBlock(block, quality);
+			var atcBlock = atcBlockEncoder.EncodeBlock(block, quality, colorConversionMode);
 
 			return new AtcInterpolatedAlphaBlock
 			{
@@ -93,8 +106,5 @@ namespace BCnEncoder.Encoder
 				colors = atcBlock
 			};
 		}
-
-		/// <inheritdoc />
-		public override CompressionFormat EncodedFormat => CompressionFormat.AtcInterpolatedAlpha;
 	}
 }

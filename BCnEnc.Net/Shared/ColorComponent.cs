@@ -26,8 +26,13 @@ namespace BCnEncoder.Shared
 		A,
 
 		/// <summary>
-		/// Use the color's luminance value as the component.
+		/// Fill all components of an Rgba color (excluding alpha).
 		/// </summary>
-		Luminance
+		RGB,
+
+		/// <summary>
+		/// Use no component.
+		/// </summary>
+		None
 	}
 }

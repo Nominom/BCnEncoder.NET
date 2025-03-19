@@ -1,4 +1,6 @@
-﻿namespace BCnEncoder.Shared
+﻿using System;
+
+namespace BCnEncoder.Shared
 {
 	internal static class ByteHelper
 	{
@@ -10,7 +12,10 @@
 		}
 
 		public static byte ClampToByte(float f)
-			=> ClampToByte((int)f);
+			=> ClampToByte((int)MathF.Round(f));
+
+		public static byte FloatToByte(float f)
+			=> ClampToByte((int)MathF.Round(f * 255f));
 
 		public static byte Extract1(ulong source, int index)
 		{

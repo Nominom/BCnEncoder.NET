@@ -1,8 +1,9 @@
 using BCnEncoder.Shared;
+using BCnEncoder.Shared.Colors;
 
 namespace BCnEncoder.Encoder
 {
-	internal class Bc5BlockEncoder : BaseBcLdrBlockEncoder<Bc5Block>
+	internal class Bc5BlockEncoder : BaseBcBlockEncoder<Bc5Block>
 	{
 		private readonly Bc4ComponentBlockEncoder redBlockEncoder;
 		private readonly Bc4ComponentBlockEncoder greenBlockEncoder;
@@ -13,7 +14,7 @@ namespace BCnEncoder.Encoder
 			greenBlockEncoder = new Bc4ComponentBlockEncoder(component2);
 		}
 
-		public override Bc5Block EncodeBlock(RawBlock4X4Rgba32 block, CompressionQuality quality)
+		public override Bc5Block EncodeBlock(RawBlock4X4RgbaFloat block, CompressionQuality quality, ColorConversionMode _)
 		{
 			return new Bc5Block
 			{
@@ -21,8 +22,5 @@ namespace BCnEncoder.Encoder
 				greenBlock = greenBlockEncoder.EncodeBlock(block, quality)
 			};
 		}
-
-		/// <inheritdoc />
-		public override CompressionFormat EncodedFormat => CompressionFormat.Bc5;
 	}
 }

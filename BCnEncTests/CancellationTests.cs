@@ -40,7 +40,7 @@ namespace BCnEncTests
 		[InlineData(false, "hdr_1_rgbe", CompressionFormat.Rgb24)]
 		[InlineData(false, "hdr_1_rgbe", CompressionFormat.RgbaHalf)]
 		[InlineData(false, "hdr_1_rgbe", CompressionFormat.Bc6U)]
-		public async void TestEncodeToRawBytesCancel(bool parallel, string name, CompressionFormat format)
+		public async Task TestEncodeToRawBytesCancel(bool parallel, string name, CompressionFormat format)
 		{
 			var encoder = MakeEncoder(format, parallel);
 
@@ -65,7 +65,7 @@ namespace BCnEncTests
 		[InlineData(false, "hdr_1_rgbe", CompressionFormat.Rgb24)]
 		[InlineData(false, "hdr_1_rgbe", CompressionFormat.RgbaHalf)]
 		[InlineData(false, "hdr_1_rgbe", CompressionFormat.Bc6U)]
-		public async void TestEncodeCancel(bool parallel, string name, CompressionFormat format)
+		public async Task TestEncodeCancel(bool parallel, string name, CompressionFormat format)
 		{
 			var encoder = MakeEncoder(format, parallel);
 
@@ -105,21 +105,23 @@ namespace BCnEncTests
 			if (inputData.Format.IsHdrFormat())
 			{
 				task = Assert.ThrowsAnyAsync<OperationCanceledException>(
-					() => decoder.DecodeRawHdrAsync(
+					() => decoder.DecodeRawAsync<byte>(
 						inputData.First.Data,
 						inputData.Width,
 						inputData.Height,
 						inputData.Format,
+						CompressionFormat.RgbaFloat,
 						cancelSource.Token));
 			}
 			else
 			{
 				task = Assert.ThrowsAnyAsync<OperationCanceledException>(
-					() => decoder.DecodeRawLdrAsync(
+					() => decoder.DecodeRawAsync<byte>(
 						inputData.First.Data,
 						inputData.Width,
 						inputData.Height,
 						inputData.Format,
+						CompressionFormat.Rgba32_sRGB,
 						cancelSource.Token));
 			}
 			#pragma warning restore xUnit2021
@@ -137,7 +139,7 @@ namespace BCnEncTests
 		[InlineData(false, "bc1a_unorm")]
 		[InlineData(false, "bc7_unorm")]
 		[InlineData(false, "bc6h_ufloat")]
-		public async void TestDecodeCancel(bool parallel, string name)
+		public async Task TestDecodeCancel(bool parallel, string name)
 		{
 			var decoder = MakeDecoder(parallel);
 
@@ -148,7 +150,7 @@ namespace BCnEncTests
 			var cancelSource = new CancellationTokenSource();
 
 			// Test
-			var task = Assert.ThrowsAnyAsync<OperationCanceledException>(() => decoder.DecodeAsync(inputData, cancelSource.Token));
+			var task = Assert.ThrowsAnyAsync<OperationCanceledException>(() => decoder.DecodeAsync(inputData, CompressionFormat.Rgba32, cancelSource.Token));
 			cancelSource.Cancel();
 			await task;
 		}

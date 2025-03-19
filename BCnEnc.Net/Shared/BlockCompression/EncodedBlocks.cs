@@ -25,23 +25,23 @@ namespace BCnEncoder.Shared
 
 		public readonly bool HasAlphaOrBlack => color0.data <= color1.data;
 
-		public readonly RawBlock4X4Rgba32 Decode(bool useAlpha)
+		public readonly RawBlock4X4RgbaFloat Decode(bool useAlpha)
 		{
-			var output = new RawBlock4X4Rgba32();
+			var output = new RawBlock4X4RgbaFloat();
 			var pixels = output.AsSpan;
 
-			var color0 = this.color0.ToColorRgb24();
-			var color1 = this.color1.ToColorRgb24();
+			var color0 = this.color0.ToColorRgbaFloat();
+			var color1 = this.color1.ToColorRgbaFloat();
 
 			useAlpha = useAlpha && HasAlphaOrBlack;
 
 			var colors = HasAlphaOrBlack ?
-				stackalloc ColorRgb24[] {
+				stackalloc ColorRgbaFloat[] {
 				color0,
 				color1,
 				color0.InterpolateHalf(color1),
-				new ColorRgb24(0, 0, 0)
-			} : stackalloc ColorRgb24[] {
+				new ColorRgbaFloat(0, 0, 0)
+			} : stackalloc ColorRgbaFloat[] {
 				color0,
 				color1,
 				color0.InterpolateThird(color1, 1),
@@ -54,11 +54,11 @@ namespace BCnEncoder.Shared
 				var color = colors[colorIndex];
 				if (useAlpha && colorIndex == 3)
 				{
-					pixels[i] = new ColorRgba32(0, 0, 0, 0);
+					pixels[i] = new ColorRgbaFloat(0, 0, 0, 0);
 				}
 				else
 				{
-					pixels[i] = new ColorRgba32(color.r, color.g, color.b, 255);
+					pixels[i] = color;
 				}
 			}
 			return output;
@@ -88,15 +88,15 @@ namespace BCnEncoder.Shared
 
 		public void SetAlpha(int index, byte alpha) => alphaBlock.SetAlpha(index, alpha);
 
-		public readonly RawBlock4X4Rgba32 Decode()
+		public readonly RawBlock4X4RgbaFloat Decode()
 		{
-			var output = new RawBlock4X4Rgba32();
+			var output = new RawBlock4X4RgbaFloat();
 			var pixels = output.AsSpan;
 
-			var color0 = this.color0.ToColorRgb24();
-			var color1 = this.color1.ToColorRgb24();
+			var color0 = this.color0.ToColorRgbaFloat();
+			var color1 = this.color1.ToColorRgbaFloat();
 
-			Span<ColorRgb24> colors = stackalloc ColorRgb24[] {
+			Span<ColorRgbaFloat> colors = stackalloc ColorRgbaFloat[] {
 				color0,
 				color1,
 				color0.InterpolateThird(color1, 1),
@@ -106,9 +106,9 @@ namespace BCnEncoder.Shared
 			for (var i = 0; i < pixels.Length; i++)
 			{
 				var colorIndex = (int)((colorIndices >> (i * 2)) & 0b11);
-				var color = colors[colorIndex];
+				var color = new ColorRgbaFloat(colors[colorIndex].r, colors[colorIndex].g, colors[colorIndex].b, GetAlpha(i) / 255f);
 
-				pixels[i] = new ColorRgba32(color.r, color.g, color.b, GetAlpha(i));
+				pixels[i] = color;
 			}
 			return output;
 		}
@@ -149,15 +149,15 @@ namespace BCnEncoder.Shared
 
 		public void SetAlphaIndex(int pixelIndex, byte alphaIndex) => alphaBlock.SetComponentIndex(pixelIndex, alphaIndex);
 
-		public readonly RawBlock4X4Rgba32 Decode()
+		public readonly RawBlock4X4RgbaFloat Decode()
 		{
-			var output = new RawBlock4X4Rgba32();
+			var output = new RawBlock4X4RgbaFloat();
 			var pixels = output.AsSpan;
 
-			var color0 = this.color0.ToColorRgb24();
-			var color1 = this.color1.ToColorRgb24();
+			var color0 = this.color0.ToColorRgbaFloat();
+			var color1 = this.color1.ToColorRgbaFloat();
 
-			Span<ColorRgb24> colors = stackalloc ColorRgb24[] {
+			Span<ColorRgbaFloat> colors = stackalloc ColorRgbaFloat[] {
 				color0,
 				color1,
 				color0.InterpolateThird(color1, 1),
@@ -169,9 +169,9 @@ namespace BCnEncoder.Shared
 			for (var i = 0; i < pixels.Length; i++)
 			{
 				var colorIndex = (int)((colorIndices >> (i * 2)) & 0b11);
-				var color = colors[colorIndex];
+				var color = new ColorRgbaFloat(colors[colorIndex].r, colors[colorIndex].g, colors[colorIndex].b, alphas[i] / 255f);
 
-				pixels[i] = new ColorRgba32(color.r, color.g, color.b, alphas[i]);
+				pixels[i] = color;
 			}
 			return output;
 		}
@@ -198,16 +198,16 @@ namespace BCnEncoder.Shared
 
 		public void SetComponentIndex(int pixelIndex, byte redIndex) => componentBlock.SetComponentIndex(pixelIndex, redIndex);
 
-		public readonly RawBlock4X4Rgba32 Decode(ColorComponent component = ColorComponent.R)
+		public readonly RawBlock4X4RgbaFloat Decode(ColorComponent component = ColorComponent.R)
 		{
-			var output = new RawBlock4X4Rgba32();
+			var output = new RawBlock4X4RgbaFloat();
 			var pixels = output.AsSpan;
 
 			var components = componentBlock.Decode();
 
 			for (var i = 0; i < pixels.Length; i++)
 			{
-				pixels[i] = ComponentHelper.ComponentToColor(component, components[i]);
+				ComponentHelper.ComponentToColor(component, components[i]).To(ref pixels[i]);
 			}
 
 			return output;
@@ -220,30 +220,6 @@ namespace BCnEncoder.Shared
 		public Bc4ComponentBlock redBlock;
 		public Bc4ComponentBlock greenBlock;
 
-		public byte Red0
-		{
-			readonly get => redBlock.Endpoint0;
-			set => redBlock.Endpoint0 = value;
-		}
-
-		public byte Red1
-		{
-			readonly get => redBlock.Endpoint1;
-			set => redBlock.Endpoint1 = value;
-		}
-
-		public byte Green0
-		{
-			readonly get => greenBlock.Endpoint0;
-			set => greenBlock.Endpoint0 = value;
-		}
-
-		public byte Green1
-		{
-			readonly get => greenBlock.Endpoint1;
-			set => greenBlock.Endpoint1 = value;
-		}
-
 		public readonly byte GetRedIndex(int pixelIndex) => redBlock.GetComponentIndex(pixelIndex);
 
 		public void SetRedIndex(int pixelIndex, byte redIndex) => redBlock.SetComponentIndex(pixelIndex, redIndex);
@@ -252,9 +228,9 @@ namespace BCnEncoder.Shared
 
 		public void SetGreenIndex(int pixelIndex, byte greenIndex) => greenBlock.SetComponentIndex(pixelIndex, greenIndex);
 
-		public readonly RawBlock4X4Rgba32 Decode(ColorComponent component1 = ColorComponent.R, ColorComponent component2 = ColorComponent.G)
+		public readonly RawBlock4X4RgbaFloat Decode(ColorComponent component1 = ColorComponent.R, ColorComponent component2 = ColorComponent.G, ColorComponent componentCalculated = ColorComponent.None)
 		{
-			var output = new RawBlock4X4Rgba32();
+			var output = new RawBlock4X4RgbaFloat();
 			var pixels = output.AsSpan;
 
 			var reds = redBlock.Decode();
@@ -262,8 +238,25 @@ namespace BCnEncoder.Shared
 
 			for (var i = 0; i < pixels.Length; i++)
 			{
-				pixels[i] = ComponentHelper.ComponentToColor(component1, reds[i]);
-				pixels[i] = ComponentHelper.ComponentToColor(pixels[i], component2, greens[i]);
+				ColorRgba32 color = ComponentHelper.ComponentToColor(component1, reds[i]);
+				ComponentHelper.ComponentToColor(ref color, component2, greens[i]);
+
+				// Calculate Z
+				if (componentCalculated != ColorComponent.None)
+				{
+					float x = reds[i] / 255f;
+					float y = greens[i] / 255f;
+					float z = 1 - x * x - y * y;
+
+					if (z < 0)
+						z = 0;
+					else
+						z = MathF.Sqrt(z);
+
+					ComponentHelper.ComponentToColor(ref color, componentCalculated, (byte)(z * 255f));
+				}
+
+				color.To(ref pixels[i]);
 			}
 
 			return output;
@@ -288,16 +281,16 @@ namespace BCnEncoder.Shared
 			}
 		}
 
-		public readonly RawBlock4X4Rgba32 Decode()
+		public readonly RawBlock4X4RgbaFloat Decode()
 		{
-			var output = new RawBlock4X4Rgba32();
+			var output = new RawBlock4X4RgbaFloat();
 			var pixels = output.AsSpan;
 
-			var color0 = this.color0.ToColorRgb24();
-			var color1 = this.color1.ToColorRgb24();
+			var color0 = this.color0.ToColorRgbaFloat();
+			var color1 = this.color1.ToColorRgbaFloat();
 
-			Span<ColorRgb24> colors = stackalloc ColorRgb24[] {
-				new ColorRgb24(0, 0, 0),
+			Span<ColorRgbaFloat> colors = stackalloc ColorRgbaFloat[] {
+				new ColorRgbaFloat(0, 0, 0),
 				color0.InterpolateFourthAtc(color1, 1),
 				color0,
 				color1
@@ -309,7 +302,7 @@ namespace BCnEncoder.Shared
 
 				var color = this.color0.Mode == 0 ? color0.InterpolateThird(color1, colorIndex) : colors[colorIndex];
 
-				pixels[i] = new ColorRgba32(color.r, color.g, color.b, 255);
+				pixels[i] = color;
 			}
 			return output;
 		}
@@ -422,14 +415,14 @@ namespace BCnEncoder.Shared
 		public Bc2AlphaBlock alphas;
 		public AtcBlock colors;
 
-		public readonly RawBlock4X4Rgba32 Decode()
+		public readonly RawBlock4X4RgbaFloat Decode()
 		{
 			var output = colors.Decode();
 			var pixels = output.AsSpan;
 
 			for (var i = 0; i < pixels.Length; i++)
 			{
-				pixels[i].a = alphas.GetAlpha(i);
+				pixels[i].a = alphas.GetAlpha(i) / 255f;
 			}
 			return output;
 		}
@@ -441,7 +434,7 @@ namespace BCnEncoder.Shared
 		public Bc4ComponentBlock alphas;
 		public AtcBlock colors;
 
-		public readonly RawBlock4X4Rgba32 Decode()
+		public readonly RawBlock4X4RgbaFloat Decode()
 		{
 			var output = colors.Decode();
 			var pixels = output.AsSpan;
@@ -450,7 +443,7 @@ namespace BCnEncoder.Shared
 
 			for (var i = 0; i < pixels.Length; i++)
 			{
-				pixels[i].a = componentValues[i];
+				pixels[i].a = componentValues[i] / 255f;
 			}
 			return output;
 		}

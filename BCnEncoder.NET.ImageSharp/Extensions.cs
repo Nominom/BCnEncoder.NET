@@ -17,13 +17,53 @@ namespace BCnEncoder.ImageSharp
 	public static class BCnTextureDataExtensions
 	{
 		/// <summary>
+		/// Wrap a <see cref="BCnTextureData"/> single face and mipLevel as an <see cref="Image"/>.
+		/// The owner of the pixel memory is still the original texture <paramref name="data"/>,
+		/// so modifying the data in the <see cref="Image"/> affects the original <see cref="BCnTextureData"/>.
+		/// </summary>
+		public static Image AsImage(this BCnTextureData data, int mipLevel = 0, int arrayIndex = 0,
+			CubeMapFaceDirection faceDirection = CubeMapFaceDirection.XPositive)
+
+		{
+			Image image = null;
+
+			switch (data.Format)
+			{
+				case CompressionFormat.Rgba32_sRGB:
+				case CompressionFormat.Rgba32:
+					image = AsImage<Rgba32>(data, data.Format, faceDirection, mipLevel, arrayIndex);
+					break;
+				case CompressionFormat.RgbaFloat:
+					image = AsImage<RgbaVector>(data, data.Format, faceDirection, mipLevel, arrayIndex);
+					break;
+				case CompressionFormat.Bgra32:
+				case CompressionFormat.Bgra32_sRGB:
+					image = AsImage<Bgra32>(data, data.Format, faceDirection, mipLevel, arrayIndex);
+					break;
+				case CompressionFormat.Rgb24:
+				case CompressionFormat.Rgb24_sRGB:
+					image = AsImage<Rgb24>(data, data.Format, faceDirection, mipLevel, arrayIndex);
+					break;
+				case CompressionFormat.Bgr24:
+				case CompressionFormat.Bgr24_sRGB:
+					image = AsImage<Bgr24>(data, data.Format, faceDirection, mipLevel, arrayIndex);
+					break;
+				default:
+					throw new ArgumentException($"Format {data.Format} is not supported for converting to Image!");
+			}
+
+			return image;
+		}
+
+
+		/// <summary>
 		/// Wrap a <see cref="BCnTextureData"/> single face and mipLevel as a <see cref="Image{TPixel}"/> of <see cref="Rgba32"/>.
 		/// Make sure first that <see cref="BCnTextureData.Format"/> is <see cref="CompressionFormat.Rgba32"/>.
 		/// The owner of the pixel memory is still <paramref name="data"/>,
 		/// so modifying the data in the <see cref="Image{TPixel}"/> affects the original <see cref="BCnTextureData"/>.
 		/// </summary>
 		public static Image<Rgba32> AsImageRgba32(this BCnTextureData data, int mipLevel = 0, int arrayIndex = 0, CubeMapFaceDirection faceDirection = CubeMapFaceDirection.XPositive)
-			=> AsImage<Rgba32>(data, CompressionFormat.Rgba32_sRGB, faceDirection, mipLevel, arrayIndex);
+			=> AsImage<Rgba32>(data, CompressionFormat.Rgba32, faceDirection, mipLevel, arrayIndex);
 
 		/// <summary>
 		/// Wrap a <see cref="BCnTextureData"/> single face and mipLevel as a <see cref="Image{TPixel}"/> of <see cref="RgbaVector"/>.
@@ -39,10 +79,10 @@ namespace BCnEncoder.ImageSharp
 			CubeMapFaceDirection faceDirection, int mipLevel, int arrayElement)
 			where TPixel : unmanaged, IPixel<TPixel>
 		{
-			if (data.Format != expectedFormat)
+			if (data.Format.ToNonSrgbFormat() != expectedFormat)
 			{
 				throw new ArgumentException(
-					$"The provided {nameof(BCnTextureData)} is not in CompressionFormat.RgbaFloat. Use the {nameof(Shared.BCnTextureDataExtensions.ConvertTo)} method to convert it first!",
+					$"The provided {nameof(BCnTextureData)} is not in CompressionFormat.{expectedFormat}. Use the {nameof(Shared.BCnTextureDataExtensions.ConvertTo)} method to convert it first!",
 					nameof(data));
 			}
 			if (mipLevel >= data.NumMips)
@@ -123,7 +163,7 @@ namespace BCnEncoder.ImageSharp
 		public static byte[] EncodeToRawBytes(this BcEncoder encoder, Image<Rgba32> input, int mipLevel,
 			out int mipWidth, out int mipHeight)
 			=> encoder.EncodeToRawBytes(
-				input.ToBCnTextureData().First.AsMemory2D<ColorRgba32>(),
+				input.ToBCnTextureData(),
 				mipLevel,
 				out mipWidth,
 				out mipHeight);
@@ -131,8 +171,8 @@ namespace BCnEncoder.ImageSharp
 		/// <inheritdoc cref="BcEncoder.EncodeToRawBytesHdr"/>
 		public static byte[] EncodeToRawBytesHdr(this BcEncoder encoder, Image<RgbaVector> input, int mipLevel,
 			out int mipWidth, out int mipHeight)
-			=> encoder.EncodeToRawBytesHdr(
-				input.ToBCnTextureData().First.AsMemory2D<ColorRgbaFloat>(),
+			=> encoder.EncodeToRawBytes(
+				input.ToBCnTextureData(),
 				mipLevel,
 				out mipWidth,
 				out mipHeight);
@@ -141,15 +181,15 @@ namespace BCnEncoder.ImageSharp
 		public static Task<byte[]> EncodeToRawBytesAsync(this BcEncoder encoder, Image<Rgba32> input, int mipLevel,
 			CancellationToken token = default)
 			=> encoder.EncodeToRawBytesAsync(
-				input.ToBCnTextureData().First.AsMemory2D<ColorRgba32>(),
+				input.ToBCnTextureData(),
 				mipLevel, token);
 
 
 		/// <inheritdoc cref="BcEncoder.EncodeToRawBytesHdrAsync"/>
 		public static Task<byte[]> EncodeToRawBytesHdrAsync(this BcEncoder encoder, Image<RgbaVector> input, int mipLevel,
 			CancellationToken token = default)
-			=> encoder.EncodeToRawBytesHdrAsync(
-				input.ToBCnTextureData().First.AsMemory2D<ColorRgbaFloat>(),
+			=> encoder.EncodeToRawBytesAsync(
+				input.ToBCnTextureData(),
 				mipLevel, token);
 
 		/// <summary>

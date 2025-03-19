@@ -293,9 +293,13 @@ namespace BCnEncoder.TextureFormats
 				// HINT: R8G8B8 has no DxgiFormat to convert from
 				case DxgiFormat.DxgiFormatR8G8B8A8Unorm:
 					return CompressionFormat.Rgba32;
+				case DxgiFormat.DxgiFormatR8G8B8A8UnormSrgb:
+					return CompressionFormat.Rgba32_sRGB;
 
 				case DxgiFormat.DxgiFormatB8G8R8A8Unorm:
 					return CompressionFormat.Bgra32;
+				case DxgiFormat.DxgiFormatB8G8R8A8UnormSrgb:
+					return CompressionFormat.Bgra32_sRGB;
 
 				case DxgiFormat.DxgiFormatR32G32B32A32Typeless:
 				case DxgiFormat.DxgiFormatR32G32B32A32Float:
@@ -310,22 +314,31 @@ namespace BCnEncoder.TextureFormats
 					return CompressionFormat.RgbFloat;
 
 				case DxgiFormat.DxgiFormatBc1Unorm:
-				case DxgiFormat.DxgiFormatBc1UnormSrgb:
 				case DxgiFormat.DxgiFormatBc1Typeless:
 					if (header.ddsPixelFormat.dwFlags.HasFlag(PixelFormatFlags.DdpfAlphaPixels))
 						return CompressionFormat.Bc1WithAlpha;
 
 					return CompressionFormat.Bc1;
 
+				case DxgiFormat.DxgiFormatBc1UnormSrgb:
+					if (header.ddsPixelFormat.dwFlags.HasFlag(PixelFormatFlags.DdpfAlphaPixels))
+						return CompressionFormat.Bc1WithAlpha_sRGB;
+
+					return CompressionFormat.Bc1_sRGB;
+
 				case DxgiFormat.DxgiFormatBc2Unorm:
-				case DxgiFormat.DxgiFormatBc2UnormSrgb:
 				case DxgiFormat.DxgiFormatBc2Typeless:
 					return CompressionFormat.Bc2;
 
+				case DxgiFormat.DxgiFormatBc2UnormSrgb:
+					return CompressionFormat.Bc2_sRGB;
+
 				case DxgiFormat.DxgiFormatBc3Unorm:
-				case DxgiFormat.DxgiFormatBc3UnormSrgb:
 				case DxgiFormat.DxgiFormatBc3Typeless:
 					return CompressionFormat.Bc3;
+
+				case DxgiFormat.DxgiFormatBc3UnormSrgb:
+					return CompressionFormat.Bc3_sRGB;
 
 				case DxgiFormat.DxgiFormatBc4Unorm:
 				case DxgiFormat.DxgiFormatBc4Snorm:
@@ -345,9 +358,11 @@ namespace BCnEncoder.TextureFormats
 					return CompressionFormat.Bc6S;
 
 				case DxgiFormat.DxgiFormatBc7Unorm:
-				case DxgiFormat.DxgiFormatBc7UnormSrgb:
 				case DxgiFormat.DxgiFormatBc7Typeless:
 					return CompressionFormat.Bc7;
+
+				case DxgiFormat.DxgiFormatBc7UnormSrgb:
+					return CompressionFormat.Bc7_sRGB;
 
 				case DxgiFormat.DxgiFormatAtcExt:
 					return CompressionFormat.Atc;

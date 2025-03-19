@@ -3,6 +3,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using CommunityToolkit.HighPerformance;
+using ArgumentException = System.ArgumentException;
 
 namespace BCnEncoder.Shared.Colors;
 
@@ -15,142 +16,234 @@ public interface IColor
 public interface IColor<TColor> : IColor, IEquatable<TColor>
 	where TColor : unmanaged, IColor<TColor>
 {
+
+}
+
+internal enum ColorConversionMode
+{
+	None,
+	LinearToSrgb,
+	SrgbToLinear
 }
 
 public static class ColorExtensions
 {
+
+	/// <summary>
+	/// Converts one color type to another.
+	/// </summary>
+	/// <param name="from">The source color.</param>
+	/// <param name="to">Reference to the target color.</param>
+	/// <typeparam name="TFrom">The type of the source color.</typeparam>
+	/// <typeparam name="TTo">The type of the target color.</typeparam>
+	[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+	public static void To<TFrom, TTo>(this TFrom from, ref TTo to)
+		where TFrom : unmanaged, IColor
+		where TTo : unmanaged, IColor
+	{
+		if (from is not ColorRgbaFloat floatColor)
+			floatColor = from.ToColorRgbaFloat();
+
+		to.FromColorRgbaFloat(floatColor);
+	}
+
+	/// <summary>
+	/// Converts a color from linear RGB to sRGB.
+	/// </summary>
+	/// <param name="from">The source color in linear RGB.</param>
+	/// <param name="to">Reference to the target color in sRGB.</param>
+	/// <typeparam name="TFrom">The type of the source color.</typeparam>
+	/// <typeparam name="TTo">The type of the target color.</typeparam>
+	[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+	public static void ToSrgb<TFrom, TTo>(this TFrom from, ref TTo to)
+		where TFrom : unmanaged, IColor
+		where TTo : unmanaged, IColor
+	{
+		if (from is not ColorRgbaFloat floatColor)
+			floatColor = from.ToColorRgbaFloat();
+
+		floatColor = ColorSpace.LrgbToSrgb(floatColor);
+
+		to.FromColorRgbaFloat(floatColor);
+	}
+
+	/// <summary>
+	/// Converts a color from sRGB to linear RGB.
+	/// </summary>
+	/// <param name="from">The source color in sRGB.</param>
+	/// <param name="to">Reference to the target color in linear RGB.</param>
+	/// <typeparam name="TFrom">The type of the source color.</typeparam>
+	/// <typeparam name="TTo">The type of the target color.</typeparam>
+	[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+	public static void ToLinear<TFrom, TTo>(this TFrom from, ref TTo to)
+		where TFrom : unmanaged, IColor
+		where TTo : unmanaged, IColor
+	{
+		if (from is not ColorRgbaFloat floatColor)
+			floatColor = from.ToColorRgbaFloat();
+
+		floatColor = ColorSpace.SrgbToLrgb(floatColor);
+
+		to.FromColorRgbaFloat(floatColor);
+	}
+
+	/// <summary>
+	/// Converts one color type to another.
+	/// </summary>
+	/// <typeparam name="TTo">The type to convert to.</typeparam>
+	/// <param name="fromColor">The color to convert.</param>
+	/// <returns>A new instance of <typeparamref name="TTo"/>, which is a copy of <paramref name="fromColor"/>.</returns>
 	public static TTo As<TTo>(this IColor fromColor)
+		where TTo : unmanaged, IColor
+	{
+		var floatColor = fromColor.ToColorRgbaFloat();
+		var dest = new TTo();
+		dest.FromColorRgbaFloat(floatColor);
+		return dest;
+	}
+
+	internal static TTo[] ConvertTo<TFrom, TTo>(this ReadOnlyMemory<TFrom> fromColor, ColorConversionMode mode)
+		where TFrom : unmanaged, IColor
+		where TTo : unmanaged, IColor
+	{
+		var fromSpan = fromColor.Span;
+		var toArray = new TTo[fromColor.Length];
+
+		ConvertTo<TFrom, TTo>(fromColor, toArray, mode);
+
+		return toArray;
+	}
+
+	internal static byte[] ConvertToAsBytes<TFrom, TTo>(this ReadOnlyMemory<TFrom> fromColor, ColorConversionMode mode)
+		where TFrom : unmanaged, IColor
+		where TTo : unmanaged, IColor
+	{
+		var toSize = Unsafe.SizeOf<TTo>();
+
+		int bufferLen = fromColor.Length * toSize;
+		byte[] toBytes = new byte[bufferLen];
+
+		ConvertToAsBytes<TFrom, TTo>(fromColor, toBytes, mode);
+
+		return toBytes;
+	}
+
+	internal static byte[] InternalConvertToAsBytesFromBytes<TFrom, TTo>(ReadOnlyMemory<byte> fromBytes, ColorConversionMode mode)
+		where TFrom : unmanaged, IColor<TFrom>
 		where TTo : unmanaged, IColor<TTo>
 	{
-		var floatColor = fromColor.ToColorRgbaFloat();
-		var dest = new TTo();
-		dest.FromColorRgbaFloat(floatColor);
-		return dest;
-	}
-
-	public static TTo ConvertTo<TFrom, TTo>(this TFrom fromColor)
-		where TFrom : unmanaged, IColor
-		where TTo : unmanaged, IColor
-	{
-		var floatColor = fromColor.ToColorRgbaFloat();
-		var dest = new TTo();
-		dest.FromColorRgbaFloat(floatColor);
-		return dest;
-	}
-
-	public static TTo[] ConvertTo<TFrom, TTo>(this TFrom[] fromColor)
-		where TFrom : unmanaged, IColor
-		where TTo : unmanaged, IColor
-		=> ConvertTo<TFrom, TTo>(fromColor.AsMemory());
-
-	public static TTo[] ConvertTo<TFrom, TTo>(this ReadOnlyMemory<TFrom> fromColor)
-		where TFrom : unmanaged, IColor
-		where TTo : unmanaged, IColor
-	{
-		var fromSpan = fromColor.Span;
-		var returnArray = new TTo[fromColor.Length];
-		for (var i = 0; i < fromColor.Length; i++)
-		{
-			returnArray[i] = fromSpan[i].ConvertTo<TFrom, TTo>();
-		}
-
-		return returnArray;
-	}
-
-	public static Memory2D<TTo> ConvertTo<TFrom, TTo>(this TFrom[,] fromColor)
-		where TFrom : unmanaged, IColor
-		where TTo : unmanaged, IColor
-		=> ConvertTo<TFrom, TTo>(fromColor.AsMemory2D());
-
-	public static Memory2D<TTo> ConvertTo<TFrom, TTo>(this ReadOnlyMemory2D<TFrom> fromColor)
-		where TFrom : unmanaged, IColor
-		where TTo : unmanaged, IColor
-	{
-		var fromSpan = fromColor.Span;
-		var returnMemory = new Memory2D<TTo>(
-			new TTo[fromColor.Width * fromColor.Height],
-			fromColor.Height,
-			fromColor.Width);
-		var toSpan = returnMemory.Span;
-
-		for (var y = 0; y < fromColor.Height; y++)
-		{
-			for (var x = 0; x < fromColor.Width; x++)
-			{
-				toSpan[y, x] = fromSpan[y, x].ConvertTo<TFrom, TTo>();
-			}
-		}
-
-		return returnMemory;
-	}
-
-	public static byte[] ConvertToAsBytes<TFrom, TTo>(this ReadOnlyMemory<TFrom> fromColor)
-		where TFrom : unmanaged, IColor
-		where TTo : unmanaged, IColor
-	{
 		var toSize = Unsafe.SizeOf<TTo>();
-		var fromSpan = fromColor.Span;
-		var returnArray = new byte[fromColor.Length * toSize];
-		var toSpan = returnArray.AsSpan().Cast<byte, TTo>();
+		var fromSize = Unsafe.SizeOf<TFrom>();
 
-		for (var i = 0; i < fromColor.Length; i++)
-		{
-			toSpan[i] = fromSpan[i].ConvertTo<TFrom, TTo>();
-		}
+		int bufferLen = fromBytes.Length / fromSize * toSize;
+		byte[] toBytes = new byte[bufferLen];
 
-		return returnArray;
-	}
+		InternalConvertToAsBytesFromBytes<TFrom, TTo>(fromBytes, toBytes, mode);
 
-	public static byte[] ConvertToAsBytes<TFrom, TTo>(this ReadOnlyMemory2D<TFrom> fromColor)
-		where TFrom : unmanaged, IColor
-		where TTo : unmanaged, IColor
-	{
-		var toSize = Unsafe.SizeOf<TTo>();
-		var fromSpan = fromColor.Span;
-		var returnArray = new byte[fromColor.Height * fromColor.Width * toSize];
-		var toSpan = returnArray.AsSpan().Cast<byte, TTo>().AsSpan2D(fromColor.Height, fromColor.Width);
-
-		for (var y = 0; y < fromColor.Height; y++)
-		{
-			for (var x = 0; x < fromColor.Width; x++)
-			{
-				toSpan[y, x] = fromSpan[y, x].ConvertTo<TFrom, TTo>();
-			}
-		}
-
-		return returnArray;
-	}
-
-	internal static byte[] InternalConvertToAsBytesFromBytes<TFrom, TTo>(ReadOnlyMemory<byte> fromBytes)
-		where TFrom : unmanaged, IColor
-		where TTo : unmanaged, IColor
-	{
-		var toSize = Unsafe.SizeOf<TTo>();
-		var fromSpan = fromBytes.Cast<byte, TFrom>().Span;
-		var returnArray = new byte[fromSpan.Length * toSize];
-		var toSpan = returnArray.AsSpan().Cast<byte, TTo>();
-
-		for (var i = 0; i < fromSpan.Length; i++)
-		{
-			toSpan[i] = fromSpan[i].ConvertTo<TFrom, TTo>();
-		}
-
-		return returnArray;
+		return toBytes;
 	}
 
 	internal static byte[] InternalConvertToAsBytesFromBytes(ReadOnlyMemory<byte> fromBytes, CompressionFormat inFormat,
-		CompressionFormat outFormat)
+		CompressionFormat outFormat, ColorConversionMode colorConversionMode)
+	{
+		var inPixelSize = inFormat.GetBytesPerBlock();
+		var outPixelSize = outFormat.GetBytesPerBlock();
+
+		var bufferLen = fromBytes.Length / inPixelSize * outPixelSize;
+		var toBytes = new byte[bufferLen];
+
+		InternalConvertToAsBytesFromBytes(fromBytes, toBytes, inFormat, outFormat, colorConversionMode);
+
+		return toBytes;
+	}
+
+	internal static void ConvertTo<TFrom, TTo>(this ReadOnlyMemory<TFrom> fromColor, Memory<TTo> toColor, ColorConversionMode mode)
+		where TFrom : unmanaged, IColor
+		where TTo : unmanaged, IColor
+	{
+		var fromSpan = fromColor.Span;
+		var toSpan = toColor.Span;
+
+		if (fromSpan.Length != toSpan.Length)
+			throw new ArgumentException($"Invalid buffer size. Expecting {fromSpan.Length} elements, got {toSpan.Length} elements.", nameof(toColor));
+
+		for (var i = 0; i < fromColor.Length; i++)
+		{
+			switch (mode)
+			{
+				case ColorConversionMode.SrgbToLinear:
+					fromSpan[i].ToLinear(ref toSpan[i]); break;
+				case ColorConversionMode.LinearToSrgb:
+					fromSpan[i].ToSrgb(ref toSpan[i]); break;
+				case ColorConversionMode.None:
+					fromSpan[i].To(ref toSpan[i]); break;
+			}
+		}
+	}
+
+	internal static void ConvertToAsBytes<TFrom, TTo>(this ReadOnlyMemory<TFrom> fromColor, Memory<byte> toBytes, ColorConversionMode mode)
+		where TFrom : unmanaged, IColor
+		where TTo : unmanaged, IColor
+	{
+		var toSize = Unsafe.SizeOf<TTo>();
+		var fromSpan = fromColor.Span;
+		if (toBytes.Length != fromSpan.Length * toSize)
+			throw new ArgumentException($"Invalid buffer size. Expecting {fromSpan.Length * toSize} bytes, got {toBytes.Length} bytes.", nameof(toBytes));
+
+		var toSpan = toBytes.Span.Cast<byte, TTo>();
+
+		for (var i = 0; i < fromColor.Length; i++)
+		{
+			switch (mode)
+			{
+				case ColorConversionMode.SrgbToLinear:
+					fromSpan[i].ToLinear(ref toSpan[i]); break;
+				case ColorConversionMode.LinearToSrgb:
+					fromSpan[i].ToSrgb(ref toSpan[i]); break;
+				case ColorConversionMode.None:
+					fromSpan[i].To(ref toSpan[i]); break;
+			}
+		}
+	}
+
+	internal static void InternalConvertToAsBytesFromBytes<TFrom, TTo>(ReadOnlyMemory<byte> fromBytes, Memory<byte> toBytes, ColorConversionMode mode)
+		where TFrom : unmanaged, IColor<TFrom>
+		where TTo : unmanaged, IColor<TTo>
+	{
+		var toSize = Unsafe.SizeOf<TTo>();
+		var fromSpan = fromBytes.Cast<byte, TFrom>().Span;
+		if (toBytes.Length != fromSpan.Length * toSize)
+			throw new ArgumentException($"Invalid buffer size. Expecting {fromSpan.Length * toSize} bytes, got {toBytes.Length} bytes.", nameof(toBytes));
+
+		var toSpan = toBytes.Span.Cast<byte, TTo>();
+
+		for (var i = 0; i < fromSpan.Length; i++)
+		{
+			switch (mode)
+			{
+				case ColorConversionMode.SrgbToLinear:
+					fromSpan[i].ToLinear(ref toSpan[i]); break;
+				case ColorConversionMode.LinearToSrgb:
+					fromSpan[i].ToSrgb(ref toSpan[i]); break;
+				case ColorConversionMode.None:
+					fromSpan[i].To(ref toSpan[i]); break;
+			}
+		}
+	}
+
+	internal static void InternalConvertToAsBytesFromBytes(ReadOnlyMemory<byte> fromBytes, Memory<byte> toBytes, CompressionFormat inFormat,
+		CompressionFormat outFormat, ColorConversionMode colorConversionMode)
 	{
 		var inPixelType = inFormat.GetPixelType();
 		var outPixelType = outFormat.GetPixelType();
 		var method = typeof(ColorExtensions)
 			.GetMethods(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static)
 			.First(x => x.Name == nameof(InternalConvertToAsBytesFromBytes) &&
-			            x.GetParameters().Length == 1);
+			            x.GetParameters().Length == 3);
 
 		var genericMethod = method.MakeGenericMethod(inPixelType, outPixelType);
 
-		return genericMethod.Invoke(null, new object[] { fromBytes }) as byte[];
+		genericMethod.Invoke(null, new object[] { fromBytes, toBytes, colorConversionMode });
 	}
 
 	public static byte[] CopyAsBytes<TFrom>(this ReadOnlyMemory<TFrom> fromColor)

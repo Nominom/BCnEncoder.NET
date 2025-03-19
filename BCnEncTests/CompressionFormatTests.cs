@@ -7,7 +7,7 @@ namespace BCnEncTests;
 
 public class CompressionFormatTests
 {
-	private static readonly string[] blockCompressedFormatFilter = { "Bc, Atc" };
+	private static readonly string[] blockCompressedFormatFilter = { "Bc", "Atc" };
 
 	[Fact]
 	public void CheckFilters()
@@ -17,14 +17,14 @@ public class CompressionFormatTests
 		foreach (CompressionFormat format in values)
 		{
 			if (format.ToString().EndsWith("sRGB", StringComparison.OrdinalIgnoreCase))
-				Assert.True(format.IsSRGBFormat());
+				Assert.True(format.IsSRGBFormat(), format.ToString());
 			else
-				Assert.False(format.IsSRGBFormat());
+				Assert.False(format.IsSRGBFormat(), format.ToString());
 
 			if (blockCompressedFormatFilter.Any(filter => format.ToString().Contains(filter, StringComparison.OrdinalIgnoreCase)))
-				Assert.True(format.IsBlockCompressedFormat());
+				Assert.True(format.IsBlockCompressedFormat(), format.ToString());
 			else
-				Assert.False(format.IsBlockCompressedFormat());
+				Assert.False(format.IsBlockCompressedFormat(), format.ToString());
 		}
 	}
 }

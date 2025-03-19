@@ -204,7 +204,7 @@ namespace BCnEncoder.Shared
 		/// Hdr rgb bounding box inset by Krzysztof Narkowicz. https://github.com/knarkowicz/GPURealTimeBC6H
 		/// Code is public domain.
 		/// </summary>
-		private static void InsetHdrChannel(ReadOnlySpan<ColorRgbFloat> colors, int channel, ref float blockMax, ref float blockMin)
+		private static void InsetHdrChannel(ReadOnlySpan<ColorRgbaFloat> colors, int channel, ref float blockMax, ref float blockMin)
 		{
 			var offset = 0f;
 			if (blockMin < 0)
@@ -216,10 +216,10 @@ namespace BCnEncoder.Shared
 
 			float Select(ReadOnlySpan<float> span, int i)
 			{
-				return span[i * 3 + channel] + offset;
+				return span[i * 4 + channel] + offset;
 			}
 
-			var floats = MemoryMarshal.Cast<ColorRgbFloat, float>(colors);
+			var floats = MemoryMarshal.Cast<ColorRgbaFloat, float>(colors);
 
 			var refinedBlockMin = blockMax;
 			var refinedBlockMax = blockMin;
@@ -244,15 +244,17 @@ namespace BCnEncoder.Shared
 			blockMax = MathF.Pow(2, logBlockMax) - 1.0f - offset;
 		}
 
-		public static void CreateFloat(ReadOnlySpan<ColorRgbFloat> colors, out ColorRgbFloat min, out ColorRgbFloat max)
+		public static void CreateFloat(ReadOnlySpan<ColorRgbaFloat> colors, out ColorRgbaFloat min, out ColorRgbaFloat max)
 		{
 
 			float minR = float.MaxValue,
 				  minG = float.MaxValue,
-				  minB = float.MaxValue;
+				  minB = float.MaxValue,
+				  minA = float.MaxValue;
 			float maxR = float.MinValue,
 				  maxG = float.MinValue,
-				  maxB = float.MinValue;
+				  maxB = float.MinValue,
+				  maxA = float.MinValue;
 
 			for (var i = 0; i < colors.Length; i++)
 			{
@@ -261,18 +263,21 @@ namespace BCnEncoder.Shared
 				if (c.r < minR) minR = c.r;
 				if (c.g < minG) minG = c.g;
 				if (c.b < minB) minB = c.b;
+				if (c.a < minA) minA = c.a;
 
 				if (c.r > maxR) maxR = c.r;
 				if (c.g > maxG) maxG = c.g;
 				if (c.b > maxB) maxB = c.b;
+				if (c.b > maxA) maxA = c.a;
 			}
 
 			InsetHdrChannel(colors, 0, ref maxR, ref minR);
 			InsetHdrChannel(colors, 1, ref maxG, ref minG);
 			InsetHdrChannel(colors, 2, ref maxB, ref minB);
+			InsetHdrChannel(colors, 3, ref maxA, ref minA);
 
-			min = new ColorRgbFloat(minR, minG, minB);
-			max = new ColorRgbFloat(maxR, maxG, maxB);
+			min = new ColorRgbaFloat(minR, minG, minB, minA);
+			max = new ColorRgbaFloat(maxR, maxG, maxB, maxA);
 		}
 	}
 }

@@ -193,7 +193,7 @@ namespace BCnEncoder.Shared
 			15, 15, 15, 15, 3, 15, 15, 8
 		};
 
-		public static readonly RawBlock4X4Rgba32 ErrorBlock = new RawBlock4X4Rgba32(new ColorRgba32(255, 0, 255));
+		public static readonly RawBlock4X4RgbaFloat ErrorBlock = new RawBlock4X4RgbaFloat(new ColorRgbaFloat(1, 0, 1));
 
 		public Bc7BlockType Type
 		{
@@ -764,9 +764,9 @@ namespace BCnEncoder.Shared
 		}
 
 
-		public RawBlock4X4Rgba32 Decode()
+		public RawBlock4X4RgbaFloat Decode()
 		{
-			var output = new RawBlock4X4Rgba32();
+			var output = new RawBlock4X4RgbaFloat();
 			var type = Type;
 
 			if (type == Bc7BlockType.Type8Reserved)
@@ -815,7 +815,7 @@ namespace BCnEncoder.Shared
 					outputColor = SwapChannels(outputColor, rotation);
 				}
 
-				pixels[i] = outputColor;
+				outputColor.To(ref pixels[i]);
 			}
 
 			return output;

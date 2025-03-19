@@ -207,19 +207,19 @@ namespace BCnEncoder.Encoder.Bptc
 		}
 
 
-		public static void GetInitialUnscaledEndpoints(RawBlock4X4Rgba32 block, out ColorRgba32 ep0,
+		public static void GetInitialUnscaledEndpoints(RawBlock4X4RgbaFloat block, out ColorRgba32 ep0,
 			out ColorRgba32 ep1)
 		{
 
 			var originalPixels = block.AsSpan;
-			PcaVectors.CreateWithAlpha(originalPixels, out var mean, out var pa);
-			PcaVectors.GetExtremePointsWithAlpha(block.AsSpan, mean, pa, out var min, out var max);
+			PcaVectors.Create(originalPixels, out var mean, out var pa);
+			PcaVectors.GetExtremePoints(block.AsSpan, mean, pa, out var min, out var max);
 
 			ep0 = new ColorRgba32((byte)(min.X * 255), (byte)(min.Y * 255), (byte)(min.Z * 255), (byte)(min.W * 255));
 			ep1 = new ColorRgba32((byte)(max.X * 255), (byte)(max.Y * 255), (byte)(max.Z * 255), (byte)(max.W * 255));
 		}
 
-		public static void GetInitialUnscaledEndpointsForSubset(RawBlock4X4Rgba32 block, out ColorRgba32 ep0,
+		public static void GetInitialUnscaledEndpointsForSubset(RawBlock4X4RgbaFloat block, out ColorRgba32 ep0,
 			out ColorRgba32 ep1, ReadOnlySpan<int> partitionTable, int subsetIndex)
 		{
 
@@ -234,7 +234,7 @@ namespace BCnEncoder.Encoder.Bptc
 				}
 			}
 
-			Span<ColorRgba32> subsetColors = stackalloc ColorRgba32[count];
+			Span<ColorRgbaFloat> subsetColors = stackalloc ColorRgbaFloat[count];
 			var next = 0;
 			for (var i = 0; i < 16; i++)
 			{
@@ -244,8 +244,8 @@ namespace BCnEncoder.Encoder.Bptc
 				}
 			}
 
-			PcaVectors.CreateWithAlpha(subsetColors, out var mean, out var pa);
-			PcaVectors.GetExtremePointsWithAlpha(block.AsSpan, mean, pa, out var min, out var max);
+			PcaVectors.Create(subsetColors, out var mean, out var pa);
+			PcaVectors.GetExtremePoints(block.AsSpan, mean, pa, out var min, out var max);
 
 			ep0 = new ColorRgba32((byte)(min.X * 255), (byte)(min.Y * 255), (byte)(min.Z * 255), (byte)(min.W * 255));
 			ep1 = new ColorRgba32((byte)(max.X * 255), (byte)(max.Y * 255), (byte)(max.Z * 255), (byte)(max.W * 255));
@@ -379,7 +379,7 @@ namespace BCnEncoder.Encoder.Bptc
 		}
 
 
-		private static float TrySubsetEndpoints(Bc7BlockType type, RawBlock4X4Rgba32 raw, ColorRgba32 ep0, ColorRgba32 ep1,
+		private static float TrySubsetEndpoints(Bc7BlockType type, RawBlock4X4RgbaFloat raw, ColorRgba32 ep0, ColorRgba32 ep1,
 			ReadOnlySpan<int> partitionTable, int subsetIndex, int type4IdxMode)
 		{
 			var colorIndexPrecision = GetColorIndexBitCount(type, type4IdxMode);
@@ -410,7 +410,7 @@ namespace BCnEncoder.Encoder.Bptc
 					var pixelColor = pixels[i].As<ColorYCbCr>();
 
 					FindClosestColorIndex(pixelColor, colors, out var ce);
-					FindClosestAlphaIndex(pixels[i].a, alphas, out var ae);
+					FindClosestAlphaIndex(ByteHelper.FloatToByte(pixels[i].a), alphas, out var ae);
 
 					error += ce + ae;
 				}
@@ -448,7 +448,7 @@ namespace BCnEncoder.Encoder.Bptc
 
 		}
 
-		public static void FillSubsetIndices(Bc7BlockType type, RawBlock4X4Rgba32 raw, ColorRgba32 ep0, ColorRgba32 ep1, ReadOnlySpan<int> partitionTable, int subsetIndex,
+		public static void FillSubsetIndices(Bc7BlockType type, RawBlock4X4RgbaFloat raw, ColorRgba32 ep0, ColorRgba32 ep1, ReadOnlySpan<int> partitionTable, int subsetIndex,
 			Span<byte> indicesToFill)
 		{
 			var colorIndexPrecision = GetColorIndexBitCount(type);
@@ -485,7 +485,7 @@ namespace BCnEncoder.Encoder.Bptc
 		/// <summary>
 		/// Used for Modes 4 and 5
 		/// </summary>
-		public static void FillAlphaColorIndices(Bc7BlockType type, RawBlock4X4Rgba32 raw, ColorRgba32 ep0, ColorRgba32 ep1,
+		public static void FillAlphaColorIndices(Bc7BlockType type, RawBlock4X4RgbaFloat raw, ColorRgba32 ep0, ColorRgba32 ep1,
 			Span<byte> colorIndicesToFill, Span<byte> alphaIndicesToFill, int idxMode = 0)
 		{
 			var colorIndexPrecision = GetColorIndexBitCount(type, idxMode);
@@ -517,7 +517,7 @@ namespace BCnEncoder.Encoder.Bptc
 					var index = FindClosestColorIndex(pixelColor, colors, out _);
 					colorIndicesToFill[i] = (byte)index;
 
-					index = FindClosestAlphaIndex(pixels[i].a, alphas, out _);
+					index = FindClosestAlphaIndex(ByteHelper.FloatToByte(pixels[i].a), alphas, out _);
 					alphaIndicesToFill[i] = (byte)index;
 				}
 			}
@@ -527,7 +527,7 @@ namespace BCnEncoder.Encoder.Bptc
 			}
 		}
 
-		public static void OptimizeSubsetEndpointsWithPBit(Bc7BlockType type, RawBlock4X4Rgba32 raw, ref ColorRgba32 ep0, ref ColorRgba32 ep1, ref byte pBit0, ref byte pBit1,
+		public static void OptimizeSubsetEndpointsWithPBit(Bc7BlockType type, RawBlock4X4RgbaFloat raw, ref ColorRgba32 ep0, ref ColorRgba32 ep1, ref byte pBit0, ref byte pBit1,
 			int variation, ReadOnlySpan<int> partitionTable, int subsetIndex, bool variatePBits, bool variateAlpha, int type4IdxMode = 0)
 		{
 
@@ -668,14 +668,14 @@ namespace BCnEncoder.Encoder.Bptc
 			}
 		}
 
-		public static RawBlock4X4Rgba32 RotateBlockColors(RawBlock4X4Rgba32 block, int rotation)
+		public static RawBlock4X4RgbaFloat RotateBlockColors(RawBlock4X4RgbaFloat block, int rotation)
 		{
 			if (rotation == 0)
 			{
 				return block;
 			}
 
-			var rotated = new RawBlock4X4Rgba32();
+			var rotated = new RawBlock4X4RgbaFloat();
 			var pixels = block.AsSpan;
 			var output = rotated.AsSpan;
 			for (var i = 0; i < 16; i++)
@@ -684,13 +684,13 @@ namespace BCnEncoder.Encoder.Bptc
 				switch (rotation)
 				{
 					case 1:
-						output[i] = new ColorRgba32(c.a, c.g, c.b, c.r);
+						output[i] = new ColorRgbaFloat(c.a, c.g, c.b, c.r);
 						break;
 					case 2:
-						output[i] = new ColorRgba32(c.r, c.a, c.b, c.g);
+						output[i] = new ColorRgbaFloat(c.r, c.a, c.b, c.g);
 						break;
 					case 3:
-						output[i] = new ColorRgba32(c.r, c.g, c.a, c.b);
+						output[i] = new ColorRgbaFloat(c.r, c.g, c.a, c.b);
 						break;
 				}
 			}

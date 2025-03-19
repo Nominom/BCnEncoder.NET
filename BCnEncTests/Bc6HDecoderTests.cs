@@ -112,7 +112,7 @@ namespace BCnEncTests
 			Random r = new Random(44);
 			r.NextBytes(buffer);
 
-			var decoded = decoder.DecodeRawHdr(buffer, width * 4, height * 4, CompressionFormat.Bc6U);
+			var decoded = decoder.DecodeRaw<ColorRgbaFloat>(buffer, width * 4, height * 4, CompressionFormat.Bc6U, CompressionFormat.RgbaFloat);
 			Assert.Contains(new ColorRgbaFloat(1, 0, 1), decoded);
 
 			var image = decoded.AsBCnTextureData(width * 4, height * 4, false).AsTexture<RadianceFile>();

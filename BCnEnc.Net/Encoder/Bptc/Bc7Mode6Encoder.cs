@@ -6,7 +6,7 @@ namespace BCnEncoder.Encoder.Bptc
 	internal static class Bc7Mode6Encoder
 	{
 
-		public static Bc7Block EncodeBlock(RawBlock4X4Rgba32 block, int startingVariation)
+		public static Bc7Block EncodeBlock(RawBlock4X4RgbaFloat block, int startingVariation)
 		{
 			var hasAlpha = block.HasTransparentPixels();
 
@@ -39,7 +39,7 @@ namespace BCnEncoder.Encoder.Bptc
 				ep1,
 				partitionTable, subset, indices);
 
-			
+
 
 			if ((indices[0] & 0b1000) > 0) //If anchor index most significant bit is 1, switch endpoints
 			{
