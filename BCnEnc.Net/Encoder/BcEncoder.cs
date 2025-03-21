@@ -233,7 +233,7 @@ namespace BCnEncoder.Encoder
 		/// Encodes a single mip level of the input image to a byte buffer. This data does not contain any file headers, just the raw encoded pixel data.
 		/// Note that even if the input data already contains mipLevels, new mips are generated from the first mip.
 		/// </summary>
-		/// <param name="input">The input to encode represented by a <see cref="ReadOnlyMemory2D{T}"/>.</param>
+		/// <param name="input">The input to encode represented by a <see cref="BCnTextureData"/>.</param>
 		/// <param name="mipLevel">The mipmap to encode.</param>
 		/// <param name="mipWidth">The width of the mipmap.</param>
 		/// <param name="mipHeight">The height of the mipmap.</param>
@@ -304,7 +304,6 @@ namespace BCnEncoder.Encoder
 		// 	}
 		// 	EncodeBlockLdrInternal(inputBlock, outputStream);
 		// }
-
 		/// <summary>
 		/// Gets the block size of the currently selected compression format in bytes.
 		/// </summary>
@@ -587,20 +586,22 @@ namespace BCnEncoder.Encoder
 
 			var totalBlocks = outputFormat.CalculateMipByteSize(mipWidth, mipHeight) / outputFormat.GetBytesPerBlock();
 
-			var context = new OperationContext
-			{
-				CancellationToken = token,
-				IsParallel = !Debugger.IsAttached && Options.IsParallel,
-				TaskCount = Options.TaskCount,
-				Progress = new OperationProgress(Options.Progress, totalBlocks),
-				ColorConversionMode = CompressionFormat.RgbaFloat.GetColorConversionMode(outputFormat)
-			};
+			// Track whether the input is in sRGB space to respect AsIs option
+			var inputIsSrgb = inputFormat.IsSRGBFormat();
+			var ignoreColorSpace = OutputOptions.ColorSpace == OutputColorSpace.KeepAsIs;
 
+			// 1. Convert to RgbaFloat format
 			ReadOnlyMemory<ColorRgbaFloat> floatData;
+
 			if (inputFormat != CompressionFormat.RgbaFloat)
 			{
-				floatData = ColorExtensions.InternalConvertToAsBytesFromBytes(input, inputFormat, CompressionFormat.RgbaFloat,
-						inputFormat.GetColorConversionMode(CompressionFormat.RgbaFloat))
+				// For KeepAsIs, don't apply color space conversion
+				var initialConversion = ignoreColorSpace ?
+					ColorConversionMode.None :
+					(inputIsSrgb ? ColorConversionMode.SrgbToLinear : ColorConversionMode.None);
+
+				floatData = ColorExtensions.InternalConvertToAsBytesFromBytes(
+					input, inputFormat, CompressionFormat.RgbaFloat, initialConversion)
 					.AsMemory().Cast<byte, ColorRgbaFloat>();
 			}
 			else
@@ -608,8 +609,44 @@ namespace BCnEncoder.Encoder
 				floatData = input.Cast<byte, ColorRgbaFloat>();
 			}
 
-			MipMapper.GenerateSingleMip(floatData.AsMemory2D(height, width), mipLevel).TryGetMemory(out floatData);
+			// 2. Process alpha based on AlphaHandling setting
+			floatData = AlphaHandlingHelper.ProcessAlpha(floatData, OutputOptions.AlphaHandling);
 
+			// 3. Generate mipmap if needed
+			if (mipLevel > 0)
+			{
+				// Generate the mipmap (alpha handling already done above)
+				MipMapper.GenerateSingleMip(floatData.AsMemory2D(height, width), mipLevel).TryGetMemory(out floatData);
+			}
+
+			// 4. Determine color conversion mode for final encoding
+			ColorConversionMode colorConversionMode = ColorConversionMode.None;
+
+			if (!ignoreColorSpace)
+			{
+				if (OutputOptions.ColorSpace == OutputColorSpace.ProcessInLinearOutputAsIs)
+				{
+					if (inputIsSrgb)
+						colorConversionMode = ColorConversionMode.LinearToSrgb;
+				} else if (OutputOptions.ColorSpace == OutputColorSpace.Auto)
+				{
+					// Determine color conversion mode
+					colorConversionMode = DetermineColorConversionMode(
+						CompressionFormat.RgbaFloat, outputFormat);
+				}
+			}
+
+			// Setup encoding context
+			var context = new OperationContext
+			{
+				CancellationToken = token,
+				IsParallel = !Debugger.IsAttached && Options.IsParallel,
+				TaskCount = Options.TaskCount,
+				Progress = new OperationProgress(Options.Progress, totalBlocks),
+				ColorConversionMode = colorConversionMode
+			};
+
+			// 5. Encode the data
 			var result = encoder.Encode(floatData, mipWidth, mipHeight, OutputOptions.Quality, context);
 
 			result.CopyTo(output);
@@ -618,11 +655,25 @@ namespace BCnEncoder.Encoder
 		private BCnTextureData EncodeInternal(BCnTextureData textureData, CancellationToken token)
 		{
 			var encoder = GetEncoder(OutputOptions.Format);
-
 			var numMipMaps = OutputOptions.GenerateMipMaps ? OutputOptions.MaxMipMapLevel : 1;
 
-			textureData = MipMapper.GenerateMipChain(textureData, ref numMipMaps);
+			// Track whether the input is in sRGB space to respect AsIs option
+			var inputIsSrgb = textureData.Format.IsSRGBFormat();
+			var ignoreColorSpace = OutputOptions.ColorSpace == OutputColorSpace.KeepAsIs;
 
+			// 1. Convert texture data to RgbaFloat format for consistent processing, also ensuring we're in linear space
+			textureData = textureData.ConvertTo(CompressionFormat.RgbaFloat, convertColorspace: !ignoreColorSpace);
+
+			// 2. Process alpha according to the chosen handling method
+			AlphaHandlingHelper.ProcessAlpha(textureData, OutputOptions.AlphaHandling);
+
+			// 3. Generate mipmaps if needed (now that we're in linear space with correct alpha)
+			if (OutputOptions.GenerateMipMaps)
+			{
+				textureData = MipMapper.GenerateMipChain(textureData, ref numMipMaps);
+			}
+
+			// 4. Create output texture data with the correct format
 			var newData = new BCnTextureData(
 				OutputOptions.Format,
 				textureData.Width,
@@ -632,17 +683,35 @@ namespace BCnEncoder.Encoder
 				textureData.NumArrayElements,
 				textureData.IsCubeMap, false);
 
-			var totalBlocks = newData.TotalByteSize / OutputOptions.Format.GetBytesPerBlock();
+			ColorConversionMode colorConversionMode = ColorConversionMode.None;
 
+			// 5. Determine final color conversion mode for encoding
+			if (!ignoreColorSpace)
+			{
+				if (OutputOptions.ColorSpace == OutputColorSpace.ProcessInLinearOutputAsIs)
+				{
+					if (inputIsSrgb)
+						colorConversionMode = ColorConversionMode.LinearToSrgb;
+				}
+				else if (OutputOptions.ColorSpace == OutputColorSpace.Auto)
+				{
+					colorConversionMode = DetermineColorConversionMode(
+						CompressionFormat.RgbaFloat, OutputOptions.Format);
+				}
+			}
+
+			// Setup encoding context
+			var totalBlocks = newData.TotalByteSize / OutputOptions.Format.GetBytesPerBlock();
 			var context = new OperationContext
 			{
 				CancellationToken = token,
 				IsParallel = !Debugger.IsAttached && Options.IsParallel,
 				TaskCount = Options.TaskCount,
 				Progress = new OperationProgress(Options.Progress, totalBlocks),
-				ColorConversionMode = CompressionFormat.RgbaFloat.GetColorConversionMode(OutputOptions.Format)
+				ColorConversionMode = colorConversionMode
 			};
 
+			// 6. Encode each mip level
 			for (var m = 0; m < newData.NumMips; m++)
 			{
 				for (var f = 0; f < newData.NumFaces; f++)
@@ -652,8 +721,7 @@ namespace BCnEncoder.Encoder
 						var mipWidth = textureData.Mips[m].Width;
 						var mipHeight = textureData.Mips[m].Height;
 						var colorMemory = textureData.Mips[m][(CubeMapFaceDirection)f, a].AsMemory<ColorRgbaFloat>();
-						var encoded = encoder.Encode(colorMemory, mipWidth, mipHeight, OutputOptions.Quality,
-							context);
+						var encoded = encoder.Encode(colorMemory, mipWidth, mipHeight, OutputOptions.Quality, context);
 
 						if (newData.Mips[m].SizeInBytes != encoded.Length)
 						{
@@ -668,112 +736,19 @@ namespace BCnEncoder.Encoder
 			return newData;
 		}
 
-		// private byte[] EncodeBlockHdrInternal(ReadOnlySpan2D<ColorRgbFloat> input)
-		// {
-		// 	var compressedEncoder = GetFloatBlockEncoder(OutputOptions.Format);
-		// 	if (compressedEncoder == null)
-		// 	{
-		// 		throw new NotSupportedException($"This Format is not supported for hdr single block encoding: {OutputOptions.Format}");
-		// 	}
-		//
-		// 	var output = new byte[compressedEncoder.GetBlockSize()];
-		//
-		// 	var rawBlock = new RawBlock4X4RgbFloat();
-		//
-		// 	var pixels = rawBlock.AsSpan;
-		//
-		// 	input.GetRowSpan(0).CopyTo(pixels);
-		// 	input.GetRowSpan(1).CopyTo(pixels.Slice(4));
-		// 	input.GetRowSpan(2).CopyTo(pixels.Slice(8));
-		// 	input.GetRowSpan(3).CopyTo(pixels.Slice(12));
-		//
-		// 	compressedEncoder.EncodeBlock(rawBlock, OutputOptions.Quality, output);
-		//
-		// 	return output;
-		// }
-		//
-		// private void EncodeBlockHdrInternal(ReadOnlySpan2D<ColorRgbFloat> input, Stream outputStream)
-		// {
-		// 	var compressedEncoder = GetFloatBlockEncoder(OutputOptions.Format);
-		// 	if (compressedEncoder == null)
-		// 	{
-		// 		throw new NotSupportedException($"This Format is not supported for hdr single block encoding: {OutputOptions.Format}");
-		// 	}
-		// 	if (input.Width != 4 || input.Height != 4)
-		// 	{
-		// 		throw new ArgumentException($"Single block encoding can only encode blocks of 4x4");
-		// 	}
-		//
-		// 	Span<byte> output = stackalloc byte[16];
-		// 	output = output.Slice(0, compressedEncoder.GetBlockSize());
-		//
-		// 	var rawBlock = new RawBlock4X4RgbFloat();
-		//
-		// 	var pixels = rawBlock.AsSpan;
-		//
-		// 	input.GetRowSpan(0).CopyTo(pixels);
-		// 	input.GetRowSpan(1).CopyTo(pixels.Slice(4));
-		// 	input.GetRowSpan(2).CopyTo(pixels.Slice(8));
-		// 	input.GetRowSpan(3).CopyTo(pixels.Slice(12));
-		//
-		// 	compressedEncoder.EncodeBlock(rawBlock, OutputOptions.Quality, output);
-		//
-		// 	outputStream.Write(output);
-		// }
-		//
-		// private byte[] EncodeBlockLdrInternal(ReadOnlySpan2D<ColorRgba32> input)
-		// {
-		// 	var compressedEncoder = GetRgba32BlockEncoder(OutputOptions.Format);
-		// 	if (compressedEncoder == null)
-		// 	{
-		// 		throw new NotSupportedException($"This Format is not supported for ldr single block encoding: {OutputOptions.Format}");
-		// 	}
-		//
-		// 	var output = new byte[compressedEncoder.GetBlockSize()];
-		//
-		// 	var rawBlock = new RawBlock4X4Rgba32();
-		//
-		// 	var pixels = rawBlock.AsSpan;
-		//
-		// 	input.GetRowSpan(0).CopyTo(pixels);
-		// 	input.GetRowSpan(1).CopyTo(pixels.Slice(4));
-		// 	input.GetRowSpan(2).CopyTo(pixels.Slice(8));
-		// 	input.GetRowSpan(3).CopyTo(pixels.Slice(12));
-		//
-		// 	compressedEncoder.EncodeBlock(rawBlock, OutputOptions.Quality, output);
-		//
-		// 	return output;
-		// }
-		//
-		// private void EncodeBlockLdrInternal(ReadOnlySpan2D<ColorRgba32> input, Stream outputStream)
-		// {
-		// 	var compressedEncoder = GetRgba32BlockEncoder(OutputOptions.Format);
-		// 	if (compressedEncoder == null)
-		// 	{
-		// 		throw new NotSupportedException($"This Format is not supported for ldr single block encoding: {OutputOptions.Format}");
-		// 	}
-		// 	if (input.Width != 4 || input.Height != 4)
-		// 	{
-		// 		throw new ArgumentException($"Single block encoding can only encode blocks of 4x4");
-		// 	}
-		//
-		// 	Span<byte> output = stackalloc byte[16];
-		// 	output = output.Slice(0, compressedEncoder.GetBlockSize());
-		//
-		// 	var rawBlock = new RawBlock4X4Rgba32();
-		//
-		// 	var pixels = rawBlock.AsSpan;
-		//
-		// 	input.GetRowSpan(0).CopyTo(pixels);
-		// 	input.GetRowSpan(1).CopyTo(pixels.Slice(4));
-		// 	input.GetRowSpan(2).CopyTo(pixels.Slice(8));
-		// 	input.GetRowSpan(3).CopyTo(pixels.Slice(12));
-		//
-		// 	compressedEncoder.EncodeBlock(rawBlock, OutputOptions.Quality, output);
-		//
-		// 	outputStream.Write(output);
-		// }
-
+		/// <summary>
+		/// Determines the color conversion mode based on the source and destination formats
+		/// </summary>
+		private ColorConversionMode DetermineColorConversionMode(CompressionFormat sourceFormat, CompressionFormat destFormat)
+		{
+			ColorConversionMode colorConversionMode = ColorConversionMode.None;
+			if (OutputOptions.ColorSpace != OutputColorSpace.KeepAsIs)
+			{
+				// Auto-detect appropriate colorspace conversion based on formats
+				colorConversionMode = sourceFormat.GetColorConversionMode(destFormat);
+			}
+			return colorConversionMode;
+		}
 		#endregion
 
 		#region Support
@@ -803,6 +778,8 @@ namespace BCnEncoder.Encoder
 				case CompressionFormat.Bgra32:
 				case CompressionFormat.Bgra32_sRGB:
 					return new RawPixelEncoder<ColorBgra32>();
+				case CompressionFormat.R10G10B10A2:
+					return new RawPixelEncoder<ColorR10G10B10A2>();
 				case CompressionFormat.RgbaFloat:
 					return new RawPixelEncoder<ColorRgbaFloat>();
 				case CompressionFormat.RgbaHalf:

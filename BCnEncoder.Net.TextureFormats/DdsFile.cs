@@ -285,10 +285,20 @@ namespace BCnEncoder.TextureFormats
 			switch (format)
 			{
 				case DxgiFormat.DxgiFormatR8Unorm:
+				case DxgiFormat.DxgiFormatR8Uint:
 					return CompressionFormat.R8;
 
+				case DxgiFormat.DxgiFormatR8Snorm:
+				case DxgiFormat.DxgiFormatR8Sint:
+					return CompressionFormat.R8S;
+
 				case DxgiFormat.DxgiFormatR8G8Unorm:
+				case DxgiFormat.DxgiFormatR8G8Uint:
 					return CompressionFormat.R8G8;
+
+				case DxgiFormat.DxgiFormatR8G8Snorm:
+				case DxgiFormat.DxgiFormatR8G8Sint:
+					return CompressionFormat.R8G8S;
 
 				// HINT: R8G8B8 has no DxgiFormat to convert from
 				case DxgiFormat.DxgiFormatR8G8B8A8Unorm:
@@ -341,14 +351,18 @@ namespace BCnEncoder.TextureFormats
 					return CompressionFormat.Bc3_sRGB;
 
 				case DxgiFormat.DxgiFormatBc4Unorm:
-				case DxgiFormat.DxgiFormatBc4Snorm:
 				case DxgiFormat.DxgiFormatBc4Typeless:
 					return CompressionFormat.Bc4;
 
+				case DxgiFormat.DxgiFormatBc4Snorm:
+					return CompressionFormat.Bc4S;
+
 				case DxgiFormat.DxgiFormatBc5Unorm:
-				case DxgiFormat.DxgiFormatBc5Snorm:
 				case DxgiFormat.DxgiFormatBc5Typeless:
 					return CompressionFormat.Bc5;
+
+				case DxgiFormat.DxgiFormatBc5Snorm:
+					return CompressionFormat.Bc5S;
 
 				case DxgiFormat.DxgiFormatBc6HTypeless:
 				case DxgiFormat.DxgiFormatBc6HUf16:

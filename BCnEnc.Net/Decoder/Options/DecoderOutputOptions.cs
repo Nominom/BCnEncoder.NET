@@ -32,6 +32,6 @@ namespace BCnEncoder.Decoder.Options
 		/// <summary>
 		/// Whether to do automatic colorspace conversion when the source colorspace does not match the target colorspace.
 		/// </summary>
-		public bool DoColorspaceConversion { get; set; } = true;
+		public bool DoColorspaceConversion { get; set; } = false;
 	}
 }

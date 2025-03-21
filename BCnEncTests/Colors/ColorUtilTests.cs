@@ -7,7 +7,7 @@ using BCnEncoder.TextureFormats;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace BCnEncTests
+namespace BCnEncTests.Colors
 {
 	public class ColorUtilTests
 	{

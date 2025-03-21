@@ -345,8 +345,17 @@ namespace BCnEncoder.Decoder
 				case CompressionFormat.R8:
 					return new RawDecoder<ColorR8>();
 
+				case CompressionFormat.R8S:
+					return new RawDecoder<ColorR8S>();
+
 				case CompressionFormat.R8G8:
 					return new RawDecoder<ColorR8G8>();
+
+				case CompressionFormat.R8G8S:
+					return new RawDecoder<ColorR8G8S>();
+
+				case CompressionFormat.R10G10B10A2:
+					return new RawDecoder<ColorR10G10B10A2>();
 
 				case CompressionFormat.Rgb24:
 				case CompressionFormat.Rgb24_sRGB:

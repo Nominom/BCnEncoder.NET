@@ -233,6 +233,11 @@ namespace BCnEncoder.TextureFormats
 						GlFormat.GlBgra,
 						GlInternalFormat.GlBgra8Extension,
 						GlType.GlUnsignedByte);
+				case CompressionFormat.R10G10B10A2:
+					return (
+						GlFormat.GlRgba,
+						GlInternalFormat.GlRgb10A2,
+						GlType.GlUnsignedInt1010102);
 				case CompressionFormat.RgbaFloat:
 					return (
 						GlFormat.GlRgba,
@@ -335,7 +340,7 @@ namespace BCnEncoder.TextureFormats
 					return 4;
 				case GlType.GlHalfFloat:
 					return 2;
-					
+
 				default: // HINT: Probably not correct but what the heck.
 					return 1;
 			}
@@ -346,23 +351,30 @@ namespace BCnEncoder.TextureFormats
 			switch (internalFormat)
 			{
 				case GlInternalFormat.GlR8:
-				case GlInternalFormat.GlR8I:
 				case GlInternalFormat.GlR8Ui:
-				case GlInternalFormat.GlR8Snorm:
 					return CompressionFormat.R8;
 
+				case GlInternalFormat.GlR8I:
+				case GlInternalFormat.GlR8Snorm:
+					return CompressionFormat.R8S;
+
 				case GlInternalFormat.GlRg8:
-				case GlInternalFormat.GlRg8I:
 				case GlInternalFormat.GlRg8Ui:
-				case GlInternalFormat.GlRg8Snorm:
 					return CompressionFormat.R8G8;
+
+				case GlInternalFormat.GlRg8I:
+				case GlInternalFormat.GlRg8Snorm:
+					return CompressionFormat.R8G8S;
+
+				case GlInternalFormat.GlRgb10A2:
+					return CompressionFormat.R10G10B10A2;
 
 				case GlInternalFormat.GlRgb8:
 				case GlInternalFormat.GlRgb8I:
 				case GlInternalFormat.GlRgb8Ui:
 				case GlInternalFormat.GlRgb8Snorm:
 					return CompressionFormat.Rgb24;
-					
+
 				case GlInternalFormat.GlRgba8:
 				case GlInternalFormat.GlRgba8I:
 				case GlInternalFormat.GlRgba8Ui:

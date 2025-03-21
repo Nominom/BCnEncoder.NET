@@ -364,3 +364,199 @@ public struct ColorRgb565 : IColor<ColorRgb565>
 		B = ByteHelper.ClampToByte(color.b * 255f);
 	}
 }
+
+public struct ColorR10G10B10A2 : IColor<ColorR10G10B10A2>
+{
+	public bool Equals(ColorR10G10B10A2 other)
+	{
+		return data == other.data;
+	}
+
+	public override bool Equals(object obj)
+	{
+		return obj is ColorR10G10B10A2 other && Equals(other);
+	}
+
+	public override int GetHashCode()
+	{
+		return data.GetHashCode();
+	}
+
+	public static bool operator ==(ColorR10G10B10A2 left, ColorR10G10B10A2 right)
+	{
+		return left.Equals(right);
+	}
+
+	public static bool operator !=(ColorR10G10B10A2 left, ColorR10G10B10A2 right)
+	{
+		return !left.Equals(right);
+	}
+
+	private const uint RedMask = 0x000003FF;
+	private const int RedShift = 0;
+	private const uint GreenMask = 0x000FFC00;
+	private const int GreenShift = 10;
+	private const uint BlueMask = 0x3FF00000;
+	private const int BlueShift = 20;
+	private const uint AlphaMask = 0xC0000000;
+	private const int AlphaShift = 30;
+
+	private const uint RedMaxValue = 1023;
+	private const uint GreenMaxValue = 1023;
+	private const uint BlueMaxValue = 1023;
+	private const uint AlphaMaxValue = 3;
+
+	public uint data;
+
+	public float R
+	{
+		readonly get
+		{
+			var r10 = (data & RedMask) >> RedShift;
+			return r10 / (float)RedMaxValue;
+		}
+		set
+		{
+			var r10 = (uint)(ColorBitConversionHelpers.Saturate(value) * RedMaxValue + 0.5f);
+			data = (data & ~RedMask) | (r10 << RedShift);
+		}
+	}
+
+	public float G
+	{
+		readonly get
+		{
+			var g10 = (data & GreenMask) >> GreenShift;
+			return g10 / (float)GreenMaxValue;
+		}
+		set
+		{
+			var g10 = (uint)(ColorBitConversionHelpers.Saturate(value) * GreenMaxValue + 0.5f);
+			data = (data & ~GreenMask) | (g10 << GreenShift);
+		}
+	}
+
+	public float B
+	{
+		readonly get
+		{
+			var b10 = (data & BlueMask) >> BlueShift;
+			return b10 / (float)BlueMaxValue;
+		}
+		set
+		{
+			var b10 = (uint)(ColorBitConversionHelpers.Saturate(value) * BlueMaxValue + 0.5f);
+			data = (data & ~BlueMask) | (b10 << BlueShift);
+		}
+	}
+
+	public float A
+	{
+		readonly get
+		{
+			var a2 = (data & AlphaMask) >> AlphaShift;
+			return a2 / (float)AlphaMaxValue;
+		}
+		set
+		{
+			var a2 = (uint)(ColorBitConversionHelpers.Saturate(value) * AlphaMaxValue + 0.5f);
+			data = (data & ~AlphaMask) | (a2 << AlphaShift);
+		}
+	}
+
+	public uint RawR
+	{
+		readonly get => (data & RedMask) >> RedShift;
+		set
+		{
+			if (value > RedMaxValue) value = RedMaxValue;
+			data = (data & ~RedMask) | (value << RedShift);
+		}
+	}
+
+	public uint RawG
+	{
+		readonly get => (data & GreenMask) >> GreenShift;
+		set
+		{
+			if (value > GreenMaxValue) value = GreenMaxValue;
+			data = (data & ~GreenMask) | (value << GreenShift);
+		}
+	}
+
+	public uint RawB
+	{
+		readonly get => (data & BlueMask) >> BlueShift;
+		set
+		{
+			if (value > BlueMaxValue) value = BlueMaxValue;
+			data = (data & ~BlueMask) | (value << BlueShift);
+		}
+	}
+
+	public uint RawA
+	{
+		readonly get => (data & AlphaMask) >> AlphaShift;
+		set
+		{
+			if (value > AlphaMaxValue) value = AlphaMaxValue;
+			data = (data & ~AlphaMask) | (value << AlphaShift);
+		}
+	}
+
+	public ColorR10G10B10A2(float r, float g, float b, float a)
+	{
+		data = 0;
+		R = r;
+		G = g;
+		B = b;
+		A = a;
+	}
+
+	public ColorR10G10B10A2(Vector4 colorVector)
+	{
+		data = 0;
+		R = colorVector.X;
+		G = colorVector.Y;
+		B = colorVector.Z;
+		A = colorVector.W;
+	}
+
+	public ColorR10G10B10A2(ColorRgba32 color)
+	{
+		data = 0;
+		R = color.r / 255f;
+		G = color.g / 255f;
+		B = color.b / 255f;
+		A = color.a / 255f;
+	}
+
+	public ColorR10G10B10A2(ColorRgbaFloat color)
+	{
+		data = 0;
+		R = color.r;
+		G = color.g;
+		B = color.b;
+		A = color.a;
+	}
+
+	public override string ToString()
+	{
+		return $"r : {R:F3} g : {G:F3} b : {B:F3} a : {A:F3}";
+	}
+	
+	/// <inheritdoc />
+	public readonly ColorRgbaFloat ToColorRgbaFloat()
+	{
+		return new ColorRgbaFloat(R, G, B, A);
+	}
+
+	/// <inheritdoc />
+	public void FromColorRgbaFloat(ColorRgbaFloat color)
+	{
+		R = color.r;
+		G = color.g;
+		B = color.b;
+		A = color.a;
+	}
+}

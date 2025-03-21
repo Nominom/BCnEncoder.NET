@@ -547,6 +547,8 @@ namespace BCnEncoder.TextureFormats
 					return DxgiFormat.DxgiFormatB8G8R8A8Unorm;
 				case CompressionFormat.Bgra32_sRGB:
 					return DxgiFormat.DxgiFormatB8G8R8A8UnormSrgb;
+				case CompressionFormat.R10G10B10A2:
+					return DxgiFormat.DxgiFormatR10G10B10A2Unorm;
 				case CompressionFormat.RgbaFloat:
 					return DxgiFormat.DxgiFormatR32G32B32A32Float;
 				case CompressionFormat.RgbaHalf:

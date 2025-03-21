@@ -29,5 +29,63 @@ namespace BCnEncoder.Encoder.Options
         /// Use bestQuality when needed. Default is balanced.
         /// </summary>
         public CompressionQuality Quality { get; set; } = CompressionQuality.Balanced;
+
+        /// <summary>
+        /// The colorspace to use for encoding and mipmap generation.
+        /// </summary>
+        public OutputColorSpace ColorSpace { get; set; } = OutputColorSpace.ProcessInLinearOutputAsIs;
+
+        /// <summary>
+        /// How to handle alpha channel during processing.
+        /// </summary>
+        public AlphaHandling AlphaHandling { get; set; } = AlphaHandling.Auto;
+
+    }
+
+    /// <summary>
+    /// Defines how colors should be interpreted and processed during encoding.
+    /// </summary>
+    public enum OutputColorSpace
+    {
+        /// <summary>
+        /// Colors are converted to linear colorspace for processing. Output will match the input colorspace regardless of chosen output format.
+        /// </summary>
+        ProcessInLinearOutputAsIs,
+
+        /// <summary>
+        /// Do not convert colors to linear colorspace for processing. Output will match the input colorspace.
+        /// </summary>
+        KeepAsIs,
+
+        /// <summary>
+        /// Detect appropriate colorspace based on input/output formats (e.g., use sRGB for sRGB formats, linear for HDR).
+        /// The RGB colorspace will be automatically determined based on the selected input and output formats.
+        /// </summary>
+        Auto
+    }
+
+    /// <summary>
+    /// Defines how the alpha channel should be handled during processing.
+    /// </summary>
+    public enum AlphaHandling
+    {
+        /// <summary>
+        /// Automatically detect if the source data is already using premultiplied alpha by checking
+        /// if any color channel value is higher than its corresponding alpha value.
+        /// If not premultiplied, convert to premultiplied for processing.
+        /// Note: Detection may be unreliable for HDR formats.
+        /// </summary>
+        Auto,
+
+        /// <summary>
+        /// Use the source alpha representation as-is without any conversion.
+        /// </summary>
+        AsIs,
+
+        /// <summary>
+        /// Expect input data in linear format with straight alpha and convert to premultiplied
+        /// for processing and output.
+        /// </summary>
+        LinearToPremultiplied
     }
 }

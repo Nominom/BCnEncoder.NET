@@ -6,7 +6,7 @@ using BCnEncoder.Shared.Colors;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace BCnEncTests
+namespace BCnEncTests.Colors
 {
 	public class ColorConversionTests
 	{

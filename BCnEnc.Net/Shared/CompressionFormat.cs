@@ -8,9 +8,14 @@ namespace BCnEncoder.Shared
 	public enum CompressionFormat
 	{
 		/// <summary>
-		/// Raw unsigned byte 8-bit Luminance data. Pixel format <see cref="ColorR8"/>.
+		/// Raw unsigned byte 8-bit Luminance (or red) data. Pixel format <see cref="ColorR8"/>.
 		/// </summary>
 		R8,
+
+		/// <summary>
+		/// Raw signed byte 8-bit Luminance (or red) data. Pixel format <see cref="ColorR8S"/>.
+		/// </summary>
+		R8S,
 
 		/// <summary>
 		/// Raw unsigned byte 16-bit RG data. Pixel format <see cref="ColorR8G8"/>.
@@ -18,12 +23,23 @@ namespace BCnEncoder.Shared
 		R8G8,
 
 		/// <summary>
-		/// Raw unsigned byte 24-bit RGB data in linear colorspace. Pixel format <see cref="ColorBgr24"/>.
+		/// Raw signed byte 16-bit RG data. Pixel format <see cref="ColorR8G8S"/>.
+		/// </summary>
+		R8G8S,
+
+		/// <summary>
+		/// Raw 32-bit R10G10B10A2 format in linear colorspace. Pixel format <see cref="ColorR10G10B10A2"/>.
+		/// 10 bits per channel for RGB and 2 bits for Alpha.
+		/// </summary>
+		R10G10B10A2,
+
+		/// <summary>
+		/// Raw unsigned byte 24-bit RGB data in linear colorspace. Pixel format <see cref="ColorRgb24"/>.
 		/// </summary>
 		Rgb24,
 
 		/// <summary>
-		/// Raw unsigned byte 24-bit RGB data in the sRGB colorspace. Pixel format <see cref="ColorBgr24"/>.
+		/// Raw unsigned byte 24-bit RGB data in the sRGB colorspace. Pixel format <see cref="ColorRgb24"/>.
 		/// </summary>
 		Rgb24_sRGB,
 
@@ -135,9 +151,19 @@ namespace BCnEncoder.Shared
 		Bc4,
 
 		/// <summary>
+		/// Signed BC4 single-channel encoding. Only luminance (or red channel) is encoded. Always linear.
+		/// </summary>
+		Bc4S,
+
+		/// <summary>
 		/// BC5 dual-channel encoding. Only red and green channels are encoded. Mostly used for normal maps. Always linear.
 		/// </summary>
 		Bc5,
+
+		/// <summary>
+		/// Signed BC5 dual-channel encoding. Only red and green channels are encoded. Mostly used for normal maps. Always linear.
+		/// </summary>
+		Bc5S,
 
 		/// <summary>
 		/// BC6H / BPTC unsigned float encoding in linear colorspace. Can compress HDR textures without alpha. Does not support negative values.
@@ -203,6 +229,7 @@ namespace BCnEncoder.Shared
 				case CompressionFormat.RgbHalf:
 				case CompressionFormat.Rgbe:
 				case CompressionFormat.Xyze:
+				case CompressionFormat.R10G10B10A2:
 				case CompressionFormat.Unknown:
 					return false;
 
@@ -250,6 +277,8 @@ namespace BCnEncoder.Shared
 				case CompressionFormat.Rgbe:
 					return 4;
 				case CompressionFormat.Xyze:
+					return 4;
+				case CompressionFormat.R10G10B10A2:
 					return 4;
 				// Block compressed
 				case CompressionFormat.Bc1:
@@ -309,6 +338,7 @@ namespace BCnEncoder.Shared
 		{
 			switch (format)
 			{
+				case CompressionFormat.R10G10B10A2:
 				case CompressionFormat.Rgba32:
 				case CompressionFormat.Rgba32_sRGB:
 				case CompressionFormat.Bgra32:
@@ -348,6 +378,19 @@ namespace BCnEncoder.Shared
 			}
 
 			return false;
+		}
+
+		public static bool IsSignedFormat(this CompressionFormat format)
+		{
+			switch (format)
+			{
+				case CompressionFormat.Bc4S:
+				case CompressionFormat.Bc5S:
+				case CompressionFormat.Bc6S:
+					return true;
+				default:
+					return false;
+			}
 		}
 
 		public static long CalculateMipByteSize(this CompressionFormat format, int width, int height)
@@ -392,6 +435,8 @@ namespace BCnEncoder.Shared
 					return typeof(ColorRgbe);
 				case CompressionFormat.Xyze:
 					return typeof(ColorXyze);
+				case CompressionFormat.R10G10B10A2:
+					return typeof(ColorR10G10B10A2);
 				default:
 					throw new ArgumentOutOfRangeException(nameof(format));
 			}

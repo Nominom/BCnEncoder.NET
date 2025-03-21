@@ -2,7 +2,7 @@ using System;
 using BCnEncoder.Shared.Colors;
 using Xunit;
 
-namespace BCnEncTests
+namespace BCnEncTests.Colors
 {
 	public class ColorTest
 	{

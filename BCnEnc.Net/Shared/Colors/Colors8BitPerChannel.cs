@@ -46,6 +46,50 @@ public struct ColorR8 : IColor<ColorR8>
 	}
 }
 
+public struct ColorR8S : IColor<ColorR8S>
+{
+	public sbyte r;
+
+	public ColorR8S(sbyte r)
+	{
+		this.r = r;
+	}
+
+	/// <inheritdoc />
+	public ColorRgbaFloat ToColorRgbaFloat()
+	{
+		return new ColorRgbaFloat(
+			ColorBitConversionHelpers.SnormToFloat(r, 8),
+			0,
+			0
+		);
+	}
+
+	/// <inheritdoc />
+	public void FromColorRgbaFloat(ColorRgbaFloat color)
+	{
+		r = (sbyte)ColorBitConversionHelpers.FloatToSnorm(color.r, 8);
+	}
+
+	/// <inheritdoc />
+	public bool Equals(ColorR8S other)
+	{
+		return r == other.r;
+	}
+
+	/// <inheritdoc />
+	public override bool Equals(object obj)
+	{
+		return obj is ColorR8S other && Equals(other);
+	}
+
+	/// <inheritdoc />
+	public override int GetHashCode()
+	{
+		return r.GetHashCode();
+	}
+}
+
 public struct ColorR8G8 : IColor<ColorR8G8>
 {
 	public byte r, g;
@@ -82,6 +126,52 @@ public struct ColorR8G8 : IColor<ColorR8G8>
 	public override bool Equals(object obj)
 	{
 		return obj is ColorR8G8 other && Equals(other);
+	}
+
+	/// <inheritdoc />
+	public override int GetHashCode()
+	{
+		return HashCode.Combine(r, g);
+	}
+}
+
+public struct ColorR8G8S : IColor<ColorR8G8S>
+{
+	public sbyte r, g;
+
+	public ColorR8G8S(sbyte r, sbyte g)
+	{
+		this.r = r;
+		this.g = g;
+	}
+
+	/// <inheritdoc />
+	public ColorRgbaFloat ToColorRgbaFloat()
+	{
+		return new ColorRgbaFloat(
+			ColorBitConversionHelpers.SnormToFloat(r, 8),
+			ColorBitConversionHelpers.SnormToFloat(g, 8),
+			0);
+	}
+
+	/// <inheritdoc />
+	public void FromColorRgbaFloat(ColorRgbaFloat color)
+	{
+
+		r = (sbyte)ColorBitConversionHelpers.FloatToSnorm(color.r, 8);
+		g = (sbyte)ColorBitConversionHelpers.FloatToSnorm(color.g, 8);
+	}
+
+	/// <inheritdoc />
+	public bool Equals(ColorR8G8S other)
+	{
+		return r == other.r && g == other.g;
+	}
+
+	/// <inheritdoc />
+	public override bool Equals(object obj)
+	{
+		return obj is ColorR8G8S other && Equals(other);
 	}
 
 	/// <inheritdoc />
