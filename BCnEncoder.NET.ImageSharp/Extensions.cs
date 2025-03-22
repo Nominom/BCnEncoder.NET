@@ -114,7 +114,8 @@ namespace BCnEncoder.ImageSharp
 		{
 			var bytes = new byte[image.Width * image.Height * 4L];
 			image.CopyPixelDataTo(bytes);
-			return BCnTextureData.FromSingle(srgb ? CompressionFormat.Rgba32_sRGB : CompressionFormat.Rgba32, image.Width, image.Height, bytes);
+			AlphaChannelHint alphaChannelHint = EncoderExtensions.GetAlphaChannelHint(image);
+			return BCnTextureData.FromSingle(srgb ? CompressionFormat.Rgba32_sRGB : CompressionFormat.Rgba32, image.Width, image.Height, bytes, alphaChannelHint);
 		}
 
 		/// <summary>
@@ -125,7 +126,8 @@ namespace BCnEncoder.ImageSharp
 		{
 			var bytes = new byte[image.Width * image.Height * 16L];
 			image.CopyPixelDataTo(bytes);
-			return BCnTextureData.FromSingle(CompressionFormat.RgbaFloat, image.Width, image.Height, bytes);
+			AlphaChannelHint alphaChannelHint = EncoderExtensions.GetAlphaChannelHint(image);
+			return BCnTextureData.FromSingle(CompressionFormat.RgbaFloat, image.Width, image.Height, bytes, alphaChannelHint);
 		}
 
 		/// <summary>
@@ -136,7 +138,8 @@ namespace BCnEncoder.ImageSharp
 		{
 			var bytes = new byte[image.Width * image.Height * 3L];
 			image.CopyPixelDataTo(bytes);
-			return BCnTextureData.FromSingle(srgb ? CompressionFormat.Rgb24_sRGB : CompressionFormat.Rgb24, image.Width, image.Height, bytes);
+			AlphaChannelHint alphaChannelHint = EncoderExtensions.GetAlphaChannelHint(image);
+			return BCnTextureData.FromSingle(srgb ? CompressionFormat.Rgb24_sRGB : CompressionFormat.Rgb24, image.Width, image.Height, bytes, alphaChannelHint);
 		}
 	}
 
@@ -363,11 +366,6 @@ namespace BCnEncoder.ImageSharp
 			tex.FromTextureData(encoded);
 			tex.WriteToStream(outputStream);
 		}
-
-
-
-
-
 
 		/// <summary>
 		/// Encodes all mipMaps of a cubeMap to a stream either in the specified texture format.
@@ -665,7 +663,9 @@ namespace BCnEncoder.ImageSharp
 			Image<Rgba32> top, Image<Rgba32> down,
 			Image<Rgba32> back, Image<Rgba32> front)
 		{
-			var data = new BCnTextureData(CompressionFormat.Rgba32, right.Width, right.Height, 1, 1, 1, true, true);
+			AlphaChannelHint alphaChannelHint = GetAlphaChannelHint(right);
+
+			var data = new BCnTextureData(CompressionFormat.Rgba32, right.Width, right.Height, 1, 1, 1, true, true, alphaChannelHint);
 
 			if (
 				right.Width != left.Width || right.Height != left.Height ||
@@ -693,7 +693,9 @@ namespace BCnEncoder.ImageSharp
 			Image<RgbaVector> top,   Image<RgbaVector> down,
 			Image<RgbaVector> back,  Image<RgbaVector> front)
 		{
-			var data = new BCnTextureData(CompressionFormat.RgbaFloat, right.Width, right.Height, 1, 1, 1, true, true);
+			AlphaChannelHint alphaChannelHint = GetAlphaChannelHint(right);
+
+			var data = new BCnTextureData(CompressionFormat.RgbaFloat, right.Width, right.Height, 1, 1, 1, true, true, alphaChannelHint);
 
 			if (
 				right.Width != left.Width || right.Height != left.Height ||
@@ -715,6 +717,23 @@ namespace BCnEncoder.ImageSharp
 
 
 			return data;
+		}
+
+		internal static AlphaChannelHint GetAlphaChannelHint(Image image)
+		{
+			if (!image.PixelType.AlphaRepresentation.HasValue)
+				return AlphaChannelHint.Unknown;
+
+			switch (image.PixelType.AlphaRepresentation.Value)
+			{
+				case (PixelAlphaRepresentation.None):
+				case PixelAlphaRepresentation.Unassociated:
+					return AlphaChannelHint.Straight;
+				case (PixelAlphaRepresentation.Associated):
+					return AlphaChannelHint.Premultiplied;
+				default:
+					return AlphaChannelHint.Unknown;
+			}
 		}
 	}
 }

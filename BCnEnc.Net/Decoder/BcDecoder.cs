@@ -213,8 +213,12 @@ namespace BCnEncoder.Decoder
 				throw new NotSupportedException($"This Format is not supported: {texture.Format}");
 			}
 
+			var outputAlphaChannelhint = OutputOptions.AlphaHandling == AlphaHandling.Unpremultiply
+				? AlphaChannelHint.Straight
+				: texture.AlphaChannelHint;
+
 			var outputData = new BCnTextureData(outputFormat, texture.Width, texture.Height, texture.Depth,
-				texture.NumMips, texture.NumArrayElements, texture.IsCubeMap, true);
+				texture.NumMips, texture.NumArrayElements, texture.IsCubeMap, true, outputAlphaChannelhint);
 
 			for (var m = 0; m < texture.NumMips; m++)
 			{
@@ -226,6 +230,16 @@ namespace BCnEncoder.Decoder
 
 						var decoded = decoder.Decode(data, texture.Mips[m].Width,
 							texture.Mips[m].Height, context);
+
+						// Apply alpha handling if needed
+						if (OutputOptions.AlphaHandling == AlphaHandling.Unpremultiply && texture.AlphaChannelHint == AlphaChannelHint.Premultiplied)
+						{
+							// Get as span to process in-place
+							var resultSpan = decoded.AsSpan().Cast<byte, ColorRgbaFloat>();
+
+							// Unpremultiply alpha
+							AlphaHandlingHelper.UnpremultiplyAlpha(resultSpan);
+						}
 
 						ColorExtensions.InternalConvertToAsBytesFromBytes(decoded, outputData.Mips[m][(CubeMapFaceDirection)f, a].Data, CompressionFormat.RgbaFloat,
 							outputFormat, ColorConversionMode.None);
@@ -282,6 +296,16 @@ namespace BCnEncoder.Decoder
 			}
 
 			var result = decoder.Decode(input, pixelWidth, pixelHeight, context);
+
+			// Apply alpha handling if needed
+			if (OutputOptions.AlphaHandling == AlphaHandling.Unpremultiply)
+			{
+				// Get as span to process in-place
+				var resultSpan = result.AsSpan().Cast<byte, ColorRgbaFloat>();
+
+				// Unpremultiply alpha
+				AlphaHandlingHelper.UnpremultiplyAlpha(resultSpan);
+			}
 
 			ColorExtensions.InternalConvertToAsBytesFromBytes(result, output, CompressionFormat.RgbaFloat,
 				outputFormat, ColorConversionMode.None);
@@ -439,10 +463,39 @@ namespace BCnEncoder.Decoder
 
 		private ColorConversionMode GetColorConversion(CompressionFormat sourceFormat, CompressionFormat targetFormat)
 		{
-			if (!OutputOptions.DoColorspaceConversion)
-				return ColorConversionMode.None;
+			// Determine input color space based on settings
+			bool inputIsSrgb = sourceFormat.IsSRGBFormat();
+			if (OutputOptions.InputColorSpace == InputColorSpaceAssumption.ForceSrgb)
+			{
+				inputIsSrgb = true;
+			}
+			else if (OutputOptions.InputColorSpace == InputColorSpaceAssumption.ForceLinear)
+			{
+				inputIsSrgb = false;
+			}
 
-			return sourceFormat.GetColorConversionMode(targetFormat);
+			// Apply output color space preferences
+			switch (OutputOptions.OutputColorSpace)
+			{
+				case OutputColorSpaceTarget.KeepAsIs:
+					// No conversion needed
+					return ColorConversionMode.None;
+
+				case OutputColorSpaceTarget.Linear:
+					// If input is sRGB, convert to linear
+					return inputIsSrgb ? ColorConversionMode.SrgbToLinear : ColorConversionMode.None;
+
+				case OutputColorSpaceTarget.Srgb:
+					// If input is linear, convert to sRGB
+					return !inputIsSrgb ? ColorConversionMode.LinearToSrgb : ColorConversionMode.None;
+
+				case OutputColorSpaceTarget.Auto:
+					// Auto mode determines the best conversion based on formats
+					return sourceFormat.GetColorConversionMode(targetFormat);
+
+				default:
+					return ColorConversionMode.None;
+			}
 		}
 
 		/// <summary>

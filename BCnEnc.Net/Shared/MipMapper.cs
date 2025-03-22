@@ -28,7 +28,7 @@ namespace BCnEncoder.Shared
 				throw new ArgumentException("Only 2D textures are supported!");
 
 			var newData = new BCnTextureData(CompressionFormat.RgbaFloat, input.Width, input.Height, input.Depth, numMipMaps,
-				input.NumArrayElements, input.IsCubeMap, true);
+				input.NumArrayElements, input.IsCubeMap, true, input.AlphaChannelHint);
 
 			for (var f = 0; f < newData.NumFaces; f++)
 			{

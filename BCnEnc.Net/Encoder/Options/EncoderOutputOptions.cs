@@ -26,14 +26,14 @@ namespace BCnEncoder.Encoder.Options
         /// <summary>
         /// The Quality of the compression. Use either fast or balanced for testing.
         /// Fast can be used for near real-time encoding for most algorithms.
-        /// Use bestQuality when needed. Default is balanced.
+        /// Use bestQuality if time is not an issue. Default is balanced.
         /// </summary>
         public CompressionQuality Quality { get; set; } = CompressionQuality.Balanced;
 
         /// <summary>
         /// The colorspace to use for encoding and mipmap generation.
         /// </summary>
-        public OutputColorSpace ColorSpace { get; set; } = OutputColorSpace.ProcessInLinearOutputAsIs;
+        public OutputColorSpace ColorSpace { get; set; } = OutputColorSpace.ProcessLinearPreserveColorSpace;
 
         /// <summary>
         /// How to handle alpha channel during processing.
@@ -50,7 +50,7 @@ namespace BCnEncoder.Encoder.Options
         /// <summary>
         /// Colors are converted to linear colorspace for processing. Output will match the input colorspace regardless of chosen output format.
         /// </summary>
-        ProcessInLinearOutputAsIs,
+        ProcessLinearPreserveColorSpace,
 
         /// <summary>
         /// Do not convert colors to linear colorspace for processing. Output will match the input colorspace.
@@ -60,6 +60,7 @@ namespace BCnEncoder.Encoder.Options
         /// <summary>
         /// Detect appropriate colorspace based on input/output formats (e.g., use sRGB for sRGB formats, linear for HDR).
         /// The RGB colorspace will be automatically determined based on the selected input and output formats.
+        /// Conversion will be automatically applied if necessary.
         /// </summary>
         Auto
     }
@@ -73,7 +74,6 @@ namespace BCnEncoder.Encoder.Options
         /// Automatically detect if the source data is already using premultiplied alpha by checking
         /// if any color channel value is higher than its corresponding alpha value.
         /// If not premultiplied, convert to premultiplied for processing.
-        /// Note: Detection may be unreliable for HDR formats.
         /// </summary>
         Auto,
 

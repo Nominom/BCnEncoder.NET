@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 using BCnEncoder.Decoder;
+using BCnEncoder.Decoder.Options;
 using BCnEncoder.Encoder;
 using BCnEncoder.Shared.Colors;
 using BCnEncoder.TextureFormats;
@@ -41,9 +42,44 @@ namespace BCnEncoder.Shared
 		ZNegative = 5
 	}
 
+	/// <summary>
+	/// Indicates how the alpha channel in texture data is encoded in relation to the color channels.
+	/// </summary>
+	public enum AlphaChannelHint
+	{
+		/// <summary>
+		/// The alpha encoding type is not known or not specified.
+		/// </summary>
+		Unknown,
+		
+		/// <summary>
+		/// Alpha is straight/non-premultiplied (color values are independent of alpha).
+		/// This is the typical format for standard image formats like PNG.
+		/// </summary>
+		Straight,
+		
+		/// <summary>
+		/// Alpha is premultiplied (color channels are already multiplied by alpha).
+		/// This is commonly used in GPU texture formats and during rendering.
+		/// </summary>
+		Premultiplied
+	}
+
 	public class BCnTextureData
 	{
-		public BCnTextureData(CompressionFormat inputFormat, int width, int height, int depth = 1, int numMips = 0, int numArrayElements = 0, bool isCubeMap = false, bool allocateBuffers = false)
+		/// <summary>
+		/// Creates a new BCnTexture object
+		/// </summary>
+		/// <param name="inputFormat">The compression format of the texture</param>
+		/// <param name="width">Width of the texture in pixels</param>
+		/// <param name="height">Height of the texture in pixels</param>
+		/// <param name="depth">Depth of the texture for volume textures, default is 1</param>
+		/// <param name="numMips">Number of mip map levels, default is 0 (no mipmaps)</param>
+		/// <param name="numArrayElements">Number of array elements for texture arrays, default is 0 (not an array)</param>
+		/// <param name="isCubeMap">Whether this texture is a cubemap (6 faces), default is false</param>
+		/// <param name="allocateBuffers">Whether to allocate memory buffers for the texture data, default is false</param>
+		/// <param name="alphaChannelHint">Hint about how the alpha channel is encoded (straight, premultiplied, or unknown), default is Unknown</param>
+		public BCnTextureData(CompressionFormat inputFormat, int width, int height, int depth = 1, int numMips = 0, int numArrayElements = 0, bool isCubeMap = false, bool allocateBuffers = false, AlphaChannelHint alphaChannelHint = AlphaChannelHint.Unknown)
 		{
 			if (width <= 0)
 				throw new ArgumentException($"Invalid texture size width: {width}", nameof(width));
@@ -58,6 +94,7 @@ namespace BCnEncoder.Shared
 			NumFaces = isCubeMap ? 6 : 1;
 			NumMips = Math.Max(numMips, 1);
 			NumArrayElements = Math.Max(numArrayElements, 1);
+			AlphaChannelHint = alphaChannelHint;
 
 			Mips = new MipMapLevel[NumMips];
 			for (int i = 0; i < NumMips; i++)
@@ -255,6 +292,12 @@ namespace BCnEncoder.Shared
 		/// </summary>
 		public bool IsArrayTexture => NumArrayElements > 1;
 
+		/// <summary>
+		/// Hint about how the alpha channel is encoded in relation to color channels.
+		/// This helps the encoder/decoder make appropriate decisions when processing the texture data.
+		/// </summary>
+		public AlphaChannelHint AlphaChannelHint { get; set; } = AlphaChannelHint.Unknown;
+
 		public long TotalByteSize => Mips.Sum(m => m.SizeInBytes * NumFaces * NumArrayElements);
 
 
@@ -323,12 +366,22 @@ namespace BCnEncoder.Shared
 			{
 				throw new ArgumentException("All faces of a cubeMap must have the same amount of array elements!");
 			}
+			if (
+				right.AlphaChannelHint != left.AlphaChannelHint ||
+				left.AlphaChannelHint != top.AlphaChannelHint ||
+				top.AlphaChannelHint != down.AlphaChannelHint ||
+				down.AlphaChannelHint != back.AlphaChannelHint ||
+				back.AlphaChannelHint != front.AlphaChannelHint)
+			{
+				throw new ArgumentException("All faces of a cubeMap must have the same amount of array elements!");
+			}
 
 			var outData = new BCnTextureData(right.Format, right.Width, right.Height, right.Depth,
 				right.NumMips,
 				right.NumArrayElements,
 				isCubeMap: true,
-				allocateBuffers: false);
+				allocateBuffers: false,
+				alphaChannelHint: right.AlphaChannelHint);
 
 			for (var m = 0; m < right.NumMips; m++)
 			{
@@ -454,10 +507,15 @@ namespace BCnEncoder.Shared
 		/// <param name="width">The width of the texture.</param>
 		/// <param name="height">The height of the texture.</param>
 		/// <param name="data">The texture data as a byte array.</param>
+		/// <param name="alphaChannelHint">Specifies how the alpha channel is encoded. If set to Unknown, will attempt to guess based on format.</param>
 		/// <returns>A new BCnTextureData instance.</returns>
-		public static BCnTextureData FromSingle(CompressionFormat format, int width, int height, byte[] data)
+		public static BCnTextureData FromSingle(CompressionFormat format, int width, int height, byte[] data, AlphaChannelHint alphaChannelHint)
 		{
-		    var texture = new BCnTextureData(format, width, height, 1, 1, 1, false, false);
+			if (alphaChannelHint == AlphaChannelHint.Unknown)
+			{
+				alphaChannelHint = format.GuessAlphaChannelHint();
+			}
+		    var texture = new BCnTextureData(format, width, height, 1, 1, 1, false, false, alphaChannelHint);
 		    texture.Mips[0].First.Data = data.ToArray();
 		    return texture;
 		}
@@ -468,15 +526,21 @@ namespace BCnEncoder.Shared
 		/// <param name="format">The compression format of the texture data.</param>
 		/// <param name="size">The size of each cubemap face (assuming square faces).</param>
 		/// <param name="faces">An IEnumerable of six byte arrays, one for each cubemap face.</param>
+		/// <param name="alphaChannelHint">Specifies how the alpha channel is encoded. If set to Unknown, will attempt to guess based on format.</param>
 		/// <returns>A new BCnTextureData instance representing a cubemap.</returns>
 		/// <exception cref="ArgumentException">Thrown when the number of faces is not exactly 6.</exception>
-		public static BCnTextureData FromCubemap(CompressionFormat format, int size, IEnumerable<byte[]> faces)
+		public static BCnTextureData FromCubemap(CompressionFormat format, int size, IEnumerable<byte[]> faces, AlphaChannelHint alphaChannelHint)
 		{
 			var facesArray = faces.ToArray();
 		    if (facesArray.Length != 6)
 		        throw new ArgumentException("Cubemap requires exactly 6 faces", nameof(faces));
 
-		    var texture = new BCnTextureData(format, size, size, depth: 1, numMips: 1, numArrayElements: 1, true, false);
+		    if (alphaChannelHint == AlphaChannelHint.Unknown)
+		    {
+			    alphaChannelHint = format.GuessAlphaChannelHint();
+		    }
+
+		    var texture = new BCnTextureData(format, size, size, depth: 1, numMips: 1, numArrayElements: 1, true, false, alphaChannelHint);
 		    for (int f = 0; f < facesArray.Length; f++)
 		    {
 		        texture.Mips[0][(CubeMapFaceDirection)f, 0].Data = facesArray[f];
@@ -537,14 +601,13 @@ namespace BCnEncoder.Shared
 	{
 		/// <summary>
 		/// Convert a <see cref="BCnTextureData"/> to another uncompressed pixel format.
-		/// If the texture data is block-compressed, it is decoded first using <see cref="BcDecoder"/>.
 		/// </summary>
 		/// <param name="data"></param>
 		/// <param name="format"></param>
 		/// <param name="convertColorspace">Whether to do colorspace conversion when the source format does not match the target format</param>
 		/// <returns>Returns self if already desired format. New data is created otherwise.</returns>
 		/// <exception cref="ArgumentException"></exception>
-		public static BCnTextureData ConvertTo(this BCnTextureData data, CompressionFormat format, bool convertColorspace = true)
+		public static BCnTextureData ConvertTo(this BCnTextureData data, CompressionFormat format, bool convertColorspace = false)
 		{
 			if (data.Format == format)
 				return data;
@@ -554,37 +617,23 @@ namespace BCnEncoder.Shared
 				throw new ArgumentException(
 					$"New format should be a non-block-compressed format. Please use {nameof(BcEncoder)} for encoding to compressed formats!");
 			}
-
-			var decoded = data;
-
 			if(data.Format.IsBlockCompressedFormat())
 			{
-				var decoder = new BcDecoder
-				{
-					Options =
-					{
-						IsParallel = false
-					},
-					OutputOptions =
-					{
-						DoColorspaceConversion = convertColorspace
-					}
-				};
-
-				decoded = decoder.Decode(data, format);
+				throw new ArgumentException(
+					$"Source format should be a non-block-compressed format. Please use {nameof(BcDecoder)} for decoding from compressed formats!");
 			}
 
-			if (decoded.Format == format)
+			if (data.Format == format)
 			{
-				return decoded;
+				return data;
 			}
 
-			return ConvertPixelFormat(decoded, format, convertColorspace);
+			return ConvertPixelFormat(data, format, convertColorspace);
 		}
 
 		private static BCnTextureData ConvertPixelFormat(BCnTextureData data, CompressionFormat newFormat, bool convertColorspace)
 		{
-			var newData = new BCnTextureData(newFormat, data.Width, data.Height, data.Depth, data.NumMips, data.NumArrayElements, data.IsCubeMap, false);
+			var newData = new BCnTextureData(newFormat, data.Width, data.Height, data.Depth, data.NumMips, data.NumArrayElements, data.IsCubeMap, false, data.AlphaChannelHint);
 			for (var m = 0; m < data.NumMips; m++)
 			{
 				for (var f = 0; f < data.NumFaces; f++)

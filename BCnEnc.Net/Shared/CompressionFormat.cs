@@ -186,17 +186,17 @@ namespace BCnEncoder.Shared
 		Bc7_sRGB,
 
 		/// <summary>
-		/// ATC / Adreno Texture Compression encoding in linear colorspace. Derivative of BC1.
+		/// ATC / Adreno Texture Compression encoding in (assumed) sRGB colorspace. Derivative of BC1.
 		/// </summary>
 		Atc,
 
 		/// <summary>
-		/// ATC / Adreno Texture Compression encoding in linear colorspace. Derivative of BC2. Good for sharp alpha transitions.
+		/// ATC / Adreno Texture Compression encoding in (assumed) sRGB colorspace. Derivative of BC2. Good for sharp alpha transitions.
 		/// </summary>
 		AtcExplicitAlpha,
 
 		/// <summary>
-		/// ATC / Adreno Texture Compression encoding in linear colorspace. Derivative of BC3. Good for smooth alpha transitions.
+		/// ATC / Adreno Texture Compression encoding in (assumed) sRGB colorspace. Derivative of BC3. Good for smooth alpha transitions.
 		/// </summary>
 		AtcInterpolatedAlpha,
 
@@ -213,28 +213,29 @@ namespace BCnEncoder.Shared
 		{
 			switch (format)
 			{
-				case CompressionFormat.R8:
-				case CompressionFormat.R8G8:
-				case CompressionFormat.Rgb24:
-				case CompressionFormat.Rgb24_sRGB:
-				case CompressionFormat.Bgr24:
-				case CompressionFormat.Bgr24_sRGB:
-				case CompressionFormat.Rgba32:
-				case CompressionFormat.Rgba32_sRGB:
-				case CompressionFormat.Bgra32:
-				case CompressionFormat.Bgra32_sRGB:
-				case CompressionFormat.RgbaFloat:
-				case CompressionFormat.RgbaHalf:
-				case CompressionFormat.RgbFloat:
-				case CompressionFormat.RgbHalf:
-				case CompressionFormat.Rgbe:
-				case CompressionFormat.Xyze:
-				case CompressionFormat.R10G10B10A2:
-				case CompressionFormat.Unknown:
-					return false;
+				case CompressionFormat.Bc1:
+				case CompressionFormat.Bc1_sRGB:
+				case CompressionFormat.Bc1WithAlpha:
+				case CompressionFormat.Bc1WithAlpha_sRGB:
+				case CompressionFormat.Bc2:
+				case CompressionFormat.Bc2_sRGB:
+				case CompressionFormat.Bc3:
+				case CompressionFormat.Bc3_sRGB:
+				case CompressionFormat.Bc4:
+				case CompressionFormat.Bc4S:
+				case CompressionFormat.Bc5:
+				case CompressionFormat.Bc5S:
+				case CompressionFormat.Bc6U:
+				case CompressionFormat.Bc6S:
+				case CompressionFormat.Bc7:
+				case CompressionFormat.Bc7_sRGB:
+				case CompressionFormat.Atc:
+				case CompressionFormat.AtcExplicitAlpha:
+				case CompressionFormat.AtcInterpolatedAlpha:
+					return true;
 
 				default:
-					return true;
+					return false;
 			}
 		}
 
@@ -251,8 +252,10 @@ namespace BCnEncoder.Shared
 			switch (format)
 			{
 				case CompressionFormat.R8:
+				case CompressionFormat.R8S:
 					return 1;
 				case CompressionFormat.R8G8:
+				case CompressionFormat.R8G8S:
 					return 2;
 				case CompressionFormat.Rgb24:
 				case CompressionFormat.Rgb24_sRGB:
@@ -294,8 +297,10 @@ namespace BCnEncoder.Shared
 				case CompressionFormat.Bc3_sRGB:
 					return 16;
 				case CompressionFormat.Bc4:
+				case CompressionFormat.Bc4S:
 					return 8;
 				case CompressionFormat.Bc5:
+				case CompressionFormat.Bc5S:
 					return 16;
 				case CompressionFormat.Bc6U:
 					return 16;
@@ -374,6 +379,10 @@ namespace BCnEncoder.Shared
 				case CompressionFormat.Bc2_sRGB:
 				case CompressionFormat.Bc3_sRGB:
 				case CompressionFormat.Bc7_sRGB:
+				// Atc formats don't have a explicit sRGB variant, so they are assumed sRGB
+ 				case CompressionFormat.Atc:
+				case CompressionFormat.AtcExplicitAlpha:
+				case CompressionFormat.AtcInterpolatedAlpha:
 					return true;
 			}
 
@@ -384,6 +393,8 @@ namespace BCnEncoder.Shared
 		{
 			switch (format)
 			{
+				case CompressionFormat.R8S:
+				case CompressionFormat.R8G8S:
 				case CompressionFormat.Bc4S:
 				case CompressionFormat.Bc5S:
 				case CompressionFormat.Bc6S:
@@ -409,8 +420,14 @@ namespace BCnEncoder.Shared
 			{
 				case CompressionFormat.R8:
 					return typeof(ColorR8);
+				case CompressionFormat.R8S:
+					return typeof(ColorR8S);
 				case CompressionFormat.R8G8:
 					return typeof(ColorR8G8);
+				case CompressionFormat.R8G8S:
+					return typeof(ColorR8G8S);
+				case CompressionFormat.R10G10B10A2:
+					return typeof(ColorR10G10B10A2);
 				case CompressionFormat.Rgb24:
 				case CompressionFormat.Rgb24_sRGB:
 					return typeof(ColorRgb24);
@@ -435,8 +452,6 @@ namespace BCnEncoder.Shared
 					return typeof(ColorRgbe);
 				case CompressionFormat.Xyze:
 					return typeof(ColorXyze);
-				case CompressionFormat.R10G10B10A2:
-					return typeof(ColorR10G10B10A2);
 				default:
 					throw new ArgumentOutOfRangeException(nameof(format));
 			}
@@ -482,6 +497,22 @@ namespace BCnEncoder.Shared
 				(false, true) => ColorConversionMode.LinearToSrgb,
 				(true, false) => ColorConversionMode.SrgbToLinear
 			};
+		}
+
+		/// <summary>
+		/// Attempts to guess the alpha channel encoding type based on the compression format.
+		/// Block compressed formats typically use premultiplied alpha, while HDR formats use straight alpha.
+		/// </summary>
+		/// <param name="format">The compression format to analyze</param>
+		/// <returns>Premultiplied for block compressed formats, Straight for HDR formats, Unknown otherwise</returns>
+		internal static AlphaChannelHint GuessAlphaChannelHint(this CompressionFormat format)
+		{
+			if (format.IsBlockCompressedFormat())
+				return AlphaChannelHint.Premultiplied;
+			if (format.IsHdrFormat())
+				return AlphaChannelHint.Straight;
+
+			return AlphaChannelHint.Unknown;
 		}
 	}
 }

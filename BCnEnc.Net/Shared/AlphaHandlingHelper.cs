@@ -16,8 +16,8 @@ namespace BCnEncoder.Shared
         /// Detects if an array of ColorRgbaFloat values is already using premultiplied alpha.
         /// </summary>
         /// <param name="colors">The array of colors to check.</param>
-        /// <returns>True if the data is premultiplied, false if it's using straight alpha.</returns>
-        public static bool IsAlreadyPremultiplied(ReadOnlySpan<ColorRgbaFloat> colors)
+        /// <returns><see cref="AlphaChannelHint.Premultiplied"/> or <see cref="AlphaChannelHint.Straight"/></returns>
+        public static AlphaChannelHint GuessAlphaChannel(ReadOnlySpan<ColorRgbaFloat> colors)
         {
             // Start by assuming it's premultiplied until we find evidence otherwise
             for (int i = 0; i < colors.Length; i++)
@@ -29,12 +29,37 @@ namespace BCnEncoder.Shared
                                              color.g > color.a + AlphaEpsilon ||
                                              color.b > color.a + AlphaEpsilon))
                 {
-                    return false;
+                    return AlphaChannelHint.Straight;
                 }
             }
 
             // If we didn't find any evidence to the contrary, consider it premultiplied
-            return true;
+            return AlphaChannelHint.Premultiplied;
+        }
+
+        public static AlphaChannelHint GuessAlphaChannel(BCnTextureData texture)
+        {
+	        if (texture.Format != CompressionFormat.RgbaFloat)
+		        throw new ArgumentException("Format must be RgbaFloat before calling this method.");
+
+	        bool isPremultiplied = true;
+
+	        for (var m = 0; m < texture.NumMips && isPremultiplied; m++)
+	        {
+		        for (var f = 0; f < texture.NumFaces && isPremultiplied; f++)
+		        {
+			        for (var a = 0; a < texture.NumArrayElements && isPremultiplied; a++)
+			        {
+				        var face = (CubeMapFaceDirection)f;
+				        var channelHint = GuessAlphaChannel(texture.Mips[m][face, a].AsMemory<ColorRgbaFloat>().Span);
+
+				        if (channelHint == AlphaChannelHint.Straight)
+					        isPremultiplied = false;
+			        }
+		        }
+	        }
+
+	        return isPremultiplied ? AlphaChannelHint.Premultiplied : AlphaChannelHint.Straight;
         }
 
         /// <summary>
@@ -91,42 +116,31 @@ namespace BCnEncoder.Shared
                 return false;
             }
 
+            if (textureData.AlphaChannelHint == AlphaChannelHint.Unknown)
+            {
+	            textureData.AlphaChannelHint = GuessAlphaChannel(textureData);
+            }
+
             bool modified = false;
 
             if (alphaHandling == AlphaHandling.Auto)
             {
-                // First, check if the data is already premultiplied
-                bool isPremultiplied = true;
-
-                // Check the first mip level of all faces/arrays
-                for (var f = 0; f < textureData.NumFaces && isPremultiplied; f++)
-                {
-                    for (var a = 0; a < textureData.NumArrayElements && isPremultiplied; a++)
-                    {
-                        var face = (CubeMapFaceDirection)f;
-                        var pixels = textureData.Mips[0][face, a].AsMemory<ColorRgbaFloat>();
-
-                        if (!IsAlreadyPremultiplied(pixels.Span))
-                        {
-                            isPremultiplied = false;
-                            break;
-                        }
-                    }
-                }
-
                 // If not premultiplied, convert to premultiplied
-                if (!isPremultiplied)
+                if (textureData.AlphaChannelHint == AlphaChannelHint.Straight)
                 {
-                    for (var f = 0; f < textureData.NumFaces; f++)
-                    {
-                        for (var a = 0; a < textureData.NumArrayElements; a++)
-                        {
-                            var face = (CubeMapFaceDirection)f;
-                            var pixels = textureData.Mips[0][face, a].AsMemory<ColorRgbaFloat>();
-                            PremultiplyAlpha(pixels.Span);
-                        }
-                    }
-                    modified = true;
+	                for (var m = 0; m < textureData.NumMips; m++)
+	                {
+		                for (var f = 0; f < textureData.NumFaces; f++)
+		                {
+			                for (var a = 0; a < textureData.NumArrayElements; a++)
+			                {
+				                var face = (CubeMapFaceDirection)f;
+				                var pixels = textureData.Mips[m][face, a].AsMemory<ColorRgbaFloat>();
+				                PremultiplyAlpha(pixels.Span);
+			                }
+		                }
+	                }
+	                modified = true;
                 }
             }
             else if (alphaHandling == AlphaHandling.LinearToPremultiplied)
@@ -141,6 +155,8 @@ namespace BCnEncoder.Shared
                         PremultiplyAlpha(pixels.Span);
                     }
                 }
+
+                textureData.AlphaChannelHint = AlphaChannelHint.Premultiplied;
                 modified = true;
             }
 
@@ -152,25 +168,31 @@ namespace BCnEncoder.Shared
         /// </summary>
         /// <param name="floatData">The color data to process.</param>
         /// <param name="alphaHandling">The alpha handling mode to apply.</param>
-        /// <returns>The processed data, which may be the same as the input if no processing was needed.</returns>
-        public static ReadOnlyMemory<ColorRgbaFloat> ProcessAlpha(
-            ReadOnlyMemory<ColorRgbaFloat> floatData, AlphaHandling alphaHandling)
+        /// <param name="alphaChannelHint">Optional hint about how the alpha is currently encoded. If Unknown, will attempt to detect.</param>
+        /// <returns>A tuple containing the processed data (which may be the same as the input if no processing was needed) and the resulting alpha channel hint.</returns>
+        public static (ReadOnlyMemory<ColorRgbaFloat> data, AlphaChannelHint alphaChannelHint) ProcessAlpha(
+            ReadOnlyMemory<ColorRgbaFloat> floatData, AlphaHandling alphaHandling, AlphaChannelHint alphaChannelHint = AlphaChannelHint.Unknown)
         {
             if (floatData.Length == 0)
             {
-                return floatData;
+                return (floatData, alphaChannelHint);
+            }
+
+            // Determine alpha channel type if unknown
+            if (alphaChannelHint == AlphaChannelHint.Unknown)
+            {
+                alphaChannelHint = GuessAlphaChannel(floatData.Span);
             }
 
             if (alphaHandling == AlphaHandling.Auto)
             {
-                // Check if the data is already premultiplied
-                if (!IsAlreadyPremultiplied(floatData.Span))
+                // Convert to premultiplied if it's straight alpha
+                if (alphaChannelHint == AlphaChannelHint.Straight)
                 {
-                    // Not premultiplied, so convert
                     var rgbaPreMul = new ColorRgbaFloat[floatData.Length];
                     floatData.CopyTo(rgbaPreMul);
                     PremultiplyAlpha(rgbaPreMul);
-                    return new ReadOnlyMemory<ColorRgbaFloat>(rgbaPreMul);
+                    return (new ReadOnlyMemory<ColorRgbaFloat>(rgbaPreMul), AlphaChannelHint.Premultiplied);
                 }
             }
             else if (alphaHandling == AlphaHandling.LinearToPremultiplied)
@@ -179,11 +201,11 @@ namespace BCnEncoder.Shared
                 var rgbaPreMul = new ColorRgbaFloat[floatData.Length];
                 floatData.CopyTo(rgbaPreMul);
                 PremultiplyAlpha(rgbaPreMul);
-                return new ReadOnlyMemory<ColorRgbaFloat>(rgbaPreMul);
+                return (new ReadOnlyMemory<ColorRgbaFloat>(rgbaPreMul), AlphaChannelHint.Premultiplied);
             }
 
             // For AsIs or already premultiplied data, return the original
-            return floatData;
+            return (floatData, alphaChannelHint);
         }
     }
 }

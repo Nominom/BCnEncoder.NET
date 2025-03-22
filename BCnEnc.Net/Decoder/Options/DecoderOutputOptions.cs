@@ -4,6 +4,79 @@ using BCnEncoder.Shared;
 namespace BCnEncoder.Decoder.Options
 {
 	/// <summary>
+	/// Controls how the color space of the input data should be interpreted.
+	/// </summary>
+	public enum InputColorSpaceAssumption
+	{
+		/// <summary>
+		/// [DEFAULT] Use the color space indicated by the format.
+		/// For formats that explicitly support sRGB (like BC1_SRGB), those indicators will be respected.
+		/// </summary>
+		Auto,
+
+		/// <summary>
+		/// Assume the input data is in sRGB color space (with gamma curve), regardless of format indicators.
+		/// Useful for older textures or those from sources that didn't properly tag their color space.
+		/// </summary>
+		ForceSrgb,
+
+		/// <summary>
+		/// Assume the input data is in linear color space (without gamma curve), regardless of format indicators.
+		/// Useful for normal maps, physical property maps, or other technical textures that store linear data.
+		/// </summary>
+		ForceLinear
+	}
+
+	/// <summary>
+	/// Controls the target color space for the decoded output.
+	/// </summary>
+	public enum OutputColorSpaceTarget
+	{
+		/// <summary>
+		/// [DEFAULT] Keep the color space the same as the input (or assumed input) color space.
+		/// No color space conversion will be performed.
+		/// </summary>
+		KeepAsIs,
+
+		/// <summary>
+		/// Convert to linear color space for the output.
+		/// Use this when you need physically accurate color values for lighting calculations or HDR rendering.
+		/// </summary>
+		Linear,
+
+		/// <summary>
+		/// Convert to sRGB color space for the output.
+		/// Use this when preparing images for display or when working with photo/UI editing software.
+		/// </summary>
+		Srgb,
+
+		/// <summary>
+		/// Automatically determine the best output color space based on the output format.
+		/// The decoder will select linear for HDR formats and numeric data, and sRGB for display formats.
+		/// </summary>
+		Auto
+	}
+
+	/// <summary>
+	/// Controls how transparency (alpha channel) is handled during decoding.
+	/// </summary>
+	public enum AlphaHandling
+	{
+		/// <summary>
+		/// [DEFAULT] Decode alpha channel exactly as stored without modification.
+		/// Best option for most cases when you want to preserve the original data.
+		/// </summary>
+		KeepAsIs,
+
+		/// <summary>
+		/// Convert from premultiplied alpha (where color channels are already multiplied by alpha) to straight alpha.
+		/// Use this when preparing textures for storing as conventional image data or when working with photo/UI editing software.
+		/// Most GPU texture formats (dds, ktx) are premultiplied alpha by default, while most standard image formats (png, etc..) are straight alpha.
+		/// </summary>
+		Unpremultiply
+	}
+
+	/// <summary>
 	/// A class for the decoder output options.
 	/// </summary>
 	public class DecoderOutputOptions
@@ -30,8 +103,18 @@ namespace BCnEncoder.Decoder.Options
 		public ColorComponent Bc5ComponentCalculated { get; set; } = ColorComponent.None;
 
 		/// <summary>
-		/// Whether to do automatic colorspace conversion when the source colorspace does not match the target colorspace.
+		/// Controls how the color space of the input data should be interpreted.
 		/// </summary>
-		public bool DoColorspaceConversion { get; set; } = false;
+		public InputColorSpaceAssumption InputColorSpace { get; set; } = InputColorSpaceAssumption.Auto;
+
+		/// <summary>
+		/// Controls the target color space for the decoded output.
+		/// </summary>
+		public OutputColorSpaceTarget OutputColorSpace { get; set; } = OutputColorSpaceTarget.KeepAsIs;
+
+		/// <summary>
+		/// Controls how transparency (alpha channel) is handled during decoding.
+		/// </summary>
+		public AlphaHandling AlphaHandling { get; set; } = AlphaHandling.KeepAsIs;
 	}
 }

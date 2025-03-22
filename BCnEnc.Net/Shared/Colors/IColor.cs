@@ -298,7 +298,7 @@ public static class ColorExtensions
 		where TFrom : unmanaged, IColor
 	{
 		return BCnTextureData.FromSingle(FromColorType(typeof(TFrom), isSrgb), fromColor.Width, fromColor.Height,
-			fromColor.CopyAsBytes());
+			fromColor.CopyAsBytes(), AlphaChannelHint.Unknown);
 	}
 
 	private static CompressionFormat FromColorType(Type type, bool isSrgb)

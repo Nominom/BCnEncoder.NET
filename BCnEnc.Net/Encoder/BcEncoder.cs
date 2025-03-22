@@ -73,7 +73,7 @@ namespace BCnEncoder.Encoder
 			ReadOnlyMemory2D<ColorRgba32> top, ReadOnlyMemory2D<ColorRgba32> down,
 			ReadOnlyMemory2D<ColorRgba32> back, ReadOnlyMemory2D<ColorRgba32> front)
 		{
-			var inputData = new BCnTextureData(CompressionFormat.Rgba32, right.Width, right.Height, 1, 1, 1, true, false);
+			var inputData = new BCnTextureData(CompressionFormat.Rgba32, right.Width, right.Height, 1, 1, 1, true, false, AlphaChannelHint.Unknown);
 
 			if (
 				right.Width != left.Width || right.Height != left.Height ||
@@ -106,7 +106,7 @@ namespace BCnEncoder.Encoder
 			ReadOnlyMemory2D<ColorRgba32> top, ReadOnlyMemory2D<ColorRgba32> down,
 			ReadOnlyMemory2D<ColorRgba32> back, ReadOnlyMemory2D<ColorRgba32> front, CancellationToken token = default)
 		{
-			var inputData = new BCnTextureData(CompressionFormat.Rgba32, right.Width, right.Height, 1, 1, 1, true, false);
+			var inputData = new BCnTextureData(CompressionFormat.Rgba32, right.Width, right.Height, 1, 1, 1, true, false, AlphaChannelHint.Unknown);
 
 			if (
 				right.Width != left.Width || right.Height != left.Height ||
@@ -136,7 +136,7 @@ namespace BCnEncoder.Encoder
 		/// <returns>A <see cref="BCnTextureData"/> containing the encoded texture data.</returns>
 		public BCnTextureData Encode(ReadOnlyMemory2D<ColorRgba32> input)
 		{
-			var inputData = BCnTextureData.FromSingle(CompressionFormat.Rgba32, input.Width, input.Height, input.CopyAsBytes());
+			var inputData = BCnTextureData.FromSingle(CompressionFormat.Rgba32, input.Width, input.Height, input.CopyAsBytes(), AlphaChannelHint.Unknown);
 			return EncodeInternal(inputData, default);
 		}
 
@@ -147,7 +147,7 @@ namespace BCnEncoder.Encoder
 		/// <returns>A <see cref="BCnTextureData"/> containing the encoded texture data.</returns>
 		public Task<BCnTextureData> EncodeAsync(ReadOnlyMemory2D<ColorRgba32> input, CancellationToken token = default)
 		{
-			var inputData = BCnTextureData.FromSingle(CompressionFormat.Rgba32, input.Width, input.Height, input.CopyAsBytes());
+			var inputData = BCnTextureData.FromSingle(CompressionFormat.Rgba32, input.Width, input.Height, input.CopyAsBytes(), AlphaChannelHint.Unknown);
 			return Task.Run(() => EncodeInternal(inputData, token), token);
 		}
 
@@ -195,7 +195,7 @@ namespace BCnEncoder.Encoder
 		/// <returns>A <see cref="BCnTextureData"/> containing the encoded texture data.</returns>
 		public Task<BCnTextureData> EncodeBytesAsync(byte[] input, int width, int height, CompressionFormat inputFormat, CancellationToken token = default)
 		{
-			var inputData = BCnTextureData.FromSingle(inputFormat, width, height, input);
+			var inputData = BCnTextureData.FromSingle(inputFormat, width, height, input, AlphaChannelHint.Unknown);
 			return Task.Run(() => EncodeInternal(inputData, token), token);
 		}
 
@@ -209,7 +209,7 @@ namespace BCnEncoder.Encoder
 		/// <returns>A <see cref="BCnTextureData"/> containing the encoded texture data.</returns>
 		public BCnTextureData EncodeBytes(byte[] input, int width, int height, CompressionFormat inputFormat)
 		{
-			var inputData = BCnTextureData.FromSingle(inputFormat, width, height, input);
+			var inputData = BCnTextureData.FromSingle(inputFormat, width, height, input, AlphaChannelHint.Unknown);
 			return EncodeInternal(inputData, default);
 		}
 
@@ -383,7 +383,7 @@ namespace BCnEncoder.Encoder
 			ReadOnlyMemory2D<ColorRgbaFloat> top, ReadOnlyMemory2D<ColorRgbaFloat> down,
 			ReadOnlyMemory2D<ColorRgbaFloat> back, ReadOnlyMemory2D<ColorRgbaFloat> front, CancellationToken token = default)
 		{
-			var inputData = new BCnTextureData(CompressionFormat.RgbaFloat, right.Width, right.Height, 1, 1, 1, true, false);
+			var inputData = new BCnTextureData(CompressionFormat.RgbaFloat, right.Width, right.Height, 1, 1, 1, true, false, AlphaChannelHint.Straight);
 
 			if (
 				right.Width != left.Width || right.Height != left.Height ||
@@ -416,7 +416,8 @@ namespace BCnEncoder.Encoder
 				CompressionFormat.RgbaFloat,
 				input.Width,
 				input.Height,
-				input.CopyAsBytes());
+				input.CopyAsBytes(),
+				AlphaChannelHint.Straight);
 			return Task.Run(() => EncodeInternal(inputData, token), token);
 		}
 
@@ -443,7 +444,8 @@ namespace BCnEncoder.Encoder
 				CompressionFormat.RgbaFloat,
 				input.Width,
 				input.Height,
-				input.CopyAsBytes());
+				input.CopyAsBytes(),
+				AlphaChannelHint.Straight);
 			return EncodeInternal(inputData, default);
 		}
 
@@ -610,7 +612,12 @@ namespace BCnEncoder.Encoder
 			}
 
 			// 2. Process alpha based on AlphaHandling setting
-			floatData = AlphaHandlingHelper.ProcessAlpha(floatData, OutputOptions.AlphaHandling);
+			if (OutputOptions.Format.SupportsAlpha() && !OutputOptions.Format.IsHdrFormat())
+			{
+				var alphaHint = AlphaChannelHint.Unknown;
+				var (processedData, resultAlphaHint) = AlphaHandlingHelper.ProcessAlpha(floatData, OutputOptions.AlphaHandling, alphaHint);
+				floatData = processedData;
+			}
 
 			// 3. Generate mipmap if needed
 			if (mipLevel > 0)
@@ -624,7 +631,7 @@ namespace BCnEncoder.Encoder
 
 			if (!ignoreColorSpace)
 			{
-				if (OutputOptions.ColorSpace == OutputColorSpace.ProcessInLinearOutputAsIs)
+				if (OutputOptions.ColorSpace == OutputColorSpace.ProcessLinearPreserveColorSpace)
 				{
 					if (inputIsSrgb)
 						colorConversionMode = ColorConversionMode.LinearToSrgb;
@@ -665,7 +672,8 @@ namespace BCnEncoder.Encoder
 			textureData = textureData.ConvertTo(CompressionFormat.RgbaFloat, convertColorspace: !ignoreColorSpace);
 
 			// 2. Process alpha according to the chosen handling method
-			AlphaHandlingHelper.ProcessAlpha(textureData, OutputOptions.AlphaHandling);
+			if (OutputOptions.Format.SupportsAlpha() && !OutputOptions.Format.IsHdrFormat())
+				AlphaHandlingHelper.ProcessAlpha(textureData, OutputOptions.AlphaHandling);
 
 			// 3. Generate mipmaps if needed (now that we're in linear space with correct alpha)
 			if (OutputOptions.GenerateMipMaps)
@@ -681,14 +689,15 @@ namespace BCnEncoder.Encoder
 				1,
 				numMipMaps,
 				textureData.NumArrayElements,
-				textureData.IsCubeMap, false);
+				textureData.IsCubeMap, false,
+				textureData.AlphaChannelHint);
 
 			ColorConversionMode colorConversionMode = ColorConversionMode.None;
 
 			// 5. Determine final color conversion mode for encoding
 			if (!ignoreColorSpace)
 			{
-				if (OutputOptions.ColorSpace == OutputColorSpace.ProcessInLinearOutputAsIs)
+				if (OutputOptions.ColorSpace == OutputColorSpace.ProcessLinearPreserveColorSpace)
 				{
 					if (inputIsSrgb)
 						colorConversionMode = ColorConversionMode.LinearToSrgb;

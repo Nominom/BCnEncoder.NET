@@ -123,7 +123,8 @@ namespace BCnEncoder.TextureFormats
 				numMips:(int)header.NumberOfMipmapLevels,
 				numArrayElements: (int) header.NumberOfArrayElements,
 				isCubeMap: header.NumberOfFaces > 1,
-				allocateBuffers: false);
+				allocateBuffers: false,
+				alphaChannelHint: AlphaChannelHint.Premultiplied);
 
 			for (var m = 0; m < textureData.NumMips; m++)
 			{

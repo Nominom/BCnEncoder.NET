@@ -143,7 +143,9 @@ namespace BCnEncoder.TextureFormats
 				depth: 1,
 				(int)header.MipMapCountOrOne,
 				arrayCount,
-				isCubeMap);
+				isCubeMap,
+				false,
+				AlphaChannelHint.Premultiplied);
 
 			for (var a = 0; a < data.NumArrayElements; a++)
 			{

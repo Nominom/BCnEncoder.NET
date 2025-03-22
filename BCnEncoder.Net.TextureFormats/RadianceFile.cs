@@ -69,7 +69,8 @@ namespace BCnEncoder.TextureFormats
 				colorSpace == ColorSpace.Rgbe ? CompressionFormat.Rgbe : CompressionFormat.Xyze,
 				width,
 				height,
-				pixelData);
+				pixelData,
+				AlphaChannelHint.Straight);
 		}
 
 
