@@ -15,7 +15,7 @@ namespace BCnEncoder.Shared
 		/// <returns> If <paramref name="numMipMaps"/> is 0 or smaller, will generate as many mipmaps as possible until a mipmap of 1x1 is reached.</returns>
 		public static BCnTextureData GenerateMipChain(BCnTextureData input, ref int numMipMaps)
 		{
-			numMipMaps = CalculateMipChainLength(input.Width, input.Height, numMipMaps);
+			numMipMaps = CalculateMipChainLength(input.Width, input.Height, input.Depth, numMipMaps);
 
 			input = input.ConvertTo(CompressionFormat.RgbaFloat);
 
@@ -71,7 +71,7 @@ namespace BCnEncoder.Shared
 		{
 			var width = pixels.Width;
 			var height = pixels.Height;
-			var mipChainLength = CalculateMipChainLength(width, height, numMipMaps);
+			var mipChainLength = CalculateMipChainLength(width, height, 1, numMipMaps);
 
 			var result = new ReadOnlyMemory2D<ColorRgbaFloat>[mipChainLength];
 			result[0] = pixels;
@@ -117,7 +117,7 @@ namespace BCnEncoder.Shared
 		{
 			var width = pixels.Width;
 			var height = pixels.Height;
-			var mipChainLength = CalculateMipChainLength(width, height, -1);
+			var mipChainLength = CalculateMipChainLength(width, height, 1,-1);
 
 			if (mipLevel >= mipChainLength)
 			{
@@ -148,7 +148,7 @@ namespace BCnEncoder.Shared
 			return pixels;
 		}
 
-		public static int CalculateMipChainLength(int width, int height, int maxNumMipMaps)
+		public static int CalculateMipChainLength(int width, int height, int depth, int maxNumMipMaps)
 		{
 			if (maxNumMipMaps == 1)
 			{
@@ -165,13 +165,14 @@ namespace BCnEncoder.Shared
 			{
 				var mipWidth = Math.Max(1, width >> mipLevel);
 				var mipHeight = Math.Max(1, height >> mipLevel);
+				var mipDepth = Math.Max(1, depth >> mipLevel);
 
 				if (mipLevel == maxNumMipMaps)
 				{
 					return maxNumMipMaps;
 				}
 
-				if (mipWidth == 1 && mipHeight == 1)
+				if (mipWidth == 1 && mipHeight == 1 && mipDepth == 1)
 				{
 					output = mipLevel + 1;
 					break;
@@ -181,10 +182,11 @@ namespace BCnEncoder.Shared
 			return output;
 		}
 
-		public static void CalculateMipLevelSize(int width, int height, int mipIdx, out int mipWidth, out int mipHeight)
+		public static void CalculateMipLevelSize(int width, int height, int depth, int mipIdx, out int mipWidth, out int mipHeight, out int mipDepth)
 		{
 			mipWidth = Math.Max(1, width >> mipIdx);
 			mipHeight = Math.Max(1, height >> mipIdx);
+			mipDepth = Math.Max(1, depth >> mipIdx);
 		}
 
 		private static ColorRgbaFloat[,] ResizeToHalf(ReadOnlySpan2D<ColorRgbaFloat> pixelsRgba)

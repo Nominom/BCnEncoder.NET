@@ -33,7 +33,68 @@ namespace BCnEncoder.Shared
 			}
 		}
 
+		public static ColorRgbaFloat ComponentToColor(ColorComponent component, float componentValue)
+		{
+			switch (component)
+			{
+				case ColorComponent.R:
+					return new ColorRgbaFloat(componentValue, 0, 0, 1);
+
+				case ColorComponent.G:
+					return new ColorRgbaFloat(0, componentValue, 0, 1);
+
+				case ColorComponent.B:
+					return new ColorRgbaFloat(0, 0, componentValue, 1);
+
+				case ColorComponent.A:
+					return new ColorRgbaFloat(0, 0, 0, componentValue);
+
+				case ColorComponent.RGB:
+					return new ColorRgbaFloat(componentValue, componentValue, componentValue, 1);
+
+				case ColorComponent.None:
+					return new ColorRgbaFloat(0, 0, 0, 0);
+
+				default:
+					throw new InvalidOperationException("Unsupported component.");
+			}
+		}
+
 		public static void ComponentToColor(ref ColorRgba32 existingColor, ColorComponent component, byte componentValue)
+		{
+			switch (component)
+			{
+				case ColorComponent.R:
+					existingColor.r = componentValue;
+					break;
+
+				case ColorComponent.G:
+					existingColor.g = componentValue;
+					break;
+
+				case ColorComponent.B:
+					existingColor.b = componentValue;
+					break;
+
+				case ColorComponent.A:
+					existingColor.a = componentValue;
+					break;
+
+				case ColorComponent.RGB:
+					existingColor.r = componentValue;
+					existingColor.g = componentValue;
+					existingColor.b = componentValue;
+					break;
+
+				case ColorComponent.None:
+					break;
+
+				default:
+					throw new InvalidOperationException("Unsupported component.");
+			}
+		}
+
+		public static void ComponentToColor(ref ColorRgbaFloat existingColor, ColorComponent component, float componentValue)
 		{
 			switch (component)
 			{

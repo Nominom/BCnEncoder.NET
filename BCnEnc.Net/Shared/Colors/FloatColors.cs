@@ -15,14 +15,6 @@ public struct ColorRgbaFloat : IColor<ColorRgbaFloat>
 		this.a = a;
 	}
 
-	public ColorRgbaFloat(ColorRgba32 other)
-	{
-		this.r = other.r / 255f;
-		this.g = other.g / 255f;
-		this.b = other.b / 255f;
-		this.a = other.a / 255f;
-	}
-
 	public ColorRgbaFloat(ColorRgbFloat other)
 	{
 		this.r = other.r;
@@ -129,7 +121,7 @@ public struct ColorRgbaFloat : IColor<ColorRgbaFloat>
 
 	public override string ToString()
 	{
-		return $"r : {r:0.00} g : {g:0.00} b : {b:0.00} a : {a:0.00}";
+		return $"r : {r:0.00000} g : {g:0.00000} b : {b:0.00000} a : {a:0.00000}";
 	}
 
 	internal void ClampToHalf()

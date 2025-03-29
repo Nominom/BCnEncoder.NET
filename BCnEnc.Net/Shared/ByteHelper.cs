@@ -12,10 +12,10 @@ namespace BCnEncoder.Shared
 		}
 
 		public static byte ClampToByte(float f)
-			=> ClampToByte((int)MathF.Round(f));
+			=> ClampToByte((int)MathF.Floor(f + 0.5f));
 
 		public static byte FloatToByte(float f)
-			=> ClampToByte((int)MathF.Round(f * 255f));
+			=> ClampToByte((int)MathF.Floor(f * 255f + 0.5f));
 
 		public static byte Extract1(ulong source, int index)
 		{

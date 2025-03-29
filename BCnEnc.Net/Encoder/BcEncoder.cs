@@ -176,11 +176,11 @@ namespace BCnEncoder.Encoder
 		/// <remarks>To get the width and height of the encoded mip level, see <see cref="CalculateMipMapSize"/>.</remarks>
 		public async Task<byte[]> EncodeToRawBytesAsync(BCnTextureData input, int mipLevel, CancellationToken token = default)
 		{
-			CalculateMipMapSize(input.Width, input.Height, mipLevel, out int mipWidth, out int mipHeight);
+			CalculateMipMapSize(input.Width, input.Height, 1, mipLevel, out int mipWidth, out int mipHeight, out _);
 
-			var output = AllocateOutputBuffer(mipWidth, mipHeight);
+			var output = AllocateOutputBuffer(mipWidth, mipHeight, 1);
 
-			await Task.Run(() => EncodeSingleInternal(input.First.Data, output, input.Format, input.Width, input.Height, mipLevel, token), token);
+			await Task.Run(() => EncodeSingleInternal(input.First.Data, output, input.Format, input.Width, input.Height, 1, mipLevel, token), token);
 
 			return output;
 		}
@@ -219,12 +219,12 @@ namespace BCnEncoder.Encoder
 		public byte[] EncodeToRawBytes<TIn>(ReadOnlyMemory<TIn> input, int width, int height, CompressionFormat inputFormat, int mipLevel, out int mipWidth, out int mipHeight)
 			where TIn : unmanaged
 		{
-			CalculateMipMapSize(width, height, mipLevel, out mipWidth, out mipHeight);
+			CalculateMipMapSize(width, height, 1, mipLevel, out mipWidth, out mipHeight, out int mipDepth);
 
-			var inputBytes = PrepareInputBuffer(input, width, height, inputFormat);
-			var output = AllocateOutputBuffer(mipWidth, mipHeight);
+			var inputBytes = PrepareInputBuffer(input, width, height, 1, inputFormat);
+			var output = AllocateOutputBuffer(mipWidth, mipHeight, mipDepth);
 
-			EncodeSingleInternal(inputBytes, output, inputFormat, width, height, mipLevel, default);
+			EncodeSingleInternal(inputBytes, output, inputFormat, width, height, 1, mipLevel, default);
 
 			return output;
 		}
@@ -237,14 +237,15 @@ namespace BCnEncoder.Encoder
 		/// <param name="mipLevel">The mipmap to encode.</param>
 		/// <param name="mipWidth">The width of the mipmap.</param>
 		/// <param name="mipHeight">The height of the mipmap.</param>
+		/// <param name="mipDepth">The depth of the mipmap.</param>
 		/// <returns>A byte buffer containing the encoded data of the requested mip-level.</returns>
-		public byte[] EncodeToRawBytes(BCnTextureData input, int mipLevel, out int mipWidth, out int mipHeight)
+		public byte[] EncodeToRawBytes(BCnTextureData input, int mipLevel, out int mipWidth, out int mipHeight, out int mipDepth)
 		{
-			CalculateMipMapSize(input.Width, input.Height, mipLevel, out mipWidth, out mipHeight);
+			CalculateMipMapSize(input.Width, input.Height, input.Depth, mipLevel, out mipWidth, out mipHeight, out mipDepth);
 
-			var output = AllocateOutputBuffer(mipWidth, mipHeight);
+			var output = AllocateOutputBuffer(mipWidth, mipHeight, mipDepth);
 
-			EncodeSingleInternal(input.First.Data, output, input.Format, input.Width, input.Height, mipLevel, default);
+			EncodeSingleInternal(input.First.Data, output, input.Format, input.Width, input.Height, input.Depth, mipLevel, default);
 
 			return output;
 		}
@@ -321,7 +322,7 @@ namespace BCnEncoder.Encoder
 		/// <returns>The total number of blocks.</returns>
 		public int GetBlockCount(int pixelWidth, int pixelHeight)
 		{
-			return ImageToBlocks.CalculateNumOfBlocks(pixelWidth, pixelHeight);
+			return ImageToBlocks.CalculateNumOfBlocks(OutputOptions.Format, pixelWidth, pixelHeight);
 		}
 
 		/// <summary>
@@ -333,7 +334,7 @@ namespace BCnEncoder.Encoder
 		/// <param name="blocksHeight">The amount of blocks in the y-axis</param>
 		public void GetBlockCount(int pixelWidth, int pixelHeight, out int blocksWidth, out int blocksHeight)
 		{
-			ImageToBlocks.CalculateNumOfBlocks(pixelWidth, pixelHeight, out blocksWidth, out blocksHeight);
+			ImageToBlocks.CalculateNumOfBlocks(OutputOptions.Format, pixelWidth, pixelHeight, 1, out blocksWidth, out blocksHeight, out _);
 		}
 
 		#endregion
@@ -529,10 +530,17 @@ namespace BCnEncoder.Encoder
 		/// </summary>
 		/// <param name="imagePixelWidth">The width of the input image in pixels</param>
 		/// <param name="imagePixelHeight">The height of the input image in pixels</param>
+		/// <param name="imagePixelDepth">The depth of the input image in pixels</param>
 		/// <returns>The number of mipmap levels that will be generated for the input image.</returns>
+		public int CalculateNumberOfMipLevels(int imagePixelWidth, int imagePixelHeight, int imagePixelDepth)
+		{
+			return MipMapper.CalculateMipChainLength(imagePixelWidth, imagePixelHeight, imagePixelDepth,
+				OutputOptions.GenerateMipMaps ? OutputOptions.MaxMipMapLevel : 1);
+		}
+
 		public int CalculateNumberOfMipLevels(int imagePixelWidth, int imagePixelHeight)
 		{
-			return MipMapper.CalculateMipChainLength(imagePixelWidth, imagePixelHeight,
+			return MipMapper.CalculateMipChainLength(imagePixelWidth, imagePixelHeight, 1,
 				OutputOptions.GenerateMipMaps ? OutputOptions.MaxMipMapLevel : 1);
 		}
 
@@ -541,13 +549,21 @@ namespace BCnEncoder.Encoder
 		/// </summary>
 		/// <param name="imagePixelWidth">The width of the input image in pixels</param>
 		/// <param name="imagePixelHeight">The height of the input image in pixels</param>
+		/// <param name="imagePixelDepth">The depth of the input image in pixels</param>
 		/// <param name="mipLevel">The mipLevel to calculate (0 is original image)</param>
 		/// <param name="mipWidth">The mipmap width calculated</param>
 		/// <param name="mipHeight">The mipmap height calculated</param>
+		/// <param name="mipDepth">The mipmap depth calculated</param>
+		public void CalculateMipMapSize(int imagePixelWidth, int imagePixelHeight, int imagePixelDepth, int mipLevel, out int mipWidth, out int mipHeight, out int mipDepth)
+		{
+			MipMapper.CalculateMipLevelSize(imagePixelWidth, imagePixelHeight, imagePixelDepth, mipLevel, out mipWidth,
+				out mipHeight, out mipDepth);
+		}
+
 		public void CalculateMipMapSize(int imagePixelWidth, int imagePixelHeight, int mipLevel, out int mipWidth, out int mipHeight)
 		{
-			MipMapper.CalculateMipLevelSize(imagePixelWidth, imagePixelHeight, mipLevel, out mipWidth,
-				out mipHeight);
+			MipMapper.CalculateMipLevelSize(imagePixelWidth, imagePixelHeight, 1, mipLevel, out mipWidth,
+				out mipHeight, out _);
 		}
 
 		/// <summary>
@@ -556,12 +572,20 @@ namespace BCnEncoder.Encoder
 		/// </summary>
 		/// <param name="imagePixelWidth">The width of the input image in pixels</param>
 		/// <param name="imagePixelHeight">The height of the input image in pixels</param>
+		/// <param name="imagePixelDepth">The depth of the input image in pixels</param>
 		/// <param name="mipLevel">The mipLevel to calculate (0 is original image)</param>
+		public long CalculateMipMapByteSize(int imagePixelWidth, int imagePixelHeight, int imagePixelDepth, int mipLevel)
+		{
+			MipMapper.CalculateMipLevelSize(imagePixelWidth, imagePixelHeight, imagePixelDepth, mipLevel, out var mipWidth,
+				out var mipHeight, out var mipDepth);
+			return OutputOptions.Format.CalculateMipByteSize(mipWidth, mipHeight, mipDepth);
+		}
+
 		public long CalculateMipMapByteSize(int imagePixelWidth, int imagePixelHeight, int mipLevel)
 		{
-			MipMapper.CalculateMipLevelSize(imagePixelWidth, imagePixelHeight, mipLevel, out var mipWidth,
-				out var mipHeight);
-			return OutputOptions.Format.CalculateMipByteSize(mipWidth, mipHeight);
+			MipMapper.CalculateMipLevelSize(imagePixelWidth, imagePixelHeight, 1, mipLevel, out var mipWidth,
+				out var mipHeight, out var mipDepth);
+			return OutputOptions.Format.CalculateMipByteSize(mipWidth, mipHeight, mipDepth);
 		}
 
 		#endregion
@@ -569,7 +593,7 @@ namespace BCnEncoder.Encoder
 		#region Private
 
 		private void EncodeSingleInternal(ReadOnlyMemory<byte> input, Memory<byte> output, CompressionFormat inputFormat, int width,
-			int height, int mipLevel, CancellationToken token)
+			int height, int depth, int mipLevel, CancellationToken token)
 		{
 			var outputFormat = OutputOptions.Format;
 			var encoder = GetEncoder(outputFormat);
@@ -584,9 +608,9 @@ namespace BCnEncoder.Encoder
 				throw new InvalidOperationException("Single mip encoding only supports raw formats as inputs!");
 			}
 
-			MipMapper.CalculateMipLevelSize(width, height, mipLevel, out var mipWidth, out var mipHeight);
+			MipMapper.CalculateMipLevelSize(width, height, depth, mipLevel, out var mipWidth, out var mipHeight, out var mipDepth);
 
-			var totalBlocks = outputFormat.CalculateMipByteSize(mipWidth, mipHeight) / outputFormat.GetBytesPerBlock();
+			var totalBlocks = outputFormat.CalculateMipByteSize(mipWidth, mipHeight, mipDepth) / outputFormat.GetBytesPerBlock();
 
 			// Track whether the input is in sRGB space to respect AsIs option
 			var inputIsSrgb = inputFormat.IsSRGBFormat();
@@ -635,7 +659,8 @@ namespace BCnEncoder.Encoder
 				{
 					if (inputIsSrgb)
 						colorConversionMode = ColorConversionMode.LinearToSrgb;
-				} else if (OutputOptions.ColorSpace == OutputColorSpace.Auto)
+				}
+				else if (OutputOptions.ColorSpace == OutputColorSpace.Auto)
 				{
 					// Determine color conversion mode
 					colorConversionMode = DetermineColorConversionMode(
@@ -686,7 +711,7 @@ namespace BCnEncoder.Encoder
 				OutputOptions.Format,
 				textureData.Width,
 				textureData.Height,
-				1,
+				textureData.Depth,
 				numMipMaps,
 				textureData.NumArrayElements,
 				textureData.IsCubeMap, false,
@@ -835,20 +860,20 @@ namespace BCnEncoder.Encoder
 			}
 		}
 
-		private byte[] AllocateOutputBuffer(int pixelWidth, int pixelHeight)
+		private byte[] AllocateOutputBuffer(int pixelWidth, int pixelHeight, int pixelDepth)
 		{
-			var output = new byte[OutputOptions.Format.CalculateMipByteSize(pixelWidth, pixelHeight)];
+			var output = new byte[OutputOptions.Format.CalculateMipByteSize(pixelWidth, pixelHeight, pixelDepth)];
 			return output;
 		}
 
-		private ReadOnlyMemory<byte> PrepareInputBuffer<TIn>(ReadOnlyMemory<TIn> input, int pixelWidth, int pixelHeight, CompressionFormat inputFormat)
+		private ReadOnlyMemory<byte> PrepareInputBuffer<TIn>(ReadOnlyMemory<TIn> input, int pixelWidth, int pixelHeight, int pixelDepth, CompressionFormat inputFormat)
 			where TIn : unmanaged
 		{
 			var bytes = input.Cast<TIn, byte>();
 
-			if (bytes.Length != inputFormat.CalculateMipByteSize(pixelWidth, pixelHeight))
+			if (bytes.Length != inputFormat.CalculateMipByteSize(pixelWidth, pixelHeight, pixelDepth))
 			{
-				throw new ArgumentException($"Invalid input size. Expected {inputFormat.CalculateMipByteSize(pixelWidth, pixelHeight)} bytes, but got {bytes.Length} bytes.", nameof(input));
+				throw new ArgumentException($"Invalid input size. Expected {inputFormat.CalculateMipByteSize(pixelWidth, pixelHeight, pixelDepth)} bytes, but got {bytes.Length} bytes.", nameof(input));
 			}
 
 			return bytes;

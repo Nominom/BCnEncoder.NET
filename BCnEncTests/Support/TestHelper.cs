@@ -1,17 +1,23 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using BCnEncoder.Decoder;
+using BCnEncoder.Decoder.Options;
 using BCnEncoder.Encoder;
 using BCnEncoder.ImageSharp;
 using BCnEncoder.Shared;
 using BCnEncoder.Shared.Colors;
 using BCnEncoder.TextureFormats;
 using CommunityToolkit.HighPerformance;
+using SharpEXR;
 using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Advanced;
+using SixLabors.ImageSharp.ColorSpaces;
+using SixLabors.ImageSharp.ColorSpaces.Conversion;
 using SixLabors.ImageSharp.PixelFormats;
 using Xunit;
 using Xunit.Abstractions;
@@ -45,6 +51,36 @@ namespace BCnEncTests.Support
 					var tPixel2 = pixels2[i / size];
 					throw NotEqualException.ForEqualValues(tPixel1.ToString()!, tPixel2.ToString()!,
 						$"Pixels were not exactly equal within tolerance of {tolerance}!");
+				}
+			}
+		}
+
+		public static void AssertPixelsEqual(ReadOnlyMemory2D<ColorRgbaFloat> expected,
+			ReadOnlyMemory2D<ColorRgbaFloat> actual, string channelMask, float tolerance)
+		{
+			Assert.Equal(expected.Height, actual.Height);
+			Assert.Equal(expected.Width, actual.Width);
+
+			ReadOnlySpan2D<ColorRgbaFloat> expectedSpan = expected.Span;
+			ReadOnlySpan2D<ColorRgbaFloat> actualSpan = actual.Span;
+
+			for (int y = 0; y < expected.Height; y++)
+			{
+				for (int x = 0; x < expected.Width; x++)
+				{
+					ColorRgbaFloat expectedPixel = expectedSpan[y, x];
+					ColorRgbaFloat actualPixel = actualSpan[y, x];
+
+					if ((channelMask.Contains('r') && Math.Abs(expectedPixel.r - actualPixel.r) > tolerance) ||
+					    (channelMask.Contains('g') && Math.Abs(expectedPixel.g - actualPixel.g) > tolerance) ||
+					    (channelMask.Contains('b') && Math.Abs(expectedPixel.b - actualPixel.b) > tolerance) ||
+					    (channelMask.Contains('a') && Math.Abs(expectedPixel.a - actualPixel.a) > tolerance))
+					{
+						ColorRgba32 expectedPixel32 = expectedPixel.As<ColorRgba32>();
+						ColorRgba32 actualPixel32 = actualPixel.As<ColorRgba32>();
+
+						Assert.Fail($"Pixels != with tolerance: {tolerance} at (x: {x}, y: {y})\nExpected: {expectedPixel}\nActual: {actualPixel}\nExpected32: {expectedPixel32}\nActual32: {actualPixel32}\nMask: {channelMask}");
+					}
 				}
 			}
 		}
@@ -83,32 +119,61 @@ namespace BCnEncTests.Support
 
 		#endregion
 
-		public static void TestDecodingLdr<TTexture>(TTexture texture, Image<Rgba32> reference, BcDecoder decoder = null, string outMipFileFormat = null, int tolerance = 0)
+		public static void TestDecoding<TTexture>(string testImage, TTexture texture, ReadOnlyMemory2D<ColorRgbaFloat> reference, bool referenceIsLdr, BcDecoder decoder, string outFileFormat = null, float tolerance = 0)
 			where TTexture : ITextureFileFormat
 		{
 			var bcnData = texture.ToTextureData();
-			if (bcnData.Format == CompressionFormat.Bc1 && texture is DdsFile)
+
+			string channelMask = GetChannelMask(bcnData.Format);
+
+			Assert.True(bcnData.Format != CompressionFormat.Unknown, $"Unknown format for {testImage}");
+			Assert.True(bcnData.Width > 0, $"Invalid width for {testImage}");
+			Assert.True(bcnData.Height > 0, $"Invalid height for {testImage}");
+			Assert.True(bcnData.IsValid(), $"Invalid data for {testImage}");
+			Assert.Equal(testImage.Contains("srgb"), bcnData.Format.IsSRGBFormat());
+
+			BCnTextureData decoded;
+
+			if (referenceIsLdr)
 			{
-				bcnData.Format = CompressionFormat.Bc1WithAlpha;
+				// Roundtrip from Rgba32, to match reference images.
+				decoded = decoder.Decode(bcnData, CompressionFormat.Rgba32);
+				decoded = decoded.ConvertTo(CompressionFormat.RgbaFloat);
+			}
+			else
+			{
+				decoded = decoder.Decode(bcnData, CompressionFormat.RgbaFloat);
 			}
 
-			decoder ??= new BcDecoder();
-			var decoded = decoder.Decode(bcnData, CompressionFormat.Rgba32_sRGB);
-
-			Assert.Equal(CompressionFormat.Rgba32_sRGB, decoded.Format);
-
-			if (!string.IsNullOrEmpty(outMipFileFormat))
+			if (!string.IsNullOrEmpty(outFileFormat))
 			{
 				for (var i = 0; i < decoded.NumMips; i++)
 				{
-					var mipDecoded = decoded.AsImageRgba32(i);
-					mipDecoded.SaveAsPng(string.Format(outMipFileFormat, i));
+					var mipDecoded = decoded.AsImage(i);
+					mipDecoded.SaveAsPng(string.Format(outFileFormat, i));
 				}
 			}
 
-			var imageDecoded = decoded.AsImageRgba32();
+			AssertPixelsEqual(reference, decoded.First.AsMemory2D<ColorRgbaFloat>(), channelMask, tolerance);
+		}
 
-			AssertImagesEqual(reference, imageDecoded, tolerance);
+		private static string GetChannelMask(CompressionFormat format)
+		{
+			switch (format)
+			{
+				case CompressionFormat.R8:
+				case CompressionFormat.R8S:
+				case CompressionFormat.Bc4:
+				case CompressionFormat.Bc4S:
+					return "r";
+				case CompressionFormat.R8G8:
+				case CompressionFormat.R8G8S:
+				case CompressionFormat.Bc5:
+				case CompressionFormat.Bc5S:
+					return "rg";
+			}
+
+			return format.SupportsAlpha() ? "rgba" : "rgb";
 		}
 
 		public static void TestDecodingHdr<TTexture>(TTexture texture, Image<RgbaVector> reference, BcDecoder decoder = null, string outMipFileFormat = null)
@@ -276,6 +341,75 @@ namespace BCnEncTests.Support
 					dest[x, y] = pixels[y * dest.Width + x];
 				}
 			}
+		}
+
+		public static Memory2D<ColorRgbaFloat> GetReferenceImage(string filePath)
+		{
+			var imageSharpExtensions = new string[] { ".png", ".jpg", ".jpeg", ".bmp" };
+			var openExrExtensions = new string[] { ".exr" };
+			var radianceExtensions = new string[] { ".hdr" };
+
+			var extension = Path.GetExtension(filePath);
+
+			if (imageSharpExtensions.Contains(extension))
+			{
+				var image = Image.Load<RgbaVector>(filePath);
+
+				// Convert to linear rgb
+				// for (int y = 0; y < image.Height; y++)
+				// {
+				// 	Memory<RgbaVector> row = image.DangerousGetPixelRowMemory(y);
+				//
+				// 	for (int x = 0; x < image.Width; x++)
+				// 	{
+				// 		var pixel = row.Span[x];
+				//
+				// 		Rgb rgb = new Rgb(pixel.R, pixel.G, pixel.B);
+				// 		LinearRgb linearRgb = ColorSpaceConverter.ToLinearRgb(rgb);
+				// 		pixel.R = linearRgb.R;
+				// 		pixel.G = linearRgb.G;
+				// 		pixel.B = linearRgb.B;
+				//
+				// 		row.Span[x] = pixel;
+				// 	}
+				// }
+
+				return image.ToBCnTextureData().First.AsMemory2D<ColorRgbaFloat>();
+			}
+			if (openExrExtensions.Contains(extension))
+			{
+				var exrFile = EXRFile.FromFile(filePath);
+				var part = exrFile.Parts[0];
+
+				part.Open(filePath);
+
+				float[] exrData = part.GetFloats(ChannelConfiguration.RGB, false, GammaEncoding.Linear, true);
+
+				Memory<ColorRgbaFloat> rgbaData = exrData.AsMemory().Cast<float, ColorRgbaFloat>();
+
+				return rgbaData.AsMemory2D(part.DataWindow.Height, part.DataWindow.Width);
+			}
+
+			throw new ArgumentException($"Unsupported image format: {extension}");
+		}
+
+		public static string GetProjectRoot()
+		{
+			// Get the directory where the assembly is located
+			string assemblyLocation = Path.GetDirectoryName(typeof(DecodingTests).Assembly.Location);
+
+			string projectRoot = assemblyLocation;
+
+			// Go up to the project folder (or however many levels needed)
+			do
+			{
+				if (Path.GetPathRoot(projectRoot) == projectRoot)
+					throw new Exception("Could not find project root");
+
+				projectRoot = Path.GetFullPath(Path.Combine(projectRoot, ".."));
+			} while(!Directory.Exists(Path.Combine(projectRoot, "bin")));
+
+			return projectRoot;
 		}
 	}
 }

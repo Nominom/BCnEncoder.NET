@@ -25,6 +25,23 @@ namespace BCnEncoder.Decoder
 		/// </summary>
 		public DecoderOutputOptions OutputOptions { get; } = new DecoderOutputOptions();
 
+		public BcDecoder() { }
+
+		public BcDecoder(DecoderOptions options)
+		{
+			Options = options;
+		}
+
+		public BcDecoder(DecoderOutputOptions outputOptions)
+		{
+			OutputOptions = outputOptions;
+		}
+
+		public BcDecoder(DecoderOptions options, DecoderOutputOptions outputOptions)
+		{
+			Options = options;
+			OutputOptions = outputOptions;
+		}
 
 		/// <inheritdoc cref="DecodeInternal"/>
 		public Task<BCnTextureData> DecodeAsync(BCnTextureData texture, CompressionFormat outputFormat, CancellationToken token = default)
@@ -46,27 +63,27 @@ namespace BCnEncoder.Decoder
 		public async Task DecodeRawAsync<TOut>(Stream inputStream, Memory<TOut> output, int pixelWidth, int pixelHeight, CompressionFormat inputFormat, CompressionFormat outputFormat, CancellationToken token = default)
 			where TOut : unmanaged
 		{
-			var dataArray = new byte[GetBufferSize(inputFormat, pixelWidth, pixelHeight)];
+			var dataArray = new byte[GetBufferSize(inputFormat, pixelWidth, pixelHeight, 1)];
 			await inputStream.ReadExactlyAsync(dataArray, 0, dataArray.Length, token);
 
-			await Task.Run(() => DecodeRawInternal(dataArray, output.Cast<TOut, byte>(), pixelWidth, pixelHeight, inputFormat, outputFormat, token), token);
+			await Task.Run(() => DecodeRawInternal(dataArray, output.Cast<TOut, byte>(), pixelWidth, pixelHeight, 1, inputFormat, outputFormat, token), token);
 		}
 
 		public Task DecodeRawAsync<TOut>(ReadOnlyMemory<byte> input, Memory<TOut> output, int pixelWidth, int pixelHeight, CompressionFormat inputFormat, CompressionFormat outputFormat, CancellationToken token = default)
 			where TOut : unmanaged
 		{
-			return Task.Run(() => DecodeRawInternal(input, output.Cast<TOut, byte>(), pixelWidth, pixelHeight, inputFormat, outputFormat, token), token);
+			return Task.Run(() => DecodeRawInternal(input, output.Cast<TOut, byte>(), pixelWidth, pixelHeight, 1, inputFormat, outputFormat, token), token);
 		}
 
 		public async Task<TOut[]> DecodeRawAsync<TOut>(Stream inputStream, int pixelWidth, int pixelHeight, CompressionFormat inputFormat, CompressionFormat outputFormat, CancellationToken token = default)
 			where TOut : unmanaged
 		{
-			var dataArray = new byte[GetBufferSize(inputFormat, pixelWidth, pixelHeight)];
+			var dataArray = new byte[GetBufferSize(inputFormat, pixelWidth, pixelHeight, 1)];
 			await inputStream.ReadExactlyAsync(dataArray, 0, dataArray.Length, token);
 
-			var output = AllocateOutputBuffer<TOut>(pixelWidth, pixelHeight, outputFormat);
+			var output = AllocateOutputBuffer<TOut>(pixelWidth, pixelHeight, 1, outputFormat);
 
-			await Task.Run(() => DecodeRawInternal(dataArray, output.AsMemory().Cast<TOut, byte>(), pixelWidth, pixelHeight, inputFormat, outputFormat, token), token);
+			await Task.Run(() => DecodeRawInternal(dataArray, output.AsMemory().Cast<TOut, byte>(), pixelWidth, pixelHeight, 1, inputFormat, outputFormat, token), token);
 
 			return output;
 		}
@@ -74,9 +91,9 @@ namespace BCnEncoder.Decoder
 		public async Task<TOut[]> DecodeRawAsync<TOut>(ReadOnlyMemory<byte> input, int pixelWidth, int pixelHeight, CompressionFormat inputFormat, CompressionFormat outputFormat, CancellationToken token = default)
 			where TOut : unmanaged
 		{
-			var output = AllocateOutputBuffer<TOut>(pixelWidth, pixelHeight, outputFormat);
+			var output = AllocateOutputBuffer<TOut>(pixelWidth, pixelHeight, 1, outputFormat);
 
-			await Task.Run(() => DecodeRawInternal(input, output.AsMemory().Cast<TOut, byte>(), pixelWidth, pixelHeight, inputFormat, outputFormat, token), token);
+			await Task.Run(() => DecodeRawInternal(input, output.AsMemory().Cast<TOut, byte>(), pixelWidth, pixelHeight, 1, inputFormat, outputFormat, token), token);
 
 			return output;
 		}
@@ -84,27 +101,27 @@ namespace BCnEncoder.Decoder
 		public void DecodeRaw<TOut>(Stream inputStream, Memory<TOut> output, int pixelWidth, int pixelHeight, CompressionFormat inputFormat, CompressionFormat outputFormat)
 			where TOut : unmanaged
 		{
-			var dataArray = new byte[GetBufferSize(inputFormat, pixelWidth, pixelHeight)];
+			var dataArray = new byte[GetBufferSize(inputFormat, pixelWidth, pixelHeight, 1)];
 			inputStream.ReadExactly(dataArray, 0, dataArray.Length);
 
-			DecodeRawInternal(dataArray, output.Cast<TOut, byte>(), pixelWidth, pixelHeight, inputFormat, outputFormat, CancellationToken.None);
+			DecodeRawInternal(dataArray, output.Cast<TOut, byte>(), pixelWidth, pixelHeight, 1, inputFormat, outputFormat, CancellationToken.None);
 		}
 
 		public void DecodeRaw<TOut>(ReadOnlyMemory<byte> input, Memory<TOut> output, int pixelWidth, int pixelHeight, CompressionFormat inputFormat, CompressionFormat outputFormat)
 			where TOut : unmanaged
 		{
-			DecodeRawInternal(input, output.Cast<TOut, byte>(), pixelWidth, pixelHeight, inputFormat, outputFormat, CancellationToken.None);
+			DecodeRawInternal(input, output.Cast<TOut, byte>(), pixelWidth, pixelHeight, 1,inputFormat, outputFormat, CancellationToken.None);
 		}
 
 		public TOut[] DecodeRaw<TOut>(Stream inputStream, int pixelWidth, int pixelHeight, CompressionFormat inputFormat, CompressionFormat outputFormat)
 			where TOut : unmanaged
 		{
-			var dataArray = new byte[GetBufferSize(inputFormat, pixelWidth, pixelHeight)];
+			var dataArray = new byte[GetBufferSize(inputFormat, pixelWidth, pixelHeight, 1)];
 			inputStream.ReadExactly(dataArray, 0, dataArray.Length);
 
-			var output = AllocateOutputBuffer<TOut>(pixelWidth, pixelHeight, outputFormat);
+			var output = AllocateOutputBuffer<TOut>(pixelWidth, pixelHeight, 1, outputFormat);
 
-			DecodeRawInternal(dataArray, output.AsMemory().Cast<TOut, byte>(), pixelWidth, pixelHeight, inputFormat, outputFormat, CancellationToken.None);
+			DecodeRawInternal(dataArray, output.AsMemory().Cast<TOut, byte>(), pixelWidth, pixelHeight, 1, inputFormat, outputFormat, CancellationToken.None);
 
 			return output;
 		}
@@ -112,9 +129,9 @@ namespace BCnEncoder.Decoder
 		public TOut[] DecodeRaw<TOut>(ReadOnlyMemory<byte> input, int pixelWidth, int pixelHeight, CompressionFormat inputFormat, CompressionFormat outputFormat)
 			where TOut : unmanaged
 		{
-			var output = AllocateOutputBuffer<TOut>(pixelWidth, pixelHeight, outputFormat);
+			var output = AllocateOutputBuffer<TOut>(pixelWidth, pixelHeight, 1, outputFormat);
 
-			DecodeRawInternal(input, output.AsMemory().Cast<TOut, byte>(), pixelWidth, pixelHeight, inputFormat, outputFormat, CancellationToken.None);
+			DecodeRawInternal(input, output.AsMemory().Cast<TOut, byte>(), pixelWidth, pixelHeight, 1, inputFormat, outputFormat, CancellationToken.None);
 
 			return output;
 		}
@@ -192,7 +209,7 @@ namespace BCnEncoder.Decoder
 				CancellationToken = token,
 				IsParallel = Options.IsParallel,
 				TaskCount = Options.TaskCount,
-				ColorConversionMode = GetColorConversion(texture.Format, outputFormat)
+				ColorConversionMode = GetColorConversionInput(texture.Format)
 			};
 
 			var blockSize = texture.Format.GetBytesPerBlock();
@@ -232,17 +249,23 @@ namespace BCnEncoder.Decoder
 							texture.Mips[m].Height, context);
 
 						// Apply alpha handling if needed
-						if (OutputOptions.AlphaHandling == AlphaHandling.Unpremultiply && texture.AlphaChannelHint == AlphaChannelHint.Premultiplied)
+						if (texture.Format.SupportsAlpha() && !texture.Format.IsHdrFormat())
 						{
-							// Get as span to process in-place
-							var resultSpan = decoded.AsSpan().Cast<byte, ColorRgbaFloat>();
+							if (OutputOptions.AlphaHandling == AlphaHandling.Unpremultiply &&
+							    texture.AlphaChannelHint == AlphaChannelHint.Premultiplied)
+							{
+								// Get as span to process in-place
+								var resultSpan = decoded.AsSpan().Cast<byte, ColorRgbaFloat>();
 
-							// Unpremultiply alpha
-							AlphaHandlingHelper.UnpremultiplyAlpha(resultSpan);
+								// Unpremultiply alpha
+								AlphaHandlingHelper.UnpremultiplyAlpha(resultSpan);
+							}
 						}
 
+						ColorConversionMode outColorConversionMode = GetColorConversionOutput(texture.Format, outputFormat);
+
 						ColorExtensions.InternalConvertToAsBytesFromBytes(decoded, outputData.Mips[m][(CubeMapFaceDirection)f, a].Data, CompressionFormat.RgbaFloat,
-							outputFormat, ColorConversionMode.None);
+							outputFormat, outColorConversionMode);
 					}
 				}
 			}
@@ -256,18 +279,19 @@ namespace BCnEncoder.Decoder
 		/// <param name="input">The <see cref="Memory{T}"/> containing the encoded data.</param>
 		/// <param name="pixelWidth">The width of the image.</param>
 		/// <param name="pixelHeight">The height of the image.</param>
+		/// <param name="pixelDepth">The depth of the image.</param>
 		/// <param name="inputFormat">The Format the encoded data is in.</param>
 		/// <param name="token">The cancellation token for this operation. May be default, if the operation is not asynchronous.</param>
 		/// <returns>The decoded Rgba32 image.</returns>
-		private void DecodeRawInternal(ReadOnlyMemory<byte> input, Memory<byte> output, int pixelWidth, int pixelHeight, CompressionFormat inputFormat, CompressionFormat outputFormat, CancellationToken token)
+		private void DecodeRawInternal(ReadOnlyMemory<byte> input, Memory<byte> output, int pixelWidth, int pixelHeight, int pixelDepth, CompressionFormat inputFormat, CompressionFormat outputFormat, CancellationToken token)
 		{
-			if (input.Length != GetBufferSize(inputFormat, pixelWidth, pixelHeight))
+			if (input.Length != GetBufferSize(inputFormat, pixelWidth, pixelHeight, pixelDepth))
 			{
-				throw new ArgumentException("The size of the input buffer does not align with the compression format. Expected: " + GetBufferSize(inputFormat, pixelWidth, pixelHeight) + ", Actual: " + input.Length);
+				throw new ArgumentException("The size of the input buffer does not align with the compression format. Expected: " + GetBufferSize(inputFormat, pixelWidth, pixelHeight, pixelDepth) + ", Actual: " + input.Length);
 			}
-			if (output.Length != GetBufferSize(outputFormat, pixelWidth, pixelHeight))
+			if (output.Length != GetBufferSize(outputFormat, pixelWidth, pixelHeight, pixelDepth))
 			{
-				throw new ArgumentException("The size of the output buffer does not align with the output format. Expected: " + GetBufferSize(outputFormat, pixelWidth, pixelHeight) + ", Actual: " + output.Length);
+				throw new ArgumentException("The size of the output buffer does not align with the output format. Expected: " + GetBufferSize(outputFormat, pixelWidth, pixelHeight, pixelDepth) + ", Actual: " + output.Length);
 			}
 			if (!outputFormat.IsRawPixelFormat())
 			{
@@ -279,7 +303,7 @@ namespace BCnEncoder.Decoder
 				CancellationToken = token,
 				IsParallel = Options.IsParallel,
 				TaskCount = Options.TaskCount,
-				ColorConversionMode = GetColorConversion(inputFormat, outputFormat)
+				ColorConversionMode = GetColorConversionInput(inputFormat)
 			};
 
 			// Calculate total blocks
@@ -308,7 +332,7 @@ namespace BCnEncoder.Decoder
 			}
 
 			ColorExtensions.InternalConvertToAsBytesFromBytes(result, output, CompressionFormat.RgbaFloat,
-				outputFormat, ColorConversionMode.None);
+				outputFormat, GetColorConversionOutput(inputFormat, outputFormat));
 		}
 
 		private void DecodeBlockInternal<TOut>(ReadOnlySpan<byte> blockData, Memory2D<TOut> output, CompressionFormat inputFormat, CompressionFormat outputFormat)
@@ -349,7 +373,7 @@ namespace BCnEncoder.Decoder
 			byte [] outputBytes = new byte[16 * Unsafe.SizeOf<TOut>()];
 
 			ColorExtensions.InternalConvertToAsBytesFromBytes(floatBytes, outputBytes, CompressionFormat.RgbaFloat,
-				outputFormat, GetColorConversion(inputFormat, outputFormat));
+				outputFormat, ColorConversionMode.None);
 
 			Span<TOut> outSpan = outputBytes.AsSpan().Cast<byte, TOut>();
 
@@ -461,8 +485,11 @@ namespace BCnEncoder.Decoder
 		}
 		#endregion
 
-		private ColorConversionMode GetColorConversion(CompressionFormat sourceFormat, CompressionFormat targetFormat)
+		private ColorConversionMode GetColorConversionInput(CompressionFormat sourceFormat)
 		{
+			if (OutputOptions.OutputColorSpace == OutputColorSpaceTarget.KeepAsIs)
+				return ColorConversionMode.None;
+
 			// Determine input color space based on settings
 			bool inputIsSrgb = sourceFormat.IsSRGBFormat();
 			if (OutputOptions.InputColorSpace == InputColorSpaceAssumption.ForceSrgb)
@@ -474,6 +501,18 @@ namespace BCnEncoder.Decoder
 				inputIsSrgb = false;
 			}
 
+			if (inputIsSrgb)
+				return ColorConversionMode.SrgbToLinear;
+
+			return ColorConversionMode.None;
+		}
+
+		private ColorConversionMode GetColorConversionOutput(CompressionFormat sourceFormat, CompressionFormat targetFormat)
+		{
+			CompressionFormat processFormat = CompressionFormat.RgbaFloat;
+
+			bool sourceIsSrgb = sourceFormat.IsSRGBFormat();
+
 			// Apply output color space preferences
 			switch (OutputOptions.OutputColorSpace)
 			{
@@ -482,43 +521,21 @@ namespace BCnEncoder.Decoder
 					return ColorConversionMode.None;
 
 				case OutputColorSpaceTarget.Linear:
-					// If input is sRGB, convert to linear
-					return inputIsSrgb ? ColorConversionMode.SrgbToLinear : ColorConversionMode.None;
+					return ColorConversionMode.None;
 
 				case OutputColorSpaceTarget.Srgb:
-					// If input is linear, convert to sRGB
-					return !inputIsSrgb ? ColorConversionMode.LinearToSrgb : ColorConversionMode.None;
+					return ColorConversionMode.LinearToSrgb;
 
 				case OutputColorSpaceTarget.Auto:
 					// Auto mode determines the best conversion based on formats
-					return sourceFormat.GetColorConversionMode(targetFormat);
+					return processFormat.GetColorConversionMode(targetFormat);
+
+				case OutputColorSpaceTarget.ProcessLinearPreserveColorSpace:
+					return sourceIsSrgb ? ColorConversionMode.LinearToSrgb : ColorConversionMode.None;
 
 				default:
 					return ColorConversionMode.None;
 			}
-		}
-
-		/// <summary>
-		/// Gets the number of total blocks in an image with the given pixel width and height.
-		/// </summary>
-		/// <param name="pixelWidth">The pixel width of the image</param>
-		/// <param name="pixelHeight">The pixel height of the image</param>
-		/// <returns>The total number of blocks.</returns>
-		public int GetBlockCount(int pixelWidth, int pixelHeight)
-		{
-			return ImageToBlocks.CalculateNumOfBlocks(pixelWidth, pixelHeight);
-		}
-
-		/// <summary>
-		/// Gets the number of blocks in an image with the given pixel width and height.
-		/// </summary>
-		/// <param name="pixelWidth">The pixel width of the image</param>
-		/// <param name="pixelHeight">The pixel height of the image</param>
-		/// <param name="blocksWidth">The amount of blocks in the x-axis</param>
-		/// <param name="blocksHeight">The amount of blocks in the y-axis</param>
-		public void GetBlockCount(int pixelWidth, int pixelHeight, out int blocksWidth, out int blocksHeight)
-		{
-			ImageToBlocks.CalculateNumOfBlocks(pixelWidth, pixelHeight, out blocksWidth, out blocksHeight);
 		}
 
 		/// <summary>
@@ -531,14 +548,17 @@ namespace BCnEncoder.Decoder
 			return format.GetBytesPerBlock();
 		}
 
-		private long GetBufferSize(CompressionFormat format, int pixelWidth, int pixelHeight)
+		private long GetBufferSize(CompressionFormat format, int pixelWidth, int pixelHeight, int pixelDepth)
 		{
-			return format.CalculateMipByteSize(pixelWidth, pixelHeight);
+			return format.CalculateMipByteSize(pixelWidth, pixelHeight, pixelDepth);
 		}
 
-		private static TOut[] AllocateOutputBuffer<TOut>(int pixelWidth, int pixelHeight, CompressionFormat outputFormat)
+		private static TOut[] AllocateOutputBuffer<TOut>(int pixelWidth, int pixelHeight, int pixelDepth, CompressionFormat outputFormat)
 			where TOut : unmanaged
 		{
+			if (outputFormat.IsBlockCompressedFormat())
+				throw new ArgumentException("The output format must be a raw pixel format.");
+
 			var tOutSize = Unsafe.SizeOf<TOut>();
 			var realTOutSize = outputFormat.GetBytesPerBlock();
 
@@ -553,7 +573,7 @@ namespace BCnEncoder.Decoder
 
 			var tOutMultiplier = realTOutSize / tOutSize;
 
-			var output = new TOut[pixelWidth * pixelHeight * tOutMultiplier];
+			var output = new TOut[pixelWidth * pixelHeight * pixelDepth * tOutMultiplier];
 			return output;
 		}
 

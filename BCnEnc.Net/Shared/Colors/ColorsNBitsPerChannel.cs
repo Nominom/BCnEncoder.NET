@@ -1,5 +1,7 @@
 using System.Numerics;
 
+using static BCnEncoder.Shared.Colors.ColorBitConversionHelpers;
+
 namespace BCnEncoder.Shared.Colors;
 
 public struct ColorRgb555 : IColor<ColorRgb555>
@@ -54,7 +56,25 @@ public struct ColorRgb555 : IColor<ColorRgb555>
 		}
 	}
 
-	public byte R
+	public float R
+	{
+		readonly get => Unorm5ToFloat(RawR);
+		set => RawR = FloatToUnorm5(value);
+	}
+
+	public float G
+	{
+		readonly get => Unorm5ToFloat(RawG);
+		set => RawG = FloatToUnorm5(value);
+	}
+
+	public float B
+	{
+		readonly get => Unorm5ToFloat(RawB);
+		set => RawB = FloatToUnorm5(value);
+	}
+
+	public byte ByteR
 	{
 		readonly get
 		{
@@ -69,7 +89,7 @@ public struct ColorRgb555 : IColor<ColorRgb555>
 		}
 	}
 
-	public byte G
+	public byte ByteG
 	{
 		readonly get
 		{
@@ -84,7 +104,7 @@ public struct ColorRgb555 : IColor<ColorRgb555>
 		}
 	}
 
-	public byte B
+	public byte ByteB
 	{
 		readonly get
 		{
@@ -99,9 +119,9 @@ public struct ColorRgb555 : IColor<ColorRgb555>
 		}
 	}
 
-	public int RawR
+	public uint RawR
 	{
-		readonly get => (data & RedMask) >> RedShift;
+		readonly get => (ushort)((data & RedMask) >> RedShift);
 		set
 		{
 			if (value > 31) value = 31;
@@ -111,9 +131,9 @@ public struct ColorRgb555 : IColor<ColorRgb555>
 		}
 	}
 
-	public int RawG
+	public uint RawG
 	{
-		readonly get => (data & GreenMask) >> GreenShift;
+		readonly get => (ushort)((data & GreenMask) >> GreenShift);
 		set
 		{
 			if (value > 31) value = 31;
@@ -123,19 +143,18 @@ public struct ColorRgb555 : IColor<ColorRgb555>
 		}
 	}
 
-	public int RawB
+	public uint RawB
 	{
-		readonly get => data & BlueMask;
+		readonly get => (ushort)(data & BlueMask);
 		set
 		{
 			if (value > 31) value = 31;
-			if (value < 0) value = 0;
 			data = (ushort)(data & ~BlueMask);
 			data = (ushort)(data | value);
 		}
 	}
 
-	public ColorRgb555(byte r, byte g, byte b)
+	public ColorRgb555(float r, float g, float b)
 	{
 		data = 0;
 		R = r;
@@ -143,52 +162,26 @@ public struct ColorRgb555 : IColor<ColorRgb555>
 		B = b;
 	}
 
-	public ColorRgb555(Vector3 colorVector)
-	{
-		data = 0;
-		R = ByteHelper.ClampToByte(colorVector.X * 255);
-		G = ByteHelper.ClampToByte(colorVector.Y * 255);
-		B = ByteHelper.ClampToByte(colorVector.Z * 255);
-	}
-
-	public ColorRgb555(ColorRgb24 color)
-	{
-		data = 0;
-		R = color.r;
-		G = color.g;
-		B = color.b;
-	}
-
-	public readonly ColorRgb24 ToColorRgb24()
-	{
-		return new ColorRgb24(R, G, B);
-	}
-
 	public override string ToString()
 	{
 		return $"r : {R} g : {G} b : {B}";
-	}
-
-	public ColorRgba32 ToColorRgba32()
-	{
-		return new ColorRgba32(R, G, B, 255);
 	}
 
 	/// <inheritdoc />
 	public ColorRgbaFloat ToColorRgbaFloat()
 	{
 		return new ColorRgbaFloat(
-			R / 255f,
-			G / 255f,
-			B / 255f);
+			R,
+			G,
+			B);
 	}
 
 	/// <inheritdoc />
 	public void FromColorRgbaFloat(ColorRgbaFloat color)
 	{
-		R = ByteHelper.ClampToByte(color.r * 255f);
-		G = ByteHelper.ClampToByte(color.g * 255f);
-		B = ByteHelper.ClampToByte(color.b * 255f);
+		R = color.r;
+		G = color.g;
+		B = color.b;
 	}
 }
 
@@ -227,7 +220,25 @@ public struct ColorRgb565 : IColor<ColorRgb565>
 
 	public ushort data;
 
-	public byte R
+	public float R
+	{
+		readonly get => Unorm5ToFloat(RawR);
+		set => RawR = FloatToUnorm5(value);
+	}
+
+	public float G
+	{
+		readonly get => Unorm6ToFloat(RawG);
+		set => RawG = FloatToUnorm6(value);
+	}
+
+	public float B
+	{
+		readonly get => Unorm5ToFloat(RawB);
+		set => RawB = FloatToUnorm5(value);
+	}
+
+	public byte ByteR
 	{
 		readonly get
 		{
@@ -242,7 +253,7 @@ public struct ColorRgb565 : IColor<ColorRgb565>
 		}
 	}
 
-	public byte G
+	public byte ByteG
 	{
 		readonly get
 		{
@@ -257,7 +268,7 @@ public struct ColorRgb565 : IColor<ColorRgb565>
 		}
 	}
 
-	public byte B
+	public byte ByteB
 	{
 		readonly get
 		{
@@ -272,43 +283,40 @@ public struct ColorRgb565 : IColor<ColorRgb565>
 		}
 	}
 
-	public int RawR
+	public uint RawR
 	{
-		readonly get { return (data & RedMask) >> RedShift; }
+		readonly get => (ushort)((data & RedMask) >> RedShift);
 		set
 		{
 			if (value > 31) value = 31;
-			if (value < 0) value = 0;
 			data = (ushort)(data & ~RedMask);
 			data = (ushort)(data | (value << RedShift));
 		}
 	}
 
-	public int RawG
+	public uint RawG
 	{
-		readonly get { return (data & GreenMask) >> GreenShift; }
+		readonly get => (ushort)((data & GreenMask) >> GreenShift);
 		set
 		{
 			if (value > 63) value = 63;
-			if (value < 0) value = 0;
 			data = (ushort)(data & ~GreenMask);
 			data = (ushort)(data | (value << GreenShift));
 		}
 	}
 
-	public int RawB
+	public uint RawB
 	{
-		readonly get { return data & BlueMask; }
+		readonly get => (ushort)(data & BlueMask);
 		set
 		{
 			if (value > 31) value = 31;
-			if (value < 0) value = 0;
 			data = (ushort)(data & ~BlueMask);
 			data = (ushort)(data | value);
 		}
 	}
 
-	public ColorRgb565(byte r, byte g, byte b)
+	public ColorRgb565(float r, float g, float b)
 	{
 		data = 0;
 		R = r;
@@ -316,52 +324,26 @@ public struct ColorRgb565 : IColor<ColorRgb565>
 		B = b;
 	}
 
-	public ColorRgb565(Vector3 colorVector)
-	{
-		data = 0;
-		R = ByteHelper.ClampToByte(colorVector.X * 255);
-		G = ByteHelper.ClampToByte(colorVector.Y * 255);
-		B = ByteHelper.ClampToByte(colorVector.Z * 255);
-	}
-
-	public ColorRgb565(ColorRgb24 color)
-	{
-		data = 0;
-		R = color.r;
-		G = color.g;
-		B = color.b;
-	}
-
-	public readonly ColorRgb24 ToColorRgb24()
-	{
-		return new ColorRgb24(R, G, B);
-	}
-
 	public override string ToString()
 	{
 		return $"r : {R} g : {G} b : {B}";
-	}
-
-	public ColorRgba32 ToColorRgba32()
-	{
-		return new ColorRgba32(R, G, B, 255);
 	}
 
 	/// <inheritdoc />
 	public ColorRgbaFloat ToColorRgbaFloat()
 	{
 		return new ColorRgbaFloat(
-			R / 255f,
-			G / 255f,
-			B / 255f);
+			R,
+			G,
+			B);
 	}
 
 	/// <inheritdoc />
 	public void FromColorRgbaFloat(ColorRgbaFloat color)
 	{
-		R = ByteHelper.ClampToByte(color.r * 255f);
-		G = ByteHelper.ClampToByte(color.g * 255f);
-		B = ByteHelper.ClampToByte(color.b * 255f);
+		R = color.r;
+		G = color.g;
+		B = color.b;
 	}
 }
 
@@ -410,58 +392,26 @@ public struct ColorR10G10B10A2 : IColor<ColorR10G10B10A2>
 
 	public float R
 	{
-		readonly get
-		{
-			var r10 = (data & RedMask) >> RedShift;
-			return r10 / (float)RedMaxValue;
-		}
-		set
-		{
-			var r10 = (uint)(ColorBitConversionHelpers.Saturate(value) * RedMaxValue + 0.5f);
-			data = (data & ~RedMask) | (r10 << RedShift);
-		}
+		readonly get => Unorm10ToFloat(RawR);
+		set => RawR = FloatToUnorm10(value);
 	}
 
 	public float G
 	{
-		readonly get
-		{
-			var g10 = (data & GreenMask) >> GreenShift;
-			return g10 / (float)GreenMaxValue;
-		}
-		set
-		{
-			var g10 = (uint)(ColorBitConversionHelpers.Saturate(value) * GreenMaxValue + 0.5f);
-			data = (data & ~GreenMask) | (g10 << GreenShift);
-		}
+		readonly get => Unorm10ToFloat(RawG);
+		set => RawG = FloatToUnorm10(value);
 	}
 
 	public float B
 	{
-		readonly get
-		{
-			var b10 = (data & BlueMask) >> BlueShift;
-			return b10 / (float)BlueMaxValue;
-		}
-		set
-		{
-			var b10 = (uint)(ColorBitConversionHelpers.Saturate(value) * BlueMaxValue + 0.5f);
-			data = (data & ~BlueMask) | (b10 << BlueShift);
-		}
+		readonly get => Unorm10ToFloat(RawB);
+		set => RawB = FloatToUnorm10(value);
 	}
 
 	public float A
 	{
-		readonly get
-		{
-			var a2 = (data & AlphaMask) >> AlphaShift;
-			return a2 / (float)AlphaMaxValue;
-		}
-		set
-		{
-			var a2 = (uint)(ColorBitConversionHelpers.Saturate(value) * AlphaMaxValue + 0.5f);
-			data = (data & ~AlphaMask) | (a2 << AlphaShift);
-		}
+		readonly get => Unorm2ToFloat(RawA);
+		set => RawA = FloatToUnorm2(value);
 	}
 
 	public uint RawR
@@ -513,38 +463,11 @@ public struct ColorR10G10B10A2 : IColor<ColorR10G10B10A2>
 		A = a;
 	}
 
-	public ColorR10G10B10A2(Vector4 colorVector)
-	{
-		data = 0;
-		R = colorVector.X;
-		G = colorVector.Y;
-		B = colorVector.Z;
-		A = colorVector.W;
-	}
-
-	public ColorR10G10B10A2(ColorRgba32 color)
-	{
-		data = 0;
-		R = color.r / 255f;
-		G = color.g / 255f;
-		B = color.b / 255f;
-		A = color.a / 255f;
-	}
-
-	public ColorR10G10B10A2(ColorRgbaFloat color)
-	{
-		data = 0;
-		R = color.r;
-		G = color.g;
-		B = color.b;
-		A = color.a;
-	}
-
 	public override string ToString()
 	{
 		return $"r : {R:F3} g : {G:F3} b : {B:F3} a : {A:F3}";
 	}
-	
+
 	/// <inheritdoc />
 	public readonly ColorRgbaFloat ToColorRgbaFloat()
 	{

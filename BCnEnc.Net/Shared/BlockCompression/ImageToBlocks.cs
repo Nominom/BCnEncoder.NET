@@ -4,6 +4,36 @@ using CommunityToolkit.HighPerformance;
 
 namespace BCnEncoder.Shared
 {
+	public enum BlockPixelSize
+	{
+		// No blocks.
+		Size1x1x1,
+		// 2D Blocks
+		Size4x4x1,
+		Size5x4x1,
+		Size5x5x1,
+		Size6x5x1,
+		Size6x6x1,
+		Size8x5x1,
+		Size8x6x1,
+		Size8x8x1,
+		Size10x5x1,
+		Size10x6x1,
+		Size10x8x1,
+		Size10x10x1,
+		Size12x10x1,
+		Size12x12x1,
+		// 3D Blocks
+		Size3x3x3,
+		Size4x3x3,
+		Size4x4x4,
+		Size5x4x4,
+		Size5x5x4,
+		Size5x5x5,
+		Size6x5x5,
+		Size6x6x5,
+		Size6x6x6
+	}
 	internal static class ImageToBlocks
 	{
 		internal static void ColorsFromRawBlocks(RawBlock4X4RgbaFloat[] blocks, Span<ColorRgbaFloat> output, int pixelWidth, int pixelHeight)
@@ -89,15 +119,32 @@ namespace BCnEncoder.Shared
 			return output;
 		}
 
-		public static int CalculateNumOfBlocks(int pixelWidth, int pixelHeight)
+		public static int CalculateNumOfBlocks(CompressionFormat blockFormat, int pixelWidth, int pixelHeight, int pixelDepth = 1)
 		{
-			CalculateNumOfBlocks(pixelWidth, pixelHeight, out var blocksWidth, out var blocksHeight);
-			return blocksWidth * blocksHeight;
+			CalculateNumOfBlocks(blockFormat, pixelWidth, pixelHeight, pixelDepth, out var blocksWidth, out var blocksHeight, out var blocksDepth);
+			return blocksWidth * blocksHeight * blocksDepth;
 		}
-		public static void CalculateNumOfBlocks(int pixelWidth, int pixelHeight, out int blocksWidth, out int blocksHeight)
+		public static void CalculateNumOfBlocks(CompressionFormat blockFormat, int pixelWidth, int pixelHeight, int pixelDepth, out int blocksWidth, out int blocksHeight, out int blocksDepth)
 		{
-			blocksWidth = ((pixelWidth + 3) & ~3) >> 2;
-			blocksHeight = ((pixelHeight + 3) & ~3) >> 2;
+			BlockPixelSize blockSize = blockFormat.GetBlockPixelSize();
+
+			// Default case
+			if (blockSize == BlockPixelSize.Size4x4x1)
+			{
+				blocksWidth = ((pixelWidth + 3) & ~3) >> 2;
+				blocksHeight = ((pixelHeight + 3) & ~3) >> 2;
+				blocksDepth = pixelDepth;
+			}
+			else if (blockSize == BlockPixelSize.Size1x1x1)
+			{
+				blocksWidth = pixelWidth;
+				blocksHeight = pixelHeight;
+				blocksDepth = pixelDepth;
+			}
+			else
+			{
+				throw new NotImplementedException();
+			}
 		}
 	}
 }

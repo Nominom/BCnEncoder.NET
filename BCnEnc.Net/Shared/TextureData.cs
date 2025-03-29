@@ -51,13 +51,13 @@ namespace BCnEncoder.Shared
 		/// The alpha encoding type is not known or not specified.
 		/// </summary>
 		Unknown,
-		
+
 		/// <summary>
 		/// Alpha is straight/non-premultiplied (color values are independent of alpha).
 		/// This is the typical format for standard image formats like PNG.
 		/// </summary>
 		Straight,
-		
+
 		/// <summary>
 		/// Alpha is premultiplied (color channels are already multiplied by alpha).
 		/// This is commonly used in GPU texture formats and during rendering.
@@ -108,6 +108,7 @@ namespace BCnEncoder.Shared
 			private readonly BCnTextureData texture;
 			public int Width { get; set; }
 			public int Height { get; set; }
+			public int Depth { get; set; }
 			public long SizeInBytes { get; set; }
 
 			private TexData[] textureData;
@@ -126,9 +127,9 @@ namespace BCnEncoder.Shared
 					throw new ArgumentException("Invalid mip level");
 
 				this.texture = texture;
-				MipMapper.CalculateMipLevelSize(texture.Width, texture.Height, level, out var mipWidth, out var mipHeight);
+				MipMapper.CalculateMipLevelSize(texture.Width, texture.Height, texture.Depth, level, out var mipWidth, out var mipHeight, out var mipDepth);
 
-				if (mipWidth == 0 || mipHeight == 0)
+				if (mipWidth == 0 || mipHeight == 0 || mipDepth == 0)
 					throw new ArgumentException("Invalid mip level size");
 				if (numFaces != 1 && numFaces != 6)
 					throw new ArgumentException("Invalid number of faces");
@@ -137,7 +138,8 @@ namespace BCnEncoder.Shared
 
 				this.Width = mipWidth;
 				this.Height = mipHeight;
-				this.SizeInBytes = texture.Format.CalculateMipByteSize(mipWidth, mipHeight);
+				this.Depth = mipDepth;
+				this.SizeInBytes = texture.Format.CalculateMipByteSize(mipWidth, mipHeight, mipDepth);
 				this.textureData = new TexData[numFaces * numArrayElements];
 
 				for (var f = 0; f < numFaces; f++)
@@ -177,6 +179,7 @@ namespace BCnEncoder.Shared
 
 			public int Width => Mip.Width;
 			public int Height => Mip.Height;
+			public int Depth => Mip.Depth;
 			public long SizeInBytes => Mip.SizeInBytes;
 
 			public TexData(CubeMapFaceDirection direction, int arrayIndex, MipMapLevel mip, byte[] data)
@@ -408,7 +411,7 @@ namespace BCnEncoder.Shared
 				return false;
 			if (NumMips <= 0)
 				return false;
-			if (NumFaces != 1 || NumFaces != 6)
+			if (NumFaces != 1 && NumFaces != 6)
 				return false;
 			if (NumArrayElements < 1)
 				return false;

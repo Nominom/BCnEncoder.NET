@@ -33,7 +33,12 @@ namespace BCnEncoder.Decoder.Options
 	public enum OutputColorSpaceTarget
 	{
 		/// <summary>
-		/// [DEFAULT] Keep the color space the same as the input (or assumed input) color space.
+		/// Colors are converted to linear colorspace for processing. Output will match the input colorspace regardless of chosen output format.
+		/// </summary>
+		ProcessLinearPreserveColorSpace,
+
+		/// <summary>
+		/// Keep the color space the same as the input (or assumed input) color space.
 		/// No color space conversion will be performed.
 		/// </summary>
 		KeepAsIs,
@@ -63,7 +68,7 @@ namespace BCnEncoder.Decoder.Options
 	public enum AlphaHandling
 	{
 		/// <summary>
-		/// [DEFAULT] Decode alpha channel exactly as stored without modification.
+		/// Decode alpha channel exactly as stored without modification.
 		/// Best option for most cases when you want to preserve the original data.
 		/// </summary>
 		KeepAsIs,
@@ -110,7 +115,7 @@ namespace BCnEncoder.Decoder.Options
 		/// <summary>
 		/// Controls the target color space for the decoded output.
 		/// </summary>
-		public OutputColorSpaceTarget OutputColorSpace { get; set; } = OutputColorSpaceTarget.KeepAsIs;
+		public OutputColorSpaceTarget OutputColorSpace { get; set; } = OutputColorSpaceTarget.ProcessLinearPreserveColorSpace;
 
 		/// <summary>
 		/// Controls how transparency (alpha channel) is handled during decoding.

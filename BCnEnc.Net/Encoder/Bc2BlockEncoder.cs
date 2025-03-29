@@ -50,7 +50,7 @@ namespace BCnEncoder.Encoder
 			for (var i = 0; i < 16; i++)
 			{
 				var color = pixels[i];
-				output.SetAlpha(i, ByteHelper.FloatToByte(color.a));
+				output.SetAlpha(i, color.a);
 				output[i] = ColorChooser.ChooseClosestRgbColor4(colors, color, rWeight, gWeight, bWeight, out var e);
 				error += e;
 			}

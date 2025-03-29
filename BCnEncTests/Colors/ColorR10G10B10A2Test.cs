@@ -41,7 +41,7 @@ namespace BCnEncTests.Colors
             Assert.Equal(0.5f, colorMid.R, 3); // Allow small floating point error
             Assert.Equal(0.5f, colorMid.G, 3);
             Assert.Equal(0.5f, colorMid.B, 3);
-            
+
             // For alpha, with only 2 bits (0-3), a value of 0.5 gets mapped to 1,
             // which when converted back is 1/3 or approximately 0.33f
             // So we expect either 0.33f (if mapped to 1) or 0.67f (if mapped to 2)
@@ -199,7 +199,7 @@ namespace BCnEncTests.Colors
             // Test conversion from ColorR10G10B10A2 to ColorRgbaFloat and back
             var original = new ColorR10G10B10A2(0.1f, 0.5f, 0.75f, 0.66f);
             var rgbaFloat = original.ToColorRgbaFloat();
-            var roundTrip = new ColorR10G10B10A2(rgbaFloat);
+            var roundTrip = rgbaFloat.As<ColorR10G10B10A2>();
 
             // Compare float values with small tolerance due to precision loss
             Assert.Equal(original.R, rgbaFloat.r, 3);
@@ -216,7 +216,7 @@ namespace BCnEncTests.Colors
             // Try with all 1s
             original = new ColorR10G10B10A2(1.0f, 1.0f, 1.0f, 1.0f);
             rgbaFloat = original.ToColorRgbaFloat();
-            roundTrip = new ColorR10G10B10A2(rgbaFloat);
+	        roundTrip = rgbaFloat.As<ColorR10G10B10A2>();
 
             Assert.Equal(1.0f, rgbaFloat.r);
             Assert.Equal(1.0f, rgbaFloat.g);
@@ -231,7 +231,7 @@ namespace BCnEncTests.Colors
             // Try with all 0s
             original = new ColorR10G10B10A2(0.0f, 0.0f, 0.0f, 0.0f);
             rgbaFloat = original.ToColorRgbaFloat();
-            roundTrip = new ColorR10G10B10A2(rgbaFloat);
+            roundTrip = rgbaFloat.As<ColorR10G10B10A2>();
 
             Assert.Equal(0.0f, rgbaFloat.r);
             Assert.Equal(0.0f, rgbaFloat.g);
@@ -249,7 +249,7 @@ namespace BCnEncTests.Colors
         {
             // Create ColorR10G10B10A2 from ColorRgba32 and convert back
             var rgba32 = new ColorRgba32(128, 64, 192, 255);
-            var r10g10b10a2 = new ColorR10G10B10A2(rgba32);
+            var r10g10b10a2 = rgba32.As<ColorR10G10B10A2>();
 
             // Check that values were preserved within reasonable limits
             // There will be some precision loss due to converting from 8-bit to 10-bit and back

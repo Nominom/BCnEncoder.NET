@@ -2,6 +2,8 @@ using System;
 
 namespace BCnEncoder.Shared.Colors;
 
+using static BCnEncoder.Shared.Colors.ColorBitConversionHelpers;
+
 public struct ColorR8 : IColor<ColorR8>
 {
 	public byte r;
@@ -14,17 +16,18 @@ public struct ColorR8 : IColor<ColorR8>
 	/// <inheritdoc />
 	public ColorRgbaFloat ToColorRgbaFloat()
 	{
+		float value = Unorm8ToFloat(r);
 		return new ColorRgbaFloat(
-			r / 255f,
-			0,
-			0
+			value,
+			value,
+			value
 		);
 	}
 
 	/// <inheritdoc />
 	public void FromColorRgbaFloat(ColorRgbaFloat color)
 	{
-		r = ByteHelper.ClampToByte(color.r * 255f);
+		r = FloatToUnorm8(color.r);
 	}
 
 	/// <inheritdoc />
@@ -58,10 +61,11 @@ public struct ColorR8S : IColor<ColorR8S>
 	/// <inheritdoc />
 	public ColorRgbaFloat ToColorRgbaFloat()
 	{
+		float value = ColorBitConversionHelpers.SnormToFloat(r, 8);
 		return new ColorRgbaFloat(
-			ColorBitConversionHelpers.SnormToFloat(r, 8),
-			0,
-			0
+			value,
+			value,
+			value
 		);
 	}
 
@@ -104,16 +108,16 @@ public struct ColorR8G8 : IColor<ColorR8G8>
 	public ColorRgbaFloat ToColorRgbaFloat()
 	{
 		return new ColorRgbaFloat(
-			r / 255f,
-			g / 255f,
+			Unorm8ToFloat(r),
+			Unorm8ToFloat(g),
 			0);
 	}
 
 	/// <inheritdoc />
 	public void FromColorRgbaFloat(ColorRgbaFloat color)
 	{
-		r = ByteHelper.ClampToByte(color.r * 255f);
-		g = ByteHelper.ClampToByte(color.g * 255f);
+		r = FloatToUnorm8(color.r);
+		g = FloatToUnorm8(color.g);
 	}
 
 	/// <inheritdoc />
@@ -190,13 +194,6 @@ public struct ColorRgb24 : IColor<ColorRgb24>
 			this.r = r;
 			this.g = g;
 			this.b = b;
-		}
-
-		public ColorRgb24(ColorRgb565 color)
-		{
-			this.r = color.R;
-			this.g = color.G;
-			this.b = color.B;
 		}
 
 		public ColorRgb24(ColorRgba32 color)
@@ -279,16 +276,16 @@ public struct ColorRgb24 : IColor<ColorRgb24>
 		public ColorRgbaFloat ToColorRgbaFloat()
 		{
 			return new ColorRgbaFloat(
-				r / 255f,
-				g / 255f,
-				b / 255f);
+				Unorm8ToFloat(r),
+				Unorm8ToFloat(g),
+				Unorm8ToFloat(b));
 		}
 
 		public void FromColorRgbaFloat(ColorRgbaFloat color)
 		{
-			r = ByteHelper.ClampToByte(color.r * 255f);
-			g = ByteHelper.ClampToByte(color.g * 255f);
-			b = ByteHelper.ClampToByte(color.b * 255f);
+			r = FloatToUnorm8(color.r);
+			g = FloatToUnorm8(color.g);
+			b = FloatToUnorm8(color.b);
 		}
 	}
 
@@ -476,16 +473,21 @@ public struct ColorRgba32 : IColor<ColorRgba32>
 	/// <inheritdoc />
 	public readonly ColorRgbaFloat ToColorRgbaFloat()
 	{
-		return new ColorRgbaFloat(this);
+		return new ColorRgbaFloat(
+			Unorm8ToFloat(r),
+			Unorm8ToFloat(g),
+			Unorm8ToFloat(b),
+			Unorm8ToFloat(a)
+			);
 	}
 
 	/// <inheritdoc />
 	public void FromColorRgbaFloat(ColorRgbaFloat color)
 	{
-		r = ByteHelper.ClampToByte(color.r * 255f);
-		g = ByteHelper.ClampToByte(color.g * 255f);
-		b = ByteHelper.ClampToByte(color.b * 255f);
-		a = ByteHelper.ClampToByte(color.a * 255f);
+		r = FloatToUnorm8(color.r);
+		g = FloatToUnorm8(color.g);
+		b = FloatToUnorm8(color.b);
+		a = FloatToUnorm8(color.a);
 	}
 }
 
@@ -518,21 +520,19 @@ internal struct ColorBgr24 : IColor<ColorBgr24>
 		return HashCode.Combine(b, g, r);
 	}
 
-	/// <inheritdoc />
-	public readonly ColorRgbaFloat ToColorRgbaFloat()
+	public ColorRgbaFloat ToColorRgbaFloat()
 	{
 		return new ColorRgbaFloat(
-			this.r / 255f,
-			this.g / 255f,
-			this.b / 255f);
+			Unorm8ToFloat(r),
+			Unorm8ToFloat(g),
+			Unorm8ToFloat(b));
 	}
 
-	/// <inheritdoc />
 	public void FromColorRgbaFloat(ColorRgbaFloat color)
 	{
-		r = ByteHelper.ClampToByte(color.r * 255f);
-		g = ByteHelper.ClampToByte(color.g * 255f);
-		b = ByteHelper.ClampToByte(color.b * 255f);
+		r = FloatToUnorm8(color.r);
+		g = FloatToUnorm8(color.g);
+		b = FloatToUnorm8(color.b);
 	}
 }
 
@@ -578,18 +578,19 @@ internal struct ColorBgra32 : IColor<ColorBgra32>
 	public readonly ColorRgbaFloat ToColorRgbaFloat()
 	{
 		return new ColorRgbaFloat(
-			this.r / 255f,
-			this.g / 255f,
-			this.b / 255f,
-			this.a / 255f);
+			Unorm8ToFloat(r),
+			Unorm8ToFloat(g),
+			Unorm8ToFloat(b),
+			Unorm8ToFloat(a)
+		);
 	}
 
 	/// <inheritdoc />
 	public void FromColorRgbaFloat(ColorRgbaFloat color)
 	{
-		r = ByteHelper.ClampToByte(color.r * 255f);
-		g = ByteHelper.ClampToByte(color.g * 255f);
-		b = ByteHelper.ClampToByte(color.b * 255f);
-		a = ByteHelper.ClampToByte(color.a * 255f);
+		r = FloatToUnorm8(color.r);
+		g = FloatToUnorm8(color.g);
+		b = FloatToUnorm8(color.b);
+		a = FloatToUnorm8(color.a);
 	}
 }

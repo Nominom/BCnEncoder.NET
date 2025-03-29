@@ -53,7 +53,7 @@ namespace BCnEncTests
 			var dds1 = DdsFile.Load(originalStream);
 
 			var dds2 = new DdsFile();
-			dds2.FromTextureData(dds1.ToTextureData(), false);
+			dds2.FromTextureData(dds1.ToTextureData());
 
 			using var newStream = new MemoryStream();
 			dds2.WriteToStream(newStream);

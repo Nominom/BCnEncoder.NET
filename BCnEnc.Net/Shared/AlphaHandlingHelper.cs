@@ -85,15 +85,17 @@ namespace BCnEncoder.Shared
         /// <param name="colors">The colors to unpremultiply.</param>
         public static void UnpremultiplyAlpha(Span<ColorRgbaFloat> colors)
         {
+	        static float Unpremultiply(float c, float a) => a > 0 ?  Math.Min(1.0f, c / a): 0;
+
             for (int i = 0; i < colors.Length; i++)
             {
                 var color = colors[i];
                 if (color.a > AlphaEpsilon)
                 {
                     colors[i] = new ColorRgbaFloat(
-                        color.r / color.a,
-                        color.g / color.a,
-                        color.b / color.a,
+                        Unpremultiply(color.r, color.a),
+                        Unpremultiply(color.g, color.a),
+                        Unpremultiply(color.b, color.a),
                         color.a);
                 }
                 else

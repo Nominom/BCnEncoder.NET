@@ -38,9 +38,8 @@ namespace BCnEncTests
 			for (var i = 0; i < numMips; i++)
 			{
 				encoder.CalculateMipMapSize(testImage.Width, testImage.Height, i, out var mW, out var mH);
-				expectedTotalBlocks += encoder.OutputOptions.Format.CalculateMipByteSize(mW, mH) / encoder.OutputOptions.Format.GetBytesPerBlock();
+				expectedTotalBlocks += encoder.OutputOptions.Format.CalculateMipByteSize(mW, mH, 1) / encoder.OutputOptions.Format.GetBytesPerBlock();
 			}
-
 
 			await using var ms = new MemoryStream();
 			await encoder.EncodeToStreamAsync<DdsFile>(testImage, ms);
@@ -65,7 +64,7 @@ namespace BCnEncTests
 			var bcnData = image.ToTextureData();
 
 			var expectedTotalBlocks = bcnData.Mips.Sum(m =>
-				bcnData.Format.CalculateMipByteSize(m.Width, m.Height)) / bcnData.Format.GetBytesPerBlock();
+				bcnData.Format.CalculateMipByteSize(m.Width, m.Height, 1)) / bcnData.Format.GetBytesPerBlock();
 
 			await decoder.DecodeAsync(bcnData, CompressionFormat.Rgba32);
 
@@ -86,7 +85,7 @@ namespace BCnEncTests
 			});
 
 			encoder.CalculateMipMapSize(testImage.Width, testImage.Height, mipLevel, out var mW, out var mH);
-			var expectedTotalBlocks = encoder.OutputOptions.Format.CalculateMipByteSize(mW, mH) / encoder.OutputOptions.Format.GetBytesPerBlock();
+			var expectedTotalBlocks = encoder.OutputOptions.Format.CalculateMipByteSize(mW, mH, 1) / encoder.OutputOptions.Format.GetBytesPerBlock();
 
 			await using var ms = new MemoryStream();
 			await encoder.EncodeToRawBytesAsync(testImage, mipLevel);
@@ -109,7 +108,7 @@ namespace BCnEncTests
 			});
 
 			var bcnData = image.ToTextureData();
-			var expectedTotalBlocks = bcnData.Format.CalculateMipByteSize(bcnData.Mips[mipLevel].Width, bcnData.Mips[mipLevel].Height) / bcnData.Format.GetBytesPerBlock();
+			var expectedTotalBlocks = bcnData.Format.CalculateMipByteSize(bcnData.Mips[mipLevel].Width, bcnData.Mips[mipLevel].Height, 1) / bcnData.Format.GetBytesPerBlock();
 
 			await decoder.DecodeRawAsync<byte>(bcnData.Mips[mipLevel].First.Data, bcnData.Mips[mipLevel].Width, bcnData.Mips[mipLevel].Height, bcnData.Format, CompressionFormat.Rgba32);
 

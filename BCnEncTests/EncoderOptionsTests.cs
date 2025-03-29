@@ -29,7 +29,7 @@ namespace BCnEncTests
 				}
 			};
 
-			Assert.Equal(requestedMipMaps, encoder.CalculateNumberOfMipLevels(testImage.Width, testImage.Height));
+			Assert.Equal(requestedMipMaps, encoder.CalculateNumberOfMipLevels(testImage.Width, testImage.Height, 1));
 
 			var bcnData = encoder.Encode(testImage);
 
@@ -54,7 +54,7 @@ namespace BCnEncTests
 		{
 			var testImage = ImageLoader.TestRawImages["rgba_1"];
 			int requestedMipMaps = generateMipMaps ?
-				MipMapper.CalculateMipChainLength(testImage.Width, testImage.Height, 0) :
+				MipMapper.CalculateMipChainLength(testImage.Width, testImage.Height, 1, 0) :
 				1;
 			var encoder = new BcEncoder()
 			{

@@ -39,13 +39,13 @@ namespace BCnEncoder.Shared
 				stackalloc ColorRgbaFloat[] {
 				color0,
 				color1,
-				color0.InterpolateHalf(color1),
+				Interpolation.InterpolateColor(color0, color1, .5f),
 				new ColorRgbaFloat(0, 0, 0)
 			} : stackalloc ColorRgbaFloat[] {
 				color0,
 				color1,
-				color0.InterpolateThird(color1, 1),
-				color0.InterpolateThird(color1, 2)
+				Interpolation.InterpolateColor(color0, color1, 1f / 3f),
+				Interpolation.InterpolateColor(color0, color1, 2f / 3f)
 			};
 
 			for (var i = 0; i < pixels.Length; i++)
@@ -61,6 +61,7 @@ namespace BCnEncoder.Shared
 					pixels[i] = color;
 				}
 			}
+
 			return output;
 		}
 	}
@@ -84,9 +85,9 @@ namespace BCnEncoder.Shared
 			}
 		}
 
-		public readonly byte GetAlpha(int index) => alphaBlock.GetAlpha(index);
+		public readonly float GetAlpha(int index) => alphaBlock.GetAlpha(index);
 
-		public void SetAlpha(int index, byte alpha) => alphaBlock.SetAlpha(index, alpha);
+		public void SetAlpha(int index, float alpha) => alphaBlock.SetAlpha(index, alpha);
 
 		public readonly RawBlock4X4RgbaFloat Decode()
 		{
@@ -99,14 +100,14 @@ namespace BCnEncoder.Shared
 			Span<ColorRgbaFloat> colors = stackalloc ColorRgbaFloat[] {
 				color0,
 				color1,
-				color0.InterpolateThird(color1, 1),
-				color0.InterpolateThird(color1, 2)
+				Interpolation.InterpolateColor(color0, color1, 1f / 3f),
+				Interpolation.InterpolateColor(color0, color1, 2f / 3f)
 			};
 
 			for (var i = 0; i < pixels.Length; i++)
 			{
 				var colorIndex = (int)((colorIndices >> (i * 2)) & 0b11);
-				var color = new ColorRgbaFloat(colors[colorIndex].r, colors[colorIndex].g, colors[colorIndex].b, GetAlpha(i) / 255f);
+				var color = new ColorRgbaFloat(colors[colorIndex].r, colors[colorIndex].g, colors[colorIndex].b, GetAlpha(i));
 
 				pixels[i] = color;
 			}
@@ -169,7 +170,7 @@ namespace BCnEncoder.Shared
 			for (var i = 0; i < pixels.Length; i++)
 			{
 				var colorIndex = (int)((colorIndices >> (i * 2)) & 0b11);
-				var color = new ColorRgbaFloat(colors[colorIndex].r, colors[colorIndex].g, colors[colorIndex].b, alphas[i] / 255f);
+				var color = new ColorRgbaFloat(colors[colorIndex].r, colors[colorIndex].g, colors[colorIndex].b, alphas[i]);
 
 				pixels[i] = color;
 			}
@@ -207,7 +208,7 @@ namespace BCnEncoder.Shared
 
 			for (var i = 0; i < pixels.Length; i++)
 			{
-				ComponentHelper.ComponentToColor(component, components[i]).To(ref pixels[i]);
+				pixels[i] = ComponentHelper.ComponentToColor(component, components[i]);
 			}
 
 			return output;
@@ -238,14 +239,14 @@ namespace BCnEncoder.Shared
 
 			for (var i = 0; i < pixels.Length; i++)
 			{
-				ColorRgba32 color = ComponentHelper.ComponentToColor(component1, reds[i]);
+				ColorRgbaFloat color = ComponentHelper.ComponentToColor(component1, reds[i]);
 				ComponentHelper.ComponentToColor(ref color, component2, greens[i]);
 
 				// Calculate Z
 				if (componentCalculated != ColorComponent.None)
 				{
-					float x = reds[i] / 255f;
-					float y = greens[i] / 255f;
+					float x = reds[i];
+					float y = greens[i];
 					float z = 1 - x * x - y * y;
 
 					if (z < 0)
@@ -253,10 +254,10 @@ namespace BCnEncoder.Shared
 					else
 						z = MathF.Sqrt(z);
 
-					ComponentHelper.ComponentToColor(ref color, componentCalculated, (byte)(z * 255f));
+					ComponentHelper.ComponentToColor(ref color, componentCalculated, z);
 				}
 
-				color.To(ref pixels[i]);
+				pixels[i] = color;
 			}
 
 			return output;
@@ -313,7 +314,26 @@ namespace BCnEncoder.Shared
 	{
 		public ulong alphas;
 
-		public readonly byte GetAlpha(int index)
+		public readonly float GetAlpha(int index)
+		{
+			var mask = 0xFUL << (index * 4);
+			var shift = index * 4;
+
+			// Unorm4 alpha
+			var alphaUnscaled = (alphas & mask) >> shift;
+			return ColorBitConversionHelpers.Unorm4ToFloat((uint)alphaUnscaled);
+		}
+
+		public void SetAlpha(int index, float alpha)
+		{
+			var mask = 0xFUL << (index * 4);
+			var shift = index * 4;
+			alphas &= ~mask;
+			var a = ColorBitConversionHelpers.FloatToUnorm4(alpha);
+			alphas |= (ulong)(a & 0xF) << shift;
+		}
+
+		public readonly byte GetAlphaByte(int index)
 		{
 			var mask = 0xFUL << (index * 4);
 			var shift = index * 4;
@@ -321,7 +341,7 @@ namespace BCnEncoder.Shared
 			return (byte)(alphaUnscaled * 17);
 		}
 
-		public void SetAlpha(int index, byte alpha)
+		public void SetAlphaByte(int index, byte alpha)
 		{
 			var mask = 0xFUL << (index * 4);
 			var shift = index * 4;
@@ -335,6 +355,26 @@ namespace BCnEncoder.Shared
 	internal struct Bc4ComponentBlock
 	{
 		public ulong componentBlock;
+
+		public float FloatEndpoint0
+		{
+			readonly get => ColorBitConversionHelpers.Unorm8ToFloat((byte)(componentBlock & 0xFFUL));
+			set
+			{
+				componentBlock &= ~0xFFUL;
+				componentBlock |= ColorBitConversionHelpers.FloatToUnorm8(value);
+			}
+		}
+
+		public float FloatEndpoint1
+		{
+			readonly get =>ColorBitConversionHelpers.Unorm8ToFloat((byte)((componentBlock >> 8) & 0xFFUL));
+			set
+			{
+				componentBlock &= ~0xFF00UL;
+				componentBlock |= (ulong)ColorBitConversionHelpers.FloatToUnorm8(value) << 8;
+			}
+		}
 
 		public byte Endpoint0
 		{
@@ -372,14 +412,14 @@ namespace BCnEncoder.Shared
 			componentBlock |= (ulong)(redIndex & 0b111) << shift;
 		}
 
-		public readonly byte[] Decode()
+		public readonly float[] Decode()
 		{
-			var output = new byte[16];
+			var output = new float[16];
 
-			var c0 = Endpoint0;
-			var c1 = Endpoint1;
+			var c0 = FloatEndpoint0;
+			var c1 = FloatEndpoint1;
 
-			var components = c0 > c1 ? stackalloc byte[] {
+			var components = c0 > c1 ? stackalloc float[] {
 				c0,
 				c1,
 				c0.InterpolateSeventh(c1, 1),
@@ -388,7 +428,7 @@ namespace BCnEncoder.Shared
 				c0.InterpolateSeventh(c1, 4),
 				c0.InterpolateSeventh(c1, 5),
 				c0.InterpolateSeventh(c1, 6),
-			} : stackalloc byte[] {
+			} : stackalloc float[] {
 				c0,
 				c1,
 				c0.InterpolateFifth(c1, 1),
@@ -396,7 +436,7 @@ namespace BCnEncoder.Shared
 				c0.InterpolateFifth(c1, 3),
 				c0.InterpolateFifth(c1, 4),
 				0,
-				255
+				1
 			};
 
 			for (var i = 0; i < output.Length; i++)
@@ -422,7 +462,7 @@ namespace BCnEncoder.Shared
 
 			for (var i = 0; i < pixels.Length; i++)
 			{
-				pixels[i].a = alphas.GetAlpha(i) / 255f;
+				pixels[i].a = alphas.GetAlpha(i);
 			}
 			return output;
 		}
@@ -443,7 +483,7 @@ namespace BCnEncoder.Shared
 
 			for (var i = 0; i < pixels.Length; i++)
 			{
-				pixels[i].a = componentValues[i] / 255f;
+				pixels[i].a = componentValues[i];
 			}
 			return output;
 		}

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using BCnEncoder.Shared;
 
@@ -133,7 +134,19 @@ namespace BCnEncoder.TextureFormats
 		/// <summary>
 		/// Used in some older DDS files for single channel color uncompressed data (dwRGBBitCount contains the luminance channel bit count; dwRBitMask contains the channel mask). Can be combined with DDPF_ALPHAPIXELS for a two channel DDS file.
 		/// </summary>
-		DdpfLuminance = 0x20000
+		DdpfLuminance = 0x20000,
+		DdpfRgba = DdpfRgb | DdpfAlphaPixels
+	}
+
+	// Note only avaialble on DX12+ dds files.
+	// Any decoder that only support dx11 or lower, will fail.
+	public enum Dx10HeaderMiscFlags2 : uint
+	{
+		Dx10HeaderMiscFlags2AlphaModeUnknown = 0x0,
+		Dx10HeaderMiscFlags2AlphaModeStraight = 0x1,
+		Dx10HeaderMiscFlags2AlphaModePremultiplied = 0x2,
+		Dx10HeaderMiscFlags2AlphaModeOpaque = 0x3,
+		Dx10HeaderMiscFlags2AlphaModeCustom = 0x4
 	}
 
 	public enum D3D10ResourceDimension : uint
@@ -531,74 +544,66 @@ namespace BCnEncoder.TextureFormats
 			}
 		}
 
-		public static DxgiFormat ToDxgiFormat(this CompressionFormat format)
-		{
-			switch (format)
-			{
-				case CompressionFormat.R8:
-					return DxgiFormat.DxgiFormatR8Unorm;
-				case CompressionFormat.R8G8:
-					return DxgiFormat.DxgiFormatR8G8Unorm;
-				case CompressionFormat.Rgba32:
-					return DxgiFormat.DxgiFormatR8G8B8A8Unorm;
-				case CompressionFormat.Rgba32_sRGB:
-					return DxgiFormat.DxgiFormatR8G8B8A8UnormSrgb;
-				case CompressionFormat.Bgra32:
-					return DxgiFormat.DxgiFormatB8G8R8A8Unorm;
-				case CompressionFormat.Bgra32_sRGB:
-					return DxgiFormat.DxgiFormatB8G8R8A8UnormSrgb;
-				case CompressionFormat.R10G10B10A2:
-					return DxgiFormat.DxgiFormatR10G10B10A2Unorm;
-				case CompressionFormat.RgbaFloat:
-					return DxgiFormat.DxgiFormatR32G32B32A32Float;
-				case CompressionFormat.RgbaHalf:
-					return DxgiFormat.DxgiFormatR16G16B16A16Float;
-				case CompressionFormat.RgbFloat:
-					return DxgiFormat.DxgiFormatR32G32B32Float;
+		public static DxgiFormat ToDxgiFormat(this CompressionFormat format) =>
+			FormatMapping.TryGetValue(format, out var dxgiFormat) ? dxgiFormat : DxgiFormat.DxgiFormatUnknown;
 
-				case CompressionFormat.Bc1:
-					return DxgiFormat.DxgiFormatBc1Unorm;
-				case CompressionFormat.Bc1_sRGB:
-					return DxgiFormat.DxgiFormatBc1UnormSrgb;
+		public static CompressionFormat ToCompressionFormat(this DxgiFormat format) =>
+			FormatMappingReverse.TryGetValue(format, out var bcnFormat) ? bcnFormat : CompressionFormat.Unknown;
 
-				case CompressionFormat.Bc1WithAlpha:
-					return DxgiFormat.DxgiFormatBc1Unorm;
-				case CompressionFormat.Bc1WithAlpha_sRGB:
-					return DxgiFormat.DxgiFormatBc1UnormSrgb;
+		private static Dictionary<CompressionFormat, DxgiFormat> FormatMapping { get; } =
+			new() {
+				// Raw formats
+				{ CompressionFormat.R8, DxgiFormat.DxgiFormatR8Unorm },
+				{ CompressionFormat.R8S, DxgiFormat.DxgiFormatR8Snorm },
+				{ CompressionFormat.R8G8, DxgiFormat.DxgiFormatR8G8Unorm },
+				{ CompressionFormat.R8G8S, DxgiFormat.DxgiFormatR8G8Snorm },
+				{ CompressionFormat.Rgba32, DxgiFormat.DxgiFormatR8G8B8A8Unorm },
+				{ CompressionFormat.Rgba32_sRGB, DxgiFormat.DxgiFormatR8G8B8A8UnormSrgb },
+				{ CompressionFormat.Bgra32, DxgiFormat.DxgiFormatB8G8R8A8Unorm },
+				{ CompressionFormat.Bgra32_sRGB, DxgiFormat.DxgiFormatB8G8R8A8UnormSrgb },
+				{ CompressionFormat.R10G10B10A2, DxgiFormat.DxgiFormatR10G10B10A2Unorm },
+				{ CompressionFormat.RgbaFloat, DxgiFormat.DxgiFormatR32G32B32A32Float },
+				{ CompressionFormat.RgbaHalf, DxgiFormat.DxgiFormatR16G16B16A16Float },
+				{ CompressionFormat.RgbFloat, DxgiFormat.DxgiFormatR32G32B32Float },
 
-				case CompressionFormat.Bc2:
-					return DxgiFormat.DxgiFormatBc2Unorm;
-				case CompressionFormat.Bc2_sRGB:
-					return DxgiFormat.DxgiFormatBc2UnormSrgb;
+	            // RGB formats without direct DXGI equivalents
+	            // { CompressionFormat.Rgb24, DxgiFormat.DxgiFormatUnknown },
+	            // { CompressionFormat.Rgb24_sRGB, DxgiFormat.DxgiFormatUnknown },
+	            // { CompressionFormat.Bgr24, DxgiFormat.DxgiFormatUnknown },
+	            // { CompressionFormat.Bgr24_sRGB, DxgiFormat.DxgiFormatUnknown },
+	            // { CompressionFormat.Rgbe, DxgiFormat.DxgiFormatUnknown },
+	            // { CompressionFormat.Xyze, DxgiFormat.DxgiFormatUnknown },
+	            // { CompressionFormat.RgbHalf, DxgiFormat.DxgiFormatUnknown },
 
-				case CompressionFormat.Bc3:
-					return DxgiFormat.DxgiFormatBc3Unorm;
-				case CompressionFormat.Bc3_sRGB:
-					return DxgiFormat.DxgiFormatBc3UnormSrgb;
+				// BC formats
+				{ CompressionFormat.Bc1, DxgiFormat.DxgiFormatBc1Unorm },
+				{ CompressionFormat.Bc1_sRGB, DxgiFormat.DxgiFormatBc1UnormSrgb },
+				{ CompressionFormat.Bc1WithAlpha, DxgiFormat.DxgiFormatBc1Unorm },
+				{ CompressionFormat.Bc1WithAlpha_sRGB, DxgiFormat.DxgiFormatBc1UnormSrgb },
+				{ CompressionFormat.Bc2, DxgiFormat.DxgiFormatBc2Unorm },
+				{ CompressionFormat.Bc2_sRGB, DxgiFormat.DxgiFormatBc2UnormSrgb },
+				{ CompressionFormat.Bc3, DxgiFormat.DxgiFormatBc3Unorm },
+				{ CompressionFormat.Bc3_sRGB, DxgiFormat.DxgiFormatBc3UnormSrgb },
+				{ CompressionFormat.Bc4, DxgiFormat.DxgiFormatBc4Unorm },
+				{ CompressionFormat.Bc4S, DxgiFormat.DxgiFormatBc4Snorm },
+				{ CompressionFormat.Bc5, DxgiFormat.DxgiFormatBc5Unorm },
+				{ CompressionFormat.Bc5S, DxgiFormat.DxgiFormatBc5Snorm },
+				{ CompressionFormat.Bc6U, DxgiFormat.DxgiFormatBc6HUf16 },
+				{ CompressionFormat.Bc6S, DxgiFormat.DxgiFormatBc6HSf16 },
+				{ CompressionFormat.Bc7, DxgiFormat.DxgiFormatBc7Unorm },
+				{ CompressionFormat.Bc7_sRGB, DxgiFormat.DxgiFormatBc7UnormSrgb },
 
-				case CompressionFormat.Bc4:
-					return DxgiFormat.DxgiFormatBc4Unorm;
-				case CompressionFormat.Bc5:
-					return DxgiFormat.DxgiFormatBc5Unorm;
-				case CompressionFormat.Bc6U:
-					return DxgiFormat.DxgiFormatBc6HUf16;
-				case CompressionFormat.Bc6S:
-					return DxgiFormat.DxgiFormatBc6HSf16;
+				// ATC formats
+				{ CompressionFormat.Atc, DxgiFormat.DxgiFormatAtcExt },
+				{ CompressionFormat.AtcExplicitAlpha, DxgiFormat.DxgiFormatAtcExplicitAlphaExt },
+				{ CompressionFormat.AtcInterpolatedAlpha, DxgiFormat.DxgiFormatAtcInterpolatedAlphaExt }
+			};
 
-				case CompressionFormat.Bc7:
-					return DxgiFormat.DxgiFormatBc7Unorm;
-				case CompressionFormat.Bc7_sRGB:
-					return DxgiFormat.DxgiFormatBc7UnormSrgb;
-
-				case CompressionFormat.Atc:
-					return DxgiFormat.DxgiFormatAtcExt;
-				case CompressionFormat.AtcExplicitAlpha:
-					return DxgiFormat.DxgiFormatAtcExplicitAlphaExt;
-				case CompressionFormat.AtcInterpolatedAlpha:
-					return DxgiFormat.DxgiFormatAtcInterpolatedAlphaExt;
-				default:
-					return DxgiFormat.DxgiFormatUnknown;
-			}
-		}
+		private static Dictionary<DxgiFormat, CompressionFormat> FormatMappingReverse { get; } =
+			FormatMapping.Where(x =>
+				// Filter out Bc1A formats, which have no DXGI equivalent
+				x.Key != CompressionFormat.Bc1WithAlpha &&
+				x.Key != CompressionFormat.Bc1WithAlpha_sRGB
+				).ToDictionary(x => x.Value, x => x.Key);
 	}
 }

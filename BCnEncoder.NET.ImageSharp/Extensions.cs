@@ -169,7 +169,8 @@ namespace BCnEncoder.ImageSharp
 				input.ToBCnTextureData(),
 				mipLevel,
 				out mipWidth,
-				out mipHeight);
+				out mipHeight,
+				out _);
 
 		/// <inheritdoc cref="BcEncoder.EncodeToRawBytesHdr"/>
 		public static byte[] EncodeToRawBytesHdr(this BcEncoder encoder, Image<RgbaVector> input, int mipLevel,
@@ -178,7 +179,8 @@ namespace BCnEncoder.ImageSharp
 				input.ToBCnTextureData(),
 				mipLevel,
 				out mipWidth,
-				out mipHeight);
+				out mipHeight,
+				out _);
 
 		/// <inheritdoc cref="BcEncoder.EncodeToRawBytesAsync"/>
 		public static Task<byte[]> EncodeToRawBytesAsync(this BcEncoder encoder, Image<Rgba32> input, int mipLevel,

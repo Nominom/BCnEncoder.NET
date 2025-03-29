@@ -34,9 +34,9 @@ namespace BCnEncTests
 			}
 		}
 
-		private static void ValidateData(BcEncoder encoder, int inputWidth, int inputHeight, BCnTextureData outputData)
+		private static void ValidateData(BcEncoder encoder, int inputWidth, int inputHeight, int inputDepth, BCnTextureData outputData)
 		{
-			Assert.Equal(outputData.NumMips, encoder.CalculateNumberOfMipLevels(inputWidth, inputHeight));
+			Assert.Equal(outputData.NumMips, encoder.CalculateNumberOfMipLevels(inputWidth, inputHeight , inputDepth));
 
 			for (var f = 0; f < outputData.NumFaces; f++)
 			{
@@ -45,10 +45,11 @@ namespace BCnEncTests
 					Assert.Equal((CubeMapFaceDirection)f, outputData.Mips[m][(CubeMapFaceDirection)f].Direction);
 
 					var mip = outputData.Mips[m][(CubeMapFaceDirection)f];
-					encoder.CalculateMipMapSize(inputWidth, inputHeight, m, out var mW, out var mH);
-					var byteSize = encoder.CalculateMipMapByteSize(inputWidth, inputHeight, m);
+					encoder.CalculateMipMapSize(inputWidth, inputHeight, inputDepth, m, out var mW, out var mH, out var mD);
+					var byteSize = encoder.CalculateMipMapByteSize(inputWidth, inputHeight, inputDepth, m);
 					Assert.Equal(mW, mip.Width);
 					Assert.Equal(mH, mip.Height);
+					Assert.Equal(mD, mip.Depth);
 					Assert.Equal(byteSize, mip.SizeInBytes);
 					Assert.Equal(byteSize, mip.Data.Length);
 				}
@@ -90,7 +91,7 @@ namespace BCnEncTests
 			var outputData = encoder.Encode(inputData);
 
 			AssertNonCube(format, outputData, inputData);
-			ValidateData(encoder, inputData.Width, inputData.Height, outputData);
+			ValidateData(encoder, inputData.Width, inputData.Height, inputData.Depth, outputData);
 		}
 
 		[Theory]
@@ -116,7 +117,7 @@ namespace BCnEncTests
 			var outputData = encoder.EncodeBytes(inputData.First.Data, inputData.Width, inputData.Height, inputData.Format);
 
 			AssertNonCube(format, outputData, inputData);
-			ValidateData(encoder, inputData.Width, inputData.Height, outputData);
+			ValidateData(encoder, inputData.Width, inputData.Height, inputData.Depth, outputData);
 		}
 
 		[Theory]
@@ -134,7 +135,7 @@ namespace BCnEncTests
 			var outputData = encoder.Encode(inputData.First.AsMemory2D<ColorRgba32>());
 
 			AssertNonCube(format, outputData, inputData);
-			ValidateData(encoder, inputData.Width, inputData.Height, outputData);
+			ValidateData(encoder, inputData.Width, inputData.Height, inputData.Depth, outputData);
 		}
 
 		[Theory]
@@ -154,7 +155,7 @@ namespace BCnEncTests
 
 			AssertNonCube(format, outputData, inputData);
 
-			ValidateData(encoder, inputData.Width, inputData.Height, outputData);
+			ValidateData(encoder, inputData.Width, inputData.Height, inputData.Depth, outputData);
 		}
 
 		[Theory]
@@ -173,21 +174,22 @@ namespace BCnEncTests
 
 			Assert.NotEqual(CompressionFormat.Unknown, inputData.Format);
 
-			var outputData = new BCnTextureData(format, inputData.Width, inputData.Height,
-				encoder.CalculateNumberOfMipLevels(inputData.Width, inputData.Height));
+			var outputData = new BCnTextureData(format, inputData.Width, inputData.Height, inputData.Depth,
+				encoder.CalculateNumberOfMipLevels(inputData.Width, inputData.Height, inputData.Depth));
 
 			// Test
 			for (var m = 0; m < outputData.NumMips; m++)
 			{
 				outputData.Mips[m].First.Data =
-					encoder.EncodeToRawBytes(inputData, m, out var mipWidth, out var mipHeight);
+					encoder.EncodeToRawBytes(inputData, m, out var mipWidth, out var mipHeight, out var mipDepth);
 
 				Assert.Equal(outputData.Mips[m].Width, mipWidth);
 				Assert.Equal(outputData.Mips[m].Height, mipHeight);
+				Assert.Equal(outputData.Mips[m].Depth, mipDepth);
 			}
 
 			AssertNonCube(format, outputData, inputData);
-			ValidateData(encoder, inputData.Width, inputData.Height, outputData);
+			ValidateData(encoder, inputData.Width, inputData.Height, inputData.Depth, outputData);
 		}
 
 		[Theory]
@@ -206,8 +208,8 @@ namespace BCnEncTests
 
 			Assert.NotEqual(CompressionFormat.Unknown, inputData.Format);
 
-			var outputData = new BCnTextureData(format, inputData.Width, inputData.Height,
-				encoder.CalculateNumberOfMipLevels(inputData.Width, inputData.Height));
+			var outputData = new BCnTextureData(format, inputData.Width, inputData.Height, inputData.Depth,
+				encoder.CalculateNumberOfMipLevels(inputData.Width, inputData.Height, inputData.Depth));
 
 			// Test
 			for (var m = 0; m < outputData.NumMips; m++)
@@ -220,7 +222,7 @@ namespace BCnEncTests
 			}
 
 			AssertNonCube(format, outputData, inputData);
-			ValidateData(encoder, inputData.Width, inputData.Height, outputData);
+			ValidateData(encoder, inputData.Width, inputData.Height, inputData.Depth, outputData);
 		}
 
 		// [Theory]
