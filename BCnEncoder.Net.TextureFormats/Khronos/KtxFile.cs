@@ -382,7 +382,6 @@ namespace BCnEncoder.TextureFormats
 		public GlFormat GlBaseInternalFormat;
 		public uint PixelWidth;
 		public uint PixelHeight;
-
 		public uint PixelDepth;
 		public uint NumberOfArrayElements;
 		public uint NumberOfFaces;

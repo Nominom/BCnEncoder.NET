@@ -248,6 +248,19 @@ namespace BCnEncoder.Decoder
 						var decoded = decoder.Decode(data, texture.Mips[m].Width,
 							texture.Mips[m].Height, context);
 
+						if (texture.Format.IsSNormFormat() && outputFormat.IsUNormFormat())
+						{
+							var resultSpan = decoded.AsSpan().Cast<byte, ColorRgbaFloat>();
+
+							for (int i = 0; i < resultSpan.Length; i++)
+							{
+								resultSpan[i] = new ColorRgbaFloat(
+									resultSpan[i].r * 0.5f + 0.5f,
+									resultSpan[i].g * 0.5f + 0.5f,
+									resultSpan[i].b * 0.5f + 0.5f);
+							}
+						}
+
 						// Apply alpha handling if needed
 						if (texture.Format.SupportsAlpha() && !texture.Format.IsHdrFormat())
 						{
@@ -320,6 +333,19 @@ namespace BCnEncoder.Decoder
 			}
 
 			var result = decoder.Decode(input, pixelWidth, pixelHeight, context);
+
+			if (inputFormat.IsSNormFormat() && outputFormat.IsUNormFormat())
+			{
+				var resultSpan = result.AsSpan().Cast<byte, ColorRgbaFloat>();
+
+				for (int i = 0; i < resultSpan.Length; i++)
+				{
+					resultSpan[i] = new ColorRgbaFloat(
+						resultSpan[i].r * 0.5f + 0.5f,
+						resultSpan[i].g * 0.5f + 0.5f,
+						resultSpan[i].b * 0.5f + 0.5f);
+				}
+			}
 
 			// Apply alpha handling if needed
 			if (OutputOptions.AlphaHandling == AlphaHandling.Unpremultiply)

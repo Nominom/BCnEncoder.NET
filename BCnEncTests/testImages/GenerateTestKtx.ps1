@@ -391,12 +391,6 @@ $formatMappings = @(
         Format = "B8G8R8A8,UBN,lRGB"
         ColorSpace = "linear"
         SupportsAlpha = $true
-    },
-    @{
-        Name = "bgra32-srgb"
-        Format = "B8G8R8A8,UBN,sRGB"
-        ColorSpace = "srgb"
-        SupportsAlpha = $true
     }
 )
 
