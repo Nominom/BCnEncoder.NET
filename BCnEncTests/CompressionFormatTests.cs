@@ -25,6 +25,13 @@ public class CompressionFormatTests
 
 			Assert.Equal(format, info.Format);
 
+			if (format.ToString().EndsWith("_Packed", StringComparison.OrdinalIgnoreCase))
+			{
+				string name = format.ToString().Replace("UF", "");
+				name = name.ToString().Replace("_Packed", "");
+				Assert.True(info.TexelType.Name.Contains(name), $"Format {format} does not match texel type: Info={info.TexelType.Name}");
+			}
+
 			if (format.ToString().Contains("Bc6u", StringComparison.OrdinalIgnoreCase))
 			{
 				Assert.Equal(CompressionFormatType.BlockUFloat, info.FormatType);
@@ -56,7 +63,18 @@ public class CompressionFormatTests
 				Assert.False(format.IsUNormFormat(), $"Format {format} should not be UNorm: Info={info}");
 				Assert.True(format.IsHdrFormat(), $"Format {format} should be HDR: Info={info}");
 			}
-			else if (format.ToString().EndsWith("Float", StringComparison.OrdinalIgnoreCase))
+			else if (format.ToString().EndsWith("UFloat", StringComparison.OrdinalIgnoreCase) ||
+			         format.ToString().EndsWith("UF", StringComparison.OrdinalIgnoreCase) ||
+			         format.ToString().EndsWith("UF_Packed", StringComparison.OrdinalIgnoreCase))
+			{
+				Assert.Equal(CompressionFormatType.RawUFloat, info.FormatType);
+				Assert.False(format.IsSignedFormat(), $"Format {format} should be signed: Info={info}");
+				Assert.False(format.IsSNormFormat(), $"Format {format} should not be SNorm: Info={info}");
+				Assert.False(format.IsUNormFormat(), $"Format {format} should not be UNorm: Info={info}");
+				Assert.True(format.IsHdrFormat(), $"Format {format} should be HDR: Info={info}");
+			}
+			else if (format.ToString().EndsWith("Float", StringComparison.OrdinalIgnoreCase) ||
+			         format.ToString().EndsWith("F", StringComparison.OrdinalIgnoreCase))
 			{
 				Assert.Equal(CompressionFormatType.RawFloat, info.FormatType);
 				Assert.True(format.IsSignedFormat(), $"Format {format} should be signed: Info={info}");
@@ -64,7 +82,8 @@ public class CompressionFormatTests
 				Assert.False(format.IsUNormFormat(), $"Format {format} should not be UNorm: Info={info}");
 				Assert.True(format.IsHdrFormat(), $"Format {format} should be HDR: Info={info}");
 			}
-			else if (format.ToString().EndsWith("e", StringComparison.OrdinalIgnoreCase))
+			else if (format.ToString().EndsWith("e32", StringComparison.OrdinalIgnoreCase) ||
+			         format.ToString().EndsWith("E5_Packed", StringComparison.Ordinal))
 			{
 				Assert.Equal(CompressionFormatType.RawSharedExponent, info.FormatType);
 				Assert.False(format.IsSignedFormat(), $"Format {format} should not be signed: Info={info}");

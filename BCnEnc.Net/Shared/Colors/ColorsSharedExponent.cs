@@ -155,34 +155,142 @@ public struct ColorXyze : IColor<ColorXyze>
 		}
 		else
 		{
-			// TODO: Do this as well.
-			var fexp = MathHelper.LdExp(1f, e - (128 + 8));
+			// First convert to XYZ using the shared exponent
+			var (xf, yf, zf) = ColorUtils.SharedExponentToRgb((x, y, z, e), 8, 128);
 
-			return new ColorXyz(
-				(float)((x + 0.5) * fexp),
-				(float)((y + 0.5) * fexp),
-				(float)((z + 0.5) * fexp)
-			).ToColorRgbaFloat();
+			// Then convert from XYZ to RGB
+			return new ColorXyz(xf, yf, zf).ToColorRgbaFloat();
 		}
 	}
 
 	/// <inheritdoc />
 	public void FromColorRgbaFloat(ColorRgbaFloat color)
 	{
+		// First convert from RGB to XYZ
 		ColorXyz xyz = color.As<ColorXyz>();
-		var max = MathF.Max(xyz.x, MathF.Max(xyz.y, xyz.z));
-		if (max <= 1e-32f)
+
+		// Handle zero case
+		if (xyz.x <= 1e-32f && xyz.y <= 1e-32f && xyz.z <= 1e-32f)
 		{
 			x = y = z = e = 0;
+			return;
 		}
-		else
-		{
-			max = (float)(MathHelper.FrExp(max, out var exponent) * 255.9999f / max);
 
-			x = (byte)(max * xyz.x);
-			y = (byte)(max * xyz.y);
-			z = (byte)(max * xyz.z);
-			e = (byte)(exponent + 128);
+		// Use shared exponent helper to convert from XYZ to shared exponent format
+		var (xi, yi, zi, ei) = ColorUtils.RgbToSharedExponent(
+			red: xyz.x,
+			green: xyz.y,
+			blue: xyz.z,
+			mantissaBits: 8,
+			bias: 128,
+			exponentMax: 255);
+
+		x = (byte)xi;
+		y = (byte)yi;
+		z = (byte)zi;
+		e = (byte)ei;
+	}
+}
+
+/// <summary>
+/// Represents a packed R9G9B9E5 shared exponent color.
+/// This format uses 9 bits each for red, green, and blue mantissas, with a shared 5-bit exponent.
+/// </summary>
+public struct ColorR9G9B9E5 : IColor<ColorR9G9B9E5>
+{
+	// The packed 32-bit value containing all components
+	public uint packedValue;
+
+	/// <summary>
+	/// Creates a new ColorR9G9B9E5 from a 32-bit packed value.
+	/// </summary>
+	public ColorR9G9B9E5(uint packedValue)
+	{
+		this.packedValue = packedValue;
+	}
+
+	/// <summary>
+	/// Creates a new ColorR9G9B9E5 from individual floating point values.
+	/// </summary>
+	public ColorR9G9B9E5(float r, float g, float b)
+	{
+		// Extract mantissas and shared exponent using ColorUtils helper
+		var (rm, gm, bm, exp) = ColorUtils.RgbToSharedExponent(
+			red: r,
+			green: g,
+			blue: b,
+			mantissaBits: 9,
+			bias: 15,
+			exponentMax: 31);
+
+		// Clamp mantissas to 9 bits
+		rm = Math.Min(rm, 0x1FF);
+		gm = Math.Min(gm, 0x1FF);
+		bm = Math.Min(bm, 0x1FF);
+
+		// Pack into 32-bit value
+		packedValue = rm | (gm << 9) | (bm << 18) | (exp << 27);
+	}
+
+	/// <inheritdoc />
+	public ColorRgbaFloat ToColorRgbaFloat()
+	{
+		// No need to convert if all values are zero
+		if (packedValue == 0)
+		{
+			return new ColorRgbaFloat(0, 0, 0);
 		}
+
+		// Extract components
+		uint rm = packedValue & 0x1FF;
+		uint gm = (packedValue >> 9) & 0x1FF;
+		uint bm = (packedValue >> 18) & 0x1FF;
+		uint exp = (packedValue >> 27) & 0x1F;
+
+		// Convert using ColorUtils helper
+		var (rf, gf, bf) = ColorUtils.SharedExponentToRgb((rm, gm, bm, exp), 9, 15);
+		return new ColorRgbaFloat(rf, gf, bf);
+	}
+
+	/// <inheritdoc />
+	public void FromColorRgbaFloat(ColorRgbaFloat color)
+	{
+		// Use constructor that handles the conversion
+		ColorR9G9B9E5 newColor = new ColorR9G9B9E5(color.r, color.g, color.b);
+		packedValue = newColor.packedValue;
+	}
+
+	/// <inheritdoc />
+	public bool Equals(ColorR9G9B9E5 other)
+	{
+		return packedValue == other.packedValue;
+	}
+
+	/// <inheritdoc />
+	public override bool Equals(object obj)
+	{
+		return obj is ColorR9G9B9E5 other && Equals(other);
+	}
+
+	/// <inheritdoc />
+	public override int GetHashCode()
+	{
+		return packedValue.GetHashCode();
+	}
+
+	public static bool operator ==(ColorR9G9B9E5 left, ColorR9G9B9E5 right)
+	{
+		return left.Equals(right);
+	}
+
+	public static bool operator !=(ColorR9G9B9E5 left, ColorR9G9B9E5 right)
+	{
+		return !left.Equals(right);
+	}
+
+	public override string ToString()
+	{
+		ColorRgbaFloat rgbaFloat = ToColorRgbaFloat();
+		return $"R: {rgbaFloat.r}, G: {rgbaFloat.g}, B: {rgbaFloat.b}";
 	}
 }

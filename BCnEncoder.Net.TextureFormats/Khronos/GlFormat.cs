@@ -42,7 +42,9 @@ namespace BCnEncoder.TextureFormats
 		GlUnsignedShort4444Rev = 33637,
 		GlUnsignedShort5551 = 32820,
 		GlUnsignedShort565 = 33635,
-		GlUnsignedShort565Rev = 33636
+		GlUnsignedShort565Rev = 33636,
+		GlUnsignedInt10F11F11FRev = 0x8C3B,
+		GlUnsignedInt5999Rev = 0x8C3E,
 	}
 
 	public enum GlInternalFormat : uint
@@ -77,7 +79,6 @@ namespace BCnEncoder.TextureFormats
 		GlR16Ui = 33332,
 		GlR32I = 33333,
 		GlR32Ui = 33334,
-
 
 		GlRg8I = 33335,
 		GlRg8Ui = 33336,
@@ -135,6 +136,12 @@ namespace BCnEncoder.TextureFormats
 		GlCompressedSrgbAlpha = 0x8C49,
 		GlCompressedSluminance = 0x8C4A,
 		GlCompressedSluminanceAlpha = 0x8C4B,
+
+		// EXT_packed_float
+		GlR11G11B10F = 0x8C3A,
+
+		// EXT_texture_shared_exponent
+		GlRgb9E5 = 0x8C3D,
 
 		//BC1
 		GlCompressedRgbS3TcDxt1Ext = 0x83F0,
@@ -365,26 +372,47 @@ namespace BCnEncoder.TextureFormats
 
 		private static Dictionary<CompressionFormat, (GlFormat format, GlInternalFormat internalFormat, GlType type)> FormatMapping { get; } =
 			new() {
-				// Raw formats
+				// Red-only formats
 				{ CompressionFormat.R8, (GlFormat.GlRed, GlInternalFormat.GlR8, GlType.GlUnsignedByte) },
-				{ CompressionFormat.R8S, (GlFormat.GlRedSnorm, GlInternalFormat.GlR8Snorm, GlType.GlByte) },
+				{ CompressionFormat.R8S, (GlFormat.GlRed, GlInternalFormat.GlR8Snorm, GlType.GlByte) },
+				{ CompressionFormat.R16, (GlFormat.GlRed, GlInternalFormat.GlR16, GlType.GlUnsignedShort) },
+				{ CompressionFormat.R16S, (GlFormat.GlRed, GlInternalFormat.GlR16Snorm, GlType.GlShort) },
+				{ CompressionFormat.R16F, (GlFormat.GlRed, GlInternalFormat.GlR16F, GlType.GlHalfFloat) },
+				{ CompressionFormat.R32F, (GlFormat.GlRed, GlInternalFormat.GlR32F, GlType.GlFloat) },
+
+				// Red-green formats
 				{ CompressionFormat.R8G8, (GlFormat.GlRg, GlInternalFormat.GlRg8, GlType.GlUnsignedByte) },
-				{ CompressionFormat.R8G8S, (GlFormat.GlRgSnorm, GlInternalFormat.GlRg8Snorm, GlType.GlByte) },
-				{ CompressionFormat.R10G10B10A2, (GlFormat.GlRgba, GlInternalFormat.GlRgb10A2, GlType.GlUnsignedInt1010102) },
+				{ CompressionFormat.R8G8S, (GlFormat.GlRg, GlInternalFormat.GlRg8Snorm, GlType.GlByte) },
+				{ CompressionFormat.R16G16, (GlFormat.GlRg, GlInternalFormat.GlRg16, GlType.GlUnsignedShort) },
+				{ CompressionFormat.R16G16S, (GlFormat.GlRg, GlInternalFormat.GlRg16Snorm, GlType.GlShort) },
+				{ CompressionFormat.R16G16F, (GlFormat.GlRg, GlInternalFormat.GlRg16F, GlType.GlHalfFloat) },
+				{ CompressionFormat.R32G32F, (GlFormat.GlRg, GlInternalFormat.GlRg32F, GlType.GlFloat) },
+
+				// RGB formats
 				{ CompressionFormat.Rgb24, (GlFormat.GlRgb, GlInternalFormat.GlRgb8, GlType.GlUnsignedByte) },
 				{ CompressionFormat.Rgb24_sRGB, (GlFormat.GlRgb, GlInternalFormat.GlSrgb8, GlType.GlUnsignedByte) },
-				{ CompressionFormat.Rgba32, (GlFormat.GlRgba, GlInternalFormat.GlRgba8, GlType.GlUnsignedByte) },
-				{ CompressionFormat.Rgba32_sRGB, (GlFormat.GlRgba, GlInternalFormat.GlSrgb8Alpha8, GlType.GlUnsignedByte) },
-				{ CompressionFormat.Bgra32, (GlFormat.GlBgra, GlInternalFormat.GlRgba8, GlType.GlUnsignedByte) },
-				{ CompressionFormat.Bgra32_sRGB, (GlFormat.GlBgra, GlInternalFormat.GlSrgb8Alpha8, GlType.GlUnsignedByte) },
-				{ CompressionFormat.RgbaFloat, (GlFormat.GlRgba, GlInternalFormat.GlRgba32F, GlType.GlFloat) },
-				{ CompressionFormat.RgbaHalf, (GlFormat.GlRgba, GlInternalFormat.GlRgba16F, GlType.GlHalfFloat) },
 				{ CompressionFormat.RgbFloat, (GlFormat.GlRgb, GlInternalFormat.GlRgb32F, GlType.GlFloat) },
 				{ CompressionFormat.RgbHalf, (GlFormat.GlRgb, GlInternalFormat.GlRgb16F, GlType.GlHalfFloat) },
+				{ CompressionFormat.R11G11B10UF_Packed, (GlFormat.GlRgb, GlInternalFormat.GlR11G11B10F, GlType.GlUnsignedInt10F11F11FRev) },
+				{ CompressionFormat.R9G9B9E5_Packed, (GlFormat.GlRgb, GlInternalFormat.GlRgb9E5, GlType.GlUnsignedInt5999Rev) },
+				{ CompressionFormat.R5G6B5_Packed, (GlFormat.GlRgb, GlInternalFormat.GlRgb565, GlType.GlUnsignedShort565Rev) },
+
+				// RGBA formats
+				{ CompressionFormat.R10G10B10A2_Packed, (GlFormat.GlRgba, GlInternalFormat.GlRgb10A2, GlType.GlUnsignedInt2101010Rev) },
+				{ CompressionFormat.Rgba32, (GlFormat.GlRgba, GlInternalFormat.GlRgba8, GlType.GlUnsignedByte) },
+				{ CompressionFormat.Rgba32_sRGB, (GlFormat.GlRgba, GlInternalFormat.GlSrgb8Alpha8, GlType.GlUnsignedByte) },
+				{ CompressionFormat.RgbaFloat, (GlFormat.GlRgba, GlInternalFormat.GlRgba32F, GlType.GlFloat) },
+				{ CompressionFormat.RgbaHalf, (GlFormat.GlRgba, GlInternalFormat.GlRgba16F, GlType.GlHalfFloat) },
+				{ CompressionFormat.R5G5B5A1_Packed, (GlFormat.GlRgba, GlInternalFormat.GlRgb5A1, GlType.GlUnsignedShort1555Rev) },
+				{ CompressionFormat.R4G4B4A4_Packed, (GlFormat.GlRgba, GlInternalFormat.GlRgba4, GlType.GlUnsignedShort4444Rev) },
+
+				// BGRA formats
+				{ CompressionFormat.Bgra32, (GlFormat.GlBgra, GlInternalFormat.GlRgba8, GlType.GlUnsignedByte) },
+				{ CompressionFormat.Bgra32_sRGB, (GlFormat.GlBgra, GlInternalFormat.GlSrgb8Alpha8, GlType.GlUnsignedByte) },
 
 				// Special formats (Rgbe and Xyze don't have direct OpenGL equivalents)
-				{ CompressionFormat.Rgbe, (GlFormat.GlRgba, GlInternalFormat.GlRgba8, GlType.GlUnsignedByte) }, // Best approximation
-				{ CompressionFormat.Xyze, (GlFormat.GlRgba, GlInternalFormat.GlRgba8, GlType.GlUnsignedByte) }, // Best approximation
+				{ CompressionFormat.Rgbe32, (GlFormat.GlRgba, GlInternalFormat.GlRgba8, GlType.GlUnsignedByte) }, // Best approximation
+				{ CompressionFormat.Xyze32, (GlFormat.GlRgba, GlInternalFormat.GlRgba8, GlType.GlUnsignedByte) }, // Best approximation
 
 				// BC formats
 				{ CompressionFormat.Bc1, (GlFormat.GlRgb, GlInternalFormat.GlCompressedRgbS3TcDxt1Ext, GlType.None) },
@@ -412,36 +440,62 @@ namespace BCnEncoder.TextureFormats
 
 		private static Dictionary<(GlInternalFormat internalFormat, GlFormat format), CompressionFormat> FormatMappingReverse { get; } =
 			new() {
-				// Raw formats
+				// Red-only formats
 				{ (GlInternalFormat.GlR8, GlFormat.GlRed), CompressionFormat.R8 },
 				{ (GlInternalFormat.GlR8Ui, GlFormat.GlRed), CompressionFormat.R8 },
 				{ (GlInternalFormat.GlR8I, GlFormat.GlRed), CompressionFormat.R8S },
 				{ (GlInternalFormat.GlR8Snorm, GlFormat.GlRed), CompressionFormat.R8S },
+				{ (GlInternalFormat.GlR16, GlFormat.GlRed), CompressionFormat.R16 },
+				{ (GlInternalFormat.GlR16Ui, GlFormat.GlRed), CompressionFormat.R16 },
+				{ (GlInternalFormat.GlR16I, GlFormat.GlRed), CompressionFormat.R16S },
+				{ (GlInternalFormat.GlR16Snorm, GlFormat.GlRed), CompressionFormat.R16S },
+				{ (GlInternalFormat.GlR16F, GlFormat.GlRed), CompressionFormat.R16F },
+				{ (GlInternalFormat.GlR32F, GlFormat.GlRed), CompressionFormat.R32F },
+
+				// Red-green formats
 				{ (GlInternalFormat.GlRg8, GlFormat.GlRg), CompressionFormat.R8G8 },
 				{ (GlInternalFormat.GlRg8Ui, GlFormat.GlRg), CompressionFormat.R8G8 },
 				{ (GlInternalFormat.GlRg8I, GlFormat.GlRg), CompressionFormat.R8G8S },
 				{ (GlInternalFormat.GlRg8Snorm, GlFormat.GlRg), CompressionFormat.R8G8S },
-				{ (GlInternalFormat.GlRgb10A2, GlFormat.GlRgba), CompressionFormat.R10G10B10A2 },
+				{ (GlInternalFormat.GlRg16, GlFormat.GlRg), CompressionFormat.R16G16 },
+				{ (GlInternalFormat.GlRg16Ui, GlFormat.GlRg), CompressionFormat.R16G16 },
+				{ (GlInternalFormat.GlRg16I, GlFormat.GlRg), CompressionFormat.R16G16S },
+				{ (GlInternalFormat.GlRg16Snorm, GlFormat.GlRg), CompressionFormat.R16G16S },
+				{ (GlInternalFormat.GlRg16F, GlFormat.GlRg), CompressionFormat.R16G16F },
+				{ (GlInternalFormat.GlRg32F, GlFormat.GlRg), CompressionFormat.R32G32F },
+
+				// RGB formats
 				{ (GlInternalFormat.GlRgb8, GlFormat.GlRgb), CompressionFormat.Rgb24 },
 				{ (GlInternalFormat.GlRgb8I, GlFormat.GlRgb), CompressionFormat.Rgb24 },
 				{ (GlInternalFormat.GlRgb8Ui, GlFormat.GlRgb), CompressionFormat.Rgb24 },
 				{ (GlInternalFormat.GlRgb8Snorm, GlFormat.GlRgb), CompressionFormat.Rgb24 },
 				{ (GlInternalFormat.GlSrgb8, GlFormat.GlRgb), CompressionFormat.Rgb24_sRGB },
 				{ (GlInternalFormat.GlSrgb, GlFormat.GlRgb), CompressionFormat.Rgb24_sRGB },
+				{ (GlInternalFormat.GlRgb32F, GlFormat.GlRgb), CompressionFormat.RgbFloat },
+				{ (GlInternalFormat.GlRgb16F, GlFormat.GlRgb), CompressionFormat.RgbHalf },
+				{ (GlInternalFormat.GlR11G11B10F, GlFormat.GlRgb), CompressionFormat.R11G11B10UF_Packed },
+				{ (GlInternalFormat.GlRgb9E5, GlFormat.GlRgb), CompressionFormat.R9G9B9E5_Packed },
+				{ (GlInternalFormat.GlRgb565, GlFormat.GlRgb), CompressionFormat.R5G6B5_Packed },
+
+				// RGBA formats
+				{ (GlInternalFormat.GlRgb10A2, GlFormat.GlRgba), CompressionFormat.R10G10B10A2_Packed },
+				{ (GlInternalFormat.GlRgb10A2Ui, GlFormat.GlRgba), CompressionFormat.R10G10B10A2_Packed },
 				{ (GlInternalFormat.GlRgba8, GlFormat.GlRgba), CompressionFormat.Rgba32 },
 				{ (GlInternalFormat.GlRgba8I, GlFormat.GlRgba), CompressionFormat.Rgba32 },
 				{ (GlInternalFormat.GlRgba8Ui, GlFormat.GlRgba), CompressionFormat.Rgba32 },
 				{ (GlInternalFormat.GlRgba8Snorm, GlFormat.GlRgba), CompressionFormat.Rgba32 },
 				{ (GlInternalFormat.GlSrgb8Alpha8, GlFormat.GlRgba), CompressionFormat.Rgba32_sRGB },
 				{ (GlInternalFormat.GlSrgbAlpha, GlFormat.GlRgba), CompressionFormat.Rgba32_sRGB },
+				{ (GlInternalFormat.GlRgba32F, GlFormat.GlRgba), CompressionFormat.RgbaFloat },
+				{ (GlInternalFormat.GlRgba16F, GlFormat.GlRgba), CompressionFormat.RgbaHalf },
+				{ (GlInternalFormat.GlRgb5A1, GlFormat.GlRgba), CompressionFormat.R5G5B5A1_Packed },
+				{ (GlInternalFormat.GlRgba4, GlFormat.GlRgba), CompressionFormat.R4G4B4A4_Packed },
+
+				// BGRA formats
 				{ (GlInternalFormat.GlBgra8Extension, GlFormat.GlBgra), CompressionFormat.Bgra32 },
 				{ (GlInternalFormat.GlFormatBgra, GlFormat.GlBgra), CompressionFormat.Bgra32 },
 				{ (GlInternalFormat.GlRgba8, GlFormat.GlBgra), CompressionFormat.Bgra32 },
 				{ (GlInternalFormat.GlSrgb8Alpha8, GlFormat.GlBgra), CompressionFormat.Bgra32_sRGB },
-				{ (GlInternalFormat.GlRgba32F, GlFormat.GlRgba), CompressionFormat.RgbaFloat },
-				{ (GlInternalFormat.GlRgba16F, GlFormat.GlRgba), CompressionFormat.RgbaHalf },
-				{ (GlInternalFormat.GlRgb32F, GlFormat.GlRgb), CompressionFormat.RgbFloat },
-				{ (GlInternalFormat.GlRgb16F, GlFormat.GlRgb), CompressionFormat.RgbHalf },
 
 				// BC formats
 				{ (GlInternalFormat.GlCompressedRgbS3TcDxt1Ext, GlFormat.GlRgb), CompressionFormat.Bc1 },
@@ -464,7 +518,7 @@ namespace BCnEncoder.TextureFormats
 				// ATC formats
 				{ (GlInternalFormat.GlCompressedRgbAtc, GlFormat.GlRgb), CompressionFormat.Atc },
 				{ (GlInternalFormat.GlCompressedRgbaAtcExplicitAlpha, GlFormat.GlRgba), CompressionFormat.AtcExplicitAlpha },
-				{ (GlInternalFormat.GlCompressedRgbaAtcInterpolatedAlpha, GlFormat.GlRgba), CompressionFormat.AtcInterpolatedAlpha },
+				{ (GlInternalFormat.GlCompressedRgbaAtcInterpolatedAlpha, GlFormat.GlRgba), CompressionFormat.AtcInterpolatedAlpha }
 			};
 	}
 }

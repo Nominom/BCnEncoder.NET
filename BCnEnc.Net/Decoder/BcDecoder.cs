@@ -248,17 +248,13 @@ namespace BCnEncoder.Decoder
 						var decoded = decoder.Decode(data, texture.Mips[m].Width,
 							texture.Mips[m].Height, context);
 
-						if (texture.Format.IsSNormFormat() && outputFormat.IsUNormFormat())
-						{
-							var resultSpan = decoded.AsSpan().Cast<byte, ColorRgbaFloat>();
+						// Get as span to process in-place
+						var resultSpan = decoded.AsSpan().Cast<byte, ColorRgbaFloat>();
 
-							for (int i = 0; i < resultSpan.Length; i++)
-							{
-								resultSpan[i] = new ColorRgbaFloat(
-									resultSpan[i].r * 0.5f + 0.5f,
-									resultSpan[i].g * 0.5f + 0.5f,
-									resultSpan[i].b * 0.5f + 0.5f);
-							}
+						// Convert to UNorm if needed
+						if (texture.Format.IsSNormFormat() && outputFormat.IsUNormFormat() && OutputOptions.RescaleSnormToUnorm)
+						{
+							SNormToUNorm(resultSpan);
 						}
 
 						// Apply alpha handling if needed
@@ -267,8 +263,6 @@ namespace BCnEncoder.Decoder
 							if (OutputOptions.AlphaHandling == AlphaHandling.Unpremultiply &&
 							    texture.AlphaChannelHint == AlphaChannelHint.Premultiplied)
 							{
-								// Get as span to process in-place
-								var resultSpan = decoded.AsSpan().Cast<byte, ColorRgbaFloat>();
 
 								// Unpremultiply alpha
 								AlphaHandlingHelper.UnpremultiplyAlpha(resultSpan);
@@ -333,28 +327,21 @@ namespace BCnEncoder.Decoder
 			}
 
 			var result = decoder.Decode(input, pixelWidth, pixelHeight, context);
+			var resultSpan = result.AsSpan().Cast<byte, ColorRgbaFloat>();
 
-			if (inputFormat.IsSNormFormat() && outputFormat.IsUNormFormat())
+			// Convert to UNorm if needed
+			if (inputFormat.IsSNormFormat() && outputFormat.IsUNormFormat() && OutputOptions.RescaleSnormToUnorm)
 			{
-				var resultSpan = result.AsSpan().Cast<byte, ColorRgbaFloat>();
-
-				for (int i = 0; i < resultSpan.Length; i++)
-				{
-					resultSpan[i] = new ColorRgbaFloat(
-						resultSpan[i].r * 0.5f + 0.5f,
-						resultSpan[i].g * 0.5f + 0.5f,
-						resultSpan[i].b * 0.5f + 0.5f);
-				}
+				SNormToUNorm(resultSpan);
 			}
 
 			// Apply alpha handling if needed
-			if (OutputOptions.AlphaHandling == AlphaHandling.Unpremultiply)
+			if (inputFormat.SupportsAlpha() && !inputFormat.IsHdrFormat())
 			{
-				// Get as span to process in-place
-				var resultSpan = result.AsSpan().Cast<byte, ColorRgbaFloat>();
-
-				// Unpremultiply alpha
-				AlphaHandlingHelper.UnpremultiplyAlpha(resultSpan);
+				if (OutputOptions.AlphaHandling == AlphaHandling.Unpremultiply)
+				{
+					AlphaHandlingHelper.UnpremultiplyAlpha(resultSpan);
+				}
 			}
 
 			ColorExtensions.InternalConvertToAsBytesFromBytes(result, output, CompressionFormat.RgbaFloat,
@@ -428,8 +415,8 @@ namespace BCnEncoder.Decoder
 				case CompressionFormat.R8G8S:
 					return new RawDecoder<ColorR8G8S>();
 
-				case CompressionFormat.R10G10B10A2:
-					return new RawDecoder<ColorR10G10B10A2>();
+				case CompressionFormat.R10G10B10A2_Packed:
+					return new RawDecoder<ColorR10G10B10A2Packed>();
 
 				case CompressionFormat.Rgb24:
 				case CompressionFormat.Rgb24_sRGB:
@@ -459,10 +446,10 @@ namespace BCnEncoder.Decoder
 				case CompressionFormat.RgbHalf:
 					return new RawDecoder<ColorRgbHalf>();
 
-				case CompressionFormat.Rgbe:
+				case CompressionFormat.Rgbe32:
 					return new RawDecoder<ColorRgbe>();
 
-				case CompressionFormat.Xyze:
+				case CompressionFormat.Xyze32:
 					return new RawDecoder<ColorXyze>();
 
 				case CompressionFormat.Bc1:
@@ -601,6 +588,18 @@ namespace BCnEncoder.Decoder
 
 			var output = new TOut[pixelWidth * pixelHeight * pixelDepth * tOutMultiplier];
 			return output;
+		}
+
+		private static void SNormToUNorm(Span<ColorRgbaFloat> colors)
+		{
+			for (int i = 0; i < colors.Length; i++)
+			{
+				colors[i] = new ColorRgbaFloat(
+					colors[i].r * 0.5f + 0.5f,
+					colors[i].g * 0.5f + 0.5f,
+					colors[i].b * 0.5f + 0.5f
+					);
+			}
 		}
 
 		#endregion

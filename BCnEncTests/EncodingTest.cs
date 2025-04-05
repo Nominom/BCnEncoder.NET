@@ -107,17 +107,17 @@ namespace BCnEncTests
 
 		[Theory]
 		// Rgbe
-		[InlineData("diffuse_1", CompressionFormat.Rgbe, CompressionQuality.Fast)]
-		[InlineData("diffuse_2", CompressionFormat.Rgbe, CompressionQuality.Fast)]
-		[InlineData("diffuse_3", CompressionFormat.Rgbe, CompressionQuality.Fast)]
-		[InlineData("diffuse_4", CompressionFormat.Rgbe, CompressionQuality.Fast)]
-		[InlineData("diffuse_5", CompressionFormat.Rgbe, CompressionQuality.Fast)]
+		[InlineData("diffuse_1", CompressionFormat.Rgbe32, CompressionQuality.Fast)]
+		[InlineData("diffuse_2", CompressionFormat.Rgbe32, CompressionQuality.Fast)]
+		[InlineData("diffuse_3", CompressionFormat.Rgbe32, CompressionQuality.Fast)]
+		[InlineData("diffuse_4", CompressionFormat.Rgbe32, CompressionQuality.Fast)]
+		[InlineData("diffuse_5", CompressionFormat.Rgbe32, CompressionQuality.Fast)]
 		// Xyze
-		[InlineData("diffuse_1", CompressionFormat.Xyze, CompressionQuality.Fast)]
-		[InlineData("diffuse_2", CompressionFormat.Xyze, CompressionQuality.Fast)]
-		[InlineData("diffuse_3", CompressionFormat.Xyze, CompressionQuality.Fast)]
-		[InlineData("diffuse_4", CompressionFormat.Xyze, CompressionQuality.Fast)]
-		[InlineData("diffuse_5", CompressionFormat.Xyze, CompressionQuality.Fast)]
+		[InlineData("diffuse_1", CompressionFormat.Xyze32, CompressionQuality.Fast)]
+		[InlineData("diffuse_2", CompressionFormat.Xyze32, CompressionQuality.Fast)]
+		[InlineData("diffuse_3", CompressionFormat.Xyze32, CompressionQuality.Fast)]
+		[InlineData("diffuse_4", CompressionFormat.Xyze32, CompressionQuality.Fast)]
+		[InlineData("diffuse_5", CompressionFormat.Xyze32, CompressionQuality.Fast)]
 		public void TestEncodingRgbe(string testImage, CompressionFormat format, CompressionQuality quality)
 		{
 			var outFileName = $"test_enc_hdr_{testImage}_{format}_{quality}.hdr";

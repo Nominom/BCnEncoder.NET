@@ -812,8 +812,8 @@ namespace BCnEncoder.Encoder
 				case CompressionFormat.Bgra32:
 				case CompressionFormat.Bgra32_sRGB:
 					return new RawPixelEncoder<ColorBgra32>();
-				case CompressionFormat.R10G10B10A2:
-					return new RawPixelEncoder<ColorR10G10B10A2>();
+				case CompressionFormat.R10G10B10A2_Packed:
+					return new RawPixelEncoder<ColorR10G10B10A2Packed>();
 				case CompressionFormat.RgbaFloat:
 					return new RawPixelEncoder<ColorRgbaFloat>();
 				case CompressionFormat.RgbaHalf:
@@ -822,9 +822,9 @@ namespace BCnEncoder.Encoder
 					return new RawPixelEncoder<ColorRgbFloat>();
 				case CompressionFormat.RgbHalf:
 					return new RawPixelEncoder<ColorRgbHalf>();
-				case CompressionFormat.Rgbe:
+				case CompressionFormat.Rgbe32:
 					return new RawPixelEncoder<ColorRgbe>();
-				case CompressionFormat.Xyze:
+				case CompressionFormat.Xyze32:
 					return new RawPixelEncoder<ColorXyze>();
 				case CompressionFormat.Bc1:
 				case CompressionFormat.Bc1_sRGB:

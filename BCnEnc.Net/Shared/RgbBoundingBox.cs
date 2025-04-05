@@ -12,7 +12,7 @@ namespace BCnEncoder.Shared
 	internal static class RgbBoundingBox
 	{
 
-		public static void Create565(ReadOnlySpan<ColorRgba32> colors, out ColorRgb565 min, out ColorRgb565 max)
+		public static void Create565(ReadOnlySpan<ColorRgba32> colors, out ColorB5G6R5Packed min, out ColorB5G6R5Packed max)
 		{
 			const int colorInsetShift = 4;
 			const int c5655Mask = 0xF8;
@@ -68,11 +68,11 @@ namespace BCnEncoder.Shared
 			maxG = (maxG & c5656Mask) | (maxG >> 6);
 			maxB = (maxB & c5655Mask) | (maxB >> 5);
 
-			min = new ColorRgb565((byte)minR, (byte)minG, (byte)minB);
-			max = new ColorRgb565((byte)maxR, (byte)maxG, (byte)maxB);
+			min = new ColorB5G6R5Packed((byte)minR, (byte)minG, (byte)minB);
+			max = new ColorB5G6R5Packed((byte)maxR, (byte)maxG, (byte)maxB);
 		}
 
-		public static void Create565AlphaCutoff(ReadOnlySpan<ColorRgba32> colors, out ColorRgb565 min, out ColorRgb565 max, int alphaCutoff = 128)
+		public static void Create565AlphaCutoff(ReadOnlySpan<ColorRgba32> colors, out ColorB5G6R5Packed min, out ColorB5G6R5Packed max, int alphaCutoff = 128)
 		{
 			const int colorInsetShift = 4;
 			const int c5655Mask = 0xF8;
@@ -126,11 +126,11 @@ namespace BCnEncoder.Shared
 			maxG = (maxG & c5656Mask) | (maxG >> 6);
 			maxB = (maxB & c5655Mask) | (maxB >> 5);
 
-			min = new ColorRgb565((byte)minR, (byte)minG, (byte)minB);
-			max = new ColorRgb565((byte)maxR, (byte)maxG, (byte)maxB);
+			min = new ColorB5G6R5Packed((byte)minR, (byte)minG, (byte)minB);
+			max = new ColorB5G6R5Packed((byte)maxR, (byte)maxG, (byte)maxB);
 		}
 
-		public static void Create565A(ReadOnlySpan<ColorRgba32> colors, out ColorRgb565 min, out ColorRgb565 max, out byte minAlpha, out byte maxAlpha)
+		public static void Create565A(ReadOnlySpan<ColorRgba32> colors, out ColorB5G6R5Packed min, out ColorB5G6R5Packed max, out byte minAlpha, out byte maxAlpha)
 		{
 			const int colorInsetShift = 4;
 			const int alphaInsetShift = 5;
@@ -194,8 +194,8 @@ namespace BCnEncoder.Shared
 			maxG = (maxG & c5656Mask) | (maxG >> 6);
 			maxB = (maxB & c5655Mask) | (maxB >> 5);
 
-			min = new ColorRgb565((byte)minR, (byte)minG, (byte)minB);
-			max = new ColorRgb565((byte)maxR, (byte)maxG, (byte)maxB);
+			min = new ColorB5G6R5Packed((byte)minR, (byte)minG, (byte)minB);
+			max = new ColorB5G6R5Packed((byte)maxR, (byte)maxG, (byte)maxB);
 			minAlpha = (byte)minA;
 			maxAlpha = (byte)maxA;
 		}

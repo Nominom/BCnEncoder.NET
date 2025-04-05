@@ -24,7 +24,7 @@ namespace BCnEncoder.Encoder
 			// According to http://www.guildsoftware.com/papers/2012.Converting.DXTC.to.Atc.pdf
 
 			// Change color0 from rgb565 to rgb555 with method 0
-			atcBlock.color0 = new ColorRgb555(bc1Block.color0.R, bc1Block.color0.G, bc1Block.color0.B);
+			atcBlock.color0 = new ColorB5G5R5M1Packed(bc1Block.color0.R, bc1Block.color0.G, bc1Block.color0.B);
 			atcBlock.color1 = bc1Block.color1;
 
 			// Remap color indices from BC1 to ATC

@@ -95,18 +95,37 @@ public static class D3DFormatExtensions
 
     private static Dictionary<CompressionFormat, D3DFormat> FormatMapping { get; } =
         new() {
-            // Raw formats
+            // Red-only formats
             { CompressionFormat.R8, D3DFormat.D3DFormatL8 },              // L8 is closest match for R8
-            { CompressionFormat.R8G8, D3DFormat.D3DFormatA8L8 },          // A8L8 is closest for R8G8
+            { CompressionFormat.R16, D3DFormat.D3DFormatL16 },             // L16 is closest match for R16
+            { CompressionFormat.R16F, D3DFormat.D3DFormatR16F },           // Direct match
+            { CompressionFormat.R32F, D3DFormat.D3DFormatR32F },           // Direct match
+
+            // Red-green formats
+            { CompressionFormat.R8G8, D3DFormat.D3DFormatA8L8 },           // A8L8 is closest for R8G8
+            { CompressionFormat.R16G16, D3DFormat.D3DFormatG16R16 },       // G16R16 in D3D9 has memory order RG
+            { CompressionFormat.R16G16F, D3DFormat.D3DFormatG16R16F },     // G16R16F in D3D9 has memory order RG
+            { CompressionFormat.R32G32F, D3DFormat.D3DFormatG32R32F },     // G32R32F in D3D9 has memory order RG
+
+            // RGBA formats
+            { CompressionFormat.R10G10B10A2_Packed, D3DFormat.D3DFormatA2B10G10R10 }, // Note component order
             { CompressionFormat.Rgba32, D3DFormat.D3DFormatA8B8G8R8 },     // A8B8G8R8 in D3D9 has memory order RGBA
             { CompressionFormat.Rgba32_sRGB, D3DFormat.D3DFormatA8B8G8R8 }, // D3D9 doesn't have sRGB explicitly
-            { CompressionFormat.Bgra32, D3DFormat.D3DFormatA8R8G8B8 },     // A8R8G8B8 in D3D9 has memory order BGRA
-            { CompressionFormat.Bgra32_sRGB, D3DFormat.D3DFormatA8R8G8B8 },
-            { CompressionFormat.R10G10B10A2, D3DFormat.D3DFormatA2B10G10R10 }, // Note component order
-            { CompressionFormat.Bgr24, D3DFormat.D3DFormatR8G8B8 },
-            { CompressionFormat.Bgr24_sRGB, D3DFormat.D3DFormatR8G8B8 },
             { CompressionFormat.RgbaFloat, D3DFormat.D3DFormatA32B32G32R32F },
             { CompressionFormat.RgbaHalf, D3DFormat.D3DFormatA16B16G16R16F },
+
+            // BGR formats
+            { CompressionFormat.Bgr24, D3DFormat.D3DFormatR8G8B8 },
+            { CompressionFormat.Bgr24_sRGB, D3DFormat.D3DFormatR8G8B8 },
+            { CompressionFormat.B5G6R5_Packed, D3DFormat.D3DFormatR5G6B5 },        // D3D9 RGB order is BGR in memory
+            { CompressionFormat.Bgr24x8, D3DFormat.D3DFormatX8R8G8B8 },
+            { CompressionFormat.Bgr24x8_sRGB, D3DFormat.D3DFormatX8R8G8B8 },
+
+            // BGRA formats
+            { CompressionFormat.B5G5R5A1_Packed, D3DFormat.D3DFormatA1R5G5B5 },    // D3D9 BGRA order is ARGB in memory (perfect match)
+            { CompressionFormat.B4G4R4A4_Packed, D3DFormat.D3DFormatA4R4G4B4 },    // D3D9 BGRA order is ARGB in memory (perfect match)
+            { CompressionFormat.Bgra32, D3DFormat.D3DFormatA8R8G8B8 },     // A8R8G8B8 in D3D9 has memory order BGRA
+            { CompressionFormat.Bgra32_sRGB, D3DFormat.D3DFormatA8R8G8B8 },
 
             // BC formats
             { CompressionFormat.Bc1, D3DFormat.D3DFormatDXT1 },
@@ -120,22 +139,37 @@ public static class D3DFormatExtensions
 
             // No D3D9 equivalents for the newer BC formats
             // BC4, BC5, BC6, BC7 were introduced with Direct3D 10
-
-            // D3D9 specific formats that have no close match in CompressionFormat
-            // D3DFormatDXT2 and D3DFormatDXT4 are premultiplied alpha variants of DXT3 and DXT5
         };
 
     private static Dictionary<D3DFormat, CompressionFormat> FormatMappingReverse { get; } =
         new() {
-            // Manual reverse mapping (not using ToDictionary to handle duplicates)
+            // Red-only formats
             { D3DFormat.D3DFormatL8, CompressionFormat.R8 },
+            { D3DFormat.D3DFormatL16, CompressionFormat.R16 },
+            { D3DFormat.D3DFormatR16F, CompressionFormat.R16F },
+            { D3DFormat.D3DFormatR32F, CompressionFormat.R32F },
+
+            // Red-green formats
             { D3DFormat.D3DFormatA8L8, CompressionFormat.R8G8 },
-            { D3DFormat.D3DFormatA8R8G8B8, CompressionFormat.Bgra32 },
+            { D3DFormat.D3DFormatG16R16, CompressionFormat.R16G16 },
+            { D3DFormat.D3DFormatG16R16F, CompressionFormat.R16G16F },
+            { D3DFormat.D3DFormatG32R32F, CompressionFormat.R32G32F },
+
+            // RGBA formats
+            { D3DFormat.D3DFormatA2B10G10R10, CompressionFormat.R10G10B10A2_Packed },
             { D3DFormat.D3DFormatA8B8G8R8, CompressionFormat.Rgba32 },
-            { D3DFormat.D3DFormatA2B10G10R10, CompressionFormat.R10G10B10A2 },
-            { D3DFormat.D3DFormatR8G8B8, CompressionFormat.Bgr24 },
             { D3DFormat.D3DFormatA32B32G32R32F, CompressionFormat.RgbaFloat },
             { D3DFormat.D3DFormatA16B16G16R16F, CompressionFormat.RgbaHalf },
+
+            // BGR formats
+            { D3DFormat.D3DFormatR8G8B8, CompressionFormat.Bgr24 },
+            { D3DFormat.D3DFormatR5G6B5, CompressionFormat.B5G6R5_Packed },
+            { D3DFormat.D3DFormatX8R8G8B8, CompressionFormat.Bgr24x8 },
+
+            // BGRA formats
+            { D3DFormat.D3DFormatA1R5G5B5, CompressionFormat.B5G5R5A1_Packed },
+            { D3DFormat.D3DFormatA4R4G4B4, CompressionFormat.B4G4R4A4_Packed },
+            { D3DFormat.D3DFormatA8R8G8B8, CompressionFormat.Bgra32 },
 
             // BC formats
             { D3DFormat.D3DFormatDXT1, CompressionFormat.Bc1 },

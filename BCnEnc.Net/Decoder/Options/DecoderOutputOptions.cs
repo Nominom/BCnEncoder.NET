@@ -121,5 +121,10 @@ namespace BCnEncoder.Decoder.Options
 		/// Controls how transparency (alpha channel) is handled during decoding.
 		/// </summary>
 		public AlphaHandling AlphaHandling { get; set; } = AlphaHandling.KeepAsIs;
+
+		/// <summary>
+		/// Whether to rescale signed normalized values [-1, 1] to unsigned normalized values [0, 1], when applicable.
+		/// </summary>
+		public bool RescaleSnormToUnorm { get; set; } = true;
 	}
 }

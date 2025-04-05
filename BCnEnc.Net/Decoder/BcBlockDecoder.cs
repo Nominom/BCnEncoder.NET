@@ -103,7 +103,7 @@ namespace BCnEncoder.Decoder
 	{
 		protected override RawBlock4X4RgbaFloat DecodeBlock(Bc1Block block)
 		{
-			return block.Decode(false);
+			return block.Decode(true, false);
 		}
 	}
 
@@ -111,7 +111,7 @@ namespace BCnEncoder.Decoder
 	{
 		protected override RawBlock4X4RgbaFloat DecodeBlock(Bc1Block block)
 		{
-			return block.Decode(true);
+			return block.Decode(true, true);
 		}
 	}
 

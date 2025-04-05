@@ -43,7 +43,7 @@ namespace BCnEncoder.TextureFormats
 		/// <inheritdoc />
 		public bool IsSupportedFormat(CompressionFormat format)
 		{
-			return format == CompressionFormat.Rgbe || format == CompressionFormat.Xyze;
+			return format == CompressionFormat.Rgbe32 || format == CompressionFormat.Xyze32;
 		}
 
 		/// <inheritdoc />
@@ -51,12 +51,12 @@ namespace BCnEncoder.TextureFormats
 		{
 			if (!IsSupportedFormat(textureData.Format))
 			{
-				textureData = textureData.ConvertTo(CompressionFormat.Rgbe);
+				textureData = textureData.ConvertTo(CompressionFormat.Rgbe32);
 			}
 
 			width = textureData.Width;
 			height = textureData.Height;
-			colorSpace = textureData.Format == CompressionFormat.Rgbe ? ColorSpace.Rgbe : ColorSpace.Xyze;
+			colorSpace = textureData.Format == CompressionFormat.Rgbe32 ? ColorSpace.Rgbe : ColorSpace.Xyze;
 			pixelData = textureData.First.Data;
 			exposure = 1;
 			gamma = 1;
@@ -66,7 +66,7 @@ namespace BCnEncoder.TextureFormats
 		public BCnTextureData ToTextureData()
 		{
 			return BCnTextureData.FromSingle(
-				colorSpace == ColorSpace.Rgbe ? CompressionFormat.Rgbe : CompressionFormat.Xyze,
+				colorSpace == ColorSpace.Rgbe ? CompressionFormat.Rgbe32 : CompressionFormat.Xyze32,
 				width,
 				height,
 				pixelData,

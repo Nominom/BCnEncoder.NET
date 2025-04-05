@@ -4,13 +4,13 @@ using Xunit;
 
 namespace BCnEncTests.Colors
 {
-    public class ColorR10G10B10A2Test
+    public class ColorR10G10B10A2PackedTest
     {
         [Fact]
         public void AccessComponentValues_HighAndLowBitValues()
         {
             // Test high values (all bits set)
-            var colorHigh = new ColorR10G10B10A2(1.0f, 1.0f, 1.0f, 1.0f);
+            var colorHigh = new ColorR10G10B10A2Packed(1.0f, 1.0f, 1.0f, 1.0f);
 
             Assert.Equal(1.0f, colorHigh.R);
             Assert.Equal(1.0f, colorHigh.G);
@@ -23,7 +23,7 @@ namespace BCnEncTests.Colors
             Assert.Equal(3u, colorHigh.RawA);    // 2 bits all set = 3
 
             // Test low values (no bits set)
-            var colorLow = new ColorR10G10B10A2(0.0f, 0.0f, 0.0f, 0.0f);
+            var colorLow = new ColorR10G10B10A2Packed(0.0f, 0.0f, 0.0f, 0.0f);
 
             Assert.Equal(0.0f, colorLow.R);
             Assert.Equal(0.0f, colorLow.G);
@@ -36,7 +36,7 @@ namespace BCnEncTests.Colors
             Assert.Equal(0u, colorLow.RawA);
 
             // Test mid values (roughly half bits set)
-            var colorMid = new ColorR10G10B10A2(0.5f, 0.5f, 0.5f, 0.5f);
+            var colorMid = new ColorR10G10B10A2Packed(0.5f, 0.5f, 0.5f, 0.5f);
 
             Assert.Equal(0.5f, colorMid.R, 3); // Allow small floating point error
             Assert.Equal(0.5f, colorMid.G, 3);
@@ -60,7 +60,7 @@ namespace BCnEncTests.Colors
         public void SetComponentValues_Individual()
         {
             // Create a color and modify R, G, B, A individually
-            var color = new ColorR10G10B10A2(0.0f, 0.0f, 0.0f, 0.0f);
+            var color = new ColorR10G10B10A2Packed(0.0f, 0.0f, 0.0f, 0.0f);
 
             // Test setting R component
             color.R = 1.0f;
@@ -113,7 +113,7 @@ namespace BCnEncTests.Colors
         public void SetBitMasks_EnsureCorrectBitPositions()
         {
             // Test that bit masks are working correctly
-            var color = new ColorR10G10B10A2(0.0f, 0.0f, 0.0f, 0.0f);
+            var color = new ColorR10G10B10A2Packed(0.0f, 0.0f, 0.0f, 0.0f);
 
             // Set raw values directly to test masks
             color.RawR = 1023; // All 10 bits of R set
@@ -165,7 +165,7 @@ namespace BCnEncTests.Colors
         public void BoundaryValues_ClampNegativeAndOverflow()
         {
             // Test negative values (should clamp to 0)
-            var color = new ColorR10G10B10A2(-1.0f, -0.5f, -0.1f, -0.2f);
+            var color = new ColorR10G10B10A2Packed(-1.0f, -0.5f, -0.1f, -0.2f);
 
             Assert.Equal(0.0f, color.R);
             Assert.Equal(0.0f, color.G);
@@ -173,7 +173,7 @@ namespace BCnEncTests.Colors
             Assert.Equal(0.0f, color.A);
 
             // Test overflow values (should clamp to 1.0)
-            color = new ColorR10G10B10A2(1.5f, 2.0f, 10.0f, 5.0f);
+            color = new ColorR10G10B10A2Packed(1.5f, 2.0f, 10.0f, 5.0f);
 
             Assert.Equal(1.0f, color.R);
             Assert.Equal(1.0f, color.G);
@@ -181,7 +181,7 @@ namespace BCnEncTests.Colors
             Assert.Equal(1.0f, color.A);
 
             // Test setting raw values beyond limits
-            color = new ColorR10G10B10A2(0, 0, 0, 0);
+            color = new ColorR10G10B10A2Packed(0, 0, 0, 0);
             color.RawR = 2000; // Beyond 10-bit limit
             color.RawG = 5000; // Beyond 10-bit limit
             color.RawB = 10000; // Beyond 10-bit limit
@@ -197,9 +197,9 @@ namespace BCnEncTests.Colors
         public void ColorRgbaFloat_ConversionRoundTrip()
         {
             // Test conversion from ColorR10G10B10A2 to ColorRgbaFloat and back
-            var original = new ColorR10G10B10A2(0.1f, 0.5f, 0.75f, 0.66f);
+            var original = new ColorR10G10B10A2Packed(0.1f, 0.5f, 0.75f, 0.66f);
             var rgbaFloat = original.ToColorRgbaFloat();
-            var roundTrip = rgbaFloat.As<ColorR10G10B10A2>();
+            var roundTrip = rgbaFloat.As<ColorR10G10B10A2Packed>();
 
             // Compare float values with small tolerance due to precision loss
             Assert.Equal(original.R, rgbaFloat.r, 3);
@@ -214,9 +214,9 @@ namespace BCnEncTests.Colors
             Assert.Equal(original.A, roundTrip.A, 3);
 
             // Try with all 1s
-            original = new ColorR10G10B10A2(1.0f, 1.0f, 1.0f, 1.0f);
+            original = new ColorR10G10B10A2Packed(1.0f, 1.0f, 1.0f, 1.0f);
             rgbaFloat = original.ToColorRgbaFloat();
-	        roundTrip = rgbaFloat.As<ColorR10G10B10A2>();
+	        roundTrip = rgbaFloat.As<ColorR10G10B10A2Packed>();
 
             Assert.Equal(1.0f, rgbaFloat.r);
             Assert.Equal(1.0f, rgbaFloat.g);
@@ -229,9 +229,9 @@ namespace BCnEncTests.Colors
             Assert.Equal(original.A, roundTrip.A);
 
             // Try with all 0s
-            original = new ColorR10G10B10A2(0.0f, 0.0f, 0.0f, 0.0f);
+            original = new ColorR10G10B10A2Packed(0.0f, 0.0f, 0.0f, 0.0f);
             rgbaFloat = original.ToColorRgbaFloat();
-            roundTrip = rgbaFloat.As<ColorR10G10B10A2>();
+            roundTrip = rgbaFloat.As<ColorR10G10B10A2Packed>();
 
             Assert.Equal(0.0f, rgbaFloat.r);
             Assert.Equal(0.0f, rgbaFloat.g);
@@ -249,7 +249,7 @@ namespace BCnEncTests.Colors
         {
             // Create ColorR10G10B10A2 from ColorRgba32 and convert back
             var rgba32 = new ColorRgba32(128, 64, 192, 255);
-            var r10g10b10a2 = rgba32.As<ColorR10G10B10A2>();
+            var r10g10b10a2 = rgba32.As<ColorR10G10B10A2Packed>();
 
             // Check that values were preserved within reasonable limits
             // There will be some precision loss due to converting from 8-bit to 10-bit and back

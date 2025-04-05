@@ -15,11 +15,11 @@ namespace BCnEncoder.Encoder
 		private static readonly int[] variatePatternEp1B = new int[] { -1, 0, 0, -1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, -1, 0, 0, 1, 0, 0, -1 };
 		public static int VarPatternCount => variatePatternEp0R.Length;
 
-		public static (ColorRgb565, ColorRgb565) Variate565(ColorRgb565 c0, ColorRgb565 c1, int i)
+		public static (ColorB5G6R5Packed, ColorB5G6R5Packed) Variate565(ColorB5G6R5Packed c0, ColorB5G6R5Packed c1, int i)
 		{
 			var idx = i % variatePatternEp0R.Length;
-			var newEp0 = new ColorRgb565();
-			var newEp1 = new ColorRgb565();
+			var newEp0 = new ColorB5G6R5Packed();
+			var newEp1 = new ColorB5G6R5Packed();
 
 			newEp0.RawR = ByteHelper.ClampToByte(c0.RawR + variatePatternEp0R[idx]);
 			newEp0.RawG = ByteHelper.ClampToByte(c0.RawG + variatePatternEp0G[idx]);

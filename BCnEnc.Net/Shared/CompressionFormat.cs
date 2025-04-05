@@ -31,12 +31,6 @@ namespace BCnEncoder.Shared
 		R8G8S,
 
 		/// <summary>
-		/// Raw 32-bit R10G10B10A2 format in linear colorspace. Pixel format <see cref="ColorR10G10B10A2"/>.
-		/// 10 bits per channel for RGB and 2 bits for Alpha.
-		/// </summary>
-		R10G10B10A2,
-
-		/// <summary>
 		/// Raw unsigned byte 24-bit RGB data in linear colorspace. Pixel format <see cref="ColorRgb24"/>.
 		/// </summary>
 		Rgb24,
@@ -79,6 +73,18 @@ namespace BCnEncoder.Shared
 		Bgra32_sRGB,
 
 		/// <summary>
+		/// Raw unsigned byte 32-bit BGR data in linear colorspace. Pixel format <see cref="ColorBgra32"/>.
+		/// 8 bits are unused.
+		/// </summary>
+		Bgr24x8,
+
+		/// <summary>
+		/// Raw unsigned byte 32-bit BGR data in the sRGB colorspace. Pixel format <see cref="ColorBgra32"/>.
+		/// 8 bits are unused.
+		/// </summary>
+		Bgr24x8_sRGB,
+
+		/// <summary>
 		/// Raw floating point 32-bit-per-channel RGBA data in linear colorspace. Pixel format <see cref="ColorRgbaFloat"/>.
 		/// </summary>
 		RgbaFloat,
@@ -101,12 +107,157 @@ namespace BCnEncoder.Shared
 		/// <summary>
 		/// 32-bit-per-pixel Hdr data with 24-bits for RGB (in linear colorspace) and 8 bits for exponent. Pixel format <see cref="ColorRgbe"/>.
 		/// </summary>
-		Rgbe,
+		Rgbe32,
 
 		/// <summary>
 		/// 32-bit-per-pixel Hdr data with 24-bits for RGB (in CIE_1931 XYZ colorspace) and 8 bits for exponent. Pixel format <see cref="ColorXyze"/>.
 		/// </summary>
-		Xyze,
+		Xyze32,
+
+		/// <summary>
+		/// Raw 16-bit Unorm single channel format. 16 bits for Red channel.
+		/// </summary>
+		R16,
+
+		/// <summary>
+		/// Raw 16-bit Snorm single channel format. 16 bits for Red channel.
+		/// </summary>
+		R16S,
+
+		/// <summary>
+		/// Raw 16-bit Float single channel format. 16 bits for Red channel.
+		/// </summary>
+		R16F,
+
+		/// <summary>
+		/// Raw 32-bit Float single channel format. 32 bits for Red channel.
+		/// </summary>
+		R32F,
+
+		/// <summary>
+		/// Raw 16-bit-per-channel Unorm dual channel format. 16 bits each for Red and Green channels.
+		/// </summary>
+		R16G16,
+
+		/// <summary>
+		/// Raw 16-bit-per-channel Snorm dual channel format. 16 bits each for Red and Green channels.
+		/// </summary>
+		R16G16S,
+
+		/// <summary>
+		/// Raw 16-bit-per-channel Float dual channel format. 16 bits each for Red and Green channels.
+		/// </summary>
+		R16G16F,
+
+		/// <summary>
+		/// Raw 32-bit-per-channel Float dual channel format. 32 bits each for Red and Green channels.
+		/// </summary>
+		R32G32F,
+
+
+
+		// ==== PACKED Formats ====
+
+		/// <summary>
+		/// 32-bit packed format with 2-bit Alpha, 10-bit Blue, 10-bit Green, and 10-bit Red components.
+		/// Bits ordered from MSB to LSB as: A[31:30] B[29:20] G[19:10] R[9:0].
+		/// Equivalent to VK_FORMAT_A2B10G10R10_UNORM_PACK32 and DXGI_FORMAT_R10G10B10A2_UNORM.
+		/// </summary>
+		R10G10B10A2_Packed,
+
+		/// <summary>
+		/// 32-bit packed format with 2-bit Alpha, 10-bit Red, 10-bit Green, and 10-bit Blue components.
+		/// Bits ordered from MSB to LSB as: A[31:30] R[29:20] G[19:10] B[9:0].
+		/// Equivalent to VK_FORMAT_A2R10G10B10_UNORM_PACK32.
+		/// </summary>
+		B10G10R10A2_Packed,
+
+		/// <summary>
+		/// 16-bit packed format with 5-bit Red, 6-bit Green, and 5-bit Blue components.
+		/// Bits ordered from MSB to LSB as: R[15:11] G[10:5] B[4:0].
+		/// Equivalent to VK_FORMAT_R5G6B5_UNORM_PACK16 and DXGI_FORMAT_B5G6R5_UNORM.
+		/// </summary>
+		B5G6R5_Packed,
+
+		/// <summary>
+		/// 16-bit packed format with 5-bit Blue, 6-bit Green, and 5-bit Red components.
+		/// Bits ordered from MSB to LSB as: B[15:11] G[10:5] R[4:0].
+		/// Equivalent to VK_FORMAT_B5G6R5_UNORM_PACK16.
+		/// </summary>
+		R5G6B5_Packed,
+
+		/// <summary>
+		/// 16-bit packed format with 5-bit Red, 5-bit Green, 5-bit Blue, and 1-bit Alpha components.
+		/// Bits ordered from MSB to LSB as: R[15:11] G[10:6] B[5:1] A[0].
+		/// Equivalent to VK_FORMAT_R5G5B5A1_UNORM_PACK16.
+		/// </summary>
+		A1B5G5R5_Packed,
+
+		/// <summary>
+		/// 16-bit packed format with 5-bit Blue, 5-bit Green, 5-bit Red, and 1-bit Alpha components.
+		/// Bits ordered from MSB to LSB as: B[15:11] G[10:6] R[5:1] A[0].
+		/// Equivalent to VK_FORMAT_B5G5R5A1_UNORM_PACK16.
+		/// </summary>
+		A1R5G5B5_Packed,
+
+		/// <summary>
+		/// 16-bit packed format with 1-bit Alpha, 5-bit Red, 5-bit Green, and 5-bit Blue components.
+		/// Bits ordered from MSB to LSB as: A[15] R[14:10] G[9:5] B[4:0].
+		/// Equivalent to VK_FORMAT_A1R5G5B5_UNORM_PACK16 and DXGI_FORMAT_B5G5R5A1_UNORM.
+		/// </summary>
+		B5G5R5A1_Packed,
+
+		/// <summary>
+		/// 16-bit packed format with 1-bit Alpha, 5-bit Blue, 5-bit Green, and 5-bit Red components.
+		/// Bits ordered from MSB to LSB as: A[15] B[14:10] G[9:5] R[4:0].
+		/// Equivalent to VK_FORMAT_A1B5G5R5_UNORM_PACK16.
+		/// </summary>
+		R5G5B5A1_Packed,
+
+		/// <summary>
+		/// 16-bit packed format with 4-bit Red, 4-bit Green, 4-bit Blue, and 4-bit Alpha components.
+		/// Bits ordered from MSB to LSB as: R[15:12] G[11:8] B[7:4] A[3:0].
+		/// Equivalent to VK_FORMAT_R4G4B4A4_UNORM_PACK16 and DXGI_FORMAT_A4B4G4R4_UNORM.
+		/// </summary>
+		A4B4G4R4_Packed,
+
+		/// <summary>
+		/// 16-bit packed format with 4-bit Blue, 4-bit Green, 4-bit Red, and 4-bit Alpha components.
+		/// Bits ordered from MSB to LSB as: B[15:12] G[11:8] R[7:4] A[3:0].
+		/// Equivalent to VK_FORMAT_B4G4R4A4_UNORM_PACK16.
+		/// </summary>
+		A4R4G4B4_Packed,
+
+		/// <summary>
+		/// 16-bit packed format with 4-bit Alpha, 4-bit Red, 4-bit Green, and 4-bit Blue components.
+		/// Bits ordered from MSB to LSB as: A[15:12] R[11:8] G[7:4] B[3:0].
+		/// Equivalent to VK_FORMAT_A4R4G4B4_UNORM_PACK16 and DXGI_FORMAT_B4G4R4A4_UNORM.
+		/// </summary>
+		B4G4R4A4_Packed,
+
+		/// <summary>
+		/// 16-bit packed format with 4-bit Alpha, 4-bit Blue, 4-bit Green, and 4-bit Red components.
+		/// Bits ordered from MSB to LSB as: A[15:12] B[11:8] G[7:4] R[3:0].
+		/// Equivalent to VK_FORMAT_A4B4G4R4_UNORM_PACK16.
+		/// </summary>
+		R4G4B4A4_Packed,
+
+		/// <summary>
+		/// 32-bit packed shared-exponent format with 5-bit Exponent, 9-bit Blue, 9-bit Green, and 9-bit Red components.
+		/// Bits ordered from MSB to LSB as: E[31:27] B[26:18] G[17:9] R[8:0].
+		/// Equivalent to VK_FORMAT_E5B9G9R9_UFLOAT_PACK32 and DXGI_FORMAT_R9G9B9E5_SHAREDEXP.
+		/// </summary>
+		R9G9B9E5_Packed,
+
+		/// <summary>
+		/// 32-bit packed floating point format with 10-bit Blue, 11-bit Green, and 11-bit Red components.
+		/// Bits ordered from MSB to LSB as: B[31:22] G[21:11] R[10:0].
+		/// Equivalent to VK_FORMAT_B10G11R11_UFLOAT_PACK32 and DXGI_FORMAT_R11G11B10_FLOAT.
+		/// </summary>
+		R11G11B10UF_Packed,
+
+
+		// ==== BCN Formats ====
 
 		/// <summary>
 		/// BC1 / DXT1 with no alpha in linear colorspace. Very widely supported and good compression ratio.
@@ -217,6 +368,7 @@ namespace BCnEncoder.Shared
 		RawUnormSrgb,
 		RawSnorm,
 		RawFloat,
+		RawUFloat,
 		RawSharedExponent,
 		BlockUnorm,
 		BlockUnormSrgb,
@@ -258,32 +410,59 @@ namespace BCnEncoder.Shared
 
 		public static IReadOnlyDictionary<CompressionFormat, CompressionFormatInfo> Infos { get; } = new Dictionary<CompressionFormat, CompressionFormatInfo>()
 		{
-			// Raw Formats
+			// Single-channel formats (R)
 			{ CompressionFormat.R8,              new CompressionFormatInfo(CompressionFormat.R8,              CompressionFormatType.RawUnorm,     false, BlockPixelSize.Size1x1x1, typeof(ColorR8))},
+			{ CompressionFormat.R8S,             new CompressionFormatInfo(CompressionFormat.R8S,             CompressionFormatType.RawSnorm,     false, BlockPixelSize.Size1x1x1, typeof(ColorR8S))},
+			{ CompressionFormat.R16,             new CompressionFormatInfo(CompressionFormat.R16,             CompressionFormatType.RawUnorm,     false, BlockPixelSize.Size1x1x1, typeof(ColorR16))},
+			{ CompressionFormat.R16S,            new CompressionFormatInfo(CompressionFormat.R16S,            CompressionFormatType.RawSnorm,     false, BlockPixelSize.Size1x1x1, typeof(ColorR16S))},
+			{ CompressionFormat.R16F,            new CompressionFormatInfo(CompressionFormat.R16F,            CompressionFormatType.RawFloat,     false, BlockPixelSize.Size1x1x1, typeof(ColorR16F))},
+			{ CompressionFormat.R32F,            new CompressionFormatInfo(CompressionFormat.R32F,            CompressionFormatType.RawFloat,     false, BlockPixelSize.Size1x1x1, typeof(ColorR32F))},
+
+			// Dual-channel formats (RG)
 			{ CompressionFormat.R8G8,            new CompressionFormatInfo(CompressionFormat.R8G8,            CompressionFormatType.RawUnorm,     false, BlockPixelSize.Size1x1x1, typeof(ColorR8G8))},
-			{ CompressionFormat.R10G10B10A2,     new CompressionFormatInfo(CompressionFormat.R10G10B10A2,     CompressionFormatType.RawUnorm,     true,  BlockPixelSize.Size1x1x1, typeof(ColorR10G10B10A2))},
+			{ CompressionFormat.R8G8S,           new CompressionFormatInfo(CompressionFormat.R8G8S,           CompressionFormatType.RawSnorm,     false, BlockPixelSize.Size1x1x1, typeof(ColorR8G8S))},
+			{ CompressionFormat.R16G16,          new CompressionFormatInfo(CompressionFormat.R16G16,          CompressionFormatType.RawUnorm,     false, BlockPixelSize.Size1x1x1, typeof(System.Numerics.Vector2))},
+			{ CompressionFormat.R16G16S,         new CompressionFormatInfo(CompressionFormat.R16G16S,         CompressionFormatType.RawSnorm,     false, BlockPixelSize.Size1x1x1, typeof(System.Numerics.Vector2))},
+			{ CompressionFormat.R16G16F,         new CompressionFormatInfo(CompressionFormat.R16G16F,         CompressionFormatType.RawFloat,     false, BlockPixelSize.Size1x1x1, typeof(System.Numerics.Vector2))},
+			{ CompressionFormat.R32G32F,         new CompressionFormatInfo(CompressionFormat.R32G32F,         CompressionFormatType.RawFloat,     false, BlockPixelSize.Size1x1x1, typeof(System.Numerics.Vector2))},
+
+			// Triple-channel formats (RGB)
 			{ CompressionFormat.Rgb24,           new CompressionFormatInfo(CompressionFormat.Rgb24,           CompressionFormatType.RawUnorm,     false, BlockPixelSize.Size1x1x1, typeof(ColorRgb24))},
 			{ CompressionFormat.Rgb24_sRGB,      new CompressionFormatInfo(CompressionFormat.Rgb24_sRGB,      CompressionFormatType.RawUnormSrgb, false, BlockPixelSize.Size1x1x1, typeof(ColorRgb24))},
 			{ CompressionFormat.Bgr24,           new CompressionFormatInfo(CompressionFormat.Bgr24,           CompressionFormatType.RawUnorm,     false, BlockPixelSize.Size1x1x1, typeof(ColorBgr24))},
 			{ CompressionFormat.Bgr24_sRGB,      new CompressionFormatInfo(CompressionFormat.Bgr24_sRGB,      CompressionFormatType.RawUnormSrgb, false, BlockPixelSize.Size1x1x1, typeof(ColorBgr24))},
+			{ CompressionFormat.RgbFloat,        new CompressionFormatInfo(CompressionFormat.RgbFloat,        CompressionFormatType.RawFloat,     false, BlockPixelSize.Size1x1x1, typeof(ColorRgbFloat))},
+			{ CompressionFormat.RgbHalf,         new CompressionFormatInfo(CompressionFormat.RgbHalf,         CompressionFormatType.RawFloat,     false, BlockPixelSize.Size1x1x1, typeof(ColorRgbHalf))},
+			{ CompressionFormat.Bgr24x8,         new CompressionFormatInfo(CompressionFormat.Bgr24x8,         CompressionFormatType.RawUnorm,     false, BlockPixelSize.Size1x1x1, typeof(ColorBgra32))},
+			{ CompressionFormat.Bgr24x8_sRGB,    new CompressionFormatInfo(CompressionFormat.Bgr24x8_sRGB,    CompressionFormatType.RawUnormSrgb, false, BlockPixelSize.Size1x1x1, typeof(ColorBgra32))},
+
+			// Quad-channel formats (RGBA)
 			{ CompressionFormat.Rgba32,          new CompressionFormatInfo(CompressionFormat.Rgba32,          CompressionFormatType.RawUnorm,     true,  BlockPixelSize.Size1x1x1, typeof(ColorRgba32))},
 			{ CompressionFormat.Rgba32_sRGB,     new CompressionFormatInfo(CompressionFormat.Rgba32_sRGB,     CompressionFormatType.RawUnormSrgb, true,  BlockPixelSize.Size1x1x1, typeof(ColorRgba32))},
 			{ CompressionFormat.Bgra32,          new CompressionFormatInfo(CompressionFormat.Bgra32,          CompressionFormatType.RawUnorm,     true,  BlockPixelSize.Size1x1x1, typeof(ColorBgra32))},
 			{ CompressionFormat.Bgra32_sRGB,     new CompressionFormatInfo(CompressionFormat.Bgra32_sRGB,     CompressionFormatType.RawUnormSrgb, true,  BlockPixelSize.Size1x1x1, typeof(ColorBgra32))},
-
-			// Raw Signed Formats
-			{ CompressionFormat.R8S,             new CompressionFormatInfo(CompressionFormat.R8S,             CompressionFormatType.RawSnorm,     false, BlockPixelSize.Size1x1x1, typeof(ColorR8S))},
-			{ CompressionFormat.R8G8S,           new CompressionFormatInfo(CompressionFormat.R8G8S,           CompressionFormatType.RawSnorm,     false, BlockPixelSize.Size1x1x1, typeof(ColorR8G8S))},
-
-			// Raw Float Formats
 			{ CompressionFormat.RgbaFloat,       new CompressionFormatInfo(CompressionFormat.RgbaFloat,       CompressionFormatType.RawFloat,     true,  BlockPixelSize.Size1x1x1, typeof(ColorRgbaFloat))},
 			{ CompressionFormat.RgbaHalf,        new CompressionFormatInfo(CompressionFormat.RgbaHalf,        CompressionFormatType.RawFloat,     true,  BlockPixelSize.Size1x1x1, typeof(ColorRgbaHalf))},
-			{ CompressionFormat.RgbFloat,        new CompressionFormatInfo(CompressionFormat.RgbFloat,        CompressionFormatType.RawFloat,     false, BlockPixelSize.Size1x1x1, typeof(ColorRgbFloat))},
-			{ CompressionFormat.RgbHalf,         new CompressionFormatInfo(CompressionFormat.RgbHalf,         CompressionFormatType.RawFloat,     false, BlockPixelSize.Size1x1x1, typeof(ColorRgbHalf))},
 
-			// Raw Shared Exponent Formats
-			{ CompressionFormat.Rgbe,            new CompressionFormatInfo(CompressionFormat.Rgbe,            CompressionFormatType.RawSharedExponent, false, BlockPixelSize.Size1x1x1, typeof(ColorRgbe))},
-			{ CompressionFormat.Xyze,            new CompressionFormatInfo(CompressionFormat.Xyze,            CompressionFormatType.RawSharedExponent, false, BlockPixelSize.Size1x1x1, typeof(ColorXyze))},
+			// Special packed formats
+			{ CompressionFormat.R5G6B5_Packed,          new CompressionFormatInfo(CompressionFormat.R5G6B5_Packed,          CompressionFormatType.RawUnorm,     false, BlockPixelSize.Size1x1x1, typeof(ColorR5G6B5Packed))},
+			{ CompressionFormat.B5G6R5_Packed,          new CompressionFormatInfo(CompressionFormat.B5G6R5_Packed,          CompressionFormatType.RawUnorm,     false, BlockPixelSize.Size1x1x1, typeof(ColorB5G6R5Packed))},
+			{ CompressionFormat.R5G5B5A1_Packed,        new CompressionFormatInfo(CompressionFormat.R5G5B5A1_Packed,        CompressionFormatType.RawUnorm,     true,  BlockPixelSize.Size1x1x1, typeof(ColorR5G5B5A1Packed))},
+			{ CompressionFormat.B5G5R5A1_Packed,        new CompressionFormatInfo(CompressionFormat.B5G5R5A1_Packed,        CompressionFormatType.RawUnorm,     true,  BlockPixelSize.Size1x1x1, typeof(ColorB5G5R5A1Packed))},
+			{ CompressionFormat.A1B5G5R5_Packed,        new CompressionFormatInfo(CompressionFormat.A1B5G5R5_Packed,        CompressionFormatType.RawUnorm,     true,  BlockPixelSize.Size1x1x1, typeof(ColorA1B5G5R5Packed))},
+			{ CompressionFormat.A1R5G5B5_Packed,        new CompressionFormatInfo(CompressionFormat.A1R5G5B5_Packed,        CompressionFormatType.RawUnorm,     true,  BlockPixelSize.Size1x1x1, typeof(ColorA1R5G5B5Packed))},
+			{ CompressionFormat.R4G4B4A4_Packed,        new CompressionFormatInfo(CompressionFormat.R4G4B4A4_Packed,        CompressionFormatType.RawUnorm,     true,  BlockPixelSize.Size1x1x1, typeof(ColorR4G4B4A4Packed))},
+			{ CompressionFormat.B4G4R4A4_Packed,        new CompressionFormatInfo(CompressionFormat.B4G4R4A4_Packed,        CompressionFormatType.RawUnorm,     true,  BlockPixelSize.Size1x1x1, typeof(ColorB4G4R4A4Packed))},
+			{ CompressionFormat.A4B4G4R4_Packed,        new CompressionFormatInfo(CompressionFormat.A4B4G4R4_Packed,        CompressionFormatType.RawUnorm,     true,  BlockPixelSize.Size1x1x1, typeof(ColorA4B4G4R4Packed))},
+			{ CompressionFormat.A4R4G4B4_Packed,        new CompressionFormatInfo(CompressionFormat.A4R4G4B4_Packed,        CompressionFormatType.RawUnorm,     true,  BlockPixelSize.Size1x1x1, typeof(ColorA4R4G4B4Packed))},
+			{ CompressionFormat.R10G10B10A2_Packed,     new CompressionFormatInfo(CompressionFormat.R10G10B10A2_Packed,     CompressionFormatType.RawUnorm,     true,  BlockPixelSize.Size1x1x1, typeof(ColorR10G10B10A2Packed))},
+			{ CompressionFormat.B10G10R10A2_Packed,     new CompressionFormatInfo(CompressionFormat.B10G10R10A2_Packed,     CompressionFormatType.RawUnorm,     true,  BlockPixelSize.Size1x1x1, typeof(ColorB10G10R10A2Packed))},
+			{ CompressionFormat.R11G11B10UF_Packed,     new CompressionFormatInfo(CompressionFormat.R11G11B10UF_Packed,     CompressionFormatType.RawUFloat,     false, BlockPixelSize.Size1x1x1, typeof(ColorR11G11B10PackedUFloat))},
+			{ CompressionFormat.R9G9B9E5_Packed,        new CompressionFormatInfo(CompressionFormat.R9G9B9E5_Packed,        CompressionFormatType.RawSharedExponent, false, BlockPixelSize.Size1x1x1, typeof(ColorR9G9B9E5))},
+
+			// Shared exponent formats
+			{ CompressionFormat.Rgbe32,        new CompressionFormatInfo(CompressionFormat.Rgbe32,        CompressionFormatType.RawSharedExponent, false, BlockPixelSize.Size1x1x1, typeof(ColorRgbe))},
+			{ CompressionFormat.Xyze32,        new CompressionFormatInfo(CompressionFormat.Xyze32,        CompressionFormatType.RawSharedExponent, false, BlockPixelSize.Size1x1x1, typeof(ColorXyze))},
 
 			// Block Formats
 			{ CompressionFormat.Bc1,             new CompressionFormatInfo(CompressionFormat.Bc1,             CompressionFormatType.BlockUnorm,    false, BlockPixelSize.Size4x4x1, typeof(Bc1Block))},
@@ -355,6 +534,7 @@ namespace BCnEncoder.Shared
 			CompressionFormatInfo info = format.GetInfo();
 
 			return info.FormatType == CompressionFormatType.RawFloat
+				|| info.FormatType == CompressionFormatType.RawUFloat
 				|| info.FormatType == CompressionFormatType.BlockSFloat
 				|| info.FormatType == CompressionFormatType.BlockUFloat
 				|| info.FormatType == CompressionFormatType.RawSharedExponent;

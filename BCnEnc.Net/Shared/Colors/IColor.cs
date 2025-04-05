@@ -332,9 +332,9 @@ public static class ColorExtensions
 		if (type == typeof(ColorRgbHalf) && !isSrgb)
 			return CompressionFormat.RgbHalf;
 		if (type == typeof(ColorRgbe) && !isSrgb)
-			return CompressionFormat.Rgbe;
+			return CompressionFormat.Rgbe32;
 		if (type == typeof(ColorXyze) && !isSrgb)
-			return CompressionFormat.Xyze;
+			return CompressionFormat.Xyze32;
 
 		return CompressionFormat.Unknown;
 	}

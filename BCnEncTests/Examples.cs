@@ -67,7 +67,7 @@ namespace BCnEncTests
 			BcDecoder decoder = new BcDecoder();
 			BCnTextureData decodedData = decoder.Decode<KtxFile>(fs);
 
-			BCnTextureData rgbeData = decodedData.ConvertTo(CompressionFormat.Rgbe);
+			BCnTextureData rgbeData = decodedData.ConvertTo(CompressionFormat.Rgbe32);
 
 			RadianceFile image = rgbeData.AsTexture<RadianceFile>();
 

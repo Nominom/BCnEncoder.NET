@@ -552,28 +552,53 @@ namespace BCnEncoder.TextureFormats
 
 		private static Dictionary<CompressionFormat, DxgiFormat> FormatMapping { get; } =
 			new() {
-				// Raw formats
+				// Red-only formats
 				{ CompressionFormat.R8, DxgiFormat.DxgiFormatR8Unorm },
 				{ CompressionFormat.R8S, DxgiFormat.DxgiFormatR8Snorm },
+				{ CompressionFormat.R16, DxgiFormat.DxgiFormatR16Unorm },
+				{ CompressionFormat.R16S, DxgiFormat.DxgiFormatR16Snorm },
+				{ CompressionFormat.R16F, DxgiFormat.DxgiFormatR16Float },
+				{ CompressionFormat.R32F, DxgiFormat.DxgiFormatR32Float },
+
+				// Red-green formats
 				{ CompressionFormat.R8G8, DxgiFormat.DxgiFormatR8G8Unorm },
 				{ CompressionFormat.R8G8S, DxgiFormat.DxgiFormatR8G8Snorm },
+				{ CompressionFormat.R16G16, DxgiFormat.DxgiFormatR16G16Unorm },
+				{ CompressionFormat.R16G16S, DxgiFormat.DxgiFormatR16G16Snorm },
+				{ CompressionFormat.R16G16F, DxgiFormat.DxgiFormatR16G16Float },
+				{ CompressionFormat.R32G32F, DxgiFormat.DxgiFormatR32G32Float },
+
+				// RGB formats
+				{ CompressionFormat.RgbFloat, DxgiFormat.DxgiFormatR32G32B32Float },
+				{ CompressionFormat.R11G11B10UF_Packed, DxgiFormat.DxgiFormatR11G11B10Float },
+				{ CompressionFormat.R9G9B9E5_Packed, DxgiFormat.DxgiFormatR9G9B9E5Sharedexp },
+
+				// BGR formats
+				{ CompressionFormat.B5G6R5_Packed, DxgiFormat.DxgiFormatB5G6R5Unorm },
+				{ CompressionFormat.Bgr24x8, DxgiFormat.DxgiFormatB8G8R8X8Unorm },
+				{ CompressionFormat.Bgr24x8_sRGB, DxgiFormat.DxgiFormatB8G8R8X8UnormSrgb },
+
+				// RGBA formats
+				{ CompressionFormat.R10G10B10A2_Packed, DxgiFormat.DxgiFormatR10G10B10A2Unorm },
 				{ CompressionFormat.Rgba32, DxgiFormat.DxgiFormatR8G8B8A8Unorm },
 				{ CompressionFormat.Rgba32_sRGB, DxgiFormat.DxgiFormatR8G8B8A8UnormSrgb },
-				{ CompressionFormat.Bgra32, DxgiFormat.DxgiFormatB8G8R8A8Unorm },
-				{ CompressionFormat.Bgra32_sRGB, DxgiFormat.DxgiFormatB8G8R8A8UnormSrgb },
-				{ CompressionFormat.R10G10B10A2, DxgiFormat.DxgiFormatR10G10B10A2Unorm },
 				{ CompressionFormat.RgbaFloat, DxgiFormat.DxgiFormatR32G32B32A32Float },
 				{ CompressionFormat.RgbaHalf, DxgiFormat.DxgiFormatR16G16B16A16Float },
-				{ CompressionFormat.RgbFloat, DxgiFormat.DxgiFormatR32G32B32Float },
 
-	            // RGB formats without direct DXGI equivalents
-	            // { CompressionFormat.Rgb24, DxgiFormat.DxgiFormatUnknown },
-	            // { CompressionFormat.Rgb24_sRGB, DxgiFormat.DxgiFormatUnknown },
-	            // { CompressionFormat.Bgr24, DxgiFormat.DxgiFormatUnknown },
-	            // { CompressionFormat.Bgr24_sRGB, DxgiFormat.DxgiFormatUnknown },
-	            // { CompressionFormat.Rgbe, DxgiFormat.DxgiFormatUnknown },
-	            // { CompressionFormat.Xyze, DxgiFormat.DxgiFormatUnknown },
-	            // { CompressionFormat.RgbHalf, DxgiFormat.DxgiFormatUnknown },
+				// BGRA formats
+				{ CompressionFormat.B5G5R5A1_Packed, DxgiFormat.DxgiFormatB5G5R5A1Unorm },
+				{ CompressionFormat.B4G4R4A4_Packed, DxgiFormat.DxgiFormatB4G4R4A4Unorm },
+				{ CompressionFormat.Bgra32, DxgiFormat.DxgiFormatB8G8R8A8Unorm },
+				{ CompressionFormat.Bgra32_sRGB, DxgiFormat.DxgiFormatB8G8R8A8UnormSrgb },
+
+				// RGB formats without direct DXGI equivalents
+				// { CompressionFormat.Rgb24, DxgiFormat.DxgiFormatUnknown },
+				// { CompressionFormat.Rgb24_sRGB, DxgiFormat.DxgiFormatUnknown },
+				// { CompressionFormat.Bgr24, DxgiFormat.DxgiFormatUnknown },
+				// { CompressionFormat.Bgr24_sRGB, DxgiFormat.DxgiFormatUnknown },
+				// { CompressionFormat.Rgbe, DxgiFormat.DxgiFormatUnknown },
+				// { CompressionFormat.Xyze, DxgiFormat.DxgiFormatUnknown },
+				// { CompressionFormat.RgbHalf, DxgiFormat.DxgiFormatUnknown },
 
 				// BC formats
 				{ CompressionFormat.Bc1, DxgiFormat.DxgiFormatBc1Unorm },
@@ -601,7 +626,7 @@ namespace BCnEncoder.TextureFormats
 
 		private static Dictionary<DxgiFormat, CompressionFormat> FormatMappingReverse { get; } =
 			FormatMapping.Where(x =>
-				// Filter out Bc1A formats, which have no DXGI equivalent
+				// Filter out formats that map to the same DXGI format
 				x.Key != CompressionFormat.Bc1WithAlpha &&
 				x.Key != CompressionFormat.Bc1WithAlpha_sRGB
 				).ToDictionary(x => x.Value, x => x.Key);

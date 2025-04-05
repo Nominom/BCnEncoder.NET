@@ -8,8 +8,8 @@ namespace BCnEncoder.Shared
 	[StructLayout(LayoutKind.Sequential)]
 	internal struct Bc1Block
 	{
-		public ColorRgb565 color0;
-		public ColorRgb565 color1;
+		public ColorB5G6R5Packed color0;
+		public ColorB5G6R5Packed color1;
 		public uint colorIndices;
 
 		public int this[int index]
@@ -25,7 +25,7 @@ namespace BCnEncoder.Shared
 
 		public readonly bool HasAlphaOrBlack => color0.data <= color1.data;
 
-		public readonly RawBlock4X4RgbaFloat Decode(bool useAlpha)
+		public readonly RawBlock4X4RgbaFloat Decode(bool useColorComparisonModeSwitch, bool useAlpha)
 		{
 			var output = new RawBlock4X4RgbaFloat();
 			var pixels = output.AsSpan;
@@ -35,7 +35,7 @@ namespace BCnEncoder.Shared
 
 			useAlpha = useAlpha && HasAlphaOrBlack;
 
-			var colors = HasAlphaOrBlack ?
+			var colors = HasAlphaOrBlack && useColorComparisonModeSwitch ?
 				stackalloc ColorRgbaFloat[] {
 				color0,
 				color1,
@@ -70,19 +70,12 @@ namespace BCnEncoder.Shared
 	internal struct Bc2Block
 	{
 		public Bc2AlphaBlock alphaBlock;
-		public ColorRgb565 color0;
-		public ColorRgb565 color1;
-		public uint colorIndices;
+		public Bc1Block colorBlock;
 
 		public int this[int index]
 		{
-			readonly get => (int)(colorIndices >> (index * 2)) & 0b11;
-			set
-			{
-				colorIndices = (uint)(colorIndices & ~(0b11 << (index * 2)));
-				var val = value & 0b11;
-				colorIndices = colorIndices | ((uint)val << (index * 2));
-			}
+			readonly get => colorBlock[index];
+			set => colorBlock[index] = value;
 		}
 
 		public readonly float GetAlpha(int index) => alphaBlock.GetAlpha(index);
@@ -91,26 +84,14 @@ namespace BCnEncoder.Shared
 
 		public readonly RawBlock4X4RgbaFloat Decode()
 		{
-			var output = new RawBlock4X4RgbaFloat();
+			var output = colorBlock.Decode(false, false);
 			var pixels = output.AsSpan;
-
-			var color0 = this.color0.ToColorRgbaFloat();
-			var color1 = this.color1.ToColorRgbaFloat();
-
-			Span<ColorRgbaFloat> colors = stackalloc ColorRgbaFloat[] {
-				color0,
-				color1,
-				Interpolation.InterpolateColor(color0, color1, 1f / 3f),
-				Interpolation.InterpolateColor(color0, color1, 2f / 3f)
-			};
 
 			for (var i = 0; i < pixels.Length; i++)
 			{
-				var colorIndex = (int)((colorIndices >> (i * 2)) & 0b11);
-				var color = new ColorRgbaFloat(colors[colorIndex].r, colors[colorIndex].g, colors[colorIndex].b, GetAlpha(i));
-
-				pixels[i] = color;
+				pixels[i].a = GetAlpha(i);
 			}
+
 			return output;
 		}
 	}
@@ -119,60 +100,18 @@ namespace BCnEncoder.Shared
 	internal struct Bc3Block
 	{
 		public Bc4ComponentBlock alphaBlock;
-		public ColorRgb565 color0;
-		public ColorRgb565 color1;
-		public uint colorIndices;
-
-		public int this[int index]
-		{
-			readonly get => (int)(colorIndices >> (index * 2)) & 0b11;
-			set
-			{
-				colorIndices = (uint)(colorIndices & ~(0b11 << (index * 2)));
-				var val = value & 0b11;
-				colorIndices = colorIndices | ((uint)val << (index * 2));
-			}
-		}
-
-		public byte Alpha0
-		{
-			get => alphaBlock.Endpoint0;
-			set => alphaBlock.Endpoint0 = value;
-		}
-
-		public byte Alpha1
-		{
-			get => alphaBlock.Endpoint1;
-			set => alphaBlock.Endpoint1 = value;
-		}
-
-		public readonly byte GetAlphaIndex(int pixelIndex) => alphaBlock.GetComponentIndex(pixelIndex);
-
-		public void SetAlphaIndex(int pixelIndex, byte alphaIndex) => alphaBlock.SetComponentIndex(pixelIndex, alphaIndex);
+		public Bc1Block colorBlock;
 
 		public readonly RawBlock4X4RgbaFloat Decode()
 		{
-			var output = new RawBlock4X4RgbaFloat();
+			var output = colorBlock.Decode(false, false);
 			var pixels = output.AsSpan;
-
-			var color0 = this.color0.ToColorRgbaFloat();
-			var color1 = this.color1.ToColorRgbaFloat();
-
-			Span<ColorRgbaFloat> colors = stackalloc ColorRgbaFloat[] {
-				color0,
-				color1,
-				color0.InterpolateThird(color1, 1),
-				color0.InterpolateThird(color1, 2)
-			};
 
 			var alphas = alphaBlock.Decode();
 
 			for (var i = 0; i < pixels.Length; i++)
 			{
-				var colorIndex = (int)((colorIndices >> (i * 2)) & 0b11);
-				var color = new ColorRgbaFloat(colors[colorIndex].r, colors[colorIndex].g, colors[colorIndex].b, alphas[i]);
-
-				pixels[i] = color;
+				pixels[i].a = alphas[i];
 			}
 			return output;
 		}
@@ -245,8 +184,8 @@ namespace BCnEncoder.Shared
 				// Calculate Z
 				if (componentCalculated != ColorComponent.None)
 				{
-					float x = reds[i];
-					float y = greens[i];
+					float x = reds[i] * 2 - 1;
+					float y = greens[i] * 2 - 1;
 					float z = 1 - x * x - y * y;
 
 					if (z < 0)
@@ -267,8 +206,8 @@ namespace BCnEncoder.Shared
 	[StructLayout(LayoutKind.Sequential)]
 	internal struct AtcBlock
 	{
-		public ColorRgb555 color0;
-		public ColorRgb565 color1;
+		public ColorB5G5R5M1Packed color0;
+		public ColorB5G6R5Packed color1;
 		public uint colorIndices;
 
 		public int this[int index]
@@ -330,23 +269,6 @@ namespace BCnEncoder.Shared
 			var shift = index * 4;
 			alphas &= ~mask;
 			var a = ColorBitConversionHelpers.FloatToUnorm4(alpha);
-			alphas |= (ulong)(a & 0xF) << shift;
-		}
-
-		public readonly byte GetAlphaByte(int index)
-		{
-			var mask = 0xFUL << (index * 4);
-			var shift = index * 4;
-			var alphaUnscaled = (alphas & mask) >> shift;
-			return (byte)(alphaUnscaled * 17);
-		}
-
-		public void SetAlphaByte(int index, byte alpha)
-		{
-			var mask = 0xFUL << (index * 4);
-			var shift = index * 4;
-			alphas &= ~mask;
-			var a = (byte)(alpha / 17);
 			alphas |= (ulong)(a & 0xF) << shift;
 		}
 	}

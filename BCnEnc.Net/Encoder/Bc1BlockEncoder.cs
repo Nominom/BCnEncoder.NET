@@ -16,9 +16,9 @@ namespace BCnEncoder.Encoder
 				case CompressionQuality.Fast:
 					// return Bc1BlockEncoderFast.EncodeBlock(block);
 				case CompressionQuality.Balanced:
-					return Bc1BlockEncoderBalanced.EncodeBlock(block);
+					return Bc1BlockEncoderBalanced.EncodeBlock(block, true);
 				case CompressionQuality.BestQuality:
-					return Bc1BlockEncoderSlow.EncodeBlock(block);
+					return Bc1BlockEncoderSlow.EncodeBlock(block, true);
 
 				default:
 					throw new ArgumentOutOfRangeException(nameof(quality), quality, null);
@@ -27,7 +27,7 @@ namespace BCnEncoder.Encoder
 
 		#region Encoding private stuff
 
-		private static Bc1Block TryColors(RawBlock4X4RgbaFloat rawBlock, ColorRgb565 color0, ColorRgb565 color1, out float error, float rWeight = 0.3f, float gWeight = 0.6f, float bWeight = 0.1f)
+		private static Bc1Block TryColors(RawBlock4X4RgbaFloat rawBlock, ColorB5G6R5Packed color0, ColorB5G6R5Packed color1, bool useColorModeSwitch, out float error, float rWeight = 0.3f, float gWeight = 0.6f, float bWeight = 0.1f)
 		{
 			var output = new Bc1Block();
 
@@ -88,12 +88,12 @@ namespace BCnEncoder.Encoder
 		// 	}
 		// }
 
-		private static class Bc1BlockEncoderBalanced
+		internal static class Bc1BlockEncoderBalanced
 		{
 			private const int MaxTries = 24 * 2;
 			private const float ErrorThreshold = 0.05f;
 
-			internal static Bc1Block EncodeBlock(RawBlock4X4RgbaFloat rawBlock)
+			internal static Bc1Block EncodeBlock(RawBlock4X4RgbaFloat rawBlock, bool useColorModeSwitch)
 			{
 				var pixels = rawBlock.AsSpan;
 
@@ -105,12 +105,10 @@ namespace BCnEncoder.Encoder
 
 				if (c0.data < c1.data)
 				{
-					var c = c0;
-					c0 = c1;
-					c1 = c;
+					(c0, c1) = (c1, c0);
 				}
 
-				var best = TryColors(rawBlock, c0, c1, out var bestError);
+				var best = TryColors(rawBlock, c0, c1, useColorModeSwitch, out var bestError);
 
 				for (var i = 0; i < MaxTries; i++)
 				{
@@ -118,12 +116,10 @@ namespace BCnEncoder.Encoder
 
 					if (newC0.data < newC1.data)
 					{
-						var c = newC0;
-						newC0 = newC1;
-						newC1 = c;
+						(newC0, newC1) = (newC1, newC0);
 					}
 
-					var block = TryColors(rawBlock, newC0, newC1, out var error);
+					var block = TryColors(rawBlock, newC0, newC1, useColorModeSwitch, out var error);
 
 					if (error < bestError)
 					{
@@ -143,12 +139,12 @@ namespace BCnEncoder.Encoder
 			}
 		}
 
-		private static class Bc1BlockEncoderSlow
+		internal static class Bc1BlockEncoderSlow
 		{
 			private const int MaxTries = 9999;
 			private const float ErrorThreshold = 0.01f;
 
-			internal static Bc1Block EncodeBlock(RawBlock4X4RgbaFloat rawBlock)
+			internal static Bc1Block EncodeBlock(RawBlock4X4RgbaFloat rawBlock, bool useColorModeSwitch)
 			{
 				var pixels = rawBlock.AsSpan;
 
@@ -160,12 +156,10 @@ namespace BCnEncoder.Encoder
 
 				if (c0.data < c1.data)
 				{
-					var c = c0;
-					c0 = c1;
-					c1 = c;
+					(c0, c1) = (c1, c0);
 				}
 
-				var best = TryColors(rawBlock, c0, c1, out var bestError);
+				var best = TryColors(rawBlock, c0, c1, useColorModeSwitch, out var bestError);
 
 				var lastChanged = 0;
 
@@ -175,12 +169,10 @@ namespace BCnEncoder.Encoder
 
 					if (newC0.data < newC1.data)
 					{
-						var c = newC0;
-						newC0 = newC1;
-						newC1 = c;
+						(newC0, newC1) = (newC1, newC0);
 					}
 
-					var block = TryColors(rawBlock, newC0, newC1, out var error);
+					var block = TryColors(rawBlock, newC0, newC1, useColorModeSwitch, out var error);
 
 					lastChanged++;
 
@@ -229,7 +221,7 @@ namespace BCnEncoder.Encoder
 
 		#region Encoding private stuff
 
-		private static Bc1Block TryColors(RawBlock4X4RgbaFloat rawBlock, ColorRgb565 color0, ColorRgb565 color1, out float error, float rWeight = 0.3f, float gWeight = 0.6f, float bWeight = 0.1f)
+		private static Bc1Block TryColors(RawBlock4X4RgbaFloat rawBlock, ColorB5G6R5Packed color0, ColorB5G6R5Packed color1, out float error, float rWeight = 0.3f, float gWeight = 0.6f, float bWeight = 0.1f)
 		{
 			var output = new Bc1Block();
 

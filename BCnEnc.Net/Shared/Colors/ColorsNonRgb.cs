@@ -3,7 +3,7 @@ using System.Numerics;
 
 namespace BCnEncoder.Shared.Colors;
 
-public struct ColorYCbCr : IColor<ColorYCbCr>
+internal struct ColorYCbCr : IColor<ColorYCbCr>
 {
 	public float y;
 	public float cb;
@@ -81,7 +81,7 @@ public struct ColorYCbCr : IColor<ColorYCbCr>
 	}
 }
 
-public struct ColorYCbCrAlpha : IColor<ColorYCbCrAlpha>
+internal struct ColorYCbCrAlpha : IColor<ColorYCbCrAlpha>
 {
 	public float y;
 	public float cb;
@@ -156,7 +156,7 @@ public struct ColorYCbCrAlpha : IColor<ColorYCbCrAlpha>
 	}
 }
 
-public struct ColorXyz : IColor<ColorXyz>
+internal struct ColorXyz : IColor<ColorXyz>
 {
 	public float x;
 	public float y;
@@ -192,7 +192,7 @@ public struct ColorXyz : IColor<ColorXyz>
 	}
 }
 
-public struct ColorLab : IColor<ColorLab>
+internal struct ColorLab : IColor<ColorLab>
 {
 	public float l;
 	public float a;
