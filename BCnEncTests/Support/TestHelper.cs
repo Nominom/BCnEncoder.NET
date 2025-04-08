@@ -8,10 +8,12 @@ using System.Threading.Tasks;
 using BCnEncoder.Decoder;
 using BCnEncoder.Decoder.Options;
 using BCnEncoder.Encoder;
+using BCnEncoder.Encoder.Options;
 using BCnEncoder.ImageSharp;
 using BCnEncoder.Shared;
 using BCnEncoder.Shared.Colors;
 using BCnEncoder.TextureFormats;
+using BCnEncTests.Api;
 using CommunityToolkit.HighPerformance;
 using SharpEXR;
 using SixLabors.ImageSharp;
@@ -19,6 +21,7 @@ using SixLabors.ImageSharp.Advanced;
 using SixLabors.ImageSharp.ColorSpaces;
 using SixLabors.ImageSharp.ColorSpaces.Conversion;
 using SixLabors.ImageSharp.PixelFormats;
+using SixLabors.ImageSharp.Processing;
 using Xunit;
 using Xunit.Abstractions;
 using Xunit.Sdk;
@@ -99,13 +102,19 @@ namespace BCnEncTests.Support
 			AssertRMSE(rmse, quality, output);
 		}
 
-		public static void AssertImagesSimilar(Image<Rgba32> original, Image<Rgba32> image, CompressionQuality quality, bool countAlpha = true, ITestOutputHelper output = null)
+		public static void AssertImagesSimilar(Image<Rgba32> original, Image<Rgba32> image, CompressionQuality quality, string channelMask, ITestOutputHelper output = null)
 		{
 			Assert.Equal(original.Width, image.Width);
 			Assert.Equal(original.Height, image.Height);
 
-			var psnr = CalculatePSNR(original, image, countAlpha);
-			AssertPSNR(psnr, quality, output);
+			Image<RgbaVector> originalVec = original.CloneAs<RgbaVector>();
+			Image<RgbaVector> imageVec = image.CloneAs<RgbaVector>();
+
+			float ms_ssim = StructuralSimilarity.MultiScaleStructuralSimilarity(originalVec, imageVec, channelMask);
+			//
+			// var psnr = CalculatePSNR(original, image, channelMask);
+
+			AseertSSIM(ms_ssim, quality, output);
 		}
 
 		public static void AssertImagesSimilar(Image<RgbaVector> original, Image<RgbaVector> image, CompressionQuality quality, bool countAlpha = true, ITestOutputHelper output = null)
@@ -163,11 +172,19 @@ namespace BCnEncTests.Support
 			{
 				case CompressionFormat.R8:
 				case CompressionFormat.R8S:
+				case CompressionFormat.R16:
+				case CompressionFormat.R16S:
+				case CompressionFormat.R16F:
+				case CompressionFormat.R32F:
 				case CompressionFormat.Bc4:
 				case CompressionFormat.Bc4S:
 					return "r";
 				case CompressionFormat.R8G8:
 				case CompressionFormat.R8G8S:
+				case CompressionFormat.R16G16:
+				case CompressionFormat.R16G16S:
+				case CompressionFormat.R16G16F:
+				case CompressionFormat.R32G32F:
 				case CompressionFormat.Bc5:
 				case CompressionFormat.Bc5S:
 					return "rg";
@@ -206,20 +223,36 @@ namespace BCnEncTests.Support
 				OutputOptions =
 				{
 					GenerateMipMaps = true,
-					Quality = quality
+					Quality = quality,
+					ColorSpaceHandling = EncoderColorSpaceHandling.KeepAsIs,
+					AlphaHandling = EncoderAlphaHandling.AsIs,
 				}
 			};
 
-			var texture = encoder.EncodeToTexture<TTexture>(original);
-			using var fs = File.OpenWrite(outFileName);
+			if (!Directory.Exists("encoding"))
+				Directory.CreateDirectory("encoding");
+
+			var texture = encoder.EncodeToTexture<TTexture>(original.ToBCnTextureData());
+			using var fs = File.OpenWrite(Path.Combine("encoding/", outFileName));
 			texture.WriteToStream(fs);
 
-			var decoder = new BcDecoder();
+			var decoder = new BcDecoder()
+			{
+				OutputOptions =
+				{
+					OutputColorSpace = OutputColorSpaceTarget.KeepAsIs,
+					AlphaHandling = DecoderAlphaHandling.KeepAsIs
+				}
+			};
+
 			var decoded = decoder.Decode(texture.ToTextureData(), CompressionFormat.Rgba32_sRGB);
 
 			using var imageDecoded = decoded.AsImageRgba32();
 
-			AssertImagesSimilar(original, imageDecoded, quality, format.SupportsAlpha(), output);
+			using var fs2 = File.OpenWrite(Path.Combine("encoding/", outFileName+".png"));
+			imageDecoded.SaveAsPng(fs2);
+
+			AssertImagesSimilar(original, imageDecoded, quality, GetChannelMask(format), output);
 		}
 
 		public static void TestEncodingHdr<TTexture>(Image<RgbaVector> original, string outFileName, CompressionFormat format, CompressionQuality quality, ITestOutputHelper output)
@@ -248,12 +281,12 @@ namespace BCnEncTests.Support
 			AssertImagesSimilar(original, imageDecoded, quality, format.SupportsAlpha(), output);
 		}
 
-		private static float CalculatePSNR(Image<Rgba32> original, Image<Rgba32> decoded, bool countAlpha = true)
+		private static float CalculatePSNR(Image<Rgba32> original, Image<Rgba32> decoded, string channelMask)
 		{
 			var pixels  = GetSinglePixelArrayAsColors(original);
 			var pixels2 = GetSinglePixelArrayAsColors(decoded);
 
-			return ImageQuality.PeakSignalToNoiseRatio(pixels, pixels2, countAlpha);
+			return ImageQuality.PeakSignalToNoiseRatio(pixels, pixels2, channelMask);
 		}
 
 		private static float CalculateLogRMSE(Image<RgbaVector> original, Image<RgbaVector> decoded, bool countAlpha = true)
@@ -287,6 +320,19 @@ namespace BCnEncTests.Support
 			else
 			{
 				Assert.True(rmse < 0.04);
+			}
+		}
+
+		public static void AseertSSIM(float ssim, CompressionQuality quality, ITestOutputHelper output = null)
+		{
+			output?.WriteLine($"MS_SSIM: {ssim} , quality: {quality}");
+			if (quality == CompressionQuality.Fast)
+			{
+				Assert.True(ssim > .8f, "SSIM was not over the minimum threshold of 0.8. SSIM: " + ssim);
+			}
+			else
+			{
+				Assert.True(ssim > .85f, "SSIM was not over the minimum threshold of 0.85. SSIM: " + ssim);
 			}
 		}
 

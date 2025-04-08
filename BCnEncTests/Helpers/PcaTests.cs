@@ -3,7 +3,7 @@ using BCnEncoder.Shared;
 using Xunit;
 using Vector4 = System.Numerics.Vector4;
 
-namespace BCnEncTests
+namespace BCnEncTests.Helpers
 {
 	public class PcaTests
 	{

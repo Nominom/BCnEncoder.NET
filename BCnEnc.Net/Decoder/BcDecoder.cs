@@ -230,7 +230,7 @@ namespace BCnEncoder.Decoder
 				throw new NotSupportedException($"This Format is not supported: {texture.Format}");
 			}
 
-			var outputAlphaChannelhint = OutputOptions.AlphaHandling == AlphaHandling.Unpremultiply
+			var outputAlphaChannelhint = OutputOptions.AlphaHandling == DecoderAlphaHandling.Unpremultiply
 				? AlphaChannelHint.Straight
 				: texture.AlphaChannelHint;
 
@@ -260,7 +260,7 @@ namespace BCnEncoder.Decoder
 						// Apply alpha handling if needed
 						if (texture.Format.SupportsAlpha() && !texture.Format.IsHdrFormat())
 						{
-							if (OutputOptions.AlphaHandling == AlphaHandling.Unpremultiply &&
+							if (OutputOptions.AlphaHandling == DecoderAlphaHandling.Unpremultiply &&
 							    texture.AlphaChannelHint == AlphaChannelHint.Premultiplied)
 							{
 
@@ -338,7 +338,7 @@ namespace BCnEncoder.Decoder
 			// Apply alpha handling if needed
 			if (inputFormat.SupportsAlpha() && !inputFormat.IsHdrFormat())
 			{
-				if (OutputOptions.AlphaHandling == AlphaHandling.Unpremultiply)
+				if (OutputOptions.AlphaHandling == DecoderAlphaHandling.Unpremultiply)
 				{
 					AlphaHandlingHelper.UnpremultiplyAlpha(resultSpan);
 				}
@@ -401,57 +401,12 @@ namespace BCnEncoder.Decoder
 		#region Get decoder
 		private IBcDecoder GetDecoder(CompressionFormat format)
 		{
+			if (format.IsRawPixelFormat())
+			{
+				return Activator.CreateInstance(typeof(RawDecoder<>).MakeGenericType(format.GetPixelType())) as IBcDecoder;
+			}
 			switch (format)
 			{
-				case CompressionFormat.R8:
-					return new RawDecoder<ColorR8>();
-
-				case CompressionFormat.R8S:
-					return new RawDecoder<ColorR8S>();
-
-				case CompressionFormat.R8G8:
-					return new RawDecoder<ColorR8G8>();
-
-				case CompressionFormat.R8G8S:
-					return new RawDecoder<ColorR8G8S>();
-
-				case CompressionFormat.R10G10B10A2_Packed:
-					return new RawDecoder<ColorR10G10B10A2Packed>();
-
-				case CompressionFormat.Rgb24:
-				case CompressionFormat.Rgb24_sRGB:
-					return new RawDecoder<ColorRgb24>();
-
-				case CompressionFormat.Bgr24:
-				case CompressionFormat.Bgr24_sRGB:
-					return new RawDecoder<ColorBgr24>();
-
-				case CompressionFormat.Rgba32:
-				case CompressionFormat.Rgba32_sRGB:
-					return new RawDecoder<ColorRgba32>();
-
-				case CompressionFormat.Bgra32:
-				case CompressionFormat.Bgra32_sRGB:
-					return new RawDecoder<ColorBgra32>();
-
-				case CompressionFormat.RgbaFloat:
-					return new RawDecoder<ColorRgbaFloat>();
-
-				case CompressionFormat.RgbaHalf:
-					return new RawDecoder<ColorRgbaHalf>();
-
-				case CompressionFormat.RgbFloat:
-					return new RawDecoder<ColorRgbFloat>();
-
-				case CompressionFormat.RgbHalf:
-					return new RawDecoder<ColorRgbHalf>();
-
-				case CompressionFormat.Rgbe32:
-					return new RawDecoder<ColorRgbe>();
-
-				case CompressionFormat.Xyze32:
-					return new RawDecoder<ColorXyze>();
-
 				case CompressionFormat.Bc1:
 				case CompressionFormat.Bc1_sRGB:
 					return new Bc1NoAlphaDecoder();

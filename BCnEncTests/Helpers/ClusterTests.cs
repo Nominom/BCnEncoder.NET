@@ -1,14 +1,4 @@
-using System;
-using System.IO;
-using System.Runtime.InteropServices;
-using BCnEncoder.Shared;
-using BCnEncoder.Shared.Colors;
-using BCnEncTests.Support;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
-using Xunit;
-
-namespace BCnEncTests
+namespace BCnEncTests.Helpers
 {
 	// public class ClusterTests
 	// {

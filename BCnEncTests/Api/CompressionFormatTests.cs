@@ -3,7 +3,7 @@ using System.Linq;
 using BCnEncoder.Shared;
 using Xunit;
 
-namespace BCnEncTests;
+namespace BCnEncTests.Api;
 
 public class CompressionFormatTests
 {

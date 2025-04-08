@@ -614,10 +614,10 @@ namespace BCnEncoder.Encoder
 
 			// Track whether the input is in sRGB space to respect AsIs option
 			var inputIsSrgb = inputFormat.IsSRGBFormat();
-			var ignoreColorSpace = OutputOptions.ColorSpace == OutputColorSpace.KeepAsIs;
+			var ignoreColorSpace = OutputOptions.ColorSpaceHandling == EncoderColorSpaceHandling.KeepAsIs;
 
 			// 1. Convert to RgbaFloat format
-			ReadOnlyMemory<ColorRgbaFloat> floatData;
+			Memory<ColorRgbaFloat> floatData;
 
 			if (inputFormat != CompressionFormat.RgbaFloat)
 			{
@@ -632,15 +632,15 @@ namespace BCnEncoder.Encoder
 			}
 			else
 			{
-				floatData = input.Cast<byte, ColorRgbaFloat>();
+				floatData = new ColorRgbaFloat[width * height * depth];
+				input.Cast<byte, ColorRgbaFloat>().CopyTo(floatData);
 			}
 
 			// 2. Process alpha based on AlphaHandling setting
 			if (OutputOptions.Format.SupportsAlpha() && !OutputOptions.Format.IsHdrFormat())
 			{
 				var alphaHint = AlphaChannelHint.Unknown;
-				var (processedData, resultAlphaHint) = AlphaHandlingHelper.ProcessAlpha(floatData, OutputOptions.AlphaHandling, alphaHint);
-				floatData = processedData;
+				var resultAlphaHint = AlphaHandlingHelper.ProcessAlpha(floatData, OutputOptions.AlphaHandling, alphaHint);
 			}
 
 			// 3. Generate mipmap if needed
@@ -655,12 +655,12 @@ namespace BCnEncoder.Encoder
 
 			if (!ignoreColorSpace)
 			{
-				if (OutputOptions.ColorSpace == OutputColorSpace.ProcessLinearPreserveColorSpace)
+				if (OutputOptions.ColorSpaceHandling == EncoderColorSpaceHandling.ProcessLinearPreserveColorSpace)
 				{
 					if (inputIsSrgb)
 						colorConversionMode = ColorConversionMode.LinearToSrgb;
 				}
-				else if (OutputOptions.ColorSpace == OutputColorSpace.Auto)
+				else if (OutputOptions.ColorSpaceHandling == EncoderColorSpaceHandling.Auto)
 				{
 					// Determine color conversion mode
 					colorConversionMode = DetermineColorConversionMode(
@@ -678,6 +678,11 @@ namespace BCnEncoder.Encoder
 				ColorConversionMode = colorConversionMode
 			};
 
+			if (inputFormat.IsUNormFormat() && outputFormat.IsSNormFormat() && OutputOptions.RescaleUnormToSnorm)
+			{
+				UNormToSNorm(floatData.Span);
+			}
+
 			// 5. Encode the data
 			var result = encoder.Encode(floatData, mipWidth, mipHeight, OutputOptions.Quality, context);
 
@@ -690,8 +695,9 @@ namespace BCnEncoder.Encoder
 			var numMipMaps = OutputOptions.GenerateMipMaps ? OutputOptions.MaxMipMapLevel : 1;
 
 			// Track whether the input is in sRGB space to respect AsIs option
+			var inputFormat = textureData.Format;
 			var inputIsSrgb = textureData.Format.IsSRGBFormat();
-			var ignoreColorSpace = OutputOptions.ColorSpace == OutputColorSpace.KeepAsIs;
+			var ignoreColorSpace = OutputOptions.ColorSpaceHandling == EncoderColorSpaceHandling.KeepAsIs;
 
 			// 1. Convert texture data to RgbaFloat format for consistent processing, also ensuring we're in linear space
 			textureData = textureData.ConvertTo(CompressionFormat.RgbaFloat, convertColorspace: !ignoreColorSpace);
@@ -722,12 +728,12 @@ namespace BCnEncoder.Encoder
 			// 5. Determine final color conversion mode for encoding
 			if (!ignoreColorSpace)
 			{
-				if (OutputOptions.ColorSpace == OutputColorSpace.ProcessLinearPreserveColorSpace)
+				if (OutputOptions.ColorSpaceHandling == EncoderColorSpaceHandling.ProcessLinearPreserveColorSpace)
 				{
 					if (inputIsSrgb)
 						colorConversionMode = ColorConversionMode.LinearToSrgb;
 				}
-				else if (OutputOptions.ColorSpace == OutputColorSpace.Auto)
+				else if (OutputOptions.ColorSpaceHandling == EncoderColorSpaceHandling.Auto)
 				{
 					colorConversionMode = DetermineColorConversionMode(
 						CompressionFormat.RgbaFloat, OutputOptions.Format);
@@ -755,6 +761,13 @@ namespace BCnEncoder.Encoder
 						var mipWidth = textureData.Mips[m].Width;
 						var mipHeight = textureData.Mips[m].Height;
 						var colorMemory = textureData.Mips[m][(CubeMapFaceDirection)f, a].AsMemory<ColorRgbaFloat>();
+
+						if (inputFormat.IsUNormFormat() && OutputOptions.Format.IsSNormFormat() &&
+						    OutputOptions.RescaleUnormToSnorm)
+						{
+							UNormToSNorm(colorMemory.Span);
+						}
+
 						var encoded = encoder.Encode(colorMemory, mipWidth, mipHeight, OutputOptions.Quality, context);
 
 						if (newData.Mips[m].SizeInBytes != encoded.Length)
@@ -776,7 +789,7 @@ namespace BCnEncoder.Encoder
 		private ColorConversionMode DetermineColorConversionMode(CompressionFormat sourceFormat, CompressionFormat destFormat)
 		{
 			ColorConversionMode colorConversionMode = ColorConversionMode.None;
-			if (OutputOptions.ColorSpace != OutputColorSpace.KeepAsIs)
+			if (OutputOptions.ColorSpaceHandling != EncoderColorSpaceHandling.KeepAsIs)
 			{
 				// Auto-detect appropriate colorspace conversion based on formats
 				colorConversionMode = sourceFormat.GetColorConversionMode(destFormat);
@@ -794,38 +807,12 @@ namespace BCnEncoder.Encoder
 
 		private IBcEncoder GetEncoder(CompressionFormat format)
 		{
+			if (format.IsRawPixelFormat())
+			{
+				return Activator.CreateInstance(typeof(RawPixelEncoder<>).MakeGenericType(format.GetPixelType())) as IBcEncoder;
+			}
 			switch (format)
 			{
-				case CompressionFormat.R8:
-					return new RawPixelEncoder<ColorR8>();
-				case CompressionFormat.R8G8:
-					return new RawPixelEncoder<ColorR8G8>();
-				case CompressionFormat.Rgb24:
-				case CompressionFormat.Rgb24_sRGB:
-					return new RawPixelEncoder<ColorRgb24>();
-				case CompressionFormat.Bgr24:
-				case CompressionFormat.Bgr24_sRGB:
-					return new RawPixelEncoder<ColorBgr24>();
-				case CompressionFormat.Rgba32:
-				case CompressionFormat.Rgba32_sRGB:
-					return new RawPixelEncoder<ColorRgba32>();
-				case CompressionFormat.Bgra32:
-				case CompressionFormat.Bgra32_sRGB:
-					return new RawPixelEncoder<ColorBgra32>();
-				case CompressionFormat.R10G10B10A2_Packed:
-					return new RawPixelEncoder<ColorR10G10B10A2Packed>();
-				case CompressionFormat.RgbaFloat:
-					return new RawPixelEncoder<ColorRgbaFloat>();
-				case CompressionFormat.RgbaHalf:
-					return new RawPixelEncoder<ColorRgbaHalf>();
-				case CompressionFormat.RgbFloat:
-					return new RawPixelEncoder<ColorRgbFloat>();
-				case CompressionFormat.RgbHalf:
-					return new RawPixelEncoder<ColorRgbHalf>();
-				case CompressionFormat.Rgbe32:
-					return new RawPixelEncoder<ColorRgbe>();
-				case CompressionFormat.Xyze32:
-					return new RawPixelEncoder<ColorXyze>();
 				case CompressionFormat.Bc1:
 				case CompressionFormat.Bc1_sRGB:
 					return new Bc1BlockEncoder();
@@ -878,6 +865,19 @@ namespace BCnEncoder.Encoder
 
 			return bytes;
 		}
+
+		private static void UNormToSNorm(Span<ColorRgbaFloat> colors)
+		{
+			for (int i = 0; i < colors.Length; i++)
+			{
+				colors[i] = new ColorRgbaFloat(
+					(colors[i].r - 0.5f) * 2,
+					(colors[i].g - 0.5f) * 2,
+					(colors[i].b - 0.5f) * 2
+				);
+			}
+		}
+
 		#endregion
 	}
 }

@@ -1,11 +1,8 @@
-using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using BCnEncoder.TextureFormats;
 using Xunit;
 
-namespace BCnEncTests
+namespace BCnEncTests.FileFormats
 {
 	public class FileFormatTests
 	{

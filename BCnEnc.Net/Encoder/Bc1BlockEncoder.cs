@@ -1,4 +1,6 @@
 using System;
+using System.Diagnostics;
+using System.Numerics;
 using BCnEncoder.Shared;
 using BCnEncoder.Shared.Colors;
 
@@ -97,16 +99,30 @@ namespace BCnEncoder.Encoder
 			{
 				var pixels = rawBlock.AsSpan;
 
-				PcaVectors.Create(pixels, out var mean, out var pa);
+				int blacks = 0;
+				Vector4 mean, pa;
+
+				if (useColorModeSwitch)
+				{
+					blacks = PcaVectors.CreateIgnoreBlacks(pixels, out mean, out pa);
+				}
+				else
+				{
+					PcaVectors.Create(pixels, out  mean, out pa);
+				}
+
 				PcaVectors.GetMinMaxColor565(pixels, mean, pa, out var min, out var max);
 
 				var c0 = max;
 				var c1 = min;
 
-				if (c0.data < c1.data)
+				(c0, c1) = useColorModeSwitch switch
 				{
-					(c0, c1) = (c1, c0);
-				}
+					true when c0.data < c1.data && blacks == 0 => (c1, c0),
+					true when c0.data > c1.data && blacks > 0 => (c1, c0),
+					false when c0.data < c1.data => (c1, c0),
+					_ => (c0, c1)
+				};
 
 				var best = TryColors(rawBlock, c0, c1, useColorModeSwitch, out var bestError);
 
@@ -114,10 +130,13 @@ namespace BCnEncoder.Encoder
 				{
 					var (newC0, newC1) = ColorVariationGenerator.Variate565(c0, c1, i);
 
-					if (newC0.data < newC1.data)
+					(newC0, newC1) = useColorModeSwitch switch
 					{
-						(newC0, newC1) = (newC1, newC0);
-					}
+						true when newC0.data < newC1.data && blacks == 0 => (newC1, newC0),
+						true when newC0.data > newC1.data && blacks > 0 => (newC1, newC0),
+						false when newC0.data < newC1.data => (newC1, newC0),
+						_ => (newC0, newC1)
+					};
 
 					var block = TryColors(rawBlock, newC0, newC1, useColorModeSwitch, out var error);
 
@@ -148,16 +167,30 @@ namespace BCnEncoder.Encoder
 			{
 				var pixels = rawBlock.AsSpan;
 
-				PcaVectors.Create(pixels, out var mean, out var pa);
+				int blacks = 0;
+				Vector4 mean, pa;
+
+				if (useColorModeSwitch)
+				{
+					blacks = PcaVectors.CreateIgnoreBlacks(pixels, out mean, out pa);
+				}
+				else
+				{
+					PcaVectors.Create(pixels, out  mean, out pa);
+				}
+
 				PcaVectors.GetMinMaxColor565(pixels, mean, pa, out var min, out var max);
 
 				var c0 = max;
 				var c1 = min;
 
-				if (c0.data < c1.data)
+				(c0, c1) = useColorModeSwitch switch
 				{
-					(c0, c1) = (c1, c0);
-				}
+					true when c0.data < c1.data && blacks == 0 => (c1, c0),
+					true when c0.data > c1.data && blacks > 0 => (c1, c0),
+					false when c0.data < c1.data => (c1, c0),
+					_ => (c0, c1)
+				};
 
 				var best = TryColors(rawBlock, c0, c1, useColorModeSwitch, out var bestError);
 
@@ -167,10 +200,13 @@ namespace BCnEncoder.Encoder
 				{
 					var (newC0, newC1) = ColorVariationGenerator.Variate565(c0, c1, i);
 
-					if (newC0.data < newC1.data)
+					(newC0, newC1) = useColorModeSwitch switch
 					{
-						(newC0, newC1) = (newC1, newC0);
-					}
+						true when newC0.data < newC1.data && blacks == 0 => (newC1, newC0),
+						true when newC0.data > newC1.data && blacks > 0 => (newC1, newC0),
+						false when newC0.data < newC1.data => (newC1, newC0),
+						_ => (newC0, newC1)
+					};
 
 					var block = TryColors(rawBlock, newC0, newC1, useColorModeSwitch, out var error);
 

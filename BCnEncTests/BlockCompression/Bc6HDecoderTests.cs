@@ -1,22 +1,14 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
 using BCnEncoder.Decoder;
-using BCnEncoder.Encoder;
 using BCnEncoder.Shared;
 using BCnEncoder.Shared.Colors;
 using BCnEncoder.TextureFormats;
-using BCnEncTests.Support;
-using CommunityToolkit.HighPerformance;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace BCnEncTests
+namespace BCnEncTests.BlockCompression
 {
 	public class Bc6HDecoderTests
 	{

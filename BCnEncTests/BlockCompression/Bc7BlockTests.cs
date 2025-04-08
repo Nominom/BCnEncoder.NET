@@ -10,7 +10,7 @@ using BCnEncoder.TextureFormats;
 using SixLabors.ImageSharp;
 using Xunit;
 
-namespace BCnEncTests
+namespace BCnEncTests.BlockCompression
 {
 	public class Bc7BlockTests
 	{

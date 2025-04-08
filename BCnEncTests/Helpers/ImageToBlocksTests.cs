@@ -1,12 +1,9 @@
 using System;
 using BCnEncoder.Shared;
 using BCnEncoder.Shared.Colors;
-using CommunityToolkit.HighPerformance;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
 using Xunit;
 
-namespace BCnEncTests
+namespace BCnEncTests.Helpers
 {
 	public class ImageToBlocksTests
 	{

@@ -113,7 +113,7 @@ namespace BCnEncoder.Shared
 		/// </summary>
 		/// <param name="pixels">The original image to scale down.</param>
 		/// <param name="mipLevel">The mipLevel to generate.</param>
-		public static ReadOnlyMemory2D<ColorRgbaFloat> GenerateSingleMip(ReadOnlyMemory2D<ColorRgbaFloat> pixels, int mipLevel)
+		public static Memory2D<ColorRgbaFloat> GenerateSingleMip(Memory2D<ColorRgbaFloat> pixels, int mipLevel)
 		{
 			var width = pixels.Width;
 			var height = pixels.Height;

@@ -421,10 +421,10 @@ namespace BCnEncoder.Shared
 			// Dual-channel formats (RG)
 			{ CompressionFormat.R8G8,            new CompressionFormatInfo(CompressionFormat.R8G8,            CompressionFormatType.RawUnorm,     false, BlockPixelSize.Size1x1x1, typeof(ColorR8G8))},
 			{ CompressionFormat.R8G8S,           new CompressionFormatInfo(CompressionFormat.R8G8S,           CompressionFormatType.RawSnorm,     false, BlockPixelSize.Size1x1x1, typeof(ColorR8G8S))},
-			{ CompressionFormat.R16G16,          new CompressionFormatInfo(CompressionFormat.R16G16,          CompressionFormatType.RawUnorm,     false, BlockPixelSize.Size1x1x1, typeof(System.Numerics.Vector2))},
-			{ CompressionFormat.R16G16S,         new CompressionFormatInfo(CompressionFormat.R16G16S,         CompressionFormatType.RawSnorm,     false, BlockPixelSize.Size1x1x1, typeof(System.Numerics.Vector2))},
-			{ CompressionFormat.R16G16F,         new CompressionFormatInfo(CompressionFormat.R16G16F,         CompressionFormatType.RawFloat,     false, BlockPixelSize.Size1x1x1, typeof(System.Numerics.Vector2))},
-			{ CompressionFormat.R32G32F,         new CompressionFormatInfo(CompressionFormat.R32G32F,         CompressionFormatType.RawFloat,     false, BlockPixelSize.Size1x1x1, typeof(System.Numerics.Vector2))},
+			{ CompressionFormat.R16G16,          new CompressionFormatInfo(CompressionFormat.R16G16,          CompressionFormatType.RawUnorm,     false, BlockPixelSize.Size1x1x1, typeof(ColorR16G16))},
+			{ CompressionFormat.R16G16S,         new CompressionFormatInfo(CompressionFormat.R16G16S,         CompressionFormatType.RawSnorm,     false, BlockPixelSize.Size1x1x1, typeof(ColorR16G16S))},
+			{ CompressionFormat.R16G16F,         new CompressionFormatInfo(CompressionFormat.R16G16F,         CompressionFormatType.RawFloat,     false, BlockPixelSize.Size1x1x1, typeof(ColorR16G16F))},
+			{ CompressionFormat.R32G32F,         new CompressionFormatInfo(CompressionFormat.R32G32F,         CompressionFormatType.RawFloat,     false, BlockPixelSize.Size1x1x1, typeof(ColorR32G32F))},
 
 			// Triple-channel formats (RGB)
 			{ CompressionFormat.Rgb24,           new CompressionFormatInfo(CompressionFormat.Rgb24,           CompressionFormatType.RawUnorm,     false, BlockPixelSize.Size1x1x1, typeof(ColorRgb24))},

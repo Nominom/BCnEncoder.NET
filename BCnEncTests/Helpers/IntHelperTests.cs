@@ -1,10 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.Text;
 using BCnEncoder.Shared;
 using Xunit;
 
-namespace BCnEncTests
+namespace BCnEncTests.Helpers
 {
 	public class IntHelperTests
 	{

@@ -17,8 +17,20 @@ namespace BCnEncoder.Encoder
 		{
 			var atcBlock = new AtcBlock();
 
+			Bc1Block bc1Block;
 			// EncodeBlock with BC1 first
-			var bc1Block = bc1BlockEncoder.EncodeBlock(block, quality, colorConversionMode);
+			switch (quality)
+			{
+				case CompressionQuality.Fast:
+				case CompressionQuality.Balanced:
+					bc1Block = Bc1BlockEncoder.Bc1BlockEncoderBalanced.EncodeBlock(block, false);
+					break;
+				case CompressionQuality.BestQuality:
+					bc1Block = Bc1BlockEncoder.Bc1BlockEncoderSlow.EncodeBlock(block, false);
+					break;
+				default:
+					throw new ArgumentOutOfRangeException(nameof(quality), quality, null);
+			}
 
 			// Atc specific modifications to BC1
 			// According to http://www.guildsoftware.com/papers/2012.Converting.DXTC.to.Atc.pdf

@@ -418,22 +418,18 @@ namespace BCnEncTests.Colors
 	        var components = GetComponents(typeInfo).ToArray();
 
 	        // Pattern to match color channels from the type name.
-	        // E.g. "ColorR10G10B10A2Packed" will match "R", "G", "B", and "A". (note the 'a' in packed is not captured)
-	        // "ColorRgb24 will match "Rgb" (note. the r in color is not captured).
-	        // "ColorRgba32 will match "Rgba"
-	        // "ColorBgr24 will match "Bgr"
-	        // "ColorR8 will match "R"
-	        // "ColorR5G5B5A1Packed" will match "R", "G", "B", and "A"
+	        // E.g. "ColorR10G10B10A2Packed" will match "R", "G", "B", and "A".
+	        // "ColorRgb24 will match "Rgb"
 	        // Etc.
 	        Regex regex = new Regex(@"(Rgba|Rgb|Bgra|Bgr|R|G|B|A(?=\d|Float|Half))", RegexOptions.Compiled); // Match both combined channel names and individual channels
 
 	        List<char> channels = new List<char>();
 
-	        var match = regex.Matches(typeInfo.Name);
+	        var matches = regex.Matches(typeInfo.Name);
 
-	        foreach (Match cap in match)
+	        foreach (Match match in matches)
 	        {
-		        foreach (char c in cap.Value)
+		        foreach (char c in match.Value)
 		        {
 			        channels.Add(Char.ToUpperInvariant(c));
 		        }

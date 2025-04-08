@@ -1,12 +1,8 @@
-using BCnEncoder.Decoder;
-using BCnEncoder.ImageSharp;
 using BCnEncoder.Shared;
 using BCnEncoder.Shared.Colors;
-using BCnEncoder.TextureFormats;
-using BCnEncTests.Support;
 using Xunit;
 
-namespace BCnEncTests
+namespace BCnEncTests.BlockCompression
 {
 	public class Bc5Tests
 	{

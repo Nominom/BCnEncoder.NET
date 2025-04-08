@@ -111,7 +111,7 @@ namespace BCnEncoder.Shared
         /// <param name="textureData">The texture data to process.</param>
         /// <param name="alphaHandling">The alpha handling mode to apply.</param>
         /// <returns>True if the data was modified, false otherwise.</returns>
-        public static bool ProcessAlpha(BCnTextureData textureData, AlphaHandling alphaHandling)
+        public static bool ProcessAlpha(BCnTextureData textureData, EncoderAlphaHandling alphaHandling)
         {
             if (textureData.Mips.Length == 0)
             {
@@ -125,7 +125,7 @@ namespace BCnEncoder.Shared
 
             bool modified = false;
 
-            if (alphaHandling == AlphaHandling.Auto)
+            if (alphaHandling == EncoderAlphaHandling.Auto)
             {
                 // If not premultiplied, convert to premultiplied
                 if (textureData.AlphaChannelHint == AlphaChannelHint.Straight)
@@ -145,7 +145,7 @@ namespace BCnEncoder.Shared
 	                modified = true;
                 }
             }
-            else if (alphaHandling == AlphaHandling.LinearToPremultiplied)
+            else if (alphaHandling == EncoderAlphaHandling.LinearToPremultiplied)
             {
                 // Always convert to premultiplied
                 for (var f = 0; f < textureData.NumFaces; f++)
@@ -172,12 +172,12 @@ namespace BCnEncoder.Shared
         /// <param name="alphaHandling">The alpha handling mode to apply.</param>
         /// <param name="alphaChannelHint">Optional hint about how the alpha is currently encoded. If Unknown, will attempt to detect.</param>
         /// <returns>A tuple containing the processed data (which may be the same as the input if no processing was needed) and the resulting alpha channel hint.</returns>
-        public static (ReadOnlyMemory<ColorRgbaFloat> data, AlphaChannelHint alphaChannelHint) ProcessAlpha(
-            ReadOnlyMemory<ColorRgbaFloat> floatData, AlphaHandling alphaHandling, AlphaChannelHint alphaChannelHint = AlphaChannelHint.Unknown)
+        public static AlphaChannelHint ProcessAlpha(
+	        Memory<ColorRgbaFloat> floatData, EncoderAlphaHandling alphaHandling, AlphaChannelHint alphaChannelHint = AlphaChannelHint.Unknown)
         {
             if (floatData.Length == 0)
             {
-                return (floatData, alphaChannelHint);
+                return alphaChannelHint;
             }
 
             // Determine alpha channel type if unknown
@@ -186,28 +186,24 @@ namespace BCnEncoder.Shared
                 alphaChannelHint = GuessAlphaChannel(floatData.Span);
             }
 
-            if (alphaHandling == AlphaHandling.Auto)
+            if (alphaHandling == EncoderAlphaHandling.Auto)
             {
                 // Convert to premultiplied if it's straight alpha
                 if (alphaChannelHint == AlphaChannelHint.Straight)
                 {
-                    var rgbaPreMul = new ColorRgbaFloat[floatData.Length];
-                    floatData.CopyTo(rgbaPreMul);
-                    PremultiplyAlpha(rgbaPreMul);
-                    return (new ReadOnlyMemory<ColorRgbaFloat>(rgbaPreMul), AlphaChannelHint.Premultiplied);
+                    PremultiplyAlpha(floatData.Span);
+                    return AlphaChannelHint.Premultiplied;
                 }
             }
-            else if (alphaHandling == AlphaHandling.LinearToPremultiplied)
+            else if (alphaHandling == EncoderAlphaHandling.LinearToPremultiplied)
             {
                 // Always convert to premultiplied
-                var rgbaPreMul = new ColorRgbaFloat[floatData.Length];
-                floatData.CopyTo(rgbaPreMul);
-                PremultiplyAlpha(rgbaPreMul);
-                return (new ReadOnlyMemory<ColorRgbaFloat>(rgbaPreMul), AlphaChannelHint.Premultiplied);
+                PremultiplyAlpha(floatData.Span);
+                return AlphaChannelHint.Premultiplied;
             }
 
             // For AsIs or already premultiplied data, return the original
-            return (floatData, alphaChannelHint);
+            return alphaChannelHint;
         }
     }
 }

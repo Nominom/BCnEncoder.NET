@@ -24,18 +24,16 @@ namespace BCnEncoder.Encoder
 				+ MathF.Abs(colors[3].b - color.b) * bWeight,
 			};
 
-			var b0 = d[0] > d[3] ? 1 : 0;
-			var b1 = d[1] > d[2] ? 1 : 0;
-			var b2 = d[0] > d[2] ? 1 : 0;
-			var b3 = d[1] > d[3] ? 1 : 0;
-			var b4 = d[2] > d[3] ? 1 : 0;
-
-			var x0 = b1 & b2;
-			var x1 = b0 & b3;
-			var x2 = b0 & b4;
-
-			var idx = x2 | ((x0 | x1) << 1);
+			int idx = 0;
 			error = d[idx];
+			for (int i = 1; i < 4; i++)
+			{
+				if (d[i] < error)
+				{
+					idx = i;
+					error = d[idx];
+				}
+			}
 			return idx;
 		}
 
@@ -66,17 +64,17 @@ namespace BCnEncoder.Encoder
 				+ MathF.Abs(colors[3].b - color.b) * bWeight,
 			};
 
-			var b0 = d[0] > d[2] ? 1 : 0;
-			var b1 = d[1] > d[3] ? 1 : 0;
-			var b2 = d[0] > d[3] ? 1 : 0;
-			var b3 = d[1] > d[2] ? 1 : 0;
-			var nb3 = d[1] > d[2] ? 0 : 1;
-			var b4 = d[0] > d[1] ? 1 : 0;
-			var b5 = d[2] > d[3] ? 1 : 0;
-
-			var idx = (nb3 & b4) | (b2 & b5) | (((b0 & b3) | (b1 & b2)) << 1);
-
+			int idx = 0;
 			error = d[idx];
+			for (int i = 1; i < 4; i++)
+			{
+				if (d[i] < error)
+				{
+					idx = i;
+					error = d[idx];
+				}
+			}
+
 			return idx;
 		}
 

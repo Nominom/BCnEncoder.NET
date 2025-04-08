@@ -33,19 +33,23 @@ namespace BCnEncoder.Encoder.Options
         /// <summary>
         /// The colorspace to use for encoding and mipmap generation.
         /// </summary>
-        public OutputColorSpace ColorSpace { get; set; } = OutputColorSpace.ProcessLinearPreserveColorSpace;
+        public EncoderColorSpaceHandling ColorSpaceHandling { get; set; } = EncoderColorSpaceHandling.ProcessLinearPreserveColorSpace;
 
         /// <summary>
         /// How to handle alpha channel during processing.
         /// </summary>
-        public AlphaHandling AlphaHandling { get; set; } = AlphaHandling.Auto;
+        public EncoderAlphaHandling AlphaHandling { get; set; } = EncoderAlphaHandling.Auto;
 
+        /// <summary>
+        /// Whether to rescale unsigned normalized values [0, 1] to signed normalized values [-1, 1], when applicable.
+        /// </summary>
+        public bool RescaleUnormToSnorm { get; set; } = true;
     }
 
     /// <summary>
     /// Defines how colors should be interpreted and processed during encoding.
     /// </summary>
-    public enum OutputColorSpace
+    public enum EncoderColorSpaceHandling
     {
         /// <summary>
         /// Colors are converted to linear colorspace for processing. Output will match the input colorspace regardless of chosen output format.
@@ -68,7 +72,7 @@ namespace BCnEncoder.Encoder.Options
     /// <summary>
     /// Defines how the alpha channel should be handled during processing.
     /// </summary>
-    public enum AlphaHandling
+    public enum EncoderAlphaHandling
     {
         /// <summary>
         /// Automatically detect if the source data is already using premultiplied alpha by checking

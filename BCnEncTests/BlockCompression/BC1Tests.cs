@@ -1,10 +1,8 @@
 using BCnEncoder.Shared;
-using SixLabors.ImageSharp.PixelFormats;
-using Xunit;
-using BCnEncoder.ImageSharp;
 using BCnEncoder.Shared.Colors;
+using Xunit;
 
-namespace BCnEncTests
+namespace BCnEncTests.BlockCompression
 {
 	public class Bc1Tests
 	{
