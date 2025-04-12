@@ -21,7 +21,7 @@ public class ProgressTests
 
 	public ProgressTests(ITestOutputHelper output) => this.output = output;
 
-	private async Task ExecuteEncodeProgressReport(BcEncoder encoder, Image<Rgba32> testImage)
+	private async Task ExecuteEncodeProgressReport(BcEncoder encoder, Image<RgbaVector> testImage)
 	{
 		var lastProgress = new ProgressElement(0, 1);
 
@@ -74,7 +74,7 @@ public class ProgressTests
 		Assert.Equal(1, lastProgress.Percentage);
 	}
 
-	private async Task ExecuteEncodeSingleMipProgressReport(BcEncoder encoder, Image<Rgba32> testImage, int mipLevel)
+	private async Task ExecuteEncodeSingleMipProgressReport(BcEncoder encoder, Image<RgbaVector> testImage, int mipLevel)
 	{
 		var lastProgress = new ProgressElement(0, 1);
 

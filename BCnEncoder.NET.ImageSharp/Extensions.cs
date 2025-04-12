@@ -141,39 +141,42 @@ namespace BCnEncoder.ImageSharp
 			AlphaChannelHint alphaChannelHint = EncoderExtensions.GetAlphaChannelHint(image);
 			return BCnTextureData.FromSingle(srgb ? CompressionFormat.Rgb24_sRGB : CompressionFormat.Rgb24, image.Width, image.Height, bytes, alphaChannelHint);
 		}
+
+		/// <summary>
+		/// Copy the contents of a <see cref="Image{TPixel}"/> into <see cref="BCnTextureData"/>.
+		/// The format of the data will be inferred from the type of <typeparamref name="TPixel"/>.
+		/// If the type is <see cref="Rgba32"/>, the format will be <see cref="CompressionFormat.Rgba32"/>,
+		/// if the type is <see cref="RgbaVector"/>, the format will be <see cref="CompressionFormat.RgbaFloat"/>,
+		/// if the type is <see cref="Rgb24"/>, the format will be <see cref="CompressionFormat.Rgb24"/>.
+		/// Otherwise, the image will be converted to <see cref="RgbaVector"/> first and then to the corresponding <see cref="BCnTextureData"/>.
+		/// </summary>
+		public static BCnTextureData ToBCnTextureData(this Image image, bool srgb = true)
+		{
+			if (image is Image<Rgba32> rgba32)
+				return rgba32.ToBCnTextureData(srgb);
+			if (image is Image<RgbaVector> rgbaVector)
+				return rgbaVector.ToBCnTextureData();
+			if (image is Image<Rgb24> rgb24)
+				return rgb24.ToBCnTextureData(srgb);
+
+			// Fallback to copy.
+			Image<RgbaVector> vectorImage = image.CloneAs<RgbaVector>();
+			return vectorImage.ToBCnTextureData();
+		}
 	}
 
 	public static class EncoderExtensions
 	{
 		/// <inheritdoc cref="BcEncoder.Encode(BCnTextureData)"/>
-		public static BCnTextureData Encode(this BcEncoder encoder, Image<Rgba32> image)
+		public static BCnTextureData Encode(this BcEncoder encoder, Image image)
 			=> encoder.Encode(image.ToBCnTextureData());
 
 		/// <inheritdoc cref="BcEncoder.EncodeAsync(BCnTextureData, CancellationToken)"/>
-		public static Task<BCnTextureData> EncodeAsync(this BcEncoder encoder, Image<Rgba32> image, CancellationToken token = default)
-			=> encoder.EncodeAsync(image.ToBCnTextureData(), token);
-
-
-		/// <inheritdoc cref="BcEncoder.Encode(BCnTextureData)"/>
-		public static BCnTextureData EncodeHdr(this BcEncoder encoder, Image<RgbaVector> image)
-			=> encoder.Encode(image.ToBCnTextureData());
-
-		/// <inheritdoc cref="BcEncoder.EncodeAsync(BCnTextureData, CancellationToken)"/>
-		public static Task<BCnTextureData> EncodeHdrAsync(this BcEncoder encoder, Image<RgbaVector> image, CancellationToken token = default)
+		public static Task<BCnTextureData> EncodeAsync(this BcEncoder encoder, Image image, CancellationToken token = default)
 			=> encoder.EncodeAsync(image.ToBCnTextureData(), token);
 
 		/// <inheritdoc cref="BcEncoder.EncodeToRawBytes"/>
-		public static byte[] EncodeToRawBytes(this BcEncoder encoder, Image<Rgba32> input, int mipLevel,
-			out int mipWidth, out int mipHeight)
-			=> encoder.EncodeToRawBytes(
-				input.ToBCnTextureData(),
-				mipLevel,
-				out mipWidth,
-				out mipHeight,
-				out _);
-
-		/// <inheritdoc cref="BcEncoder.EncodeToRawBytesHdr"/>
-		public static byte[] EncodeToRawBytesHdr(this BcEncoder encoder, Image<RgbaVector> input, int mipLevel,
+		public static byte[] EncodeToRawBytes(this BcEncoder encoder, Image input, int mipLevel,
 			out int mipWidth, out int mipHeight)
 			=> encoder.EncodeToRawBytes(
 				input.ToBCnTextureData(),
@@ -183,25 +186,18 @@ namespace BCnEncoder.ImageSharp
 				out _);
 
 		/// <inheritdoc cref="BcEncoder.EncodeToRawBytesAsync"/>
-		public static Task<byte[]> EncodeToRawBytesAsync(this BcEncoder encoder, Image<Rgba32> input, int mipLevel,
+		public static Task<byte[]> EncodeToRawBytesAsync(this BcEncoder encoder, Image input, int mipLevel,
 			CancellationToken token = default)
 			=> encoder.EncodeToRawBytesAsync(
 				input.ToBCnTextureData(),
 				mipLevel, token);
 
-
-		/// <inheritdoc cref="BcEncoder.EncodeToRawBytesHdrAsync"/>
-		public static Task<byte[]> EncodeToRawBytesHdrAsync(this BcEncoder encoder, Image<RgbaVector> input, int mipLevel,
-			CancellationToken token = default)
-			=> encoder.EncodeToRawBytesAsync(
-				input.ToBCnTextureData(),
-				mipLevel, token);
 
 		/// <summary>
 		/// Encodes all mipmap levels into a texture file container.
 		/// </summary>
 		/// <param name="input">The input to encode represented by a <see cref="ReadOnlyMemory2D{T}"/>.</param>
-		public static TTextureFormat EncodeToTextureHdr<TTextureFormat>(this BcEncoder encoder, Image<RgbaVector> input)
+		public static TTextureFormat EncodeToTexture<TTextureFormat>(this BcEncoder encoder, Image input)
 			where TTextureFormat : class, ITextureFileFormat<TTextureFormat>, new()
 		{
 			var tex = new TTextureFormat();
@@ -217,49 +213,6 @@ namespace BCnEncoder.ImageSharp
 					$"{typeof(TTextureFormat).Name} does not support the {encoder.OutputOptions.Format} format!");
 			}
 
-			var encoded = encoder.EncodeHdr(input);
-			tex.FromTextureData(encoded);
-			return tex;
-		}
-
-		/// <summary>
-		/// Encodes all mipmap levels into a texture file container.
-		/// </summary>
-		/// <param name="input">The input to encode represented by a <see cref="ReadOnlyMemory2D{T}"/>.</param>
-		public static async Task<TTextureFormat> EncodeToTextureHdrAsync<TTextureFormat>(this BcEncoder encoder, Image<RgbaVector> input, CancellationToken token = default)
-			where TTextureFormat : class, ITextureFileFormat<TTextureFormat>, new()
-		{
-			var tex = new TTextureFormat();
-
-			if (!tex.SupportsHdr)
-			{
-				throw new InvalidOperationException(
-					$"{typeof(TTextureFormat).Name} does not support HDR formats!");
-			}
-			if (!tex.IsSupportedFormat(encoder.OutputOptions.Format))
-			{
-				throw new InvalidOperationException(
-					$"{typeof(TTextureFormat).Name} does not support the {encoder.OutputOptions.Format} format!");
-			}
-
-			var encoded = await encoder.EncodeHdrAsync(input, token);
-			tex.FromTextureData(encoded);
-			return tex;
-		}
-
-		/// <summary>
-		/// Encodes all mipmap levels into a texture file container.
-		/// </summary>
-		/// <param name="input">The input to encode represented by a <see cref="ReadOnlyMemory2D{T}"/>.</param>
-		public static TTextureFormat EncodeToTexture<TTextureFormat>(this BcEncoder encoder, Image<Rgba32> input)
-			where TTextureFormat : class, ITextureFileFormat<TTextureFormat>, new()
-		{
-			var tex = new TTextureFormat();
-			if (!tex.IsSupportedFormat(encoder.OutputOptions.Format))
-			{
-				throw new InvalidOperationException(
-					$"{typeof(TTextureFormat).Name} does not support the {encoder.OutputOptions.Format} format!");
-			}
 			var encoded = encoder.Encode(input);
 			tex.FromTextureData(encoded);
 			return tex;
@@ -269,15 +222,22 @@ namespace BCnEncoder.ImageSharp
 		/// Encodes all mipmap levels into a texture file container.
 		/// </summary>
 		/// <param name="input">The input to encode represented by a <see cref="ReadOnlyMemory2D{T}"/>.</param>
-		public static async Task<TTextureFormat> EncodeToTextureAsync<TTextureFormat>(this BcEncoder encoder, Image<Rgba32> input, CancellationToken token = default)
+		public static async Task<TTextureFormat> EncodeToTextureAsync<TTextureFormat>(this BcEncoder encoder, Image input, CancellationToken token = default)
 			where TTextureFormat : class, ITextureFileFormat<TTextureFormat>, new()
 		{
 			var tex = new TTextureFormat();
+
+			if (!tex.SupportsHdr)
+			{
+				throw new InvalidOperationException(
+					$"{typeof(TTextureFormat).Name} does not support HDR formats!");
+			}
 			if (!tex.IsSupportedFormat(encoder.OutputOptions.Format))
 			{
 				throw new InvalidOperationException(
 					$"{typeof(TTextureFormat).Name} does not support the {encoder.OutputOptions.Format} format!");
 			}
+
 			var encoded = await encoder.EncodeAsync(input, token);
 			tex.FromTextureData(encoded);
 			return tex;
@@ -288,7 +248,7 @@ namespace BCnEncoder.ImageSharp
 		/// </summary>
 		/// <param name="input">The input to encode represented by a <see cref="ReadOnlyMemory2D{T}"/>.</param>
 		/// <param name="outputStream">The stream to write the encoded image to.</param>
-		public static void EncodeToStreamHdr<TTextureFormat>(this BcEncoder encoder, Image<RgbaVector> input, Stream outputStream)
+		public static void EncodeToStream<TTextureFormat>(this BcEncoder encoder, Image input, Stream outputStream)
 			where TTextureFormat : class, ITextureFileFormat<TTextureFormat>, new()
 		{
 			var tex = new TTextureFormat();
@@ -297,49 +257,6 @@ namespace BCnEncoder.ImageSharp
 				throw new InvalidOperationException(
 					$"{typeof(TTextureFormat).Name} does not support HDR formats!");
 			}
-			if (!tex.IsSupportedFormat(encoder.OutputOptions.Format))
-			{
-				throw new InvalidOperationException(
-					$"{typeof(TTextureFormat).Name} does not support the {encoder.OutputOptions.Format} format!");
-			}
-			var encoded = encoder.EncodeHdr(input);
-			tex.FromTextureData(encoded);
-			tex.WriteToStream(outputStream);
-		}
-
-		/// <summary>
-		/// Encodes all mipmap levels into a texture file and writes it to the output stream.
-		/// </summary>
-		/// <param name="input">The input to encode represented by a <see cref="ReadOnlyMemory2D{T}"/>.</param>
-		/// <param name="outputStream">The stream to write the encoded image to.</param>
-		public static async Task EncodeToStreamHdrAsync<TTextureFormat>(this BcEncoder encoder, Image<RgbaVector> input, Stream outputStream, CancellationToken token = default)
-			where TTextureFormat : class, ITextureFileFormat<TTextureFormat>, new()
-		{
-			var tex = new TTextureFormat();
-			if (!tex.SupportsHdr)
-			{
-				throw new InvalidOperationException(
-					$"{typeof(TTextureFormat).Name} does not support HDR formats!");
-			}
-			if (!tex.IsSupportedFormat(encoder.OutputOptions.Format))
-			{
-				throw new InvalidOperationException(
-					$"{typeof(TTextureFormat).Name} does not support the {encoder.OutputOptions.Format} format!");
-			}
-			var encoded = await encoder.EncodeHdrAsync(input, token);
-			tex.FromTextureData(encoded);
-			tex.WriteToStream(outputStream);
-		}
-
-		/// <summary>
-		/// Encodes all mipmap levels into a texture file and writes it to the output stream.
-		/// </summary>
-		/// <param name="input">The input to encode represented by a <see cref="ReadOnlyMemory2D{T}"/>.</param>
-		/// <param name="outputStream">The stream to write the encoded image to.</param>
-		public static void EncodeToStream<TTextureFormat>(this BcEncoder encoder, Image<Rgba32> input, Stream outputStream)
-			where TTextureFormat : class, ITextureFileFormat<TTextureFormat>, new()
-		{
-			var tex = new TTextureFormat();
 			if (!tex.IsSupportedFormat(encoder.OutputOptions.Format))
 			{
 				throw new InvalidOperationException(
@@ -355,10 +272,15 @@ namespace BCnEncoder.ImageSharp
 		/// </summary>
 		/// <param name="input">The input to encode represented by a <see cref="ReadOnlyMemory2D{T}"/>.</param>
 		/// <param name="outputStream">The stream to write the encoded image to.</param>
-		public static async Task EncodeToStreamAsync<TTextureFormat>(this BcEncoder encoder, Image<Rgba32> input, Stream outputStream, CancellationToken token = default)
+		public static async Task EncodeToStreamAsync<TTextureFormat>(this BcEncoder encoder, Image input, Stream outputStream, CancellationToken token = default)
 			where TTextureFormat : class, ITextureFileFormat<TTextureFormat>, new()
 		{
 			var tex = new TTextureFormat();
+			if (!tex.SupportsHdr)
+			{
+				throw new InvalidOperationException(
+					$"{typeof(TTextureFormat).Name} does not support HDR formats!");
+			}
 			if (!tex.IsSupportedFormat(encoder.OutputOptions.Format))
 			{
 				throw new InvalidOperationException(

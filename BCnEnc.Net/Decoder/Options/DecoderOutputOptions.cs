@@ -89,7 +89,7 @@ namespace BCnEncoder.Decoder.Options
 		/// <summary>
 		/// The color channel to populate with the values of a BC4 block.
 		/// </summary>
-		public ColorComponent Bc4Component { get; set; } = ColorComponent.R;
+		public ColorComponent Bc4Component { get; set; } = ColorComponent.RGB;
 
 		/// <summary>
 		/// The color channel to populate with the values of the first BC5 block.

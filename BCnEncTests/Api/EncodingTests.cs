@@ -20,7 +20,9 @@ public class EncoderTests
 		this.output = output;
 	}
 
-	public static string[] TestImages = ["blocks"];
+	public static (string, TextureType)[] TestImages = [
+		("rgb_hard", TextureType.Albedo)
+	];
 	public static string[] RgTestImages = ["blocks", "rg"];
 
 	public enum TestFileType
@@ -39,21 +41,21 @@ public class EncoderTests
 
 		foreach (CompressionFormat format in Enum.GetValues<CompressionFormat>())
 		{
-			string[] images = TestImages;
+			(string, TextureType)[] images = TestImages;
 
 			if (tex.IsSupportedFormat(format))
 			{
-				foreach (string image in images)
+				foreach ((string fileName, TextureType texType) image in images)
 				{
 					if (format.IsRawPixelFormat())
 					{
-						yield return new object[] { fileType, image, format, CompressionQuality.Fast, tex };
+						yield return new object[] { fileType, image.fileName, image.texType, format, CompressionQuality.Fast, tex };
 					}
 					else
 					{
-						yield return new object[] { fileType, image, format, CompressionQuality.Fast, tex };
-						yield return new object[] { fileType, image, format, CompressionQuality.Balanced, tex };
-						yield return new object[] { fileType, image, format, CompressionQuality.BestQuality, tex };
+						yield return new object[] { fileType, image.fileName, image.texType, format, CompressionQuality.Fast, tex };
+						yield return new object[] { fileType, image.fileName, image.texType, format, CompressionQuality.Balanced, tex };
+						yield return new object[] { fileType, image.fileName, image.texType, format, CompressionQuality.BestQuality, tex };
 					}
 				}
 			}
@@ -63,12 +65,12 @@ public class EncoderTests
 
 	[Theory]
 	[MemberData(nameof(GetTestCases), TestFileType.dds)]
-	public void TestEncoding<TTexture>(TestFileType fileType, string testImage, CompressionFormat format, CompressionQuality quality, TTexture _)
+	public void TestEncoding<TTexture>(TestFileType fileType, string testImage, TextureType texType, CompressionFormat format, CompressionQuality quality, TTexture _)
 		where TTexture : class, ITextureFileFormat<TTexture>, new()
 	{
 		var outFileName = $"test_enc_{fileType.ToString()}_{testImage}_{format}_{quality}.{fileType.ToString()}";
 		var rawFile = ImageLoader.TestRawImages[testImage];
 
-		TestHelper.TestEncodingLdr<TTexture>(rawFile, outFileName, format, quality, output);
+		TestHelper.TestEncodingLdr<TTexture>(rawFile, texType, outFileName, format, quality, output);
 	}
 }

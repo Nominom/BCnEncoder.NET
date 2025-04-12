@@ -28,13 +28,13 @@ namespace BCnEncTests.Support
 
 		public static readonly List<(string, Exception)> ReadThrownExceptions = new List<(string, Exception)>();
 
-		public static readonly IReadOnlyDictionary<string, Image<Rgba32>> TestRawImages = FindRawTestImages();
+		public static readonly IReadOnlyDictionary<string, Image<RgbaVector>> TestRawImages = FindRawTestImages();
 		public static readonly IReadOnlyDictionary<string, (ITextureFileFormat, Image<Rgba32>)> TestEncodedImages = FindEncodedTestImages();
 
 
-		private static Dictionary<string, Image<Rgba32>> FindRawTestImages()
+		private static Dictionary<string, Image<RgbaVector>> FindRawTestImages()
 		{
-			var rawImages = new Dictionary<string, Image<Rgba32>>();
+			var rawImages = new Dictionary<string, Image<RgbaVector>>();
 
 			if (!new DirectoryInfo(TestImageRawFolder).Exists)
 				throw new FileNotFoundException($"Raw test folder does not exist! {TestImageRawFolder}");
@@ -48,7 +48,7 @@ namespace BCnEncTests.Support
 			{
 				try
 				{
-					var img = Image.Load<Rgba32>(file);
+					var img = Image.Load<RgbaVector>(file);
 
 					var name = Path.GetFileNameWithoutExtension(file);
 					rawImages.Add(name, img);
@@ -130,7 +130,7 @@ namespace BCnEncTests.Support
 		public static RadianceFile TestHdr1 => TestEncodedImages["hdr_1_rgbe"].Item1 as RadianceFile;
 		public static RadianceFile TestHdr2 => TestEncodedImages["hdr_2_rgbe"].Item1 as RadianceFile;
 
-		public static Image<Rgba32> TestLdrRgba => TestRawImages["rgba_1"];
+		public static Image<RgbaVector> TestLdrRgba => TestRawImages["rgba_1"];
 
 		internal static Image<Rgba32> LoadTestImage(string filename)
 		{

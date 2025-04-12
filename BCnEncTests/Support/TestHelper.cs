@@ -87,45 +87,6 @@ namespace BCnEncTests.Support
 				}
 			}
 		}
-
-		public static void AssertPixelsSimilar(Span<Rgba32> originalPixels, Span<Rgba32> pixels, CompressionQuality quality, bool countAlpha = true, ITestOutputHelper output = null)
-		{
-			var psnr = ImageQuality.PeakSignalToNoiseRatio(
-				MemoryMarshal.Cast<Rgba32, ColorRgba32>(originalPixels),
-				MemoryMarshal.Cast<Rgba32, ColorRgba32>(pixels), countAlpha);
-			AssertPSNR(psnr, quality, output);
-		}
-
-		public static void AssertPixelsSimilar(Span<ColorRgbaFloat> originalPixels, Span<ColorRgbaFloat> pixels, CompressionQuality quality, bool countAlpha = true, ITestOutputHelper output = null)
-		{
-			var rmse = ImageQuality.CalculateLogRMSE(originalPixels,pixels, countAlpha);
-			AssertRMSE(rmse, quality, output);
-		}
-
-		public static void AssertImagesSimilar(Image<Rgba32> original, Image<Rgba32> image, CompressionQuality quality, string channelMask, ITestOutputHelper output = null)
-		{
-			Assert.Equal(original.Width, image.Width);
-			Assert.Equal(original.Height, image.Height);
-
-			Image<RgbaVector> originalVec = original.CloneAs<RgbaVector>();
-			Image<RgbaVector> imageVec = image.CloneAs<RgbaVector>();
-
-			float ms_ssim = StructuralSimilarity.MultiScaleStructuralSimilarity(originalVec, imageVec, channelMask);
-			//
-			// var psnr = CalculatePSNR(original, image, channelMask);
-
-			AseertSSIM(ms_ssim, quality, output);
-		}
-
-		public static void AssertImagesSimilar(Image<RgbaVector> original, Image<RgbaVector> image, CompressionQuality quality, bool countAlpha = true, ITestOutputHelper output = null)
-		{
-			Assert.Equal(original.Width, image.Width);
-			Assert.Equal(original.Height, image.Height);
-
-			var rmse = CalculateLogRMSE(original, image, countAlpha);
-			AssertRMSE(rmse, quality, output);
-		}
-
 		#endregion
 
 		public static void TestDecoding<TTexture>(string testImage, TTexture texture, ReadOnlyMemory2D<ColorRgbaFloat> reference, bool referenceIsLdr, BcDecoder decoder, string outFileFormat = null, float tolerance = 0)
@@ -215,7 +176,7 @@ namespace BCnEncTests.Support
 			}
 		}
 
-		public static void TestEncodingLdr<TTexture>(Image<Rgba32> original, string outFileName, CompressionFormat format, CompressionQuality quality, ITestOutputHelper output)
+		public static void TestEncodingLdr<TTexture>(Image<RgbaVector> original, TextureType texType, string outFileName, CompressionFormat format, CompressionQuality quality, ITestOutputHelper output)
 			where TTexture : class, ITextureFileFormat<TTexture>, new()
 		{
 			var encoder = new BcEncoder(format)
@@ -245,95 +206,14 @@ namespace BCnEncTests.Support
 				}
 			};
 
-			var decoded = decoder.Decode(texture.ToTextureData(), CompressionFormat.Rgba32_sRGB);
+			var decoded = decoder.Decode(texture.ToTextureData(), CompressionFormat.RgbaFloat);
 
-			using var imageDecoded = decoded.AsImageRgba32();
+			using var imageDecoded = decoded.AsImageRgbaVector();
 
 			using var fs2 = File.OpenWrite(Path.Combine("encoding/", outFileName+".png"));
 			imageDecoded.SaveAsPng(fs2);
 
-			AssertImagesSimilar(original, imageDecoded, quality, GetChannelMask(format), output);
-		}
-
-		public static void TestEncodingHdr<TTexture>(Image<RgbaVector> original, string outFileName, CompressionFormat format, CompressionQuality quality, ITestOutputHelper output)
-			where TTexture : class, ITextureFileFormat<TTexture>, new()
-		{
-			var encoder = new BcEncoder(format)
-			{
-				OutputOptions =
-				{
-					GenerateMipMaps = true,
-					Quality = quality
-				}
-			};
-
-			var texture = encoder.EncodeToTexture<TTexture>(original.ToBCnTextureData());
-			using var fs = File.OpenWrite(outFileName);
-			texture.WriteToStream(fs);
-
-			var decoder = new BcDecoder();
-			var decoded = decoder.Decode(texture.ToTextureData(), CompressionFormat.RgbaFloat);
-
-			Assert.Equal(CompressionFormat.RgbaFloat, decoded.Format);
-
-			using var imageDecoded = decoded.AsImageRgbaVector();
-
-			AssertImagesSimilar(original, imageDecoded, quality, format.SupportsAlpha(), output);
-		}
-
-		private static float CalculatePSNR(Image<Rgba32> original, Image<Rgba32> decoded, string channelMask)
-		{
-			var pixels  = GetSinglePixelArrayAsColors(original);
-			var pixels2 = GetSinglePixelArrayAsColors(decoded);
-
-			return ImageQuality.PeakSignalToNoiseRatio(pixels, pixels2, channelMask);
-		}
-
-		private static float CalculateLogRMSE(Image<RgbaVector> original, Image<RgbaVector> decoded, bool countAlpha = true)
-		{
-			var pixels = GetSinglePixelArrayAsColors(original);
-			var pixels2 = GetSinglePixelArrayAsColors(decoded);
-
-			return ImageQuality.CalculateLogRMSE(pixels, pixels2, countAlpha);
-		}
-
-		public static void AssertPSNR(float psnr, CompressionQuality quality, ITestOutputHelper output = null)
-		{
-			output?.WriteLine($"PSNR: {psnr} , quality: {quality}");
-			if (quality == CompressionQuality.Fast)
-			{
-				Assert.True(psnr > 25);
-			}
-			else
-			{
-				Assert.True(psnr > 30);
-			}
-		}
-
-		public static void AssertRMSE(float rmse, CompressionQuality quality, ITestOutputHelper output = null)
-		{
-			output?.WriteLine($"RMSE: {rmse} , quality: {quality}");
-			if (quality == CompressionQuality.Fast)
-			{
-				Assert.True(rmse < 0.1);
-			}
-			else
-			{
-				Assert.True(rmse < 0.04);
-			}
-		}
-
-		public static void AseertSSIM(float ssim, CompressionQuality quality, ITestOutputHelper output = null)
-		{
-			output?.WriteLine($"MS_SSIM: {ssim} , quality: {quality}");
-			if (quality == CompressionQuality.Fast)
-			{
-				Assert.True(ssim > .8f, "SSIM was not over the minimum threshold of 0.8. SSIM: " + ssim);
-			}
-			else
-			{
-				Assert.True(ssim > .85f, "SSIM was not over the minimum threshold of 0.85. SSIM: " + ssim);
-			}
+			ImageQuality.AssertImageQuality(original, imageDecoded, texType, quality, GetChannelMask(format), output);
 		}
 
 		public static ColorRgba32[] GetSinglePixelArrayAsColors(Image<Rgba32> original)
