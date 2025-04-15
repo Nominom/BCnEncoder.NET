@@ -10,10 +10,17 @@ diffuse_4 & height_1 & normal_1 CC0, from https://publicdomaintextures.com/
 diffuse_5 & diffuse_6 CC0, from https://texture.ninja/ 
 rg_1 & rgba_1 CC0, from https://github.com/sevmeyer/ktxtest
 hdr_1 CC0, from https://polyhaven.com/
-hdr_2 CC0, from http://graphicslearning.com/downloads/hdr-light-probe-02-cc0/
 cubemap_1, CC0, Made with Paint.NET
 cubemap_2, CC-BY 3.0, Work of Emil Persson, aka Humus. http://www.humus.name
 ktx test files from https://github.com/sevmeyer/ktxtest CC0
+
+
+rgb_hard.png - Collection of images from different sources
+- KTXTest pattern https://github.com/sevmeyer/ktxtest CC0
+- wcDogg test images https://github.com/wcDogg/test-files CC0
+- 4096 Scifi Hex Tiles PBR Texture Normal by txturs https://opengameart.org/content/4096-scifi-hex-tiles-pbr-texture CC0
+- Medieval Wooden Roof Normal by Kutejnikov https://opengameart.org/content/medieval-wooden-roof CC0
+- Synthetic Texture Pack Synth-Fabric_01 by Screaming Brain Studios https://opengameart.org/content/synthetic-texture-pack CC0
 
 Unsplash license:
 https://unsplash.com/license

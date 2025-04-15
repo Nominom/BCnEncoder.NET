@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using BCnEncoder.Shared;
@@ -11,6 +13,7 @@ using SixLabors.ImageSharp.Processing.Processors.Filters;
 
 namespace BCnEncTests.Support
 {
+
 	/// <summary>
 	/// Implementation of Multi-Scale Structural Similarity Index based on:
 	/// Z. Wang, E. P. Simoncelli and A. C. Bovik, "Multiscale structural similarity for image quality assessment,"
@@ -18,6 +21,30 @@ namespace BCnEncTests.Support
 	/// </summary>
 	public static class StructuralSimilarity
 	{
+		private class SsimMapScale
+		{
+			public int ValidWindows { get; set; }
+
+			public List<float> SsimValues { get; } = new List<float>();
+			public List<float>[] LuminanceValues { get; }
+			public List<float>[] ContrastValues { get; }
+			public List<float>[] StructureValues { get; }
+
+			public SsimMapScale()
+			{
+				LuminanceValues = new List<float>[4];
+				ContrastValues = new List<float>[4];
+				StructureValues = new List<float>[4];
+
+				for (int i = 0; i < 4; i++)
+				{
+					LuminanceValues[i] = new List<float>();
+					ContrastValues[i] = new List<float>();
+					StructureValues[i] = new List<float>();
+				}
+			}
+		}
+
 		/// <summary>
 		/// Calculates the Multi-Scale Structural Similarity Index (MS-SSIM) between two images.
 		/// </summary>
@@ -72,16 +99,8 @@ namespace BCnEncTests.Support
 					nameof(channelMask));
 			}
 
-			// Standard weights from the paper
-			float[] standardBetaWeights =
-			[
-				0.0448f * 5,
-				0.2856f * 5,
-				0.3001f * 5,
-				0.2363f * 5,
-				0.1333f * 5
-			];
-			float[] standardGammaWeights =
+			// Standard scale weights from the paper
+			float[] standardWeights =
 			[
 				0.0448f * 5,
 				0.2856f * 5,
@@ -90,19 +109,17 @@ namespace BCnEncTests.Support
 				0.1333f * 5
 			];
 
-			// Standard ITU-R BT.709 channel weights, with alpha having half the weight.
+			// Standard channel weights to approximate human perception
 			float[] standardChannelWeights =
 			[
-				(0.2126f * 3.5f) / 4, // (0.2126f * 3.5f) / 4
-				(0.7152f * 3.5f) / 4, // (0.7152f * 3.5f) / 4
-				(0.0722f * 3.5f) / 4, // (0.0722f * 3.5f) / 4
-				.5f / 4f              // .5f / 4f
+				0.25f,
+				0.54f,
+				0.11f,
+				0.10f
 			];
 
 			// Define MS-SSIM weights (from Wang et al. paper)
-			// Luminance weight (alpha) is only used at lowest scale
-			float[] betaWeights = new float[scales]; // Contrast weights
-			float[] gammaWeights = new float[scales]; // Structure weights
+			float[] scaleWeights = new float[scales];
 
 			// Fill with standard weights (can be adjusted)
 			for (int i = 0; i < scales; i++)
@@ -110,19 +127,23 @@ namespace BCnEncTests.Support
 				// If 5 scales or less, use standard scales
 				if (scales <= 5)
 				{
-					betaWeights[i] = standardBetaWeights[i] / scales;
-					gammaWeights[i] = standardGammaWeights[i] / scales;
+					scaleWeights[i] = standardWeights[i] / scales;
 				}
 				else // Otherwise, use uniform scales
 				{
-					betaWeights[i] = 1f / scales;
-					gammaWeights[i] = 1f / scales;
+					scaleWeights[i] = 1f / scales;
 				}
+
+				// TODO: Test
+				scaleWeights[i] = 1f / scales;
 			}
 
 			// Constants to stabilize division with weak denominators
-			const float C1 = 0.01f * 0.01f; // (K1*L)^2, K1=0.01, L=1 (assumed dynamic range)
-			const float C2 = 0.03f * 0.03f; // (K2*L)^2, K2=0.03, L=1
+			const float C1 = 0.005f * 0.005f; // (K1*L)^2, K1=0.005, L=1 (assumed dynamic range)
+			const float C2 = 0.015f * 0.015f; // (K2*L)^2, K2=0.015, L=1
+
+			// const float C1 = 0.01f * 0.01f; // (K1*L)^2, K1=0.01, L=1 (assumed dynamic range)
+			// const float C2 = 0.03f * 0.03f; // (K2*L)^2, K2=0.03, L=1
 
 			// Create working copies of the images
 			using var originalCopy = original.Clone();
@@ -137,12 +158,16 @@ namespace BCnEncTests.Support
 			int currentWidth = original.Width;
 			int currentHeight = original.Height;
 
+			// Create a list to store SSIM maps for each scale
+			var ssimMaps = new SsimMapScale[scales];
+			for (int i = 0; i < scales; i++)
+			{
+				ssimMaps[i] = new SsimMapScale();
+			}
+
 			// Process each scale
 			for (int scale = 0; scale < scales; scale++)
 			{
-				// Check if we're at the final (lowest resolution) scale
-				bool isFinalScale = (scale == scales - 1);
-
 				// Calculate SSIM at current scale
 				float luminance = 0;
 				float contrast = 0;
@@ -150,9 +175,9 @@ namespace BCnEncTests.Support
 
 				// Adapt window size to current image dimensions
 				// Ensure window is never larger than the image and always has at least 3×3 size
-				int windowSize = Math.Min(baseWindowSize, Math.Min(currentWidth, currentHeight) - 2);
-				windowSize = Math.Max(windowSize, 3); // Ensure at least 3×3 window
-				windowSize = windowSize % 2 == 0 ? windowSize - 1 : windowSize; // Ensure odd size for symmetry
+				// Scale window size with image
+				int windowSize = Math.Max(3, baseWindowSize - 2 * scale);
+				windowSize = windowSize % 2 == 0 ? windowSize - 1 : windowSize; // Ensure odd size
 				int windowRadius = windowSize / 2;
 
 				float[] channelLuminance = new float[4];
@@ -173,8 +198,8 @@ namespace BCnEncTests.Support
 
 					// Calculate local statistics (mean, variance, covariance)
 					// This is the core of the algorithm - sliding window calculation
-					float localContrast = 0;
-					float localStructure = 0;
+					// float localContrast = 0;
+					// float localStructure = 0;
 
 					// Compute local statistics for valid windows
 					int validWindows = 0;
@@ -223,94 +248,77 @@ namespace BCnEncTests.Support
 							float c = (2 * MathF.Sqrt(sigmaX2) * MathF.Sqrt(sigmaY2) + C2) / (sigmaX2 + sigmaY2 + C2);
 							float s = (sigmaXY + C2 / 2) / (MathF.Sqrt(sigmaX2) * MathF.Sqrt(sigmaY2) + C2 / 2);
 
-							// For final scale, include luminance component
-							if (isFinalScale)
-							{
-								channelLuminance[channel] += l;
-							}
+							// channelLuminance[channel] += l;
+							//
+							// localContrast += c;
+							// localStructure += s;
 
-							localContrast += c;
-							localStructure += s;
+							ssimMaps[scale].LuminanceValues[channel].Add(l);
+							ssimMaps[scale].ContrastValues[channel].Add(c);
+							ssimMaps[scale].StructureValues[channel].Add(s);
+
 							validWindows++;
 						}
 					}
 
-					// Average components across all windows
-					if (validWindows > 0)
-					{
-						if (isFinalScale)
-						{
-							channelLuminance[channel] /= validWindows;
-							// luminance += channelLuminance / validWindows;
-						}
-
-						channelContrast[channel] = localContrast / validWindows;
-						channelStructure[channel] = localStructure / validWindows;
-					}
+					ssimMaps[scale].ValidWindows = validWindows;
 				}
 
 				// Apply perceptual weights to all components
-				float totalWeight = 0;
-				luminance = 0;
-				contrast = 0;
-				structure = 0;
-
-				if (useRed) {
-					if (isFinalScale) {
-						luminance += channelLuminance[0] * standardChannelWeights[0];
-					}
-					contrast += channelContrast[0] * standardChannelWeights[0];
-					structure += channelStructure[0] * standardChannelWeights[0];
-					totalWeight += standardChannelWeights[0];
-				}
-
-				if (useGreen) {
-					if (isFinalScale) {
-						luminance += channelLuminance[1] * standardChannelWeights[1];
-					}
-					contrast += channelContrast[1] * standardChannelWeights[1];
-					structure += channelStructure[1] * standardChannelWeights[1];
-					totalWeight += standardChannelWeights[1];
-				}
-
-				if (useBlue) {
-					if (isFinalScale) {
-						luminance += channelLuminance[2] * standardChannelWeights[2];
-					}
-					contrast += channelContrast[2] * standardChannelWeights[2];
-					structure += channelStructure[2] * standardChannelWeights[2];
-					totalWeight += standardChannelWeights[2];
-				}
-
-				if (useAlpha) {
-					if (isFinalScale) {
-						luminance += channelLuminance[3] * standardChannelWeights[3];
-					}
-					contrast += channelContrast[3] * standardChannelWeights[3];
-					structure += channelStructure[3] * standardChannelWeights[3];
-					totalWeight += standardChannelWeights[3];
-				}
-
-				if (totalWeight > 0) {
-					if (isFinalScale) {
-						luminance /= totalWeight;
-					}
-					contrast /= totalWeight;
-					structure /= totalWeight;
-				}
-
-				// Calculate the MS-SSIM components with weights
-				// According to the Wang et al. paper:
-				// 1. Luminance component is only used at the lowest scale (final scale)
-				// 2. Contrast and structure each have their own weights at every scale
-				if (isFinalScale)
+				for (int w = 0; w < ssimMaps[scale].ValidWindows; w++)
 				{
-					// At the lowest scale, include luminance component with alpha weight (typically 1.0)
-					msssimResult *= luminance;
+					float totalWeight = 0;
+					luminance = 0;
+					contrast = 0;
+					structure = 0;
+
+					if (useRed) {
+						luminance += ssimMaps[scale].LuminanceValues[0][w] * standardChannelWeights[0];
+						contrast += ssimMaps[scale].ContrastValues[0][w] * standardChannelWeights[0];
+						structure += ssimMaps[scale].StructureValues[0][w] * standardChannelWeights[0];
+						totalWeight += standardChannelWeights[0];
+					}
+
+					if (useGreen) {
+						luminance += ssimMaps[scale].LuminanceValues[1][w] * standardChannelWeights[1];
+						contrast += ssimMaps[scale].ContrastValues[1][w] * standardChannelWeights[1];
+						structure += ssimMaps[scale].StructureValues[1][w] * standardChannelWeights[1];
+						totalWeight += standardChannelWeights[1];
+					}
+
+					if (useBlue) {
+						luminance += ssimMaps[scale].LuminanceValues[2][w] * standardChannelWeights[2];
+						contrast += ssimMaps[scale].ContrastValues[2][w] * standardChannelWeights[2];
+						structure += ssimMaps[scale].StructureValues[2][w] * standardChannelWeights[2];
+						totalWeight += standardChannelWeights[2];
+					}
+
+					if (useAlpha) {
+						luminance += ssimMaps[scale].LuminanceValues[3][w] * standardChannelWeights[3];
+						contrast += ssimMaps[scale].ContrastValues[3][w] * standardChannelWeights[3];
+						structure += ssimMaps[scale].StructureValues[3][w] * standardChannelWeights[3];
+						totalWeight += standardChannelWeights[3];
+					}
+
+					if (totalWeight > 0) {
+						luminance /= totalWeight;
+						contrast /= totalWeight;
+						structure /= totalWeight;
+					}
+
+					ssimMaps[scale].SsimValues.Add(luminance * contrast * structure);
 				}
 
-				// Apply specific weights to contrast and structure at each scale
-				msssimResult *= MathF.Pow(contrast, betaWeights[scale]) * MathF.Pow(structure, gammaWeights[scale]);
+				const float worstPercentileWeight = 0.5f;
+
+				// Calculate average SSIM
+				float averageSsim = CalculateAverage(ssimMaps[scale].SsimValues);
+				float lowSsim = CalculatePercentile(ssimMaps[scale].SsimValues, 0.1f);
+
+				float scaleSsim = (averageSsim * (1 - worstPercentileWeight)) + (lowSsim * worstPercentileWeight);
+
+
+				msssimResult *= MathF.Pow(scaleSsim, scaleWeights[scale]);
 
 				// Downsample for next scale if not at the last scale
 				if (scale < scales - 1)
@@ -392,6 +400,46 @@ namespace BCnEncTests.Support
 			other.Mutate(ctx => ctx
 				.GaussianBlur(sigma)
 				.Resize(resizeOptions));
+		}
+
+		private static float CalculatePercentile(List<float> values, float percentile)
+		{
+			int count = values.Count;
+
+			if (count == 0)
+			{
+				return 0;
+			}
+
+			// Sort the values (ascending)
+			values.Sort();
+
+			// Calculate the index for the percentile
+			int index = (int)(percentile * count);
+
+			// Ensure index is valid
+			index = Math.Max(0, Math.Min(count - 1, index));
+
+			// Return the value at the percentile position
+			return values[index];
+		}
+
+		private static float CalculateAverage(List<float> values)
+		{
+			int count = values.Count;
+
+			if (count == 0)
+			{
+				return 0;
+			}
+
+			float sum = 0;
+			foreach (var value in values)
+			{
+				sum += value;
+			}
+
+			return sum / count;
 		}
 	}
 }

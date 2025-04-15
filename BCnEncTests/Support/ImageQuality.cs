@@ -329,7 +329,7 @@ namespace BCnEncTests.Support
 			Xunit.Abstractions.ITestOutputHelper output)
 		{
 			// For standard albedo maps, MS-SSIM is a good perceptual metric
-			float msssim = StructuralSimilarity.MultiScaleStructuralSimilarity(original, compressed, channelMask);
+			float msssim = StructuralSimilarity.MultiScaleStructuralSimilarity(original, compressed, channelMask, 3);
 
 			// Different thresholds based on compression quality
 			float threshold = quality switch
