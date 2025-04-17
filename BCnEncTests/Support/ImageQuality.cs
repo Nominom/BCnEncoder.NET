@@ -329,7 +329,7 @@ namespace BCnEncTests.Support
 			Xunit.Abstractions.ITestOutputHelper output)
 		{
 			// For standard albedo maps, MS-SSIM is a good perceptual metric
-			float msssim = StructuralSimilarity.MultiScaleStructuralSimilarity(original, compressed, channelMask, 3);
+			StructuralSimilarityResult msssim = StructuralSimilarity.MultiScaleStructuralSimilarity(original, compressed, channelMask);
 
 			// Different thresholds based on compression quality
 			float threshold = quality switch
@@ -341,7 +341,7 @@ namespace BCnEncTests.Support
 			};
 
 			output?.WriteLine($"Albedo MS-SSIM: {msssim:F4}, threshold: {threshold:F4}, quality: {quality}");
-			Xunit.Assert.True(msssim >= threshold,
+			Xunit.Assert.True(msssim.Average >= threshold,
 				$"Image quality below threshold. MS-SSIM: {msssim:F4}, required: {threshold:F4}");
 		}
 
@@ -387,7 +387,7 @@ namespace BCnEncTests.Support
 		{
 			// For height maps, combine RMSE and SSIM for both precision and structure
 			// SSIM for structure preservation
-			float ssim = StructuralSimilarity.SingleScaleStructuralSimilarity(original, compressed, channelMask);
+			StructuralSimilarityResult ssim = StructuralSimilarity.SingleScaleStructuralSimilarity(original, compressed, channelMask);
 
 			// RMSE for precision - use the direct Image<RgbaVector> overload
 			float rmse = CalculateRMSE(original, compressed, channelMask);
@@ -412,7 +412,7 @@ namespace BCnEncTests.Support
 			output?.WriteLine($"Height map SSIM: {ssim:F4}, threshold: {ssimThreshold:F4}");
 			output?.WriteLine($"Height map RMSE: {rmse:F4}, threshold: {rmseThreshold:F4}, quality: {quality}");
 
-			Xunit.Assert.True(ssim >= ssimThreshold,
+			Xunit.Assert.True(ssim.Average >= ssimThreshold,
 				$"Height map structure quality below threshold. SSIM: {ssim:F4}, required: {ssimThreshold:F4}");
 			Xunit.Assert.True(rmse <= rmseThreshold,
 				$"Height map precision below threshold. RMSE: {rmse:F4}, max allowed: {rmseThreshold:F4}");
@@ -450,7 +450,7 @@ namespace BCnEncTests.Support
 			Xunit.Abstractions.ITestOutputHelper output)
 		{
 			// For specular/roughness/metallic maps, use MS-SSIM with moderate thresholds
-			float msssim = StructuralSimilarity.MultiScaleStructuralSimilarity(original, compressed, channelMask);
+			StructuralSimilarityResult msssim = StructuralSimilarity.MultiScaleStructuralSimilarity(original, compressed, channelMask);
 
 			float threshold = quality switch
 			{
@@ -461,7 +461,7 @@ namespace BCnEncTests.Support
 			};
 
 			output?.WriteLine($"Specular map MS-SSIM: {msssim:F4}, threshold: {threshold:F4}, quality: {quality}");
-			Xunit.Assert.True(msssim >= threshold,
+			Xunit.Assert.True(msssim.Average >= threshold,
 				$"Specular map quality below threshold. MS-SSIM: {msssim:F4}, required: {threshold:F4}");
 		}
 

@@ -46,11 +46,11 @@ namespace BCnEncTests.Support
             string channelMask = "rgb"; // Test only RGB channels
 
             // Act
-            float similarity = StructuralSimilarity.MultiScaleStructuralSimilarity(image, clone, channelMask);
+            StructuralSimilarityResult similarity = StructuralSimilarity.MultiScaleStructuralSimilarity(image, clone, channelMask);
 
             // Assert
             _output.WriteLine($"MS-SSIM between identical images: {similarity}");
-            Assert.Equal(1.0f, similarity, 4); // Should be exactly 1.0 with tolerance of 10^-4
+            Assert.Equal(1.0f, similarity.Average, 4); // Should be exactly 1.0 with tolerance of 10^-4
         }
 
         [Fact]
@@ -90,12 +90,12 @@ namespace BCnEncTests.Support
             string channelMask = "rgba";
 
             // Act
-            float similarity = StructuralSimilarity.MultiScaleStructuralSimilarity(original, modified, channelMask);
+            StructuralSimilarityResult similarity = StructuralSimilarity.MultiScaleStructuralSimilarity(original, modified, channelMask);
 
             // Assert
             _output.WriteLine($"MS-SSIM between similar images: {similarity}");
-            Assert.True(similarity > 0.9f, $"MS-SSIM value {similarity} is lower than expected for similar images");
-            Assert.True(similarity < 1.0f, $"MS-SSIM value {similarity} should be less than 1.0 for non-identical images");
+            Assert.True(similarity.Average > 0.9f, $"MS-SSIM value {similarity} is lower than expected for similar images");
+            Assert.True(similarity.Average < 1.0f, $"MS-SSIM value {similarity} should be less than 1.0 for non-identical images");
         }
 
         [Fact]
@@ -126,11 +126,11 @@ namespace BCnEncTests.Support
             string channelMask = "rgba";
 
             // Act
-            float similarity = StructuralSimilarity.MultiScaleStructuralSimilarity(image1, image2, channelMask);
+            StructuralSimilarityResult similarity = StructuralSimilarity.MultiScaleStructuralSimilarity(image1, image2, channelMask);
 
             // Assert
             _output.WriteLine($"MS-SSIM between different images: {similarity}");
-            Assert.True(similarity < 0.8f, $"MS-SSIM value {similarity} is higher than expected for different images");
+            Assert.True(similarity.Average < 0.8f, $"MS-SSIM value {similarity} is higher than expected for different images");
         }
 
         [Fact]
@@ -163,15 +163,15 @@ namespace BCnEncTests.Support
             string channelMask = "rgba";
 
             // Act - Test with different scale values
-            float similarity3 = StructuralSimilarity.MultiScaleStructuralSimilarity(original, modified, channelMask, scales: 3);
-            float similarity5 = StructuralSimilarity.MultiScaleStructuralSimilarity(original, modified, channelMask, scales: 5);
+            StructuralSimilarityResult similarity3 = StructuralSimilarity.MultiScaleStructuralSimilarity(original, modified, channelMask, scales: 3);
+            StructuralSimilarityResult similarity5 = StructuralSimilarity.MultiScaleStructuralSimilarity(original, modified, channelMask, scales: 5);
 
             // Assert
             _output.WriteLine($"MS-SSIM with 3 scales: {similarity3}");
             _output.WriteLine($"MS-SSIM with 5 scales: {similarity5}");
 
             // Results should be stable but not identical with different scale counts
-            Assert.True(Math.Abs(similarity3 - similarity5) < 0.1f,
+            Assert.True(Math.Abs(similarity3.Average - similarity5.Average) < 0.1f,
                 $"MS-SSIM values with different scales differ too much: {similarity3} vs {similarity5}");
         }
 
@@ -201,23 +201,23 @@ namespace BCnEncTests.Support
             }));
 
             // Act & Assert
-            float similarityRgb = StructuralSimilarity.MultiScaleStructuralSimilarity(original, greenModified, "rgb");
-            float similarityRb = StructuralSimilarity.MultiScaleStructuralSimilarity(original, greenModified, "rb");
-            float similarityG = StructuralSimilarity.MultiScaleStructuralSimilarity(original, greenModified, "g");
+            StructuralSimilarityResult similarityRgb = StructuralSimilarity.MultiScaleStructuralSimilarity(original, greenModified, "rgb");
+            StructuralSimilarityResult similarityRb = StructuralSimilarity.MultiScaleStructuralSimilarity(original, greenModified, "rb");
+            StructuralSimilarityResult similarityG = StructuralSimilarity.MultiScaleStructuralSimilarity(original, greenModified, "g");
 
             _output.WriteLine($"MS-SSIM RGB channels: {similarityRgb}");
             _output.WriteLine($"MS-SSIM RB channels (unchanged): {similarityRb}");
             _output.WriteLine($"MS-SSIM G channel (changed): {similarityG}");
 
             // RB should be close to 1.0 as those channels are unchanged
-            Assert.True(similarityRb > 0.99f, $"MS-SSIM for unchanged channels should be close to 1.0, got {similarityRb}");
+            Assert.True(similarityRb.Average > 0.99f, $"MS-SSIM for unchanged channels should be close to 1.0, got {similarityRb}");
 
             // G should be lower as that channel was modified
-            Assert.True(similarityG < 0.95f, $"MS-SSIM for changed channel should be lower, got {similarityG}");
+            Assert.True(similarityG.Average < 0.95f, $"MS-SSIM for changed channel should be lower, got {similarityG}");
 
             // RGB combined should be between the two
-            Assert.True(similarityRgb < similarityRb, $"MS-SSIM for RGB should be lower than RB, got {similarityRgb} vs {similarityRb}");
-            Assert.True(similarityRgb > similarityG, $"MS-SSIM for RGB should be higher than G, got {similarityRgb} vs {similarityG}");
+            Assert.True(similarityRgb.Average < similarityRb.Average, $"MS-SSIM for RGB should be lower than RB, got {similarityRgb} vs {similarityRb}");
+            Assert.True(similarityRgb.Average > similarityG.Average, $"MS-SSIM for RGB should be higher than G, got {similarityRgb} vs {similarityG}");
         }
     }
 }

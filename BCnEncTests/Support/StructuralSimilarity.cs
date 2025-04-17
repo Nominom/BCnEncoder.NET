@@ -14,6 +14,20 @@ using SixLabors.ImageSharp.Processing.Processors.Filters;
 namespace BCnEncTests.Support
 {
 
+	public class StructuralSimilarityResult
+	{
+		public float Average { get; set; } = 1f;
+		public float Percentile5 { get; set; } = 1f;
+		public float Percentile10 { get; set; } = 1f;
+		public float Percentile20 { get; set; } = 1f;
+
+		public override string ToString()
+		{
+			return
+				$"{nameof(Average)}: {Average:F3}, 5th percentile: {Percentile5:F3}, 10th percentile: {Percentile10:F3}, 20th percentile: {Percentile20:F3}";
+		}
+	}
+
 	/// <summary>
 	/// Implementation of Multi-Scale Structural Similarity Index based on:
 	/// Z. Wang, E. P. Simoncelli and A. C. Bovik, "Multiscale structural similarity for image quality assessment,"
@@ -53,7 +67,7 @@ namespace BCnEncTests.Support
 		/// <param name="channelMask">String indicating which channels to include ("rgba"). Case-insensitive.</param>
 		/// <param name="scales">Number of scales to use in calculation (default: 5).</param>
 		/// <returns>MS-SSIM value between 0-1, where 1 indicates identical images.</returns>
-		public static float MultiScaleStructuralSimilarity(
+		public static StructuralSimilarityResult MultiScaleStructuralSimilarity(
 			Image<RgbaVector> original,
 			Image<RgbaVector> other,
 			string channelMask,
@@ -71,7 +85,7 @@ namespace BCnEncTests.Support
 
 			// Validate scales based on image dimensions
 			int minDimension = Math.Min(original.Width, original.Height);
-			int maxScales = (int)Math.Log2(minDimension) - 1; // Ensure smallest scale is at least 8×8
+			int maxScales = (int)Math.Log2(minDimension) - 1;
 			scales = Math.Min(scales, maxScales);
 
 			if (scales < 1)
@@ -154,7 +168,7 @@ namespace BCnEncTests.Support
 
 			// Actual window size will be adapted based on current image dimensions
 
-			float msssimResult = 1.0f;
+			StructuralSimilarityResult msssimResult = new StructuralSimilarityResult();
 			int currentWidth = original.Width;
 			int currentHeight = original.Height;
 
@@ -179,10 +193,6 @@ namespace BCnEncTests.Support
 				int windowSize = Math.Max(3, baseWindowSize - 2 * scale);
 				windowSize = windowSize % 2 == 0 ? windowSize - 1 : windowSize; // Ensure odd size
 				int windowRadius = windowSize / 2;
-
-				float[] channelLuminance = new float[4];
-				float[] channelContrast = new float[4];
-				float[] channelStructure = new float[4];
 
 				// For each channel
 				for (int channel = 0; channel < 4; channel++)
@@ -248,11 +258,6 @@ namespace BCnEncTests.Support
 							float c = (2 * MathF.Sqrt(sigmaX2) * MathF.Sqrt(sigmaY2) + C2) / (sigmaX2 + sigmaY2 + C2);
 							float s = (sigmaXY + C2 / 2) / (MathF.Sqrt(sigmaX2) * MathF.Sqrt(sigmaY2) + C2 / 2);
 
-							// channelLuminance[channel] += l;
-							//
-							// localContrast += c;
-							// localStructure += s;
-
 							ssimMaps[scale].LuminanceValues[channel].Add(l);
 							ssimMaps[scale].ContrastValues[channel].Add(c);
 							ssimMaps[scale].StructureValues[channel].Add(s);
@@ -309,16 +314,21 @@ namespace BCnEncTests.Support
 					ssimMaps[scale].SsimValues.Add(luminance * contrast * structure);
 				}
 
-				const float worstPercentileWeight = 0.5f;
+
+				// Sort the SSIM values (ascending)
+				ssimMaps[scale].SsimValues.Sort();
 
 				// Calculate average SSIM
 				float averageSsim = CalculateAverage(ssimMaps[scale].SsimValues);
-				float lowSsim = CalculatePercentile(ssimMaps[scale].SsimValues, 0.1f);
+				float percentile5 = CalculatePercentile(ssimMaps[scale].SsimValues, 0.05f);
+				float percentile10 = CalculatePercentile(ssimMaps[scale].SsimValues, 0.1f);
+				float percentile20 = CalculatePercentile(ssimMaps[scale].SsimValues, 0.2f);
 
-				float scaleSsim = (averageSsim * (1 - worstPercentileWeight)) + (lowSsim * worstPercentileWeight);
 
-
-				msssimResult *= MathF.Pow(scaleSsim, scaleWeights[scale]);
+				msssimResult.Average *= MathF.Pow(averageSsim, scaleWeights[scale]);
+				msssimResult.Percentile5 *= MathF.Pow(percentile5, scaleWeights[scale]);
+				msssimResult.Percentile10 *= MathF.Pow(percentile10, scaleWeights[scale]);
+				msssimResult.Percentile20 *= MathF.Pow(percentile20, scaleWeights[scale]);
 
 				// Downsample for next scale if not at the last scale
 				if (scale < scales - 1)
@@ -343,7 +353,7 @@ namespace BCnEncTests.Support
 		/// SSIM is designed to better match human perception of image quality than metrics like PSNR.
 		/// It measures structural information changes, perceived as variations in image structure.
 		/// </remarks>
-		public static float SingleScaleStructuralSimilarity(
+		public static StructuralSimilarityResult SingleScaleStructuralSimilarity(
 			Image<RgbaVector> original,
 			Image<RgbaVector> other,
 			string channelMask)
@@ -402,6 +412,13 @@ namespace BCnEncTests.Support
 				.Resize(resizeOptions));
 		}
 
+		/// <summary>
+		/// Calculate a percentile value from a list of values.
+		/// The list must be sorted in ascending order.
+		/// </summary>
+		/// <param name="values"></param>
+		/// <param name="percentile"></param>
+		/// <returns></returns>
 		private static float CalculatePercentile(List<float> values, float percentile)
 		{
 			int count = values.Count;
@@ -410,9 +427,6 @@ namespace BCnEncTests.Support
 			{
 				return 0;
 			}
-
-			// Sort the values (ascending)
-			values.Sort();
 
 			// Calculate the index for the percentile
 			int index = (int)(percentile * count);
