@@ -3,6 +3,8 @@ using BCnEncoder.Shared;
 using BCnEncoder.Shared.Colors;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp;
+using Xunit.Abstractions;
+using BCnEncoder.Encoder;
 
 namespace BCnEncTests.Support
 {
@@ -270,22 +272,25 @@ namespace BCnEncTests.Support
 		}
 
 		/// <summary>
-		/// Asserts that the quality between two images meets the threshold for the specified texture type and compression quality.
-		/// Automatically selects the appropriate metric based on texture type.
+		/// Asserts that the quality between two images meets the threshold for the specified texture type,
+		/// compression quality, and format. Automatically selects the appropriate metric based on texture type.
+		/// For lossless formats, enforces higher quality standards.
 		/// </summary>
 		/// <param name="original">The original image</param>
 		/// <param name="compressed">The compressed/processed image to compare</param>
 		/// <param name="textureType">Type of texture, which determines the quality metric and threshold</param>
 		/// <param name="quality">Compression quality used, which determines the expected threshold</param>
 		/// <param name="channelMask">Optional mask specifying which channels to include ("rgba"). Default is all channels.</param>
+		/// <param name="compressionFormat">The compression format used, which may affect quality expectations</param>
 		/// <param name="output">Optional test output helper for writing results</param>
 		public static void AssertImageQuality(
 			Image<RgbaVector> original,
 			Image<RgbaVector> compressed,
 			TextureType textureType,
-			BCnEncoder.Encoder.CompressionQuality quality,
+			CompressionQuality quality,
+			CompressionFormat compressionFormat,
 			string channelMask,
-			Xunit.Abstractions.ITestOutputHelper output = null)
+			ITestOutputHelper output = null)
 		{
 			// Verify images have same dimensions
 			if (original.Width != compressed.Width || original.Height != compressed.Height)
@@ -293,28 +298,37 @@ namespace BCnEncTests.Support
 				throw new ArgumentException("Both images must have the same dimensions");
 			}
 
+			// Check if this is a lossless format - requires near-perfect quality
+			// Raw pixel formats (non-block-compressed) should be lossless
+			bool isLossless = !compressionFormat.IsBlockCompressedFormat();
+
+			if (isLossless)
+			{
+				output?.WriteLine($"Using lossless quality check for format: {compressionFormat}");
+			}
+
 			// Select appropriate metric and threshold based on texture type
 			switch (textureType)
 			{
 				case TextureType.Normal:
-					AssertNormalMapQuality(original, compressed, quality, channelMask, output);
+					AssertNormalMapQuality(original, compressed, quality, channelMask, output, isLossless);
 					break;
 
 				case TextureType.Height:
-					AssertHeightMapQuality(original, compressed, quality, channelMask, output);
+					AssertHeightMapQuality(original, compressed, quality, channelMask, output, isLossless);
 					break;
 
 				case TextureType.Hdr:
-					AssertHdrQuality(original, compressed, quality, channelMask, output);
+					AssertHdrQuality(original, compressed, quality, channelMask, output, isLossless);
 					break;
 
 				case TextureType.Specular:
-					AssertSpecularMapQuality(original, compressed, quality, channelMask, output);
+					AssertSpecularMapQuality(original, compressed, quality, channelMask, output, isLossless);
 					break;
 
 				case TextureType.Albedo:
 				default:
-					AssertAlbedoQuality(original, compressed, quality, channelMask, output);
+					AssertAlbedoQuality(original, compressed, quality, channelMask, output, isLossless);
 					break;
 			}
 		}
@@ -324,33 +338,72 @@ namespace BCnEncTests.Support
 		private static void AssertAlbedoQuality(
 			Image<RgbaVector> original,
 			Image<RgbaVector> compressed,
-			BCnEncoder.Encoder.CompressionQuality quality,
+			CompressionQuality quality,
 			string channelMask,
-			Xunit.Abstractions.ITestOutputHelper output)
+			ITestOutputHelper output,
+			bool isLossless = false)
 		{
 			// For standard albedo maps, MS-SSIM is a good perceptual metric
 			StructuralSimilarityResult msssim = StructuralSimilarity.MultiScaleStructuralSimilarity(original, compressed, channelMask);
 
-			// Different thresholds based on compression quality
-			float threshold = quality switch
+			// Thresholds with pattern matching - special case for lossless formats
+			// For average SSIM
+			float avgThreshold = quality switch
 			{
-				BCnEncoder.Encoder.CompressionQuality.Fast => 0.82f,
-				BCnEncoder.Encoder.CompressionQuality.Balanced => 0.88f,
-				BCnEncoder.Encoder.CompressionQuality.BestQuality => 0.94f,
+				_ when isLossless => 0.99f,  // Near-perfect quality for lossless formats
+				CompressionQuality.Fast => 0.82f,
+				CompressionQuality.Balanced => 0.88f,
+				CompressionQuality.BestQuality => 0.94f,
 				_ => 0.88f
 			};
 
-			output?.WriteLine($"Albedo MS-SSIM: {msssim:F4}, threshold: {threshold:F4}, quality: {quality}");
-			Xunit.Assert.True(msssim.Average >= threshold,
-				$"Image quality below threshold. MS-SSIM: {msssim:F4}, required: {threshold:F4}");
+			// 5th percentile threshold - albedo textures can tolerate more artifacts than specular maps
+			float p5Threshold = quality switch
+			{
+				_ when isLossless => 0.97f,  // Allow for small areas with minimal differences
+				CompressionQuality.Fast => 0.65f,      // More permissive for fast quality
+				CompressionQuality.Balanced => 0.70f,   // Balanced quality
+				CompressionQuality.BestQuality => 0.80f, // Stricter for best quality
+				_ => 0.70f
+			};
+
+			// 10th percentile threshold
+			float p10Threshold = quality switch
+			{
+				_ when isLossless => 0.98f,  // Strict threshold for lossless formats
+				CompressionQuality.Fast => 0.70f,
+				CompressionQuality.Balanced => 0.75f,
+				CompressionQuality.BestQuality => 0.85f,
+				_ => 0.75f
+			};
+
+			if (isLossless)
+			{
+				output?.WriteLine("Using lossless format thresholds for albedo texture");
+			}
+
+			output?.WriteLine($"Albedo MS-SSIM: {msssim}, quality: {quality}");
+			output?.WriteLine($"Thresholds - Average: {avgThreshold:F3}, 5th percentile: {p5Threshold:F3}, 10th percentile: {p10Threshold:F3}");
+
+			// Check average quality
+			Xunit.Assert.True(msssim.Average >= avgThreshold,
+				$"Albedo average quality below threshold. MS-SSIM Avg: {msssim.Average:F4}, required: {avgThreshold:F4}");
+
+			// Check for bad spots using percentiles
+			Xunit.Assert.True(msssim.Percentile5 >= p5Threshold,
+				$"Albedo has bad spots (5th percentile). MS-SSIM 5th percentile: {msssim.Percentile5:F4}, required: {p5Threshold:F4}");
+
+			Xunit.Assert.True(msssim.Percentile10 >= p10Threshold,
+				$"Albedo has significant low-quality regions (10th percentile). MS-SSIM 10th percentile: {msssim.Percentile10:F4}, required: {p10Threshold:F4}");
 		}
 
 		private static void AssertNormalMapQuality(
 			Image<RgbaVector> original,
 			Image<RgbaVector> compressed,
-			BCnEncoder.Encoder.CompressionQuality quality,
+			CompressionQuality quality,
 			string channelMask,
-			Xunit.Abstractions.ITestOutputHelper output)
+			ITestOutputHelper output,
+			bool isLossless = false)
 		{
 			// Determine if we should use all three channels (RGB) based on the channel mask
 			bool useRGB = channelMask.Contains("b", StringComparison.OrdinalIgnoreCase);
@@ -365,11 +418,17 @@ namespace BCnEncTests.Support
 			// The theoretical maximum L₂ distance between unit vectors is 2.0 (opposite directions)
 			float threshold = quality switch
 			{
-				BCnEncoder.Encoder.CompressionQuality.Fast => 0.15f,      // Max vector diff of 0.15 for fast
-				BCnEncoder.Encoder.CompressionQuality.Balanced => 0.08f,   // Max vector diff of 0.08 for balanced
-				BCnEncoder.Encoder.CompressionQuality.BestQuality => 0.05f, // Max vector diff of 0.05 for best quality
+				_ when isLossless => 0.01f,   // Very strict threshold for lossless formats
+				CompressionQuality.Fast => 0.15f,      // Max vector diff of 0.15 for fast
+				CompressionQuality.Balanced => 0.08f,   // Max vector diff of 0.08 for balanced
+				CompressionQuality.BestQuality => 0.05f, // Max vector diff of 0.05 for best quality
 				_ => 0.08f
 			};
+
+			if (isLossless)
+			{
+				output?.WriteLine("Using lossless format threshold for normal map (vector diff max: 0.01)");
+			}
 
 			output?.WriteLine($"Normal map Vector Difference: {vectorDiff:F4}, threshold: {threshold:F4}");
 			output?.WriteLine($"Normal map RMSE (for reference): {rmse:F4}, quality: {quality}");
@@ -381,9 +440,10 @@ namespace BCnEncTests.Support
 		private static void AssertHeightMapQuality(
 			Image<RgbaVector> original,
 			Image<RgbaVector> compressed,
-			BCnEncoder.Encoder.CompressionQuality quality,
+			CompressionQuality quality,
 			string channelMask,
-			Xunit.Abstractions.ITestOutputHelper output)
+			ITestOutputHelper output,
+			bool isLossless = false)
 		{
 			// For height maps, combine RMSE and SSIM for both precision and structure
 			// SSIM for structure preservation
@@ -392,22 +452,31 @@ namespace BCnEncTests.Support
 			// RMSE for precision - use the direct Image<RgbaVector> overload
 			float rmse = CalculateRMSE(original, compressed, channelMask);
 
-			// Thresholds for height maps
+			// Thresholds for height maps with pattern matching for lossless formats
+			// SSIM thresholds (structural similarity)
 			float ssimThreshold = quality switch
 			{
-				BCnEncoder.Encoder.CompressionQuality.Fast => 0.90f,
-				BCnEncoder.Encoder.CompressionQuality.Balanced => 0.93f,
-				BCnEncoder.Encoder.CompressionQuality.BestQuality => 0.96f,
+				_ when isLossless => 0.99f,  // Near-perfect structural similarity for lossless formats
+				CompressionQuality.Fast => 0.90f,
+				CompressionQuality.Balanced => 0.93f,
+				CompressionQuality.BestQuality => 0.96f,
 				_ => 0.93f
 			};
 
+			// RMSE thresholds (precision)
 			float rmseThreshold = quality switch
 			{
-				BCnEncoder.Encoder.CompressionQuality.Fast => 0.04f,
-				BCnEncoder.Encoder.CompressionQuality.Balanced => 0.02f,
-				BCnEncoder.Encoder.CompressionQuality.BestQuality => 0.01f,
+				_ when isLossless => 0.001f, // Very minimal error tolerance for lossless formats
+				CompressionQuality.Fast => 0.04f,
+				CompressionQuality.Balanced => 0.02f,
+				CompressionQuality.BestQuality => 0.01f,
 				_ => 0.025f
 			};
+
+			if (isLossless)
+			{
+				output?.WriteLine("Using lossless format thresholds for height map");
+			}
 
 			output?.WriteLine($"Height map SSIM: {ssim:F4}, threshold: {ssimThreshold:F4}");
 			output?.WriteLine($"Height map RMSE: {rmse:F4}, threshold: {rmseThreshold:F4}, quality: {quality}");
@@ -421,21 +490,28 @@ namespace BCnEncTests.Support
 		private static void AssertHdrQuality(
 			Image<RgbaVector> original,
 			Image<RgbaVector> compressed,
-			BCnEncoder.Encoder.CompressionQuality quality,
+			CompressionQuality quality,
 			string channelMask,
-			Xunit.Abstractions.ITestOutputHelper output)
+			ITestOutputHelper output,
+			bool isLossless = false)
 		{
 			// For HDR textures, log-based RMSE is most appropriate - use direct Image<RgbaVector> overload
 			float logRmse = CalculateLogRMSE(original, compressed, channelMask);
 
-			// Thresholds for HDR content
+			// Thresholds for HDR content with pattern matching for lossless formats
 			float threshold = quality switch
 			{
-				BCnEncoder.Encoder.CompressionQuality.Fast => 0.045f,
-				BCnEncoder.Encoder.CompressionQuality.Balanced => 0.03f,
-				BCnEncoder.Encoder.CompressionQuality.BestQuality => 0.02f,
+				_ when isLossless => 0.003f,  // Extremely strict threshold for lossless HDR formats
+				CompressionQuality.Fast => 0.045f,
+				CompressionQuality.Balanced => 0.03f,
+				CompressionQuality.BestQuality => 0.02f,
 				_ => 0.03f
 			};
+
+			if (isLossless)
+			{
+				output?.WriteLine("Using lossless format threshold for HDR content");
+			}
 
 			output?.WriteLine($"HDR Log-RMSE: {logRmse:F4}, threshold: {threshold:F4}, quality: {quality}");
 			Xunit.Assert.True(logRmse <= threshold,
@@ -445,24 +521,63 @@ namespace BCnEncTests.Support
 		private static void AssertSpecularMapQuality(
 			Image<RgbaVector> original,
 			Image<RgbaVector> compressed,
-			BCnEncoder.Encoder.CompressionQuality quality,
+			CompressionQuality quality,
 			string channelMask,
-			Xunit.Abstractions.ITestOutputHelper output)
+			ITestOutputHelper output,
+			bool isLossless = false)
 		{
 			// For specular/roughness/metallic maps, use MS-SSIM with moderate thresholds
 			StructuralSimilarityResult msssim = StructuralSimilarity.MultiScaleStructuralSimilarity(original, compressed, channelMask);
 
-			float threshold = quality switch
+			// Thresholds with pattern matching - special case for lossless formats
+			// For average SSIM
+			float avgThreshold = quality switch
 			{
-				BCnEncoder.Encoder.CompressionQuality.Fast => 0.85f,
-				BCnEncoder.Encoder.CompressionQuality.Balanced => 0.90f,
-				BCnEncoder.Encoder.CompressionQuality.BestQuality => 0.95f,
+				_ when isLossless => 0.995f, // Near-perfect quality for lossless formats (especially important for specular maps)
+				CompressionQuality.Fast => 0.85f,
+				CompressionQuality.Balanced => 0.90f,
+				CompressionQuality.BestQuality => 0.95f,
 				_ => 0.90f
 			};
 
-			output?.WriteLine($"Specular map MS-SSIM: {msssim:F4}, threshold: {threshold:F4}, quality: {quality}");
-			Xunit.Assert.True(msssim.Average >= threshold,
-				$"Specular map quality below threshold. MS-SSIM: {msssim:F4}, required: {threshold:F4}");
+			// 5th percentile threshold
+			float p5Threshold = quality switch
+			{
+				_ when isLossless => 0.98f,  // Allow for small areas with minimal differences
+				CompressionQuality.Fast => 0.70f,      // More permissive for fast quality
+				CompressionQuality.Balanced => 0.75f,   // Balanced quality
+				CompressionQuality.BestQuality => 0.85f, // Stricter for best quality
+				_ => 0.75f
+			};
+
+			// 10th percentile threshold
+			float p10Threshold = quality switch
+			{
+				_ when isLossless => 0.99f,  // Strict threshold for lossless formats
+				CompressionQuality.Fast => 0.75f,
+				CompressionQuality.Balanced => 0.80f,
+				CompressionQuality.BestQuality => 0.88f,
+				_ => 0.80f
+			};
+
+			if (isLossless)
+			{
+				output?.WriteLine("Using lossless format thresholds for specular texture");
+			}
+
+			output?.WriteLine($"Specular map MS-SSIM: {msssim}, quality: {quality}");
+			output?.WriteLine($"Thresholds - Average: {avgThreshold:F3}, 5th percentile: {p5Threshold:F3}, 10th percentile: {p10Threshold:F3}");
+
+			// Check average quality
+			Xunit.Assert.True(msssim.Average >= avgThreshold,
+				$"Specular map average quality below threshold. MS-SSIM Avg: {msssim.Average:F4}, required: {avgThreshold:F4}");
+
+			// Check for bad spots using percentiles
+			Xunit.Assert.True(msssim.Percentile5 >= p5Threshold,
+				$"Specular map has bad spots (5th percentile). MS-SSIM 5th percentile: {msssim.Percentile5:F4}, required: {p5Threshold:F4}");
+
+			Xunit.Assert.True(msssim.Percentile10 >= p10Threshold,
+				$"Specular map has significant low-quality regions (10th percentile). MS-SSIM 10th percentile: {msssim.Percentile10:F4}, required: {p10Threshold:F4}");
 		}
 
 	}

@@ -26,7 +26,7 @@ namespace BCnEncTests.Support
         public void MultiScaleStructuralSimilarity_IdenticalImages_ReturnsOne()
         {
             // Arrange
-            using var image = new Image<RgbaVector>(100, 100);
+            using var image = new Image<RgbaVector>(128, 128);
 
             // Fill with random data to ensure we're not just testing empty images
             var random = new Random(42); // Fixed seed for reproducibility
@@ -51,6 +51,10 @@ namespace BCnEncTests.Support
             // Assert
             _output.WriteLine($"MS-SSIM between identical images: {similarity}");
             Assert.Equal(1.0f, similarity.Average, 4); // Should be exactly 1.0 with tolerance of 10^-4
+            // Check percentiles also equal 1.0 for identical images
+            Assert.Equal(1.0f, similarity.Percentile5, 4);
+            Assert.Equal(1.0f, similarity.Percentile10, 4);
+            Assert.Equal(1.0f, similarity.Percentile20, 4);
         }
 
         [Fact]
@@ -96,6 +100,17 @@ namespace BCnEncTests.Support
             _output.WriteLine($"MS-SSIM between similar images: {similarity}");
             Assert.True(similarity.Average > 0.9f, $"MS-SSIM value {similarity} is lower than expected for similar images");
             Assert.True(similarity.Average < 1.0f, $"MS-SSIM value {similarity} should be less than 1.0 for non-identical images");
+
+            // Check percentiles follow expected pattern (lower percentiles should be lower than higher ones)
+            Assert.True(similarity.Percentile5 < similarity.Percentile10,
+                $"5th percentile ({similarity.Percentile5}) should be lower than 10th percentile ({similarity.Percentile10})");
+            Assert.True(similarity.Percentile10 < similarity.Percentile20,
+                $"10th percentile ({similarity.Percentile10}) should be lower than 20th percentile ({similarity.Percentile20})");
+            Assert.True(similarity.Percentile20 < similarity.Average,
+                $"20th percentile ({similarity.Percentile20}) should be lower than average ({similarity.Average})");
+
+            // All percentiles should be high for similar images
+            Assert.True(similarity.Percentile5 > 0.85f, $"5th percentile value {similarity.Percentile5} is lower than expected for similar images");
         }
 
         [Fact]
@@ -131,14 +146,20 @@ namespace BCnEncTests.Support
             // Assert
             _output.WriteLine($"MS-SSIM between different images: {similarity}");
             Assert.True(similarity.Average < 0.8f, $"MS-SSIM value {similarity} is higher than expected for different images");
+
+            // For different images, percentiles should be significantly different
+            Assert.True(similarity.Percentile5 < similarity.Average,
+                $"5th percentile ({similarity.Percentile5}) should be lower than average ({similarity.Average}) for different images");
+            // All percentiles should be low for very different images
+            Assert.True(similarity.Percentile5 < 0.7f, $"5th percentile {similarity.Percentile5} is higher than expected for different images");
         }
 
         [Fact]
         public void MultiScaleStructuralSimilarity_WithDifferentScales_ProducesConsistentResults()
         {
             // Arrange
-            using var original = new Image<RgbaVector>(128, 128); // Power of 2 size for clean downscaling
-            using var modified = new Image<RgbaVector>(128, 128);
+            using var original = new Image<RgbaVector>(256, 256); // Power of 2 size for clean downscaling
+            using var modified = new Image<RgbaVector>(256, 256);
 
             // Create patterns with some similarity but clear differences
             var random = new Random(42);
@@ -173,13 +194,21 @@ namespace BCnEncTests.Support
             // Results should be stable but not identical with different scale counts
             Assert.True(Math.Abs(similarity3.Average - similarity5.Average) < 0.1f,
                 $"MS-SSIM values with different scales differ too much: {similarity3} vs {similarity5}");
+
+            // Percentiles should also be relatively stable across scales
+            Assert.True(Math.Abs(similarity3.Percentile5 - similarity5.Percentile5) < 0.15f,
+                $"5th percentile values differ too much across scales: {similarity3.Percentile5} vs {similarity5.Percentile5}");
+            Assert.True(Math.Abs(similarity3.Percentile10 - similarity5.Percentile10) < 0.15f,
+                $"10th percentile values differ too much across scales: {similarity3.Percentile10} vs {similarity5.Percentile10}");
+            Assert.True(Math.Abs(similarity3.Percentile20 - similarity5.Percentile20) < 0.15f,
+                $"20th percentile values differ too much across scales: {similarity3.Percentile20} vs {similarity5.Percentile20}");
         }
 
         [Fact]
         public void MultiScaleStructuralSimilarity_ChannelMaskVariations_WorkCorrectly()
         {
             // Arrange
-            using var original = new Image<RgbaVector>(100, 100);
+            using var original = new Image<RgbaVector>(128, 128);
 
             // Create image with R=1, G=0.5, B=0 for all pixels
             for (int y = 0; y < original.Height; y++)
@@ -211,13 +240,19 @@ namespace BCnEncTests.Support
 
             // RB should be close to 1.0 as those channels are unchanged
             Assert.True(similarityRb.Average > 0.99f, $"MS-SSIM for unchanged channels should be close to 1.0, got {similarityRb}");
+            Assert.True(similarityRb.Percentile5 > 0.99f, $"5th percentile for unchanged channels should be close to 1.0, got {similarityRb.Percentile5}");
 
             // G should be lower as that channel was modified
             Assert.True(similarityG.Average < 0.95f, $"MS-SSIM for changed channel should be lower, got {similarityG}");
+            Assert.True(similarityG.Percentile5 < 0.95f, $"5th percentile for changed channel should be lower, got {similarityG.Percentile5}");
 
             // RGB combined should be between the two
             Assert.True(similarityRgb.Average < similarityRb.Average, $"MS-SSIM for RGB should be lower than RB, got {similarityRgb} vs {similarityRb}");
+            Assert.True(similarityRgb.Percentile5 < similarityRb.Percentile5,
+                $"5th percentile for RGB should be lower than RB, got {similarityRgb.Percentile5} vs {similarityRb.Percentile5}");
             Assert.True(similarityRgb.Average > similarityG.Average, $"MS-SSIM for RGB should be higher than G, got {similarityRgb} vs {similarityG}");
+            Assert.True(similarityRgb.Percentile5 > similarityG.Percentile5,
+                $"5th percentile for RGB should be higher than G, got {similarityRgb.Percentile5} vs {similarityG.Percentile5}");
         }
     }
 }

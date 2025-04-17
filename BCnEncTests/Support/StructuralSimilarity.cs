@@ -13,7 +13,6 @@ using SixLabors.ImageSharp.Processing.Processors.Filters;
 
 namespace BCnEncTests.Support
 {
-
 	public class StructuralSimilarityResult
 	{
 		public float Average { get; set; } = 1f;
@@ -85,7 +84,7 @@ namespace BCnEncTests.Support
 
 			// Validate scales based on image dimensions
 			int minDimension = Math.Min(original.Width, original.Height);
-			int maxScales = (int)Math.Log2(minDimension) - 1;
+			int maxScales = (int)Math.Log2(minDimension) - 3; // Ensure window size is at least 16x16
 			scales = Math.Min(scales, maxScales);
 
 			if (scales < 1)
@@ -147,24 +146,21 @@ namespace BCnEncTests.Support
 				{
 					scaleWeights[i] = 1f / scales;
 				}
-
-				// TODO: Test
-				scaleWeights[i] = 1f / scales;
 			}
 
 			// Constants to stabilize division with weak denominators
-			const float C1 = 0.005f * 0.005f; // (K1*L)^2, K1=0.005, L=1 (assumed dynamic range)
-			const float C2 = 0.015f * 0.015f; // (K2*L)^2, K2=0.015, L=1
-
-			// const float C1 = 0.01f * 0.01f; // (K1*L)^2, K1=0.01, L=1 (assumed dynamic range)
-			// const float C2 = 0.03f * 0.03f; // (K2*L)^2, K2=0.03, L=1
+			const float C1 = 0.01f * 0.01f; // (K1*L)^2, K1=0.01, L=1 (assumed dynamic range)
+			const float C2 = 0.03f * 0.03f; // (K2*L)^2, K2=0.03, L=1
 
 			// Create working copies of the images
 			using var originalCopy = original.Clone();
 			using var otherCopy = other.Clone();
 
 			// Base window size for local statistics (typically 11×11)
-			const int baseWindowSize = 11;
+			const int windowSize = 11;
+			const int windowRadius = windowSize / 2;
+
+			float[] gaussianKernel = CreateGaussianKernel(windowSize, windowRadius);
 
 			// Actual window size will be adapted based on current image dimensions
 
@@ -187,13 +183,6 @@ namespace BCnEncTests.Support
 				float contrast = 0;
 				float structure = 0;
 
-				// Adapt window size to current image dimensions
-				// Ensure window is never larger than the image and always has at least 3×3 size
-				// Scale window size with image
-				int windowSize = Math.Max(3, baseWindowSize - 2 * scale);
-				windowSize = windowSize % 2 == 0 ? windowSize - 1 : windowSize; // Ensure odd size
-				int windowRadius = windowSize / 2;
-
 				// For each channel
 				for (int channel = 0; channel < 4; channel++)
 				{
@@ -208,9 +197,6 @@ namespace BCnEncTests.Support
 
 					// Calculate local statistics (mean, variance, covariance)
 					// This is the core of the algorithm - sliding window calculation
-					// float localContrast = 0;
-					// float localStructure = 0;
-
 					// Compute local statistics for valid windows
 					int validWindows = 0;
 
@@ -231,23 +217,25 @@ namespace BCnEncTests.Support
 									float xVal = GetChannelValue(originalCopy[x + wx, y + wy], channel);
 									float yVal = GetChannelValue(otherCopy[x + wx, y + wy], channel);
 
-									sumX += xVal;
-									sumY += yVal;
-									sumXX += xVal * xVal;
-									sumYY += yVal * yVal;
-									sumXY += xVal * yVal;
+									// Get Gaussian weight for this position
+									int idx = (wy + windowRadius) * windowSize + (wx + windowRadius);
+									float weight = gaussianKernel[idx];
+
+									// Apply weighted contribution
+									sumX += xVal * weight;
+									sumY += yVal * weight;
+									sumXX += xVal * xVal * weight;
+									sumYY += yVal * yVal * weight;
+									sumXY += xVal * yVal * weight;
 								}
 							}
 
-							// Window pixel count
-							int N = windowSize * windowSize;
-
 							// Local statistics
-							float muX = sumX / N;
-							float muY = sumY / N;
-							float sigmaX2 = (sumXX / N) - (muX * muX);
-							float sigmaY2 = (sumYY / N) - (muY * muY);
-							float sigmaXY = (sumXY / N) - (muX * muY);
+							float muX = sumX ;
+							float muY = sumY;
+							float sigmaX2 = sumXX - (muX * muX);
+							float sigmaY2 = sumYY - (muY * muY);
+							float sigmaXY = sumXY - (muX * muY);
 
 							// Guard against negative variances due to floating-point errors
 							sigmaX2 = Math.Max(0, sigmaX2);
@@ -256,7 +244,7 @@ namespace BCnEncTests.Support
 							// Calculate SSIM components
 							float l = (2 * muX * muY + C1) / (muX * muX + muY * muY + C1);
 							float c = (2 * MathF.Sqrt(sigmaX2) * MathF.Sqrt(sigmaY2) + C2) / (sigmaX2 + sigmaY2 + C2);
-							float s = (sigmaXY + C2 / 2) / (MathF.Sqrt(sigmaX2) * MathF.Sqrt(sigmaY2) + C2 / 2);
+							float s = (sigmaXY + C2 / 2) / (MathF.Sqrt(sigmaX2 * sigmaY2) + C2 / 2);
 
 							ssimMaps[scale].LuminanceValues[channel].Add(l);
 							ssimMaps[scale].ContrastValues[channel].Add(c);
@@ -277,35 +265,40 @@ namespace BCnEncTests.Support
 					contrast = 0;
 					structure = 0;
 
-					if (useRed) {
+					if (useRed)
+					{
 						luminance += ssimMaps[scale].LuminanceValues[0][w] * standardChannelWeights[0];
 						contrast += ssimMaps[scale].ContrastValues[0][w] * standardChannelWeights[0];
 						structure += ssimMaps[scale].StructureValues[0][w] * standardChannelWeights[0];
 						totalWeight += standardChannelWeights[0];
 					}
 
-					if (useGreen) {
+					if (useGreen)
+					{
 						luminance += ssimMaps[scale].LuminanceValues[1][w] * standardChannelWeights[1];
 						contrast += ssimMaps[scale].ContrastValues[1][w] * standardChannelWeights[1];
 						structure += ssimMaps[scale].StructureValues[1][w] * standardChannelWeights[1];
 						totalWeight += standardChannelWeights[1];
 					}
 
-					if (useBlue) {
+					if (useBlue)
+					{
 						luminance += ssimMaps[scale].LuminanceValues[2][w] * standardChannelWeights[2];
 						contrast += ssimMaps[scale].ContrastValues[2][w] * standardChannelWeights[2];
 						structure += ssimMaps[scale].StructureValues[2][w] * standardChannelWeights[2];
 						totalWeight += standardChannelWeights[2];
 					}
 
-					if (useAlpha) {
+					if (useAlpha)
+					{
 						luminance += ssimMaps[scale].LuminanceValues[3][w] * standardChannelWeights[3];
 						contrast += ssimMaps[scale].ContrastValues[3][w] * standardChannelWeights[3];
 						structure += ssimMaps[scale].StructureValues[3][w] * standardChannelWeights[3];
 						totalWeight += standardChannelWeights[3];
 					}
 
-					if (totalWeight > 0) {
+					if (totalWeight > 0)
+					{
 						luminance /= totalWeight;
 						contrast /= totalWeight;
 						structure /= totalWeight;
@@ -324,11 +317,17 @@ namespace BCnEncTests.Support
 				float percentile10 = CalculatePercentile(ssimMaps[scale].SsimValues, 0.1f);
 				float percentile20 = CalculatePercentile(ssimMaps[scale].SsimValues, 0.2f);
 
+				// Ensure values are non-negative before applying power function
+				// This follows image quality research convention where absolute structural similarity is used
+				float absAverageSsim = Math.Abs(averageSsim);
+				float absPercentile5 = Math.Abs(percentile5);
+				float absPercentile10 = Math.Abs(percentile10);
+				float absPercentile20 = Math.Abs(percentile20);
 
-				msssimResult.Average *= MathF.Pow(averageSsim, scaleWeights[scale]);
-				msssimResult.Percentile5 *= MathF.Pow(percentile5, scaleWeights[scale]);
-				msssimResult.Percentile10 *= MathF.Pow(percentile10, scaleWeights[scale]);
-				msssimResult.Percentile20 *= MathF.Pow(percentile20, scaleWeights[scale]);
+				msssimResult.Average *= MathF.Pow(absAverageSsim, scaleWeights[scale]);
+				msssimResult.Percentile5 *= MathF.Pow(absPercentile5, scaleWeights[scale]);
+				msssimResult.Percentile10 *= MathF.Pow(absPercentile10, scaleWeights[scale]);
+				msssimResult.Percentile20 *= MathF.Pow(absPercentile20, scaleWeights[scale]);
 
 				// Downsample for next scale if not at the last scale
 				if (scale < scales - 1)
@@ -454,6 +453,34 @@ namespace BCnEncTests.Support
 			}
 
 			return sum / count;
+		}
+
+		private static float[] CreateGaussianKernel(int windowSize, int windowRadius)
+		{
+			// Before your nested window loops, create a Gaussian kernel:
+			float[] gaussianKernel = new float[windowSize * windowSize];
+			float sigma = windowSize / 6.0f; // Standard deviation - typically 1/6 of the window size
+			float sum = 0;
+
+			// Pre-compute the 2D Gaussian kernel
+			for (int wy = -windowRadius; wy <= windowRadius; wy++)
+			{
+				for (int wx = -windowRadius; wx <= windowRadius; wx++)
+				{
+					int idx = (wy + windowRadius) * windowSize + (wx + windowRadius);
+					// Gaussian function: exp(-(x² + y²)/(2*σ²))
+					gaussianKernel[idx] = MathF.Exp(-(wx * wx + wy * wy) / (2 * sigma * sigma));
+					sum += gaussianKernel[idx];
+				}
+			}
+
+			// Normalize the kernel
+			for (int i = 0; i < gaussianKernel.Length; i++)
+			{
+				gaussianKernel[i] /= sum;
+			}
+
+			return gaussianKernel;
 		}
 	}
 }

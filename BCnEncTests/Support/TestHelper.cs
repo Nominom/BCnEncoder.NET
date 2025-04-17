@@ -213,7 +213,7 @@ namespace BCnEncTests.Support
 			using var fs2 = File.OpenWrite(Path.Combine("encoding/", outFileName+".png"));
 			imageDecoded.SaveAsPng(fs2);
 
-			ImageQuality.AssertImageQuality(original, imageDecoded, texType, quality, GetChannelMask(format), output);
+			ImageQuality.AssertImageQuality(original, imageDecoded, texType, quality, format, GetChannelMask(format), output);
 		}
 
 		public static ColorRgba32[] GetSinglePixelArrayAsColors(Image<Rgba32> original)
