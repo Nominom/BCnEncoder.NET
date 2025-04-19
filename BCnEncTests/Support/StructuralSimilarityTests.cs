@@ -114,6 +114,59 @@ namespace BCnEncTests.Support
         }
 
         [Fact]
+        public void MultiScaleStructuralSimilarity_SIMD_IsEqualToNonSIMD()
+        {
+            // Arrange
+            using var original = new Image<RgbaVector>(256, 256);
+
+            // Fill with random data
+            var random = new Random(42);
+            for (int y = 0; y < original.Height; y++)
+            {
+                for (int x = 0; x < original.Width; x++)
+                {
+                    original[x, y] = new RgbaVector(
+                        (float)random.NextDouble(),
+                        (float)random.NextDouble(),
+                        (float)random.NextDouble(),
+                        (float)random.NextDouble());
+                }
+            }
+
+            // Create slightly modified image (add small amount of noise)
+            using var modified = original.Clone();
+            modified.Mutate(ctx => ctx.ProcessPixelRowsAsVector4((row, point) =>
+            {
+                for (int x = 0; x < row.Length; x++)
+                {
+                    row[x] = new Vector4(
+                        row[x].X + (float)(random.NextDouble() * 0.05), // Small random noise
+                        row[x].Y + (float)(random.NextDouble() * 0.05),
+                        row[x].Z + (float)(random.NextDouble() * 0.05),
+                        row[x].W);
+                }
+            }));
+
+            // Test non-standard channel mask too
+            string channelMask = "rba";
+
+            // Act
+            StructuralSimilarityResult similarity = StructuralSimilarity.MultiScaleStructuralSimilarity_NonSimd(original, modified, channelMask, 5);
+            StructuralSimilarityResult similaritySimd = StructuralSimilarity.MultiScaleStructuralSimilarity_Simd(original, modified, channelMask, 5);
+
+            // Assert
+            _output.WriteLine($"MS-SSIM between similar images: {similarity}");
+            _output.WriteLine($"MS-SSIM (SIMD) between similar images: {similaritySimd}");
+
+            Assert.Equal(similarity.Average, similaritySimd.Average, 0.00001);
+
+            // Check percentiles
+			Assert.Equal(similarity.Percentile5, similaritySimd.Percentile5, 0.00001);
+			Assert.Equal(similarity.Percentile10, similaritySimd.Percentile10, 0.00001);
+			Assert.Equal(similarity.Percentile20, similaritySimd.Percentile20, 0.00001);
+        }
+
+        [Fact]
         public void MultiScaleStructuralSimilarity_DifferentImages_ReturnsLowerValue()
         {
             // Arrange
