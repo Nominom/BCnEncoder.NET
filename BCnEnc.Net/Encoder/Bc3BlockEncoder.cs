@@ -8,22 +8,22 @@ namespace BCnEncoder.Encoder
 	{
 		private static readonly Bc4ComponentBlockEncoder bc4BlockEncoder = new Bc4ComponentBlockEncoder(ColorComponent.A);
 
-		public override Bc3Block EncodeBlock(RawBlock4X4RgbaFloat block, CompressionQuality quality, ColorConversionMode colorConversionMode)
+		public override Bc3Block EncodeBlock(RawBlock4X4RgbaFloat block, OperationContext context)
 		{
 			// TODO: Do better.
-			block.ColorConvert(colorConversionMode);
+			block.ColorConvert(context.ColorConversionMode);
 
-			switch (quality)
+			switch (context.Quality)
 			{
 				case CompressionQuality.Fast:
-					return Bc3BlockEncoderFast.EncodeBlock(block);
+					return Bc3BlockEncoderFast.EncodeBlock(block, context);
 				case CompressionQuality.Balanced:
-					return Bc3BlockEncoderBalanced.EncodeBlock(block);
+					return Bc3BlockEncoderBalanced.EncodeBlock(block, context);
 				case CompressionQuality.BestQuality:
-					return Bc3BlockEncoderSlow.EncodeBlock(block);
+					return Bc3BlockEncoderSlow.EncodeBlock(block, context);
 
 				default:
-					throw new ArgumentOutOfRangeException(nameof(quality), quality, null);
+					throw new ArgumentOutOfRangeException(nameof(context.Quality), context.Quality, null);
 			}
 		}
 
@@ -31,10 +31,10 @@ namespace BCnEncoder.Encoder
 
 		private static class Bc3BlockEncoderFast
 		{
-			internal static Bc3Block EncodeBlock(RawBlock4X4RgbaFloat rawBlock)
+			internal static Bc3Block EncodeBlock(RawBlock4X4RgbaFloat rawBlock, OperationContext context)
 			{
 				Bc3Block result = new Bc3Block();
-				result. colorBlock = Bc1BlockEncoder.Bc1BlockEncoderBalanced.EncodeBlock(rawBlock, false);
+				result. colorBlock = Bc1BlockEncoder.Bc1BlockEncoderFast.EncodeBlock(rawBlock, context, false);
 				result.alphaBlock = bc4BlockEncoder.EncodeBlock(rawBlock, CompressionQuality.Fast);
 
 				return result;
@@ -46,10 +46,10 @@ namespace BCnEncoder.Encoder
 			private const int MaxTries = 24 * 2;
 			private const float ErrorThreshold = 0.05f;
 
-			internal static Bc3Block EncodeBlock(RawBlock4X4RgbaFloat rawBlock)
+			internal static Bc3Block EncodeBlock(RawBlock4X4RgbaFloat rawBlock, OperationContext context)
 			{
 				Bc3Block result = new Bc3Block();
-				result. colorBlock = Bc1BlockEncoder.Bc1BlockEncoderBalanced.EncodeBlock(rawBlock, false);
+				result. colorBlock = Bc1BlockEncoder.Bc1BlockEncoderBalanced.EncodeBlock(rawBlock, context, false);
 				result.alphaBlock = bc4BlockEncoder.EncodeBlock(rawBlock, CompressionQuality.Balanced);
 
 				return result;
@@ -58,10 +58,10 @@ namespace BCnEncoder.Encoder
 
 		private static class Bc3BlockEncoderSlow
 		{
-			internal static Bc3Block EncodeBlock(RawBlock4X4RgbaFloat rawBlock)
+			internal static Bc3Block EncodeBlock(RawBlock4X4RgbaFloat rawBlock, OperationContext context)
 			{
 				Bc3Block result = new Bc3Block();
-				result. colorBlock = Bc1BlockEncoder.Bc1BlockEncoderSlow.EncodeBlock(rawBlock, false);
+				result. colorBlock = Bc1BlockEncoder.Bc1BlockEncoderSlow.EncodeBlock(rawBlock, context, false);
 				result.alphaBlock = bc4BlockEncoder.EncodeBlock(rawBlock, CompressionQuality.BestQuality);
 
 				return result;

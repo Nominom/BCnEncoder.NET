@@ -467,17 +467,17 @@ public struct ColorRgbaFloat : IColorRgba<ColorRgbaFloat, float>
 		this.a = other.W;
 	}
 
-	public bool Equals(ColorRgbaFloat other)
+	public readonly bool Equals(ColorRgbaFloat other)
 	{
 		return r == other.r && g == other.g && b == other.b && a == other.a;
 	}
 
-	public override bool Equals(object obj)
+	public readonly override bool Equals(object obj)
 	{
 		return obj is ColorRgbaFloat other && Equals(other);
 	}
 
-	public override int GetHashCode()
+	public readonly override int GetHashCode()
 	{
 		unchecked
 		{
@@ -547,7 +547,7 @@ public struct ColorRgbaFloat : IColorRgba<ColorRgbaFloat, float>
 		);
 	}
 
-	public override string ToString()
+	public readonly override string ToString()
 	{
 		return $"r : {r:0.00000} g : {g:0.00000} b : {b:0.00000} a : {a:0.00000}";
 	}
@@ -579,12 +579,12 @@ public struct ColorRgbaFloat : IColorRgba<ColorRgbaFloat, float>
 		a = color.a;
 	}
 
-	public Vector3 ToVector3()
+	public readonly Vector3 ToVector3()
 	{
 		return new Vector3(r, g, b);
 	}
 
-	public Vector4 ToVector4()
+	public readonly Vector4 ToVector4()
 	{
 		return new Vector4(r, g, b, a);
 	}
@@ -596,7 +596,7 @@ public struct ColorRgbaFloat : IColorRgba<ColorRgbaFloat, float>
 	/// </summary>
 	public float R
 	{
-		get => r;
+		readonly get => r;
 		set => r = value;
 	}
 
@@ -605,7 +605,7 @@ public struct ColorRgbaFloat : IColorRgba<ColorRgbaFloat, float>
 	/// </summary>
 	public float G
 	{
-		get => g;
+		readonly get => g;
 		set => g = value;
 	}
 
@@ -614,7 +614,7 @@ public struct ColorRgbaFloat : IColorRgba<ColorRgbaFloat, float>
 	/// </summary>
 	public float B
 	{
-		get => b;
+		readonly get => b;
 		set => b = value;
 	}
 
@@ -623,7 +623,7 @@ public struct ColorRgbaFloat : IColorRgba<ColorRgbaFloat, float>
 	/// </summary>
 	public float A
 	{
-		get => a;
+		readonly get => a;
 		set => a = value;
 	}
 
@@ -632,7 +632,7 @@ public struct ColorRgbaFloat : IColorRgba<ColorRgbaFloat, float>
 	/// </summary>
 	public float RawR
 	{
-		get => r;
+		readonly get => r;
 		set => r = value;
 	}
 
@@ -641,7 +641,7 @@ public struct ColorRgbaFloat : IColorRgba<ColorRgbaFloat, float>
 	/// </summary>
 	public float RawG
 	{
-		get => g;
+		readonly get => g;
 		set => g = value;
 	}
 
@@ -650,7 +650,7 @@ public struct ColorRgbaFloat : IColorRgba<ColorRgbaFloat, float>
 	/// </summary>
 	public float RawB
 	{
-		get => b;
+		readonly get => b;
 		set => b = value;
 	}
 
@@ -659,7 +659,7 @@ public struct ColorRgbaFloat : IColorRgba<ColorRgbaFloat, float>
 	/// </summary>
 	public float RawA
 	{
-		get => a;
+		readonly get => a;
 		set => a = value;
 	}
 }

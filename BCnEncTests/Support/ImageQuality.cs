@@ -344,8 +344,14 @@ namespace BCnEncTests.Support
 			ITestOutputHelper output,
 			bool isLossless = false)
 		{
+			bool useOkLab = channelMask == "rgb";
+			if (useOkLab)
+			{
+				output.WriteLine("Using OkLab in MS-SSIM");
+			}
+
 			// For standard albedo maps, MS-SSIM is a good perceptual metric
-			StructuralSimilarityResult msssim = StructuralSimilarity.MultiScaleStructuralSimilarity(original, compressed, channelMask);
+			StructuralSimilarityResult msssim = StructuralSimilarity.MultiScaleStructuralSimilarity(original, compressed, channelMask, useOkLab, false);
 
 			// Thresholds with pattern matching - special case for lossless formats
 			// For average MS-SSIM
@@ -448,7 +454,7 @@ namespace BCnEncTests.Support
 		{
 			// For height maps, combine RMSE and SSIM for both precision and structure
 			// SSIM for structure preservation
-			StructuralSimilarityResult ssim = StructuralSimilarity.SingleScaleStructuralSimilarity(original, compressed, channelMask);
+			StructuralSimilarityResult ssim = StructuralSimilarity.SingleScaleStructuralSimilarity(original, compressed, channelMask, true, false);
 
 			// RMSE for precision - use the direct Image<RgbaVector> overload
 			float rmse = CalculateRMSE(original, compressed, channelMask);
@@ -528,7 +534,7 @@ namespace BCnEncTests.Support
 			bool isLossless = false)
 		{
 			// For specular/roughness/metallic maps, use MS-SSIM with moderate thresholds
-			StructuralSimilarityResult msssim = StructuralSimilarity.MultiScaleStructuralSimilarity(original, compressed, channelMask);
+			StructuralSimilarityResult msssim = StructuralSimilarity.MultiScaleStructuralSimilarity(original, compressed, channelMask, true, false);
 
 			// Thresholds with pattern matching - special case for lossless formats
 			// For average MS-SSIM

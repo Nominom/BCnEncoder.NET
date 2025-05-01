@@ -14,12 +14,12 @@ namespace BCnEncoder.Encoder
 			greenBlockEncoder = new Bc4ComponentBlockEncoder(component2);
 		}
 
-		public override Bc5Block EncodeBlock(RawBlock4X4RgbaFloat block, CompressionQuality quality, ColorConversionMode _)
+		public override Bc5Block EncodeBlock(RawBlock4X4RgbaFloat block, OperationContext context)
 		{
 			return new Bc5Block
 			{
-				redBlock = redBlockEncoder.EncodeBlock(block, quality),
-				greenBlock = greenBlockEncoder.EncodeBlock(block, quality)
+				redBlock = redBlockEncoder.EncodeBlock(block, context.Quality),
+				greenBlock = greenBlockEncoder.EncodeBlock(block, context.Quality)
 			};
 		}
 	}

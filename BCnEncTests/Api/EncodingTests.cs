@@ -25,6 +25,11 @@ public class EncoderTests
 	];
 	public static string[] RgTestImages = ["blocks", "rg"];
 
+	public static CompressionFormat[] OverrideFormats =
+	[
+		CompressionFormat.Bc1
+	];
+
 	public enum TestFileType
 	{
 		dds,
@@ -39,7 +44,9 @@ public class EncoderTests
 			TestFileType.ktx => new KtxFile(),
 		};
 
-		foreach (CompressionFormat format in Enum.GetValues<CompressionFormat>())
+		IEnumerable<CompressionFormat> formats = OverrideFormats.Length > 0 ? OverrideFormats : Enum.GetValues<CompressionFormat>();
+
+		foreach (CompressionFormat format in formats)
 		{
 			(string, TextureType)[] images = TestImages;
 

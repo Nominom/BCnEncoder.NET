@@ -6,12 +6,12 @@ namespace BCnEncoder.Encoder.Bptc
 	internal static class Bc7Mode6Encoder
 	{
 
-		public static Bc7Block EncodeBlock(RawBlock4X4RgbaFloat block, int startingVariation)
+		public static Bc7Block EncodeBlock(RawBlock4X4RgbaFloat block, int startingVariation, OperationContext context)
 		{
 			var hasAlpha = block.HasTransparentPixels();
 
 			var output = new Bc7Block();
-			Bc7EncodingHelpers.GetInitialUnscaledEndpoints(block, out var ep0, out var ep1);
+			Bc7EncodingHelpers.GetInitialUnscaledEndpoints(block, out var ep0, out var ep1, context.Weights);
 
 			var scaledEp0 =
 				Bc7EncodingHelpers.ScaleDownEndpoint(ep0, Bc7BlockType.Type6, false, out var pBit0);

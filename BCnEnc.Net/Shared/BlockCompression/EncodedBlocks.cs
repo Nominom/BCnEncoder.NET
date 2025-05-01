@@ -229,7 +229,9 @@ namespace BCnEncoder.Shared
 			var color0 = this.color0.ToColorRgbaFloat();
 			var color1 = this.color1.ToColorRgbaFloat();
 
-			Span<ColorRgbaFloat> colors = stackalloc ColorRgbaFloat[] {
+			int mode = this.color0.Mode;
+
+			Span<ColorRgbaFloat> colorsMode1 = stackalloc ColorRgbaFloat[] {
 				new ColorRgbaFloat(0, 0, 0),
 				color0.InterpolateFourthAtc(color1, 1),
 				color0,
@@ -240,7 +242,7 @@ namespace BCnEncoder.Shared
 			{
 				var colorIndex = this[i];
 
-				var color = this.color0.Mode == 0 ? color0.InterpolateThird(color1, colorIndex) : colors[colorIndex];
+				var color = mode == 0 ? color0.InterpolateThird(color1, colorIndex) : colorsMode1[colorIndex];
 
 				pixels[i] = color;
 			}

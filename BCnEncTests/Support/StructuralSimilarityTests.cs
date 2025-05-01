@@ -46,7 +46,7 @@ namespace BCnEncTests.Support
             string channelMask = "rgb"; // Test only RGB channels
 
             // Act
-            StructuralSimilarityResult similarity = StructuralSimilarity.MultiScaleStructuralSimilarity(image, clone, channelMask);
+            StructuralSimilarityResult similarity = StructuralSimilarity.MultiScaleStructuralSimilarity(image, clone, channelMask, false, false);
 
             // Assert
             _output.WriteLine($"MS-SSIM between identical images: {similarity}");
@@ -94,7 +94,7 @@ namespace BCnEncTests.Support
             string channelMask = "rgba";
 
             // Act
-            StructuralSimilarityResult similarity = StructuralSimilarity.MultiScaleStructuralSimilarity(original, modified, channelMask);
+            StructuralSimilarityResult similarity = StructuralSimilarity.MultiScaleStructuralSimilarity(original, modified, channelMask, false, false);
 
             // Assert
             _output.WriteLine($"MS-SSIM between similar images: {similarity}");
@@ -150,9 +150,11 @@ namespace BCnEncTests.Support
             // Test non-standard channel mask too
             string channelMask = "rba";
 
+            float[] channelWeights = new float[] { 0.2126f, 0.7152f, 0.0722f, 1f };
+
             // Act
             StructuralSimilarityResult similarity = StructuralSimilarity.MultiScaleStructuralSimilarity_NonSimd(original, modified, channelMask, 5);
-            StructuralSimilarityResult similaritySimd = StructuralSimilarity.MultiScaleStructuralSimilarity_Simd(original, modified, channelMask, 5);
+            StructuralSimilarityResult similaritySimd = StructuralSimilarity.MultiScaleStructuralSimilarity_Simd(original, modified, channelMask, channelWeights, 5);
 
             // Assert
             _output.WriteLine($"MS-SSIM between similar images: {similarity}");
@@ -194,7 +196,7 @@ namespace BCnEncTests.Support
             string channelMask = "rgba";
 
             // Act
-            StructuralSimilarityResult similarity = StructuralSimilarity.MultiScaleStructuralSimilarity(image1, image2, channelMask);
+            StructuralSimilarityResult similarity = StructuralSimilarity.MultiScaleStructuralSimilarity(image1, image2, channelMask, false, false);
 
             // Assert
             _output.WriteLine($"MS-SSIM between different images: {similarity}");
@@ -237,8 +239,8 @@ namespace BCnEncTests.Support
             string channelMask = "rgba";
 
             // Act - Test with different scale values
-            StructuralSimilarityResult similarity3 = StructuralSimilarity.MultiScaleStructuralSimilarity(original, modified, channelMask, scales: 3);
-            StructuralSimilarityResult similarity5 = StructuralSimilarity.MultiScaleStructuralSimilarity(original, modified, channelMask, scales: 5);
+            StructuralSimilarityResult similarity3 = StructuralSimilarity.MultiScaleStructuralSimilarity(original, modified, channelMask, false, false, scales: 3);
+            StructuralSimilarityResult similarity5 = StructuralSimilarity.MultiScaleStructuralSimilarity(original, modified, channelMask, false, false, scales: 5);
 
             // Assert
             _output.WriteLine($"MS-SSIM with 3 scales: {similarity3}");
@@ -283,9 +285,9 @@ namespace BCnEncTests.Support
             }));
 
             // Act & Assert
-            StructuralSimilarityResult similarityRgb = StructuralSimilarity.MultiScaleStructuralSimilarity(original, greenModified, "rgb");
-            StructuralSimilarityResult similarityRb = StructuralSimilarity.MultiScaleStructuralSimilarity(original, greenModified, "rb");
-            StructuralSimilarityResult similarityG = StructuralSimilarity.MultiScaleStructuralSimilarity(original, greenModified, "g");
+            StructuralSimilarityResult similarityRgb = StructuralSimilarity.MultiScaleStructuralSimilarity(original, greenModified, "rgb", false, false);
+            StructuralSimilarityResult similarityRb = StructuralSimilarity.MultiScaleStructuralSimilarity(original, greenModified, "rb", false, false);
+            StructuralSimilarityResult similarityG = StructuralSimilarity.MultiScaleStructuralSimilarity(original, greenModified, "g", false, false);
 
             _output.WriteLine($"MS-SSIM RGB channels: {similarityRgb}");
             _output.WriteLine($"MS-SSIM RB channels (unchanged): {similarityRb}");
@@ -306,6 +308,57 @@ namespace BCnEncTests.Support
             Assert.True(similarityRgb.Average > similarityG.Average, $"MS-SSIM for RGB should be higher than G, got {similarityRgb} vs {similarityG}");
             Assert.True(similarityRgb.Percentile5 > similarityG.Percentile5,
                 $"5th percentile for RGB should be higher than G, got {similarityRgb.Percentile5} vs {similarityG.Percentile5}");
+        }
+
+        [Fact]
+        public void MultiScaleStructuralSimilarity_Oklab_WorkCorrectly()
+        {
+            // Arrange
+            using var original = new Image<RgbaVector>(256, 256);
+
+            // Fill with random data
+            var random = new Random(42);
+            for (int y = 0; y < original.Height; y++)
+            {
+	            for (int x = 0; x < original.Width; x++)
+	            {
+		            original[x, y] = new RgbaVector(
+			            (float)random.NextDouble(),
+			            (float)random.NextDouble(),
+			            (float)random.NextDouble(),
+			            (float)random.NextDouble());
+	            }
+            }
+
+            using var copy = original.Clone();
+
+            // Create slightly modified image (add small amount of noise)
+            using var modified = original.Clone();
+            modified.Mutate(ctx => ctx.ProcessPixelRowsAsVector4((row, point) =>
+            {
+	            for (int x = 0; x < row.Length; x++)
+	            {
+		            row[x] = new Vector4(
+			            row[x].X + (float)(random.NextDouble() * 0.05), // Small random noise
+			            row[x].Y + (float)(random.NextDouble() * 0.05),
+			            row[x].Z + (float)(random.NextDouble() * 0.05),
+			            row[x].W);
+	            }
+            }));
+
+            string channelMask = "rgba";
+
+            // Act
+            StructuralSimilarityResult similaritySame = StructuralSimilarity.MultiScaleStructuralSimilarity(original, copy, channelMask, true, false);
+            StructuralSimilarityResult similarityDiff = StructuralSimilarity.MultiScaleStructuralSimilarity(original, modified, channelMask, true, false);
+
+            // Assert
+            _output.WriteLine($"MS-SSIM between copy images: {similaritySame}");
+            Assert.True(similaritySame.Average > 0.999f, $"MS-SSIM between copy images should be close to 1.0, got {similaritySame}");
+
+			_output.WriteLine($"MS-SSIM between different images: {similarityDiff}");
+			Assert.True(similarityDiff.Average < 1f, $"MS-SSIM between different images should be less than 1.0, got {similarityDiff}");
+			Assert.True(similarityDiff.Average > .95f, $"MS-SSIM between different images should be more than 0.95, got {similarityDiff}");
         }
     }
 }

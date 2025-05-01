@@ -1,5 +1,6 @@
 using System;
 using System.Threading;
+using BCnEncoder.Encoder;
 using BCnEncoder.Shared.Colors;
 
 namespace BCnEncoder.Shared
@@ -29,6 +30,24 @@ namespace BCnEncoder.Shared
 		/// </summary>
 		public OperationProgress Progress { get; set; }
 
+		/// <summary>
+		/// The compression quality to use for the operation.
+		/// </summary>
+		public CompressionQuality Quality { get; set; }
+
+		/// <summary>
+		/// The color conversion mode for the operation.
+		/// </summary>
 		public ColorConversionMode ColorConversionMode { get; set; }
+
+		/// <summary>
+		/// The Rgb weights to use for the operation, affects error calculation and PCA.
+		/// </summary>
+		public RgbWeights Weights { get; set; }
+
+		/// <summary>
+		/// The alpha cutoff to use when converting to 1bit alpha.
+		/// </summary>
+		public float AlphaThreshold { get; set; } = .5f;
 	}
 }

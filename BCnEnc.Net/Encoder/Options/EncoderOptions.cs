@@ -18,6 +18,7 @@ namespace BCnEncoder.Encoder.Options
 
 		/// <summary>
 		/// Determines how many tasks should be used for parallel processing.
+		/// Default is the number of available processors.
 		/// </summary>
 		public int TaskCount { get; set; } = Environment.ProcessorCount;
 

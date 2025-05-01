@@ -13,27 +13,29 @@ namespace BCnEncoder.Encoder
 			bc1BlockEncoder = new Bc1BlockEncoder();
 		}
 
-		public override AtcBlock EncodeBlock(RawBlock4X4RgbaFloat block, CompressionQuality quality, ColorConversionMode colorConversionMode)
+		public override AtcBlock EncodeBlock(RawBlock4X4RgbaFloat block, OperationContext context)
 		{
 			var atcBlock = new AtcBlock();
 
 			Bc1Block bc1Block;
 			// EncodeBlock with BC1 first
-			switch (quality)
+			switch (context.Quality)
 			{
 				case CompressionQuality.Fast:
+					bc1Block = Bc1BlockEncoder.Bc1BlockEncoderFast.EncodeBlock(block, context, false);
+					break;
 				case CompressionQuality.Balanced:
-					bc1Block = Bc1BlockEncoder.Bc1BlockEncoderBalanced.EncodeBlock(block, false);
+					bc1Block = Bc1BlockEncoder.Bc1BlockEncoderBalanced.EncodeBlock(block, context, false);
 					break;
 				case CompressionQuality.BestQuality:
-					bc1Block = Bc1BlockEncoder.Bc1BlockEncoderSlow.EncodeBlock(block, false);
+					bc1Block = Bc1BlockEncoder.Bc1BlockEncoderSlow.EncodeBlock(block, context, false);
 					break;
 				default:
-					throw new ArgumentOutOfRangeException(nameof(quality), quality, null);
+					throw new ArgumentOutOfRangeException(nameof(context.Quality), context.Quality, null);
 			}
 
 			// Atc specific modifications to BC1
-			// According to http://www.guildsoftware.com/papers/2012.Converting.DXTC.to.Atc.pdf
+			// According to http://www.guildsoftware.com/papers/2012.Converting.DXTC.to.ATC.pdf
 
 			// Change color0 from rgb565 to rgb555 with method 0
 			atcBlock.color0 = new ColorB5G5R5M1Packed(bc1Block.color0.R, bc1Block.color0.G, bc1Block.color0.B);
@@ -48,15 +50,6 @@ namespace BCnEncoder.Encoder
 
 			return atcBlock;
 		}
-
-		public override void EncodeBlocks(ReadOnlySpan<RawBlock4X4RgbaFloat> blocks, Span<AtcBlock> outputBlocks, CompressionQuality quality,
-			ColorConversionMode colorConversionMode)
-		{
-			for (var i = 0; i < blocks.Length; i++)
-			{
-				outputBlocks[i] = EncodeBlock(blocks[i], quality, colorConversionMode);
-			}
-		}
 	}
 
 	internal class AtcExplicitAlphaBlockEncoder : BaseBcBlockEncoder<AtcExplicitAlphaBlock>
@@ -68,9 +61,9 @@ namespace BCnEncoder.Encoder
 			atcBlockEncoder = new AtcBlockEncoder();
 		}
 
-		public override AtcExplicitAlphaBlock EncodeBlock(RawBlock4X4RgbaFloat block, CompressionQuality quality, ColorConversionMode colorConversionMode)
+		public override AtcExplicitAlphaBlock EncodeBlock(RawBlock4X4RgbaFloat block, OperationContext context)
 		{
-			var atcBlock = atcBlockEncoder.EncodeBlock(block, quality, colorConversionMode);
+			var atcBlock = atcBlockEncoder.EncodeBlock(block, context);
 
 			// EncodeBlock alpha
 			var bc2AlphaBlock = new Bc2AlphaBlock();
@@ -85,15 +78,6 @@ namespace BCnEncoder.Encoder
 				colors = atcBlock
 			};
 		}
-
-		public override void EncodeBlocks(ReadOnlySpan<RawBlock4X4RgbaFloat> blocks, Span<AtcExplicitAlphaBlock> outputBlocks, CompressionQuality quality,
-			ColorConversionMode colorConversionMode)
-		{
-			for (var i = 0; i < blocks.Length; i++)
-			{
-				outputBlocks[i] = EncodeBlock(blocks[i], quality, colorConversionMode);
-			}
-		}
 	}
 
 	internal class AtcInterpolatedAlphaBlockEncoder : BaseBcBlockEncoder<AtcInterpolatedAlphaBlock>
@@ -107,10 +91,10 @@ namespace BCnEncoder.Encoder
 			atcBlockEncoder = new AtcBlockEncoder();
 		}
 
-		public override AtcInterpolatedAlphaBlock EncodeBlock(RawBlock4X4RgbaFloat block, CompressionQuality quality, ColorConversionMode colorConversionMode)
+		public override AtcInterpolatedAlphaBlock EncodeBlock(RawBlock4X4RgbaFloat block, OperationContext context)
 		{
-			var bc4Block = bc4BlockEncoder.EncodeBlock(block, quality);
-			var atcBlock = atcBlockEncoder.EncodeBlock(block, quality, colorConversionMode);
+			var bc4Block = bc4BlockEncoder.EncodeBlock(block, context.Quality);
+			var atcBlock = atcBlockEncoder.EncodeBlock(block, context);
 
 			return new AtcInterpolatedAlphaBlock
 			{

@@ -78,8 +78,8 @@ namespace BCnEncTests
             _output.WriteLine($"LogRMSE: {result.LogRmse:F6}");
 
             // Calculate StructuralSimilarity (Single-Scale SSIM and Multi-Scale SSIM)
-            result.SsimResult = StructuralSimilarity.SingleScaleStructuralSimilarity(referenceImage, ddsImage, channelMask);
-            result.MsSsimResult = StructuralSimilarity.MultiScaleStructuralSimilarity(referenceImage, ddsImage, channelMask);
+            result.SsimResult = StructuralSimilarity.SingleScaleStructuralSimilarity(referenceImage, ddsImage, channelMask, false, false);
+            result.MsSsimResult = StructuralSimilarity.MultiScaleStructuralSimilarity(referenceImage, ddsImage, channelMask, false, false);
             _output.WriteLine($"SSIM: {result.SsimResult}");
             _output.WriteLine($"MS-SSIM: {result.MsSsimResult}");
 

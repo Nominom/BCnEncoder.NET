@@ -14,11 +14,11 @@ namespace BCnEncoder.Encoder
 			bc4Encoder = new Bc4ComponentBlockEncoder(component);
 		}
 
-		public override Bc4Block EncodeBlock(RawBlock4X4RgbaFloat block, CompressionQuality quality, ColorConversionMode _)
+		public override Bc4Block EncodeBlock(RawBlock4X4RgbaFloat block, OperationContext context)
 		{
 			var output = new Bc4Block
 			{
-				componentBlock = bc4Encoder.EncodeBlock(block, quality)
+				componentBlock = bc4Encoder.EncodeBlock(block, context.Quality)
 			};
 
 			return output;

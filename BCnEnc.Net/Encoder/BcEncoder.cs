@@ -675,7 +675,9 @@ namespace BCnEncoder.Encoder
 				IsParallel = !Debugger.IsAttached && Options.IsParallel,
 				TaskCount = Options.TaskCount,
 				Progress = new OperationProgress(Options.Progress, totalBlocks),
-				ColorConversionMode = colorConversionMode
+				ColorConversionMode = colorConversionMode,
+				Weights = OutputOptions.UsePerceptualMetrics ? RgbWeights.Perceptual : RgbWeights.Linear,
+				Quality = OutputOptions.Quality
 			};
 
 			if (inputFormat.IsUNormFormat() && outputFormat.IsSNormFormat() && OutputOptions.RescaleUnormToSnorm)
@@ -684,7 +686,7 @@ namespace BCnEncoder.Encoder
 			}
 
 			// 5. Encode the data
-			var result = encoder.Encode(floatData, mipWidth, mipHeight, OutputOptions.Quality, context);
+			var result = encoder.Encode(floatData, mipWidth, mipHeight, context);
 
 			result.CopyTo(output);
 		}
@@ -748,7 +750,9 @@ namespace BCnEncoder.Encoder
 				IsParallel = !Debugger.IsAttached && Options.IsParallel,
 				TaskCount = Options.TaskCount,
 				Progress = new OperationProgress(Options.Progress, totalBlocks),
-				ColorConversionMode = colorConversionMode
+				ColorConversionMode = colorConversionMode,
+				Weights = OutputOptions.UsePerceptualMetrics ? RgbWeights.Perceptual : RgbWeights.Linear,
+				Quality = OutputOptions.Quality
 			};
 
 			// 6. Encode each mip level
@@ -768,7 +772,7 @@ namespace BCnEncoder.Encoder
 							UNormToSNorm(colorMemory.Span);
 						}
 
-						var encoded = encoder.Encode(colorMemory, mipWidth, mipHeight, OutputOptions.Quality, context);
+						var encoded = encoder.Encode(colorMemory, mipWidth, mipHeight, context);
 
 						if (newData.Mips[m].SizeInBytes != encoded.Length)
 						{

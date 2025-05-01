@@ -6,7 +6,7 @@ namespace BCnEncoder.Encoder
 {
 	internal interface IBcEncoder
 	{
-		byte[] Encode(ReadOnlyMemory<ColorRgbaFloat> pixels, int width, int height, CompressionQuality quality, OperationContext context);
+		byte[] Encode(ReadOnlyMemory<ColorRgbaFloat> pixels, int width, int height, OperationContext context);
 	}
 
 	internal class RawPixelEncoder<TPixelFormat> : IBcEncoder
@@ -15,7 +15,7 @@ namespace BCnEncoder.Encoder
 		public RawPixelEncoder() { }
 
 		/// <inheritdoc />
-		public byte[] Encode(ReadOnlyMemory<ColorRgbaFloat> pixels, int width, int height, CompressionQuality quality, OperationContext context)
+		public byte[] Encode(ReadOnlyMemory<ColorRgbaFloat> pixels, int width, int height, OperationContext context)
 		{
 			var output = pixels.ConvertToAsBytes<ColorRgbaFloat, TPixelFormat>(context.ColorConversionMode);
 

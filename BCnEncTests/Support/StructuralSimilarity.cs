@@ -36,6 +36,26 @@ namespace BCnEncTests.Support
 	/// </summary>
 	public static class StructuralSimilarity
 	{
+		// Standard channel weights to approximate human perception
+		private static float[] StandardRgbaWeights = new float[]{
+			0.25f, // R
+			0.54f, // G
+			0.11f, // B
+			0.10f  // A
+		};
+		private static float[] StandardLinearRgbaWeights = new float[]{
+			1f, // R
+			1f, // G
+			1f, // B
+			1f  // A
+		};
+		private static float[] StandardOklabWeights = new float[]{
+			0.25f, // R
+			0.54f, // G
+			0.11f, // B
+			1f     // L
+		};
+
 
 		/// <summary>
 		/// Calculates the Multi-Scale Structural Similarity Index (MS-SSIM) between two images.
@@ -43,15 +63,51 @@ namespace BCnEncTests.Support
 		/// <param name="original">The original image.</param>
 		/// <param name="other">The comparison image.</param>
 		/// <param name="channelMask">String indicating which channels to include ("rgba"). Case-insensitive.</param>
+		/// <param name="useOklab">Whether to use Oklab color space when calculating SSIM.</param>
+		/// <param name="isSrgb">Whether the input images are in sRGB color space</param>
 		/// <param name="scales">Number of scales to use in calculation (default: 5).</param>
 		/// <returns>MS-SSIM value between 0-1, where 1 indicates identical images.</returns>
 		public static StructuralSimilarityResult MultiScaleStructuralSimilarity(
 			Image<RgbaVector> original,
 			Image<RgbaVector> other,
 			string channelMask,
+			bool useOklab,
+			bool isSrgb,
 			int scales = 5)
 		{
-			return MultiScaleStructuralSimilarity_Simd(original, other, channelMask, scales);
+			float[] weights = channelMask.ToLowerInvariant() switch
+			{
+				_ when useOklab => StandardOklabWeights,
+				"rgba" => StandardRgbaWeights,
+				"rgb" => StandardRgbaWeights,
+				_ => StandardLinearRgbaWeights
+			};
+
+			if (useOklab)
+			{
+				try
+				{
+					var config = new Configuration()
+					{
+						PreferContiguousImageBuffers = true,
+					};
+					original = original.Clone(config);
+					other = other.Clone(config);
+					OkLabToAlpha(original, isSrgb);
+					OkLabToAlpha(other, isSrgb);
+
+					channelMask = "rgba";
+
+					return MultiScaleStructuralSimilarity_Simd(original, other, channelMask, weights, scales);
+				}
+				finally
+				{
+					// original?.Dispose();
+					// other?.Dispose();
+				}
+			}
+
+			return MultiScaleStructuralSimilarity_Simd(original, other, channelMask, weights, scales);
 		}
 
 		/// <summary>
@@ -59,6 +115,8 @@ namespace BCnEncTests.Support
 		/// </summary>
 		/// <param name="original">The original image.</param>
 		/// <param name="other">The comparison image.</param>
+		/// <param name="useOklab">Whether to use Oklab color space when calculating SSIM.</param>
+		/// <param name="isSrgb">Whether the input images are in sRGB color space</param>
 		/// <param name="channelMask">String indicating which channels to include ("rgba"). Case-insensitive.</param>
 		/// <returns>SSIM value between 0-1, where 1 indicates identical images.</returns>
 		/// <remarks>
@@ -68,10 +126,44 @@ namespace BCnEncTests.Support
 		internal static StructuralSimilarityResult SingleScaleStructuralSimilarity(
 			Image<RgbaVector> original,
 			Image<RgbaVector> other,
-			string channelMask)
+			string channelMask,
+			bool useOklab,
+			bool isSrgb)
 		{
+			float[] weights = channelMask.ToLowerInvariant() switch
+			{
+				_ when useOklab => StandardOklabWeights,
+				"rgba" => StandardRgbaWeights,
+				"rgb" => StandardRgbaWeights,
+				_ => StandardLinearRgbaWeights
+			};
+
+			if (useOklab)
+			{
+				try
+				{
+					var config = new Configuration()
+					{
+						PreferContiguousImageBuffers = true,
+					};
+					original = original.Clone(config);
+					other = other.Clone(config);
+					OkLabToAlpha(original, isSrgb);
+					OkLabToAlpha(other, isSrgb);
+
+					channelMask = "rgba";
+
+					return MultiScaleStructuralSimilarity_Simd(original, other, channelMask, weights, scales: 1);
+				}
+				finally
+				{
+					original?.Dispose();
+					other?.Dispose();
+				}
+			}
+
 			// Single-scale SSIM is just MS-SSIM with one scale
-			return MultiScaleStructuralSimilarity_Simd(original, other, channelMask, scales: 1);
+			return MultiScaleStructuralSimilarity_Simd(original, other, channelMask, weights, scales: 1);
 		}
 
 		/// <summary>
@@ -97,12 +189,24 @@ namespace BCnEncTests.Support
 		/// Uses ImageSharp's Gaussian filtering for high-quality downsampling that reduces aliasing artifacts.
 		/// This produces better results than a simple box filter when calculating structural similarity.
 		/// </remarks>
-		private static void DownsampleImages(
-			Image<RgbaVector> original,
-			Image<RgbaVector> other)
+		private static void DownsampleImage(
+			Image<RgbaVector> original)
 		{
 			int newWidth = original.Width / 2;
 			int newHeight = original.Height / 2;
+
+			var rgb = original;
+			using var alpha = original.Clone();
+
+			for (int y = 0; y < original.Height; y++)
+			{
+				for (int x = 0; x < original.Width; x++)
+				{
+					var oPixel = original[x, y];
+					rgb[x, y] = new RgbaVector(oPixel.R, oPixel.G, oPixel.B);
+					alpha[x, y] = new RgbaVector(oPixel.A, oPixel.A, oPixel.A);
+				}
+			}
 
 			// Configure resize options with Gaussian resampling
 			var resizeOptions = new ResizeOptions
@@ -110,18 +214,68 @@ namespace BCnEncTests.Support
 				Size = new Size(newWidth, newHeight),
 				Mode = ResizeMode.Stretch,
 				Sampler = new BicubicResampler(),
+				PremultiplyAlpha = false,
 			};
 
 			// Apply Gaussian blur before resizing to reduce aliasing
 			float sigma = 0.8f; // Standard deviation for Gaussian kernel
 
-			original.Mutate(ctx => ctx
+			rgb.Mutate(ctx =>
+			{
+				ctx
+					.GaussianBlur(sigma)
+					.Resize(resizeOptions);
+			});
+
+			alpha.Mutate(ctx => ctx
 				.GaussianBlur(sigma)
 				.Resize(resizeOptions));
 
-			other.Mutate(ctx => ctx
-				.GaussianBlur(sigma)
-				.Resize(resizeOptions));
+			for (int y = 0; y < newHeight; y++)
+			{
+				for (int x = 0; x < newWidth; x++)
+				{
+					rgb[x, y] = rgb[x, y] with{ A = alpha[x, y].R };
+				}
+			}
+		}
+
+		private static void OkLabToAlpha(Image<RgbaVector> image, bool isSrgb)
+		{
+			// for (int y = 0; y < image.Height; y++)
+			// {
+			// 	for (int x = 0; x < image.Width; x++)
+			// 	{
+			//
+			// 		var oPixel = image[x, y];
+			// 		Vector4 rgb = oPixel.ToVector4();
+			//
+			// 		if (isSrgb)
+			// 			rgb = ColorSpace.Srgb.ToLrgb(rgb); // Convert from sRGB to linear RGB
+			// 		Vector4 oklab = ColorSpace.Oklab.LrgbToOklab(rgb);
+			//
+			// 		RgbaVector newPixel = oPixel;
+			// 		newPixel.A = oklab.X;
+			// 		image[x, y] = newPixel;
+			// 	}
+			// }
+
+			image.Mutate(ctx =>
+			{
+				ctx.ProcessPixelRowsAsVector4((row, point) =>
+				{
+					for (int x = 0; x < row.Length; x++)
+					{
+						Vector4 rgb = row[x];
+
+						if (isSrgb)
+							rgb = ColorSpace.Srgb.ToLrgb(rgb); // Convert from sRGB to linear RGB
+						Vector4 oklab = ColorSpace.Oklab.LrgbToOklab(rgb);
+
+						row[x].W = oklab.X;
+					}
+				});
+			});
 		}
 
 		/// <summary>
@@ -208,6 +362,7 @@ namespace BCnEncTests.Support
 			Image<RgbaVector> original,
 			Image<RgbaVector> other,
 			string channelMask,
+			float[] channelWeights,
 			int scales)
 		{
 			if (original.Width != other.Width || original.Height != other.Height)
@@ -218,6 +373,11 @@ namespace BCnEncTests.Support
 			if (string.IsNullOrEmpty(channelMask))
 			{
 				throw new ArgumentException("Channel mask must contain at least one channel", nameof(channelMask));
+			}
+
+			if (channelWeights == null || channelWeights.Length != 4)
+			{
+				throw new ArgumentException("Channel weights must be an array of length 4", nameof(channelWeights));
 			}
 
 			// Validate scales based on image dimensions
@@ -259,14 +419,6 @@ namespace BCnEncTests.Support
 				0.2363f * 5,
 				0.1333f * 5
 			];
-
-			// Standard channel weights to approximate human perception
-			Vector128<float> standardChannelWeights = Vector128.Create(
-				0.25f, // R
-				0.54f, // G
-				0.11f, // B
-				0.10f  // A
-				);
 
 			// Define MS-SSIM weights (from Wang et al. paper)
 			float[] scaleWeights = new float[scales];
@@ -327,8 +479,18 @@ namespace BCnEncTests.Support
 				useAlpha ? 1f: 0
 			);
 
-			Vector128<float> channelWeights = standardChannelWeights * channelsOnOffVector;
-			float totalWeight = Vector128.Sum(channelWeights);
+			// Create channel weights
+			Vector128<float> channelWeightsVec = Vector128.Create(
+				channelWeights[0],
+				channelWeights[1],
+				channelWeights[2],
+				channelWeights[3]
+			);
+
+			// Turn off unused channels
+			channelWeightsVec *= channelsOnOffVector;
+
+			float totalWeight = Vector128.Sum(channelWeightsVec);
 
 			if (totalWeight == 0)
 			{
@@ -336,7 +498,7 @@ namespace BCnEncTests.Support
 			}
 
 			// Normalize weights
-			channelWeights /= totalWeight;
+			channelWeightsVec /= totalWeight;
 
 			// Process each scale
 			for (int scale = 0; scale < scales; scale++)
@@ -412,9 +574,9 @@ namespace BCnEncTests.Support
 						Vector128<float> s = (sigmaXY + c2Vector / twoVector) / (sqrtSigmaX2SigmaY2 + c2Vector / twoVector);
 
 						// Horizontal add the channels multiplied by their weights (already normalized)
-						float luminance = Vector128.Sum(l * channelWeights);
-						float contrast =   Vector128.Sum(c * channelWeights);
-						float structure = Vector128.Sum(s * channelWeights);
+						float luminance = Vector128.Sum(l * channelWeightsVec);
+						float contrast =   Vector128.Sum(c * channelWeightsVec);
+						float structure = Vector128.Sum(s * channelWeightsVec);
 
 						ssimMaps[scale].SsimValues.Add(luminance * contrast * structure);
 
@@ -451,7 +613,8 @@ namespace BCnEncTests.Support
 				// Downsample for next scale if not at the last scale
 				if (scale < scales - 1)
 				{
-					DownsampleImages(originalCopy, otherCopy);
+					DownsampleImage(originalCopy);
+					DownsampleImage(otherCopy);
 					currentWidth /= 2;
 					currentHeight /= 2;
 				}
@@ -755,7 +918,8 @@ namespace BCnEncTests.Support
 				// Downsample for next scale if not at the last scale
 				if (scale < scales - 1)
 				{
-					DownsampleImages(originalCopy, otherCopy);
+					DownsampleImage(originalCopy);
+					DownsampleImage(otherCopy);
 					currentWidth /= 2;
 					currentHeight /= 2;
 				}

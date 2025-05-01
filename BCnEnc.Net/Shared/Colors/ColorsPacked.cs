@@ -1,3 +1,4 @@
+using System.Numerics;
 using System.Runtime.InteropServices;
 
 namespace BCnEncoder.Shared.Colors;
@@ -901,6 +902,14 @@ public struct ColorB5G6R5Packed : IColorRgb<ColorB5G6R5Packed, ushort>, IColorPa
 		R = r;
 		G = g;
 		B = b;
+	}
+
+	public ColorB5G6R5Packed(Vector4 color)
+	{
+		data = 0;
+		R = color.X;
+		G = color.Y;
+		B = color.Z;
 	}
 
 	public readonly override string ToString()

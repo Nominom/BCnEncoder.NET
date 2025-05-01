@@ -7,7 +7,7 @@ namespace BCnEncoder.Encoder.Bptc
 	internal static class Bc7Mode1Encoder
 	{
 
-		public static Bc7Block EncodeBlock(RawBlock4X4RgbaFloat block, int startingVariation, int bestPartition)
+		public static Bc7Block EncodeBlock(RawBlock4X4RgbaFloat block, int startingVariation, int bestPartition, OperationContext context)
 		{
 			var output = new Bc7Block();
 			const Bc7BlockType type = Bc7BlockType.Type1;
@@ -27,7 +27,7 @@ namespace BCnEncoder.Encoder.Bptc
 			for (var subset = 0; subset < 2; subset++) {
 
 				Bc7EncodingHelpers.GetInitialUnscaledEndpointsForSubset(block, out var ep0, out var ep1,
-					partitionTable, subset);
+					partitionTable, subset, context.Weights);
 				var scaledEp0 =
 					Bc7EncodingHelpers.ScaleDownEndpoint(ep0, type, true, out var pBit);
 				var scaledEp1 =

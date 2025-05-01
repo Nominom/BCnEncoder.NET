@@ -9,8 +9,9 @@ using CommunityToolkit.HighPerformance;
 
 namespace BCnEncoder.Encoder
 {
-	internal abstract class BaseBcBlockEncoder<TEncodedBlock> : IBcBlockEncoder
+	internal abstract class BaseBcBlockEncoder<TEncodedBlock, TEncodingContext> : IBcBlockEncoder
 		where TEncodedBlock: unmanaged
+		where TEncodingContext: struct, IBlockEncodingContext
 	{
 		private static readonly object lockObj = new object();
 
@@ -19,14 +20,15 @@ namespace BCnEncoder.Encoder
 			return Unsafe.SizeOf<TEncodedBlock>();
 		}
 
-		public abstract TEncodedBlock EncodeBlock(RawBlock4X4RgbaFloat block, CompressionQuality quality, ColorConversionMode colorConversionMode);
+		public abstract TEncodedBlock EncodeBlock(in TEncodingContext context);
 
-		public virtual void EncodeBlocks(ReadOnlySpan<RawBlock4X4RgbaFloat> blocks, Span<TEncodedBlock> outputBlocks,
-			CompressionQuality quality, ColorConversionMode colorConversionMode)
+		public virtual void EncodeBlocks(ReadOnlySpan<RawBlock4X4RgbaFloat> blocks, Span<TEncodedBlock> outputBlocks, OperationContext context)
 		{
 			for (var i = 0; i < blocks.Length; i++)
 			{
-				outputBlocks[i] = EncodeBlock(blocks[i], quality, colorConversionMode);
+				// EncodeBlock
+				TEncodingContext encContext = BlockEncodingContextHelpers.Create<TEncodingContext>(blocks[i], context);
+				outputBlocks[i] = EncodeBlock(encContext);
 			}
 		}
 
@@ -35,14 +37,13 @@ namespace BCnEncoder.Encoder
 			ReadOnlyMemory<ColorRgbaFloat> pixels,
 			int width,
 			int height,
-			CompressionQuality quality,
 			OperationContext context)
 		{
 			var blocks = ImageToBlocks.ImageTo4X4(pixels, width, height, out var blocksWidth, out var blocksHeight);
-			return EncodeBlocks(blocks, blocksWidth, blocksHeight, quality, context);
+			return EncodeBlocks(blocks, blocksWidth, blocksHeight, context);
 		}
 
-		public byte[] EncodeBlocks(RawBlock4X4RgbaFloat[] blocks, int blockWidth, int blockHeight, CompressionQuality quality, OperationContext context)
+		public byte[] EncodeBlocks(RawBlock4X4RgbaFloat[] blocks, int blockWidth, int blockHeight, OperationContext context)
 		{
 			var outputData = new byte[blockWidth * blockHeight * Unsafe.SizeOf<TEncodedBlock>()];
 
@@ -58,7 +59,7 @@ namespace BCnEncoder.Encoder
 					var outputBlocks = MemoryMarshal.Cast<byte, TEncodedBlock>(outputData).Slice(y * blockWidth, blockWidth);
 					var inputBlocks = blocks.AsSpan().Slice(y * blockWidth, blockWidth);
 
-					EncodeBlocks(inputBlocks, outputBlocks, quality, context.ColorConversionMode);
+					EncodeBlocks(inputBlocks, outputBlocks, context);
 
 					if (context.Progress != null)
 					{
@@ -78,7 +79,7 @@ namespace BCnEncoder.Encoder
 					var outputBlocks = MemoryMarshal.Cast<byte, TEncodedBlock>(outputData).Slice(y * blockWidth, blockWidth);
 					var inputBlocks = blocks.AsSpan().Slice(y * blockWidth, blockWidth);
 
-					EncodeBlocks(inputBlocks, outputBlocks, quality, context.ColorConversionMode);
+					EncodeBlocks(inputBlocks, outputBlocks, context);
 
 					context.Progress?.Report(blockWidth);
 				}
@@ -87,13 +88,13 @@ namespace BCnEncoder.Encoder
 			return outputData;
 		}
 
-		public void EncodeBlocks(ReadOnlySpan<RawBlock4X4RgbaFloat> blocks, Span<byte> output, CompressionQuality quality, ColorConversionMode colorConversionMode)
+		public void EncodeBlocks(ReadOnlySpan<RawBlock4X4RgbaFloat> blocks, Span<byte> output, OperationContext context)
 		{
 			if (output.Length != Unsafe.SizeOf<TEncodedBlock>() * blocks.Length)
 			{
 				throw new Exception("Cannot encode block! Output buffer is not the correct size.");
 			}
-			EncodeBlocks(blocks, MemoryMarshal.Cast<byte, TEncodedBlock>(output), quality, colorConversionMode);
+			EncodeBlocks(blocks, MemoryMarshal.Cast<byte, TEncodedBlock>(output), context);
 		}
 	}
 }

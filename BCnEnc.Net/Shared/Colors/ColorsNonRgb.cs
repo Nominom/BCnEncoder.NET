@@ -79,6 +79,11 @@ internal struct ColorYCbCr : IColor<ColorYCbCr>
 	{
 		return HashCode.Combine(y, cb, cr);
 	}
+
+	public Vector3 ToVector3()
+	{
+		return new Vector3(y, cb, cr);
+	}
 }
 
 internal struct ColorYCbCrAlpha : IColor<ColorYCbCrAlpha>

@@ -6,7 +6,7 @@ namespace BCnEncoder.Encoder
 {
 	internal interface IBcBlockEncoder : IBcEncoder
 	{
-		void EncodeBlocks(ReadOnlySpan<RawBlock4X4RgbaFloat> blocks, Span<byte> output, CompressionQuality quality, ColorConversionMode colorConversionMode);
+		void EncodeBlocks(ReadOnlySpan<RawBlock4X4RgbaFloat> blocks, Span<byte> output, OperationContext context);
 		int GetBlockSize();
 	}
 }

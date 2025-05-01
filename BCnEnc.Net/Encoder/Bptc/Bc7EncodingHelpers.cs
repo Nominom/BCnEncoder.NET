@@ -208,11 +208,11 @@ namespace BCnEncoder.Encoder.Bptc
 
 
 		public static void GetInitialUnscaledEndpoints(RawBlock4X4RgbaFloat block, out ColorRgba32 ep0,
-			out ColorRgba32 ep1)
+			out ColorRgba32 ep1, RgbWeights weights)
 		{
 
 			var originalPixels = block.AsSpan;
-			PcaVectors.Create(originalPixels, out var mean, out var pa);
+			PcaVectors.Create(originalPixels, out var mean, out var pa, weights);
 			PcaVectors.GetExtremePoints(block.AsSpan, mean, pa, out var min, out var max);
 
 			ep0 = new ColorRgba32((byte)(min.X * 255), (byte)(min.Y * 255), (byte)(min.Z * 255), (byte)(min.W * 255));
@@ -220,7 +220,7 @@ namespace BCnEncoder.Encoder.Bptc
 		}
 
 		public static void GetInitialUnscaledEndpointsForSubset(RawBlock4X4RgbaFloat block, out ColorRgba32 ep0,
-			out ColorRgba32 ep1, ReadOnlySpan<int> partitionTable, int subsetIndex)
+			out ColorRgba32 ep1, ReadOnlySpan<int> partitionTable, int subsetIndex, RgbWeights weights)
 		{
 
 			var originalPixels = block.AsSpan;
@@ -244,7 +244,7 @@ namespace BCnEncoder.Encoder.Bptc
 				}
 			}
 
-			PcaVectors.Create(subsetColors, out var mean, out var pa);
+			PcaVectors.Create(subsetColors, out var mean, out var pa, weights);
 			PcaVectors.GetExtremePoints(block.AsSpan, mean, pa, out var min, out var max);
 
 			ep0 = new ColorRgba32((byte)(min.X * 255), (byte)(min.Y * 255), (byte)(min.Z * 255), (byte)(min.W * 255));

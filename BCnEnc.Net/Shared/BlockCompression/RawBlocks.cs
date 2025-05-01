@@ -1,4 +1,5 @@
 using System;
+using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
 using BCnEncoder.Encoder.Bptc;
@@ -217,12 +218,12 @@ namespace BCnEncoder.Shared
 			return rawYcbcr;
 		}
 
-		public bool HasTransparentPixels()
+		public bool HasTransparentPixels(float alphaThreshold = 1)
 		{
 			var pixels = AsSpan;
 			for (var i = 0; i < pixels.Length; i++)
 			{
-				if (pixels[i].a < 1) return true;
+				if (pixels[i].a < alphaThreshold) return true;
 			}
 			return false;
 		}
@@ -255,6 +256,59 @@ namespace BCnEncoder.Shared
 			// TODO: COLORSPACE
 			return ToRawBlockYcbcrAlpha()
 				.CalculateError(other.ToRawBlockYcbcrAlpha(), yMultiplier, 1, 1, alphaMultiplier);
+		}
+
+		internal RawBlock4X4Vector4 AsVector4()
+		{
+			RawBlock4X4Vector4 result = new RawBlock4X4Vector4();
+			var pixels = AsSpan;
+			var resultPixels = result.AsSpan;
+
+			pixels.Cast<ColorRgbaFloat, Vector4>().CopyTo(resultPixels);
+
+			return result;
+		}
+	}
+
+	public struct RawBlock4X4Vector4
+	{
+		public Vector4 p00, p10, p20, p30;
+		public Vector4 p01, p11, p21, p31;
+		public Vector4 p02, p12, p22, p32;
+		public Vector4 p03, p13, p23, p33;
+
+		public RawBlock4X4Vector4(Vector4 fillColor)
+		{
+			p00 = p01 = p02 = p03 =
+				p10 = p11 = p12 = p13 =
+					p20 = p21 = p22 = p23 =
+						p30 = p31 = p32 = p33 = fillColor;
+		}
+
+		public Span<Vector4> AsSpan => MemoryMarshal.CreateSpan(ref p00, 16);
+		internal Span<Vector128<float> > AsVector128 => MemoryMarshal.CreateSpan(ref p00, 16).Cast<Vector4, Vector128<float>>();
+		internal Span<Vector256<float> > AsVector256 => MemoryMarshal.CreateSpan(ref p00, 16).Cast<Vector4, Vector256<float>>();
+
+		public Vector4 this[int x, int y]
+		{
+			get => AsSpan[x + y * 4];
+			set => AsSpan[x + y * 4] = value;
+		}
+
+		public Vector4 this[int index]
+		{
+			get => AsSpan[index];
+			set => AsSpan[index] = value;
+		}
+
+		public bool HasTransparentPixels(float alphaThreshold = 1)
+		{
+			var pixels = AsSpan;
+			for (var i = 0; i < pixels.Length; i++)
+			{
+				if (pixels[i].W < alphaThreshold) return true;
+			}
+			return false;
 		}
 	}
 

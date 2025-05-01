@@ -14,21 +14,21 @@ namespace BCnEncoder.Encoder.Bptc
 			this.signed = signed;
 		}
 
-		public override Bc6Block EncodeBlock(RawBlock4X4RgbaFloat block, CompressionQuality quality, ColorConversionMode colorConversionMode)
+		public override Bc6Block EncodeBlock(RawBlock4X4RgbaFloat block, OperationContext context)
 		{
 			// TODO: Do better.
-			block.ColorConvert(colorConversionMode);
+			block.ColorConvert(context.ColorConversionMode);
 
-			switch (quality)
+			switch (context.Quality)
 			{
 				case CompressionQuality.Fast:
-					return Bc6EncoderFast.EncodeBlock(block, signed);
+					return Bc6EncoderFast.EncodeBlock(block, context, signed);
 				case CompressionQuality.Balanced:
-					return Bc6EncoderBalanced.EncodeBlock(block, signed);
+					return Bc6EncoderBalanced.EncodeBlock(block, context, signed);
 				case CompressionQuality.BestQuality:
-					return Bc6EncoderBestQuality.EncodeBlock(block, signed);
+					return Bc6EncoderBestQuality.EncodeBlock(block, context, signed);
 				default:
-					throw new ArgumentOutOfRangeException(nameof(quality), quality, null);
+					throw new ArgumentOutOfRangeException(nameof(context.Quality), context.Quality, null);
 			}
 		}
 
@@ -59,7 +59,7 @@ namespace BCnEncoder.Encoder.Bptc
 
 		internal static class Bc6EncoderFast
 		{
-			internal static Bc6Block EncodeBlock(RawBlock4X4RgbaFloat block, bool signed)
+			internal static Bc6Block EncodeBlock(RawBlock4X4RgbaFloat block, OperationContext context, bool signed)
 			{
 				RgbBoundingBox.CreateFloat(block.AsSpan, out var min, out var max);
 				ColorRgbFloat minRgb = min, maxRgb = max;
@@ -76,10 +76,10 @@ namespace BCnEncoder.Encoder.Bptc
 			private const float TargetError = 0.001f;
 			private const int MaxTries = 10;
 
-			private static IEnumerable<Bc6Block> GenerateCandidates(RawBlock4X4RgbaFloat block, bool signed)
+			private static IEnumerable<Bc6Block> GenerateCandidates(RawBlock4X4RgbaFloat block, OperationContext context, bool signed)
 			{
 				var candidates = 0;
-				Bc6EncodingHelpers.GetInitialUnscaledEndpoints(block, out var ep0Sub1, out var ep1Sub1);
+				Bc6EncodingHelpers.GetInitialUnscaledEndpoints(block, out var ep0Sub1, out var ep1Sub1, context.Weights);
 
 				if (!signed)
 				{
@@ -114,8 +114,8 @@ namespace BCnEncoder.Encoder.Bptc
 
 					foreach (var subsetPartition in best2SubsetPartitions)
 					{
-						Bc6EncodingHelpers.GetInitialUnscaledEndpointsForSubset(block, out var ep0, out var ep1, subsetPartition, 0);
-						Bc6EncodingHelpers.GetInitialUnscaledEndpointsForSubset(block, out var ep2, out var ep3, subsetPartition, 1);
+						Bc6EncodingHelpers.GetInitialUnscaledEndpointsForSubset(block, out var ep0, out var ep1, subsetPartition, 0, context.Weights);
+						Bc6EncodingHelpers.GetInitialUnscaledEndpointsForSubset(block, out var ep2, out var ep3, subsetPartition, 1, context.Weights);
 
 						if (!signed)
 						{
@@ -171,12 +171,12 @@ namespace BCnEncoder.Encoder.Bptc
 				}
 			}
 
-			internal static Bc6Block EncodeBlock(RawBlock4X4RgbaFloat block, bool signed)
+			internal static Bc6Block EncodeBlock(RawBlock4X4RgbaFloat block, OperationContext context, bool signed)
 			{
 				var result = new Bc6Block();
 				var bestError = 9999999f;
 
-				foreach (var candidate in GenerateCandidates(block, signed))
+				foreach (var candidate in GenerateCandidates(block, context, signed))
 				{
 					var error = block.CalculateError(candidate.Decode(signed));
 
@@ -201,10 +201,10 @@ namespace BCnEncoder.Encoder.Bptc
 			private const float TargetError = 0.0005f;
 			private const int MaxTries = 500;
 
-			private static IEnumerable<Bc6Block> GenerateCandidates(RawBlock4X4RgbaFloat block, bool signed)
+			private static IEnumerable<Bc6Block> GenerateCandidates(RawBlock4X4RgbaFloat block, OperationContext context, bool signed)
 			{
 				var candidates = 0;
-				Bc6EncodingHelpers.GetInitialUnscaledEndpoints(block, out var ep0Sub1, out var ep1Sub1);
+				Bc6EncodingHelpers.GetInitialUnscaledEndpoints(block, out var ep0Sub1, out var ep1Sub1, context.Weights);
 
 				if (!signed)
 				{
@@ -260,8 +260,8 @@ namespace BCnEncoder.Encoder.Bptc
 
 				foreach (var subsetPartition in best2SubsetPartitions)
 				{
-					Bc6EncodingHelpers.GetInitialUnscaledEndpointsForSubset(block, out var ep0, out var ep1, subsetPartition, 0);
-					Bc6EncodingHelpers.GetInitialUnscaledEndpointsForSubset(block, out var ep2, out var ep3, subsetPartition, 1);
+					Bc6EncodingHelpers.GetInitialUnscaledEndpointsForSubset(block, out var ep0, out var ep1, subsetPartition, 0, context.Weights);
+					Bc6EncodingHelpers.GetInitialUnscaledEndpointsForSubset(block, out var ep2, out var ep3, subsetPartition, 1, context.Weights);
 
 					if (!signed)
 					{
@@ -301,12 +301,12 @@ namespace BCnEncoder.Encoder.Bptc
 				}
 			}
 
-			internal static Bc6Block EncodeBlock(RawBlock4X4RgbaFloat block, bool signed)
+			internal static Bc6Block EncodeBlock(RawBlock4X4RgbaFloat block, OperationContext context, bool signed)
 			{
 				var result = new Bc6Block();
 				float bestError = 9999999;
 
-				foreach (var candidate in GenerateCandidates(block, signed))
+				foreach (var candidate in GenerateCandidates(block, context, signed))
 				{
 					var error = block.CalculateError(candidate.Decode(signed));
 

@@ -41,9 +41,26 @@ namespace BCnEncoder.Encoder.Options
         public EncoderAlphaHandling AlphaHandling { get; set; } = EncoderAlphaHandling.Auto;
 
         /// <summary>
+        /// <para>
         /// Whether to rescale unsigned normalized values [0, 1] to signed normalized values [-1, 1], when applicable.
+        /// </para>
+        /// <para>
+        /// Default is true.
+        /// </para>
         /// </summary>
         public bool RescaleUnormToSnorm { get; set; } = true;
+
+        /// <summary>
+        /// <para>
+        /// Whether to use perceptual metrics for encoding.
+        /// This makes the encoder calculate the error based on human perception of luma, instead of absolute color difference.
+        /// This option has no effect on R and RG formats.
+        /// </para>
+        /// <para>
+        /// Default is true.
+        /// </para>
+        /// </summary>
+        public bool UsePerceptualMetrics { get; set; } = true;
     }
 
     /// <summary>

@@ -8,7 +8,7 @@ namespace BCnEncoder.Encoder.Bptc
 		private static ReadOnlySpan<int> PartitionTable => new int[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 		const int Subset = 0;
 
-		public static Bc7Block EncodeBlock(RawBlock4X4RgbaFloat block, int startingVariation)
+		public static Bc7Block EncodeBlock(RawBlock4X4RgbaFloat block, int startingVariation, OperationContext context)
 		{
 			var type = Bc7BlockType.Type5;
 
@@ -18,7 +18,7 @@ namespace BCnEncoder.Encoder.Bptc
 				var rotatedBlock = Bc7EncodingHelpers.RotateBlockColors(block, rotation);
 				var output = new Bc7Block();
 
-				Bc7EncodingHelpers.GetInitialUnscaledEndpoints(rotatedBlock, out var ep0, out var ep1);
+				Bc7EncodingHelpers.GetInitialUnscaledEndpoints(rotatedBlock, out var ep0, out var ep1, context.Weights);
 
 				var scaledEp0 =
 					Bc7EncodingHelpers.ScaleDownEndpoint(ep0, type, false, out var _);
