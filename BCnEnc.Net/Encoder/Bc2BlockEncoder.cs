@@ -4,28 +4,18 @@ using BCnEncoder.Shared.Colors;
 
 namespace BCnEncoder.Encoder
 {
-	internal class Bc2BlockEncoder : BaseBcBlockEncoder<Bc2Block>
+	internal class Bc2BlockEncoder : BaseBcBlockEncoder<Bc2Block, RgbEncodingContext>
 	{
-		public override Bc2Block EncodeBlock(RawBlock4X4RgbaFloat block, OperationContext context)
+		private static readonly Bc1BlockEncoder bc1BlockEncoder = new Bc1BlockEncoder(false, false);
+
+		public override Bc2Block EncodeBlock(in RgbEncodingContext context)
 		{
-			// TODO: Do better.
-			block.ColorConvert(context.ColorConversionMode);
+			Bc1Block colorBlock = bc1BlockEncoder.EncodeBlock(context);
 
-			switch (context.Quality)
-			{
-				case CompressionQuality.Fast:
-					return Bc2BlockEncoderFast.EncodeBlock(block, context);
-				case CompressionQuality.Balanced:
-					return Bc2BlockEncoderBalanced.EncodeBlock(block, context);
-				case CompressionQuality.BestQuality:
-					return Bc2BlockEncoderSlow.EncodeBlock(block, context);
-
-				default:
-					throw new ArgumentOutOfRangeException(nameof(context.Quality), context.Quality, null);
-			}
+			return EncodeAlpha(colorBlock, context.RawBlockVec);
 		}
 
-		private static Bc2Block EncodeAlpha(Bc1Block colorBlock, RawBlock4X4RgbaFloat rawBlock)
+		private static Bc2Block EncodeAlpha(Bc1Block colorBlock, RawBlock4X4Vector4 rawBlock)
 		{
 			var pixels = rawBlock.AsSpan;
 
@@ -34,45 +24,10 @@ namespace BCnEncoder.Encoder
 
 			for (int i = 0; i < pixels.Length; i++)
 			{
-				result.SetAlpha(i, pixels[i].a);
+				result.SetAlpha(i, pixels[i].W);
 			}
 
 			return result;
 		}
-
-		#region Encoders
-
-		private static class Bc2BlockEncoderFast
-		{
-
-			internal static Bc2Block EncodeBlock(RawBlock4X4RgbaFloat rawBlock, OperationContext context)
-			{
-				Bc1Block colorBlock = Bc1BlockEncoder.Bc1BlockEncoderFast.EncodeBlock(rawBlock, context, false);
-
-				return EncodeAlpha(colorBlock, rawBlock);
-			}
-		}
-
-		private static class Bc2BlockEncoderBalanced
-		{
-			internal static Bc2Block EncodeBlock(RawBlock4X4RgbaFloat rawBlock, OperationContext context)
-			{
-				Bc1Block colorBlock = Bc1BlockEncoder.Bc1BlockEncoderBalanced.EncodeBlock(rawBlock, context, false);
-
-				return EncodeAlpha(colorBlock, rawBlock);
-			}
-		}
-
-		private static class Bc2BlockEncoderSlow
-		{
-			internal static Bc2Block EncodeBlock(RawBlock4X4RgbaFloat rawBlock, OperationContext context)
-			{
-				Bc1Block colorBlock = Bc1BlockEncoder.Bc1BlockEncoderSlow.EncodeBlock(rawBlock, context, false);
-
-				return EncodeAlpha(colorBlock, rawBlock);
-			}
-		}
-
-		#endregion
 	}
 }

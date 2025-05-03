@@ -6,7 +6,7 @@ namespace BCnEncoder.Encoder.Bptc
 	internal static class Bc7Mode6Encoder
 	{
 
-		public static Bc7Block EncodeBlock(RawBlock4X4RgbaFloat block, int startingVariation, OperationContext context)
+		public static Bc7Block EncodeBlock(RawBlock4X4RgbaFloat block, int startingVariation, in RgbEncodingContext context)
 		{
 			var hasAlpha = block.HasTransparentPixels();
 

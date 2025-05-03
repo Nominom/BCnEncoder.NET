@@ -14,16 +14,11 @@ namespace BCnEncoder.Shared
 		/// <param name="colors">Input colors</param>
 		/// <param name="vectors">Output vectors</param>
 		/// <param name="weights">Weight for the rgb channels</param>
-		private static void ConvertToVector4Weighted(ReadOnlySpan<ColorRgbaFloat> colors, Span<Vector4> vectors, RgbWeights weights)
+		private static void ConvertToVector4(ReadOnlySpan<ColorRgbaFloat> colors, Span<Vector4> vectors)
 		{
 			for (var i = 0; i < colors.Length; i++)
 			{
-				vectors[i] = weights.TransformPca(colors[i].ToVector4());
-
-				// vectors[i].X = colors[i].r * weights.R;
-				// vectors[i].Y = colors[i].g * weights.G;
-				// vectors[i].Z = colors[i].b * weights.B;
-				// vectors[i].W = colors[i].a;
+				vectors[i] = colors[i].ToVector4();
 			}
 		}
 
@@ -140,93 +135,16 @@ namespace BCnEncoder.Shared
 		/// <summary>
 		/// Creates PCA vectors with color weighting
 		/// </summary>
-		public static void Create(Span<ColorRgbaFloat> colors, out Vector4 mean, out Vector4 principalAxis, RgbWeights weights)
+		public static void Create(Span<ColorRgbaFloat> colors, out Vector4 mean, out Vector4 principalAxis, out Vector4 min, out Vector4 max)
 		{
 			Span<Vector4> vectors = stackalloc Vector4[colors.Length];
-			ConvertToVector4Weighted(colors, vectors, weights);
+			ConvertToVector4(colors, vectors);
 
 			var cov = CalculateCovariance(vectors, out var v4Mean);
-
-			// Convert the mean back to unweighted space
-			// v4Mean.X /= weights.R;
-			// v4Mean.Y /= weights.G;
-			// v4Mean.Z /= weights.B;
-
-			v4Mean = weights.InverseTransformPca(v4Mean);
 
 			mean = new Vector4(v4Mean.X, v4Mean.Y, v4Mean.Z, v4Mean.W);
 
 			var pa = CalculatePrincipalAxis(cov);
-
-			// Convert principal axis back to unweighted space
-			// pa.X /= weights.R;
-			// pa.Y /= weights.G;
-			// pa.Z /= weights.B;
-
-			pa = weights.InverseTransformPca(pa);
-
-			principalAxis = new Vector4(pa.X, pa.Y, pa.Z, pa.W);
-			if (principalAxis.LengthSquared() == 0)
-			{
-				principalAxis = Vector4.UnitY;
-			}
-			else
-			{
-				principalAxis = Vector4.Normalize(principalAxis);
-			}
-		}
-
-		/// <summary>
-		/// Creates PCA vectors with color weighting, ignoring black pixels
-		/// </summary>
-		public static int CreateIgnoreBlacks(Span<ColorRgbaFloat> colors, out Vector4 mean, out Vector4 principalAxis, RgbWeights weights)
-		{
-			int numBlackPixels = 0;
-			bool IsBlackPixel(in ColorRgbaFloat c) => (c.r < 0.01f && c.g < 0.01f && c.b < 0.01f);
-
-			for (int i = 0; i < colors.Length; i++)
-			{
-				if (IsBlackPixel(colors[i]))
-				{
-					numBlackPixels++;
-				}
-			}
-
-			Span<Vector4> vectors = stackalloc Vector4[colors.Length - numBlackPixels];
-			int vecIdx = 0;
-			for (int i = 0; i < colors.Length; i++)
-			{
-				if (!IsBlackPixel(colors[i]))
-				{
-					var color = colors[i];
-					// vectors[vecIdx].X = color.r * weights.R;
-					// vectors[vecIdx].Y = color.g * weights.G;
-					// vectors[vecIdx].Z = color.b * weights.B;
-					// vectors[vecIdx].W = color.a;
-					vectors[vecIdx] = weights.TransformPca(color.ToVector4());
-					vecIdx++;
-				}
-			}
-
-			var cov = CalculateCovariance(vectors, out var v4Mean);
-
-			// Convert the mean back to unweighted space
-			// v4Mean.X /= weights.R;
-			// v4Mean.Y /= weights.G;
-			// v4Mean.Z /= weights.B;
-
-			v4Mean = weights.InverseTransformPca(v4Mean);
-
-			mean = new Vector4(v4Mean.X, v4Mean.Y, v4Mean.Z, v4Mean.W);
-
-			var pa = CalculatePrincipalAxis(cov);
-
-			// Convert principal axis back to unweighted space
-			// pa.X /= weights.R;
-			// pa.Y /= weights.G;
-			// pa.Z /= weights.B;
-
-			pa = weights.InverseTransformPca(pa);
 
 			principalAxis = new Vector4(pa.X, pa.Y, pa.Z, pa.W);
 			if (principalAxis.LengthSquared() == 0)
@@ -238,79 +156,7 @@ namespace BCnEncoder.Shared
 				principalAxis = Vector4.Normalize(principalAxis);
 			}
 
-			return numBlackPixels;
-		}
-
-		/// <summary>
-		/// Creates PCA vectors with color weighting, ignoring transaprent pixels
-		/// </summary>
-		public static int CreateIgnoreTransparent(Span<ColorRgbaFloat> colors, out Vector4 mean, out Vector4 principalAxis, float alphaCutoff, RgbWeights weights)
-		{
-			int numTransparentPixels = 0;
-			bool IsTransparentPixel(in ColorRgbaFloat c) => c.a < alphaCutoff;
-
-			for (int i = 0; i < colors.Length; i++)
-			{
-				if (IsTransparentPixel(colors[i]))
-				{
-					numTransparentPixels++;
-				}
-			}
-
-			Span<Vector4> vectors = stackalloc Vector4[colors.Length - numTransparentPixels];
-			int vecIdx = 0;
-			for (int i = 0; i < colors.Length; i++)
-			{
-				if (!IsTransparentPixel(colors[i]))
-				{
-					var color = colors[i];
-					vectors[vecIdx].X = color.r * weights.R;
-					vectors[vecIdx].Y = color.g * weights.R;
-					vectors[vecIdx].Z = color.b * weights.B;
-					vectors[vecIdx].W = color.a;
-					vecIdx++;
-				}
-			}
-
-			var cov = CalculateCovariance(vectors, out var v4Mean);
-
-			// Convert the mean back to unweighted space
-			v4Mean.X /= weights.R;
-			v4Mean.Y /= weights.G;
-			v4Mean.Z /= weights.B;
-
-			mean = new Vector4(v4Mean.X, v4Mean.Y, v4Mean.Z, v4Mean.W);
-
-			var pa = CalculatePrincipalAxis(cov);
-
-			// Convert principal axis back to unweighted space
-			pa.X /= weights.R;
-			pa.Y /= weights.G;
-			pa.Z /= weights.B;
-
-			principalAxis = new Vector4(pa.X, pa.Y, pa.Z, pa.W);
-			if (principalAxis.LengthSquared() == 0)
-			{
-				principalAxis = Vector4.UnitY;
-			}
-			else
-			{
-				principalAxis = Vector4.Normalize(principalAxis);
-			}
-
-			return numTransparentPixels;
-		}
-
-		public static void GetMinMaxColor565(Span<ColorRgbaFloat> colors, Vector4 mean, Vector4 principalAxis,
-			out ColorB5G6R5Packed min, out ColorB5G6R5Packed max)
-		{
-			GetExtremePoints(colors, mean, principalAxis, out var minVec, out var maxVec);
-
-			minVec = Vector4.Clamp(minVec, Vector4.Zero, Vector4.One);
-			maxVec = Vector4.Clamp(maxVec, Vector4.Zero, Vector4.One);
-
-			min = new ColorB5G6R5Packed(minVec.X, minVec.Y, minVec.Z);
-			max = new ColorB5G6R5Packed(maxVec.X, maxVec.Y, maxVec.Z);
+			GetExtremePoints(colors, mean, principalAxis, out min, out max);
 		}
 
 		public static void GetExtremePoints(Span<ColorRgbaFloat> colors, Vector4 mean, Vector4 principalAxis, out Vector4 min,

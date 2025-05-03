@@ -13,7 +13,12 @@ internal interface IBlockEncodingContext
 	/// <summary>
 	/// Raw block in linear rgba color space
 	/// </summary>
-	public RawBlock4X4Vector4 RawBlock { get; }
+	public RawBlock4X4RgbaFloat RawBlock { get; }
+
+	/// <summary>
+	/// Raw block in linear rgba color space as Vector4s
+	/// </summary>
+	public RawBlock4X4Vector4 RawBlockVec { get; }
 
 	/// <summary>
 	/// The compression quality to use for the operation.
@@ -31,6 +36,11 @@ internal static class BlockEncodingContextHelpers
 			var rgbContext = new RgbEncodingContext(rawBlock, context.Quality, context.Weights, context.ColorConversionMode, context.AlphaThreshold);
 			return (TContext)(object)rgbContext;
 		}
+		if (typeof(TContext) == typeof(RgEncodingContext))
+		{
+			var rgContext = new RgEncodingContext(rawBlock, context.Quality);
+			return (TContext)(object)rgContext;
+		}
 		throw new NotSupportedException($"The type {typeof(TContext).Name} is not supported.");
 	}
 }
@@ -38,7 +48,10 @@ internal static class BlockEncodingContextHelpers
 internal struct RgbEncodingContext : IBlockEncodingContext
 {
 	/// <inheritdoc />
-	public RawBlock4X4Vector4 RawBlock { get; init; }
+	public RawBlock4X4RgbaFloat RawBlock { get; init; }
+
+	/// <inheritdoc />
+	public RawBlock4X4Vector4 RawBlockVec { get; init; }
 
 	/// <inheritdoc />
 	public CompressionQuality Quality { get; init; }
@@ -65,18 +78,38 @@ internal struct RgbEncodingContext : IBlockEncodingContext
 
 	public RgbEncodingContext(RawBlock4X4RgbaFloat rawBlock, CompressionQuality quality, RgbWeights weights, ColorConversionMode colorConversionMode, float alphaThreshold)
 	{
-		RawBlock = rawBlock.AsVector4();
-		PerceptualBlock = new RawBlock4X4Vector4();
+		RawBlock = rawBlock;
+		RawBlockVec = rawBlock.AsVector4();
 		Quality = quality;
 		Weights = weights;
 		ColorConversionMode = colorConversionMode;
 		AlphaThreshold = alphaThreshold;
 
 		// Precompute perceptual block
-		Span<Vector4> perceptualPixels = PerceptualBlock.AsSpan;
+		RawBlock4X4Vector4 perceptualBlock = new RawBlock4X4Vector4();
+		Span<Vector4> perceptualPixels = perceptualBlock.AsSpan;
 		for (var i = 0; i < perceptualPixels.Length; i++)
 		{
-			perceptualPixels[i] = weights.TransformToPerceptual(RawBlock[i]);
+			perceptualPixels[i] = weights.TransformToPerceptual(RawBlockVec[i]);
 		}
+
+		PerceptualBlock = perceptualBlock;
+	}
+}
+
+internal struct RgEncodingContext : IBlockEncodingContext
+{
+	/// <inheritdoc />
+	public RawBlock4X4RgbaFloat RawBlock { get; }
+	/// <inheritdoc />
+	public RawBlock4X4Vector4 RawBlockVec { get; }
+	/// <inheritdoc />
+	public CompressionQuality Quality { get; }
+
+	public RgEncodingContext(RawBlock4X4RgbaFloat rawBlock, CompressionQuality quality)
+	{
+		RawBlock = rawBlock;
+		RawBlockVec = rawBlock.AsVector4();
+		Quality = quality;
 	}
 }

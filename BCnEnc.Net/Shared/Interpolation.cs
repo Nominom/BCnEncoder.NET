@@ -1,9 +1,33 @@
+using System.Numerics;
 using BCnEncoder.Shared.Colors;
 
 namespace BCnEncoder.Shared
 {
 	internal static class Interpolation
 	{
+		/// <summary>
+		/// Interpolates two colors by half.
+		/// </summary>
+		/// <param name="c0">The first color endpoint.</param>
+		/// <param name="c1">The second color endpoint.</param>
+		/// <returns>The interpolated color.</returns>
+		public static Vector4 InterpolateHalf(this Vector4 c0, Vector4 c1)
+		{
+			return (c0 + c1) * 0.5f;
+		}
+
+		/// <summary>
+		/// Interpolates two colors by third.
+		/// </summary>
+		/// <param name="c0">The first color endpoint.</param>
+		/// <param name="c1">The second color endpoint.</param>
+		/// <param name="num">The dividend in the third.</param>
+		/// <returns>The interpolated color.</returns>
+		public static Vector4 InterpolateThird(this Vector4 c0, Vector4 c1, int num)
+		{
+			return ((3 - num) * c0 + num * c1) / 3;
+		}
+
 		/// <summary>
 		/// Interpolates two colors by half.
 		/// </summary>

@@ -5,7 +5,7 @@ using BCnEncoder.Shared.Colors;
 
 namespace BCnEncoder.Encoder
 {
-	internal class Bc4BlockEncoder : BaseBcBlockEncoder<Bc4Block>
+	internal class Bc4BlockEncoder : BaseBcBlockEncoder<Bc4Block, RgEncodingContext>
 	{
 		private readonly Bc4ComponentBlockEncoder bc4Encoder;
 
@@ -14,11 +14,11 @@ namespace BCnEncoder.Encoder
 			bc4Encoder = new Bc4ComponentBlockEncoder(component);
 		}
 
-		public override Bc4Block EncodeBlock(RawBlock4X4RgbaFloat block, OperationContext context)
+		public override Bc4Block EncodeBlock(in RgEncodingContext context)
 		{
 			var output = new Bc4Block
 			{
-				componentBlock = bc4Encoder.EncodeBlock(block, context.Quality)
+				componentBlock = bc4Encoder.EncodeBlock(context.RawBlock, context.Quality)
 			};
 
 			return output;

@@ -5,7 +5,7 @@ using BCnEncoder.Shared.Colors;
 
 namespace BCnEncoder.Encoder.Bptc
 {
-	internal class Bc6Encoder : BaseBcBlockEncoder<Bc6Block>
+	internal class Bc6Encoder : BaseBcBlockEncoder<Bc6Block, RgbEncodingContext>
 	{
 		private readonly bool signed;
 
@@ -14,19 +14,16 @@ namespace BCnEncoder.Encoder.Bptc
 			this.signed = signed;
 		}
 
-		public override Bc6Block EncodeBlock(RawBlock4X4RgbaFloat block, OperationContext context)
+		public override Bc6Block EncodeBlock(in RgbEncodingContext context)
 		{
-			// TODO: Do better.
-			block.ColorConvert(context.ColorConversionMode);
-
 			switch (context.Quality)
 			{
 				case CompressionQuality.Fast:
-					return Bc6EncoderFast.EncodeBlock(block, context, signed);
+					return Bc6EncoderFast.EncodeBlock(context, signed);
 				case CompressionQuality.Balanced:
-					return Bc6EncoderBalanced.EncodeBlock(block, context, signed);
+					return Bc6EncoderBalanced.EncodeBlock(context.RawBlock, context, signed);
 				case CompressionQuality.BestQuality:
-					return Bc6EncoderBestQuality.EncodeBlock(block, context, signed);
+					return Bc6EncoderBestQuality.EncodeBlock(context.RawBlock, context, signed);
 				default:
 					throw new ArgumentOutOfRangeException(nameof(context.Quality), context.Quality, null);
 			}
@@ -59,14 +56,14 @@ namespace BCnEncoder.Encoder.Bptc
 
 		internal static class Bc6EncoderFast
 		{
-			internal static Bc6Block EncodeBlock(RawBlock4X4RgbaFloat block, OperationContext context, bool signed)
+			internal static Bc6Block EncodeBlock(in RgbEncodingContext context, bool signed)
 			{
-				RgbBoundingBox.CreateFloat(block.AsSpan, out var min, out var max);
+				RgbBoundingBox.CreateFloat(context.RawBlock.AsSpan, out var min, out var max);
 				ColorRgbFloat minRgb = min, maxRgb = max;
 
-				LeastSquares.OptimizeEndpoints1Sub(block, ref minRgb, ref maxRgb);
+				LeastSquares.OptimizeEndpoints1Sub(context.RawBlock, ref minRgb, ref maxRgb);
 
-				return Bc6ModeEncoder.EncodeBlock1Sub(Bc6BlockType.Type3, block, min, max, signed, out _);
+				return Bc6ModeEncoder.EncodeBlock1Sub(Bc6BlockType.Type3, context.RawBlock, min, max, signed, out _);
 			}
 		}
 
@@ -76,7 +73,7 @@ namespace BCnEncoder.Encoder.Bptc
 			private const float TargetError = 0.001f;
 			private const int MaxTries = 10;
 
-			private static IEnumerable<Bc6Block> GenerateCandidates(RawBlock4X4RgbaFloat block, OperationContext context, bool signed)
+			private static IEnumerable<Bc6Block> GenerateCandidates(RawBlock4X4RgbaFloat block, RgbEncodingContext context, bool signed)
 			{
 				var candidates = 0;
 				Bc6EncodingHelpers.GetInitialUnscaledEndpoints(block, out var ep0Sub1, out var ep1Sub1, context.Weights);
@@ -171,7 +168,7 @@ namespace BCnEncoder.Encoder.Bptc
 				}
 			}
 
-			internal static Bc6Block EncodeBlock(RawBlock4X4RgbaFloat block, OperationContext context, bool signed)
+			internal static Bc6Block EncodeBlock(RawBlock4X4RgbaFloat block, in RgbEncodingContext context, bool signed)
 			{
 				var result = new Bc6Block();
 				var bestError = 9999999f;
@@ -201,7 +198,7 @@ namespace BCnEncoder.Encoder.Bptc
 			private const float TargetError = 0.0005f;
 			private const int MaxTries = 500;
 
-			private static IEnumerable<Bc6Block> GenerateCandidates(RawBlock4X4RgbaFloat block, OperationContext context, bool signed)
+			private static IEnumerable<Bc6Block> GenerateCandidates(RawBlock4X4RgbaFloat block, RgbEncodingContext context, bool signed)
 			{
 				var candidates = 0;
 				Bc6EncodingHelpers.GetInitialUnscaledEndpoints(block, out var ep0Sub1, out var ep1Sub1, context.Weights);
@@ -301,7 +298,7 @@ namespace BCnEncoder.Encoder.Bptc
 				}
 			}
 
-			internal static Bc6Block EncodeBlock(RawBlock4X4RgbaFloat block, OperationContext context, bool signed)
+			internal static Bc6Block EncodeBlock(RawBlock4X4RgbaFloat block, in RgbEncodingContext context, bool signed)
 			{
 				var result = new Bc6Block();
 				float bestError = 9999999;

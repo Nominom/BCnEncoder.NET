@@ -267,23 +267,23 @@ internal class PcaVectors2
 	/// <summary>
 	/// Creates PCA vectors with color weighting, ignoring transaprent pixels
 	/// </summary>
-	public static int CreateIgnoreTransparent(Span<Vector4> colorsWeighted, RgbWeights weights, float alphaCutoff, out Vector4 mean, out Vector4 principalAxis,
+	public static int CreateIgnoreTransparent(Span<Vector4> colorsPerceptual, RgbWeights weights, float alphaCutoff, out Vector4 mean, out Vector4 principalAxis,
 		out Vector4 min, out Vector4 max)
 	{
 		bool IsTransparentPixel(Vector4 c) => c.W < alphaCutoff;
 
-		return CreateIgnorePixels(colorsWeighted, weights, IsTransparentPixel, out mean, out principalAxis, out min, out max);
+		return CreateIgnorePixels(colorsPerceptual, weights, IsTransparentPixel, out mean, out principalAxis, out min, out max);
 	}
 
 	/// <summary>
 	/// Creates PCA vectors with color weighting, ignoring black pixels
 	/// </summary>
-	public static int CreateIgnoreBlack(Span<Vector4> colorsWeighted, RgbWeights weights, out Vector4 mean, out Vector4 principalAxis,
+	public static int CreateIgnoreBlack(Span<Vector4> colorsPerceptual, RgbWeights weights, out Vector4 mean, out Vector4 principalAxis,
 		out Vector4 min, out Vector4 max)
 	{
 		bool IsBlackPixel(Vector4 c) => (c.X < 0.01f && c.Y < 0.01f && c.Z < 0.01f);
 
-		return CreateIgnorePixels(colorsWeighted, weights, IsBlackPixel, out mean, out principalAxis, out min, out max);
+		return CreateIgnorePixels(colorsPerceptual, weights, IsBlackPixel, out mean, out principalAxis, out min, out max);
 	}
 
 	public static void GetExtremePoints(Span<Vector4> colors, Vector4 mean, Vector4 principalAxis,

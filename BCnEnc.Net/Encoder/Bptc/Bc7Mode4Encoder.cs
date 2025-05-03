@@ -9,7 +9,7 @@ namespace BCnEncoder.Encoder.Bptc
 		private static ReadOnlySpan<int> PartitionTable => new int[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 		const int Subset = 0;
 
-		public static Bc7Block EncodeBlock(RawBlock4X4RgbaFloat block, int startingVariation, OperationContext context)
+		public static Bc7Block EncodeBlock(RawBlock4X4RgbaFloat block, int startingVariation, in RgbEncodingContext context)
 		{
 			var type = Bc7BlockType.Type4;
 

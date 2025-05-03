@@ -212,8 +212,8 @@ namespace BCnEncoder.Encoder.Bptc
 		{
 
 			var originalPixels = block.AsSpan;
-			PcaVectors.Create(originalPixels, out var mean, out var pa, weights);
-			PcaVectors.GetExtremePoints(block.AsSpan, mean, pa, out var min, out var max);
+
+			PcaVectors.Create(originalPixels, out var mean, out var pa, out var min, out var max);
 
 			ep0 = new ColorRgba32((byte)(min.X * 255), (byte)(min.Y * 255), (byte)(min.Z * 255), (byte)(min.W * 255));
 			ep1 = new ColorRgba32((byte)(max.X * 255), (byte)(max.Y * 255), (byte)(max.Z * 255), (byte)(max.W * 255));
@@ -244,8 +244,7 @@ namespace BCnEncoder.Encoder.Bptc
 				}
 			}
 
-			PcaVectors.Create(subsetColors, out var mean, out var pa, weights);
-			PcaVectors.GetExtremePoints(block.AsSpan, mean, pa, out var min, out var max);
+			PcaVectors.Create(originalPixels, out var mean, out var pa, out var min, out var max);
 
 			ep0 = new ColorRgba32((byte)(min.X * 255), (byte)(min.Y * 255), (byte)(min.Z * 255), (byte)(min.W * 255));
 			ep1 = new ColorRgba32((byte)(max.X * 255), (byte)(max.Y * 255), (byte)(max.Z * 255), (byte)(max.W * 255));

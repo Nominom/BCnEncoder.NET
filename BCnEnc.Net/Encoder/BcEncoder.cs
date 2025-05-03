@@ -676,7 +676,7 @@ namespace BCnEncoder.Encoder
 				TaskCount = Options.TaskCount,
 				Progress = new OperationProgress(Options.Progress, totalBlocks),
 				ColorConversionMode = colorConversionMode,
-				Weights = OutputOptions.UsePerceptualMetrics ? RgbWeights.Perceptual : RgbWeights.Linear,
+				Weights = new RgbWeights(OutputOptions.UsePerceptualMetrics),
 				Quality = OutputOptions.Quality
 			};
 
@@ -751,7 +751,7 @@ namespace BCnEncoder.Encoder
 				TaskCount = Options.TaskCount,
 				Progress = new OperationProgress(Options.Progress, totalBlocks),
 				ColorConversionMode = colorConversionMode,
-				Weights = OutputOptions.UsePerceptualMetrics ? RgbWeights.Perceptual : RgbWeights.Linear,
+				Weights = new RgbWeights(OutputOptions.UsePerceptualMetrics),
 				Quality = OutputOptions.Quality
 			};
 
@@ -819,10 +819,10 @@ namespace BCnEncoder.Encoder
 			{
 				case CompressionFormat.Bc1:
 				case CompressionFormat.Bc1_sRGB:
-					return new Bc1BlockEncoder();
+					return new Bc1BlockEncoder(true, false);
 				case CompressionFormat.Bc1WithAlpha:
 				case CompressionFormat.Bc1WithAlpha_sRGB:
-					return new Bc1AlphaBlockEncoder();
+					return new Bc1BlockEncoder(true, true);
 				case CompressionFormat.Bc2:
 				case CompressionFormat.Bc2_sRGB:
 					return new Bc2BlockEncoder();

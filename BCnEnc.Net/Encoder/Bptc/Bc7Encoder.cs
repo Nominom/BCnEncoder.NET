@@ -5,12 +5,13 @@ using BCnEncoder.Shared.Colors;
 
 namespace BCnEncoder.Encoder.Bptc
 {
-	internal class Bc7Encoder : BaseBcBlockEncoder<Bc7Block>
+	internal class Bc7Encoder : BaseBcBlockEncoder<Bc7Block, RgbEncodingContext>
 	{
 
-		public override Bc7Block EncodeBlock(RawBlock4X4RgbaFloat rawBlock, OperationContext context)
+		public override Bc7Block EncodeBlock(in RgbEncodingContext context)
 		{
 			// TODO: Do better.
+			RawBlock4X4RgbaFloat rawBlock = context.RawBlock;
 			rawBlock.ColorConvert(context.ColorConversionMode);
 
 			switch (context.Quality)
@@ -56,7 +57,7 @@ namespace BCnEncoder.Encoder.Bptc
 			private const float ErrorThreshold = 0.005f;
 			private const int MaxTries = 5;
 
-			private static IEnumerable<Bc7Block> TryMethods(RawBlock4X4RgbaFloat rawBlock, int[] best2SubsetPartitions, int[] best3SubsetPartitions, bool alpha, OperationContext context)
+			private static IEnumerable<Bc7Block> TryMethods(RawBlock4X4RgbaFloat rawBlock, int[] best2SubsetPartitions, int[] best3SubsetPartitions, bool alpha, RgbEncodingContext context)
 			{
 				if (alpha)
 				{
@@ -77,7 +78,7 @@ namespace BCnEncoder.Encoder.Bptc
 				}
 			}
 
-			public static Bc7Block EncodeBlock(RawBlock4X4RgbaFloat rawBlock, OperationContext context)
+			public static Bc7Block EncodeBlock(RawBlock4X4RgbaFloat rawBlock, in RgbEncodingContext context)
 			{
 				var hasAlpha = rawBlock.HasTransparentPixels();
 
@@ -120,7 +121,7 @@ namespace BCnEncoder.Encoder.Bptc
 			private const float ErrorThreshold = 0.005f;
 			private const int MaxTries = 25;
 
-			private static IEnumerable<Bc7Block> TryMethods(RawBlock4X4RgbaFloat rawBlock, int[] best2SubsetPartitions, int[] best3SubsetPartitions, bool alpha, OperationContext context)
+			private static IEnumerable<Bc7Block> TryMethods(RawBlock4X4RgbaFloat rawBlock, int[] best2SubsetPartitions, int[] best3SubsetPartitions, bool alpha, RgbEncodingContext context)
 			{
 				if (alpha)
 				{
@@ -150,7 +151,7 @@ namespace BCnEncoder.Encoder.Bptc
 				}
 			}
 
-			public static Bc7Block EncodeBlock(RawBlock4X4RgbaFloat rawBlock, OperationContext context)
+			public static Bc7Block EncodeBlock(RawBlock4X4RgbaFloat rawBlock, in RgbEncodingContext context)
 			{
 				var hasAlpha = rawBlock.HasTransparentPixels();
 
@@ -194,7 +195,7 @@ namespace BCnEncoder.Encoder.Bptc
 			private const float ErrorThreshold = 0.001f;
 			private const int MaxTries = 40;
 
-			private static IEnumerable<Bc7Block> TryMethods(RawBlock4X4RgbaFloat rawBlock, int[] best2SubsetPartitions, int[] best3SubsetPartitions, bool alpha, OperationContext context)
+			private static IEnumerable<Bc7Block> TryMethods(RawBlock4X4RgbaFloat rawBlock, int[] best2SubsetPartitions, int[] best3SubsetPartitions, bool alpha, RgbEncodingContext context)
 			{
 				if (alpha)
 				{
@@ -225,7 +226,7 @@ namespace BCnEncoder.Encoder.Bptc
 				}
 			}
 
-			public static Bc7Block EncodeBlock(RawBlock4X4RgbaFloat rawBlock, OperationContext context)
+			public static Bc7Block EncodeBlock(RawBlock4X4RgbaFloat rawBlock, in RgbEncodingContext context)
 			{
 				var hasAlpha = rawBlock.HasTransparentPixels();
 

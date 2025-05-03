@@ -4,35 +4,21 @@ using BCnEncoder.Shared.Colors;
 
 namespace BCnEncoder.Encoder
 {
-	internal unsafe class AtcBlockEncoder : BaseBcBlockEncoder<AtcBlock>
+	internal unsafe class AtcBlockEncoder : BaseBcBlockEncoder<AtcBlock, RgbEncodingContext>
 	{
-		private readonly Bc1BlockEncoder bc1BlockEncoder;
+		private static readonly Bc1BlockEncoder bc1BlockEncoder = new Bc1BlockEncoder(false, false);
+
 
 		public AtcBlockEncoder()
 		{
-			bc1BlockEncoder = new Bc1BlockEncoder();
 		}
 
-		public override AtcBlock EncodeBlock(RawBlock4X4RgbaFloat block, OperationContext context)
+		public override AtcBlock EncodeBlock(in RgbEncodingContext context)
 		{
 			var atcBlock = new AtcBlock();
 
-			Bc1Block bc1Block;
 			// EncodeBlock with BC1 first
-			switch (context.Quality)
-			{
-				case CompressionQuality.Fast:
-					bc1Block = Bc1BlockEncoder.Bc1BlockEncoderFast.EncodeBlock(block, context, false);
-					break;
-				case CompressionQuality.Balanced:
-					bc1Block = Bc1BlockEncoder.Bc1BlockEncoderBalanced.EncodeBlock(block, context, false);
-					break;
-				case CompressionQuality.BestQuality:
-					bc1Block = Bc1BlockEncoder.Bc1BlockEncoderSlow.EncodeBlock(block, context, false);
-					break;
-				default:
-					throw new ArgumentOutOfRangeException(nameof(context.Quality), context.Quality, null);
-			}
+			Bc1Block bc1Block = bc1BlockEncoder.EncodeBlock(context);
 
 			// Atc specific modifications to BC1
 			// According to http://www.guildsoftware.com/papers/2012.Converting.DXTC.to.ATC.pdf
@@ -52,7 +38,7 @@ namespace BCnEncoder.Encoder
 		}
 	}
 
-	internal class AtcExplicitAlphaBlockEncoder : BaseBcBlockEncoder<AtcExplicitAlphaBlock>
+	internal class AtcExplicitAlphaBlockEncoder : BaseBcBlockEncoder<AtcExplicitAlphaBlock, RgbEncodingContext>
 	{
 		private readonly AtcBlockEncoder atcBlockEncoder;
 
@@ -61,15 +47,15 @@ namespace BCnEncoder.Encoder
 			atcBlockEncoder = new AtcBlockEncoder();
 		}
 
-		public override AtcExplicitAlphaBlock EncodeBlock(RawBlock4X4RgbaFloat block, OperationContext context)
+		public override AtcExplicitAlphaBlock EncodeBlock(in RgbEncodingContext context)
 		{
-			var atcBlock = atcBlockEncoder.EncodeBlock(block, context);
+			var atcBlock = atcBlockEncoder.EncodeBlock(context);
 
 			// EncodeBlock alpha
 			var bc2AlphaBlock = new Bc2AlphaBlock();
 			for (var i = 0; i < 16; i++)
 			{
-				bc2AlphaBlock.SetAlpha(i, block[i].a);
+				bc2AlphaBlock.SetAlpha(i, context.RawBlock[i].a);
 			}
 
 			return new AtcExplicitAlphaBlock
@@ -80,7 +66,7 @@ namespace BCnEncoder.Encoder
 		}
 	}
 
-	internal class AtcInterpolatedAlphaBlockEncoder : BaseBcBlockEncoder<AtcInterpolatedAlphaBlock>
+	internal class AtcInterpolatedAlphaBlockEncoder : BaseBcBlockEncoder<AtcInterpolatedAlphaBlock, RgbEncodingContext>
 	{
 		private readonly Bc4ComponentBlockEncoder bc4BlockEncoder;
 		private readonly AtcBlockEncoder atcBlockEncoder;
@@ -91,10 +77,10 @@ namespace BCnEncoder.Encoder
 			atcBlockEncoder = new AtcBlockEncoder();
 		}
 
-		public override AtcInterpolatedAlphaBlock EncodeBlock(RawBlock4X4RgbaFloat block, OperationContext context)
+		public override AtcInterpolatedAlphaBlock EncodeBlock(in RgbEncodingContext context)
 		{
-			var bc4Block = bc4BlockEncoder.EncodeBlock(block, context.Quality);
-			var atcBlock = atcBlockEncoder.EncodeBlock(block, context);
+			var bc4Block = bc4BlockEncoder.EncodeBlock(context.RawBlock, context.Quality);
+			var atcBlock = atcBlockEncoder.EncodeBlock(context);
 
 			return new AtcInterpolatedAlphaBlock
 			{

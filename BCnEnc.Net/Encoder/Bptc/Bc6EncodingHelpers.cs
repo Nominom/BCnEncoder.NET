@@ -352,8 +352,7 @@ namespace BCnEncoder.Encoder.Bptc
 				}
 			}
 
-			PcaVectors.Create(subsetColors, out var mean, out var pa, weights);
-			PcaVectors.GetExtremePoints(subsetColors, mean, pa, out var min, out var max);
+			PcaVectors.Create(originalPixels, out var mean, out var pa, out var min, out var max);
 
 			ep0 = new ColorRgbaFloat(min);
 			ep1 = new ColorRgbaFloat(max);
@@ -365,8 +364,7 @@ namespace BCnEncoder.Encoder.Bptc
 
 			var originalPixels = block.AsSpan;
 
-			PcaVectors.Create(originalPixels, out var mean, out var pa, weights);
-			PcaVectors.GetExtremePoints(originalPixels, mean, pa, out var min, out var max);
+			PcaVectors.Create(originalPixels, out var mean, out var pa, out var min, out var max);
 
 			ep0 = new ColorRgbaFloat(min);
 			ep1 = new ColorRgbaFloat(max);
