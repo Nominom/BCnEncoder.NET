@@ -1161,6 +1161,10 @@ namespace BCnEncoder.Decoder
 		private ColorRgba32[][] DecodeInternal(DdsFile file, bool allMipMaps, CancellationToken token)
 		{
 			var mipMaps = allMipMaps ? file.header.dwMipMapCount : 1;
+
+			// Assume at least 1 mip map
+			mipMaps = Math.Max(1, mipMaps);
+
 			var colors = new ColorRgba32[mipMaps][];
 
 			var context = new OperationContext

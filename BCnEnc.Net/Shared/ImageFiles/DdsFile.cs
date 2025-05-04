@@ -55,6 +55,10 @@ namespace BCnEncoder.Shared.ImageFiles
 				}
 
 				var mipMapCount = (header.dwCaps & HeaderCaps.DdscapsMipmap) != 0 ? header.dwMipMapCount : 1;
+
+				// Assume at least 1 mip level
+				mipMapCount = Math.Max(mipMapCount, 1);
+
 				var faceCount = (header.dwCaps2 & HeaderCaps2.Ddscaps2Cubemap) != 0 ? 6u : 1u;
 				var width = header.dwWidth;
 				var height = header.dwHeight;
@@ -416,7 +420,7 @@ namespace BCnEncoder.Shared.ImageFiles
 	public struct DdsPixelFormat
 	{
 		public static readonly uint Dx10 = MakeFourCc('D', 'X', '1', '0');
-		
+
 		public static readonly uint Dxt1 = MakeFourCc('D', 'X', 'T', '1');
 		public static readonly uint Dxt2 = MakeFourCc('D', 'X', 'T', '2');
 		public static readonly uint Dxt3 = MakeFourCc('D', 'X', 'T', '3');
