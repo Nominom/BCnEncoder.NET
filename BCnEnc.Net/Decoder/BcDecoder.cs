@@ -1092,6 +1092,15 @@ namespace BCnEncoder.Decoder
 		/// <returns>An array of decoded Rgba32 images.</returns>
 		private ColorRgba32[][] DecodeInternal(KtxFile file, bool allMipMaps, CancellationToken token)
 		{
+			if (file == null)
+			{
+				throw new ArgumentNullException(nameof(file));
+			}
+			if (GetCompressionFormat(file.header.GlInternalFormat) == CompressionFormat.Unknown)
+			{
+				throw new ArgumentException($"Unsupported compression format: {file.header.GlInternalFormat}");
+			}
+
 			var mipMaps = allMipMaps ? file.MipMaps.Count : 1;
 			var colors = new ColorRgba32[mipMaps][];
 
@@ -1160,6 +1169,18 @@ namespace BCnEncoder.Decoder
 		/// <returns>An array of decoded Rgba32 images.</returns>
 		private ColorRgba32[][] DecodeInternal(DdsFile file, bool allMipMaps, CancellationToken token)
 		{
+			if (file == null)
+			{
+				throw new ArgumentNullException(nameof(file));
+			}
+			if (GetCompressionFormat(file) == CompressionFormat.Unknown)
+			{
+				var format = file.header.ddsPixelFormat.IsDxt10Format ?
+					file.dx10Header.dxgiFormat :
+					file.header.ddsPixelFormat.DxgiFormat;
+				throw new ArgumentException($"Unsupported compression format: {format}");
+			}
+
 			var mipMaps = allMipMaps ? file.header.dwMipMapCount : 1;
 
 			// Assume at least 1 mip map
