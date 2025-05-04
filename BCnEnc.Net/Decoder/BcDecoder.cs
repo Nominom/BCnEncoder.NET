@@ -1261,6 +1261,10 @@ namespace BCnEncoder.Decoder
 		/// <returns>The decoded Rgba32 image.</returns>
 		private ColorRgba32[] DecodeRawInternal(ReadOnlyMemory<byte> input, int pixelWidth, int pixelHeight, CompressionFormat format, CancellationToken token)
 		{
+			if (format == CompressionFormat.Unknown)
+			{
+				throw new ArgumentException($"Unsupported compression format: {format}");
+			}
 			if (input.Length % GetBlockSize(format) != 0)
 			{
 				throw new ArgumentException("The size of the input buffer does not align with the compression format.");
@@ -1387,6 +1391,11 @@ namespace BCnEncoder.Decoder
 		/// <returns>An array of decoded Rgba32 images.</returns>
 		private ColorRgbFloat[][] DecodeInternalHdr(KtxFile file, bool allMipMaps, CancellationToken token)
 		{
+			if (GetCompressionFormat(file.header.GlInternalFormat) == CompressionFormat.Unknown)
+			{
+				throw new ArgumentException($"Unsupported compression format: {file.header.GlInternalFormat}");
+			}
+
 			var mipMaps = allMipMaps ? file.MipMaps.Count : 1;
 			var colors = new ColorRgbFloat[mipMaps][];
 
@@ -1439,7 +1448,25 @@ namespace BCnEncoder.Decoder
 		/// <returns>An array of decoded Rgba32 images.</returns>
 		private ColorRgbFloat[][] DecodeInternalHdr(DdsFile file, bool allMipMaps, CancellationToken token)
 		{
+			if (file == null)
+			{
+				throw new ArgumentNullException(nameof(file));
+			}
+
+			var dxtFormat = file.header.ddsPixelFormat.IsDxt10Format
+				? file.dx10Header.dxgiFormat
+				: file.header.ddsPixelFormat.DxgiFormat;
+
+			if (GetCompressionFormat(file) == CompressionFormat.Unknown)
+			{
+				throw new ArgumentException($"Unsupported compression format: {dxtFormat}");
+			}
+
 			var mipMaps = allMipMaps ? file.header.dwMipMapCount : 1;
+
+			// Assume at least 1 mip map
+			mipMaps = Math.Max(1, mipMaps);
+
 			var colors = new ColorRgbFloat[mipMaps][];
 
 			var context = new OperationContext
@@ -1455,9 +1482,7 @@ namespace BCnEncoder.Decoder
 
 			context.Progress = new OperationProgress(Options.Progress, totalBlocks);
 
-			var dxtFormat = file.header.ddsPixelFormat.IsDxt10Format
-				? file.dx10Header.dxgiFormat
-				: file.header.ddsPixelFormat.DxgiFormat;
+
 			var format = GetCompressionFormat(file);
 			var decoder = GetRgbFloatDecoder(format);
 
@@ -1499,6 +1524,10 @@ namespace BCnEncoder.Decoder
 		/// <returns>The decoded Rgba32 image.</returns>
 		private ColorRgbFloat[] DecodeRawInternalHdr(ReadOnlyMemory<byte> input, int pixelWidth, int pixelHeight, CompressionFormat format, CancellationToken token)
 		{
+			if (format == CompressionFormat.Unknown)
+			{
+				throw new ArgumentException($"Unsupported compression format: {format}");
+			}
 			if (input.Length % GetBlockSize(format) != 0)
 			{
 				throw new ArgumentException("The size of the input buffer does not align with the compression format.");
