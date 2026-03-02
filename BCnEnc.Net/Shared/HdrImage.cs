@@ -73,7 +73,7 @@ namespace BCnEncoder.Shared
 				c = (char)b;
 				buffer[i++] = c;
 			} while (c != (char)10);
-			return new string(buffer.AsSpan().Slice(0, i)).Trim();
+			return new string(buffer, 0, i).Trim();
 		}
 
 		private static void WriteLineToStream(BinaryWriter br, string s)
