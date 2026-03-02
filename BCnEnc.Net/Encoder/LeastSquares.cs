@@ -5,6 +5,10 @@ using System.Text;
 using BCnEncoder.Encoder.Bptc;
 using BCnEncoder.Shared;
 
+#if NETSTANDARD2_0
+using Math = BCnEncoder.Shared.MathPolyfills;
+#endif
+
 namespace BCnEncoder.Encoder
 {
 	/// <summary>

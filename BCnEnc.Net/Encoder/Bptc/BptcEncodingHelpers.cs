@@ -5,6 +5,10 @@ using System.Runtime.InteropServices;
 using System.Text;
 using BCnEncoder.Shared;
 
+#if NETSTANDARD2_0
+using MemoryMarshal = BCnEncoder.Shared.MemoryMarshalPolyfills;
+#endif
+
 namespace BCnEncoder.Encoder.Bptc
 {
 	internal static class BptcEncodingHelpers
@@ -20,7 +24,7 @@ namespace BCnEncoder.Encoder.Bptc
 			var aWeights2 = ColorInterpolationWeights2;
 			var aWeights3 = ColorInterpolationWeights3;
 			var aWeights4 = ColorInterpolationWeights4;
-			
+
 			if (indexPrecision == 2)
 				return (((64 - aWeights2[index]) * e0 + aWeights2[index] * e1 + 32) >> 6);
 			if (indexPrecision == 3)
@@ -52,7 +56,7 @@ namespace BCnEncoder.Encoder.Bptc
 
 
 			int CalculatePartitionError(int partitionIndex)
-			{ 
+			{
 				var error = 0;
 				ReadOnlySpan<int> partitionTable = Bc7Block.Subsets2PartitionTable[partitionIndex];
 				Span<int> subset0 = stackalloc int[numDistinctClusters];
@@ -60,7 +64,7 @@ namespace BCnEncoder.Encoder.Bptc
 				var max0Idx = 0;
 				var max1Idx = 0;
 
-				//Calculate largest cluster index for each subset 
+				//Calculate largest cluster index for each subset
 				for (var i = 0; i < 16; i++)
 				{
 					if (partitionTable[i] == 0)
@@ -122,7 +126,7 @@ namespace BCnEncoder.Encoder.Bptc
 				var max1Idx = 0;
 				var max2Idx = 0;
 
-				//Calculate largest cluster index for each subset 
+				//Calculate largest cluster index for each subset
 				for (var i = 0; i < 16; i++)
 				{
 					if (partitionTable[i] == 0)

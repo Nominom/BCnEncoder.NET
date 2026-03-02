@@ -2,6 +2,10 @@ using System;
 using System.Runtime.InteropServices;
 using BCnEncoder.Encoder.Bptc;
 
+#if NETSTANDARD2_0
+using MemoryMarshal = BCnEncoder.Shared.MemoryMarshalPolyfills;
+#endif
+
 namespace BCnEncoder.Shared
 {
 
@@ -19,7 +23,7 @@ namespace BCnEncoder.Shared
 					p20 = p21 = p22 = p23 =
 						p30 = p31 = p32 = p33 = fillColor;
 		}
-		
+
 		public Span<ColorRgba32> AsSpan => MemoryMarshal.CreateSpan(ref p00, 16);
 
 		public ColorRgba32 this[int x, int y]
@@ -156,7 +160,7 @@ namespace BCnEncoder.Shared
 					p20 = p21 = p22 = p23 =
 						p30 = p31 = p32 = p33 = fillColor;
 		}
-		
+
 		public Span<ColorRgbFloat> AsSpan => MemoryMarshal.CreateSpan(ref p00, 16);
 
 		public ColorRgbFloat this[int x, int y]
@@ -184,7 +188,7 @@ namespace BCnEncoder.Shared
 				var re = Math.Sign(col1.r) * MathF.Log( 1 + MathF.Abs(col1.r)) - Math.Sign(col2.r) * MathF.Log( 1 + MathF.Abs(col2.r));
 				var ge = Math.Sign(col1.g) * MathF.Log( 1 + MathF.Abs(col1.g)) - Math.Sign(col2.g) * MathF.Log( 1 + MathF.Abs(col2.g));
 				var be = Math.Sign(col1.b) * MathF.Log( 1 + MathF.Abs(col1.b)) - Math.Sign(col2.b) * MathF.Log( 1 + MathF.Abs(col2.b));
-																	   
+
 				error += re * re;
 				error += ge * ge;
 				error += be * be;
@@ -222,7 +226,7 @@ namespace BCnEncoder.Shared
 
 			return error;
 		}
-		
+
 
 		internal RawBlock4X4Ycbcr ToRawBlockYcbcr()
 		{

@@ -1,6 +1,10 @@
 using System;
 using System.Collections.Generic;
 
+#if NETSTANDARD2_0
+using Array = BCnEncoder.Shared.ArrayPolyfills;
+#endif
+
 namespace BCnEncoder.Shared
 {
 	/// <summary>
@@ -194,7 +198,7 @@ namespace BCnEncoder.Shared
 			if (enforceConnectivity) {
 				clusterIndices = EnforceConnectivity(clusterIndices, width, height, clusters);
 			}
-			
+
 			return clusterIndices;
 		}
 
@@ -427,7 +431,7 @@ namespace BCnEncoder.Shared
 		{
 			ReadOnlySpan<int> neighborX = new[] { -1, 0, 1, 0 };
 			ReadOnlySpan<int> neighborY = new[] { 0, -1, 0, 1 };
-			
+
 			var sSquared = width * height / clusters;
 
 			var clusterX = new List<int>(sSquared);
