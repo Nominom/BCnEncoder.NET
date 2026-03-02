@@ -54,6 +54,11 @@ namespace BCnEncoder.Encoder.Bptc
 		{
 			var output = Enumerable.Range(0, smallIndex ? 32 : 64).ToArray();
 
+			// Copy struct to array before the closure so that reducedIndicesBlock is not
+			// heap-captured. On .NET Framework, MemoryMarshalPolyfills.CreateSpan uses
+			// Unsafe.AsPointer, which is only GC-safe for stack-allocated structs.
+			var indices = new int[16];
+			for (var k = 0; k < 16; k++) indices[k] = reducedIndicesBlock[k];
 
 			int CalculatePartitionError(int partitionIndex)
 			{
@@ -69,7 +74,7 @@ namespace BCnEncoder.Encoder.Bptc
 				{
 					if (partitionTable[i] == 0)
 					{
-						var r = reducedIndicesBlock[i];
+						var r = indices[i];
 						subset0[r]++;
 						var count = subset0[r];
 						if (count > subset0[max0Idx])
@@ -79,7 +84,7 @@ namespace BCnEncoder.Encoder.Bptc
 					}
 					else
 					{
-						var r = reducedIndicesBlock[i];
+						var r = indices[i];
 						subset1[r]++;
 						var count = subset1[r];
 						if (count > subset1[max1Idx])
@@ -94,11 +99,11 @@ namespace BCnEncoder.Encoder.Bptc
 				{
 					if (partitionTable[i] == 0)
 					{
-						if (reducedIndicesBlock[i] != max0Idx) error++;
+						if (indices[i] != max0Idx) error++;
 					}
 					else
 					{
-						if (reducedIndicesBlock[i] != max1Idx) error++;
+						if (indices[i] != max1Idx) error++;
 					}
 				}
 
@@ -113,6 +118,12 @@ namespace BCnEncoder.Encoder.Bptc
 		public static int[] Rank3SubsetPartitions(ClusterIndices4X4 reducedIndicesBlock, int numDistinctClusters)
 		{
 			var output = Enumerable.Range(0, 64).ToArray();
+
+			// Copy struct to array before the closure so that reducedIndicesBlock is not
+			// heap-captured. On .NET Framework, MemoryMarshalPolyfills.CreateSpan uses
+			// Unsafe.AsPointer, which is only GC-safe for stack-allocated structs.
+			var indices = new int[16];
+			for (var k = 0; k < 16; k++) indices[k] = reducedIndicesBlock[k];
 
 			int CalculatePartitionError(int partitionIndex)
 			{
@@ -131,7 +142,7 @@ namespace BCnEncoder.Encoder.Bptc
 				{
 					if (partitionTable[i] == 0)
 					{
-						var r = reducedIndicesBlock[i];
+						var r = indices[i];
 						subset0[r]++;
 						var count = subset0[r];
 						if (count > subset0[max0Idx])
@@ -141,7 +152,7 @@ namespace BCnEncoder.Encoder.Bptc
 					}
 					else if (partitionTable[i] == 1)
 					{
-						var r = reducedIndicesBlock[i];
+						var r = indices[i];
 						subset1[r]++;
 						var count = subset1[r];
 						if (count > subset1[max1Idx])
@@ -151,7 +162,7 @@ namespace BCnEncoder.Encoder.Bptc
 					}
 					else
 					{
-						var r = reducedIndicesBlock[i];
+						var r = indices[i];
 						subset2[r]++;
 						var count = subset2[r];
 						if (count > subset2[max2Idx])
@@ -166,15 +177,15 @@ namespace BCnEncoder.Encoder.Bptc
 				{
 					if (partitionTable[i] == 0)
 					{
-						if (reducedIndicesBlock[i] != max0Idx) error++;
+						if (indices[i] != max0Idx) error++;
 					}
 					else if (partitionTable[i] == 1)
 					{
-						if (reducedIndicesBlock[i] != max1Idx) error++;
+						if (indices[i] != max1Idx) error++;
 					}
 					else
 					{
-						if (reducedIndicesBlock[i] != max2Idx) error++;
+						if (indices[i] != max2Idx) error++;
 					}
 				}
 
