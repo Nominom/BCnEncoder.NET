@@ -164,15 +164,15 @@ namespace BCnEncoder.Shared
 			mipHeight = Math.Max(1, height >> mipIdx);
 		}
 
-		private static ColorRgba32[,] ResizeToHalf(ReadOnlySpan2D<ColorRgba32> pixelsRgba)
+		private static Memory2D<ColorRgba32> ResizeToHalf(ReadOnlySpan2D<ColorRgba32> pixelsRgba)
 		{
-
 			var oldWidth = pixelsRgba.Width;
 			var oldHeight = pixelsRgba.Height;
 			var newWidth = Math.Max(1, oldWidth >> 1);
 			var newHeight = Math.Max(1, oldHeight >> 1);
 
-			var result = new ColorRgba32[newHeight, newWidth];
+			// Use a 1D backing array so TryGetMemory() succeeds on all target frameworks
+			var result = new ColorRgba32[newHeight * newWidth];
 
 			int ClampW(int x) => Math.Max(0, Math.Min(oldWidth - 1, x));
 			int ClampH(int y) => Math.Max(0, Math.Min(oldHeight - 1, y));
@@ -186,22 +186,22 @@ namespace BCnEncoder.Shared
 					var ll = pixelsRgba[ClampH(y2 * 2 + 1), ClampW(x2 * 2)].ToFloat();
 					var lr = pixelsRgba[ClampH(y2 * 2 + 1), ClampW(x2 * 2 + 1)].ToFloat();
 
-					result[y2, x2] = ((ul + ur + ll + lr) / 4).ToRgba32();
+					result[y2 * newWidth + x2] = ((ul + ur + ll + lr) / 4).ToRgba32();
 				}
 			}
 
-			return result;
+			return ((Memory<ColorRgba32>)result).AsMemory2D(newHeight, newWidth);
 		}
 
-		private static ColorRgbFloat[,] ResizeToHalf(ReadOnlySpan2D<ColorRgbFloat> pixelsRgba)
+		private static Memory2D<ColorRgbFloat> ResizeToHalf(ReadOnlySpan2D<ColorRgbFloat> pixelsRgba)
 		{
-
 			var oldWidth = pixelsRgba.Width;
 			var oldHeight = pixelsRgba.Height;
 			var newWidth = Math.Max(1, oldWidth >> 1);
 			var newHeight = Math.Max(1, oldHeight >> 1);
 
-			var result = new ColorRgbFloat[newHeight, newWidth];
+			// Use a 1D backing array so TryGetMemory() succeeds on all target frameworks
+			var result = new ColorRgbFloat[newHeight * newWidth];
 
 			int ClampW(int x) => Math.Max(0, Math.Min(oldWidth - 1, x));
 			int ClampH(int y) => Math.Max(0, Math.Min(oldHeight - 1, y));
@@ -215,11 +215,11 @@ namespace BCnEncoder.Shared
 					var ll = pixelsRgba[ClampH(y2 * 2 + 1), ClampW(x2 * 2)];
 					var lr = pixelsRgba[ClampH(y2 * 2 + 1), ClampW(x2 * 2 + 1)];
 
-					result[y2, x2] = ((ul + ur + ll + lr) / 4);
+					result[y2 * newWidth + x2] = ((ul + ur + ll + lr) / 4);
 				}
 			}
 
-			return result;
+			return ((Memory<ColorRgbFloat>)result).AsMemory2D(newHeight, newWidth);
 		}
 	}
 }

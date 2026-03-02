@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using BCnEncoder.Shared;
 using CommunityToolkit.HighPerformance;
 using Xunit;
@@ -36,10 +36,10 @@ namespace BCnEncTests
 		{
 			var testImage = new ColorRgba32[15, 11];
 
-			var pixels = testImage.AsSpan();
-
-			for (var i = 0; i < pixels.Length; i++) {
-				pixels[i] = new ColorRgba32(0, 125, 125);
+			for (var y = 0; y < testImage.GetLength(0); y++) {
+				for (var x = 0; x < testImage.GetLength(1); x++) {
+					testImage[y, x] = new ColorRgba32(0, 125, 125);
+				}
 			}
 
 			var blocks = ImageToBlocks.ImageTo4X4(testImage, out var blocksWidth, out var blocksHeight);
@@ -63,14 +63,14 @@ namespace BCnEncTests
 			var r = new Random(0);
 			var testImage = new ColorRgba32[16, 16];
 
-			var pixels = testImage.AsSpan();
-
-			for (var i = 0; i < pixels.Length; i++) {
-				pixels[i] = new ColorRgba32(
-					(byte)r.Next(255),
-					(byte)r.Next(255),
-					(byte)r.Next(255),
-					(byte)r.Next(255));
+			for (var y = 0; y < testImage.GetLength(0); y++) {
+				for (var x = 0; x < testImage.GetLength(1); x++) {
+					testImage[y, x] = new ColorRgba32(
+						(byte)r.Next(255),
+						(byte)r.Next(255),
+						(byte)r.Next(255),
+						(byte)r.Next(255));
+				}
 			}
 
 			var blocks = ImageToBlocks.ImageTo4X4(testImage, out var blocksWidth, out var blocksHeight);
@@ -83,9 +83,11 @@ namespace BCnEncTests
 
 			var pixels2 = output.AsSpan();
 
-			Assert.Equal(pixels.Length, pixels2.Length);
-			for (var i = 0; i < pixels.Length; i++) {
-				Assert.Equal(pixels[i], pixels2[i]);
+			Assert.Equal(testImage.Length, pixels2.Length);
+			for (var y = 0; y < 16; y++) {
+				for (var x = 0; x < 16; x++) {
+					Assert.Equal(testImage[y, x], pixels2[y * 16 + x]);
+				}
 			}
 		}
 
