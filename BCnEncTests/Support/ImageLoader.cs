@@ -1,6 +1,7 @@
 using System.IO;
 using BCnEncoder.Shared;
 using BCnEncoder.Shared.ImageFiles;
+using CommunityToolkit.HighPerformance;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
@@ -8,21 +9,21 @@ namespace BCnEncTests.Support
 {
 	public static class ImageLoader
 	{
-		public static Image<Rgba32> TestDiffuse1 { get; } = LoadTestImage("../../../testImages/test_diffuse_1_512.jpg");
-		public static Image<Rgba32> TestBlur1 { get; } = LoadTestImage("../../../testImages/test_blur_1_512.jpg");
-		public static Image<Rgba32> TestNormal1 { get; } = LoadTestImage("../../../testImages/test_normal_1_512.jpg");
-		public static Image<Rgba32> TestHeight1 { get; } = LoadTestImage("../../../testImages/test_height_1_512.jpg");
-		public static Image<Rgba32> TestGradient1 { get; } = LoadTestImage("../../../testImages/test_gradient_1_512.jpg");
+		public static Memory2D<ColorRgba32> TestDiffuse1 { get; } = LoadTestImage("../../../testImages/test_diffuse_1_512.jpg");
+		public static Memory2D<ColorRgba32> TestBlur1 { get; } = LoadTestImage("../../../testImages/test_blur_1_512.jpg");
+		public static Memory2D<ColorRgba32> TestNormal1 { get; } = LoadTestImage("../../../testImages/test_normal_1_512.jpg");
+		public static Memory2D<ColorRgba32> TestHeight1 { get; } = LoadTestImage("../../../testImages/test_height_1_512.jpg");
+		public static Memory2D<ColorRgba32> TestGradient1 { get; } = LoadTestImage("../../../testImages/test_gradient_1_512.jpg");
 
-		public static Image<Rgba32> TestTransparentSprite1 { get; } = LoadTestImage("../../../testImages/test_transparent.png");
-		public static Image<Rgba32> TestAlphaGradient1 { get; } = LoadTestImage("../../../testImages/test_alphagradient_1_512.png");
-		public static Image<Rgba32> TestAlpha1 { get; } = LoadTestImage("../../../testImages/test_alpha_1_512.png");
-		public static Image<Rgba32> TestRedGreen1 { get; } = LoadTestImage("../../../testImages/test_red_green_1_64.png");
-		public static Image<Rgba32> TestRgbHard1 { get; } = LoadTestImage("../../../testImages/test_rgb_hard_1.png");
-		public static Image<Rgba32> TestLenna { get; } = LoadTestImage("../../../testImages/test_lenna_512.png");
-		public static Image<Rgba32> TestDecodingBc5Reference { get; } = LoadTestImage("../../../testImages/decoding_dds_bc5_reference.png");
+		public static Memory2D<ColorRgba32> TestTransparentSprite1 { get; } = LoadTestImage("../../../testImages/test_transparent.png");
+		public static Memory2D<ColorRgba32> TestAlphaGradient1 { get; } = LoadTestImage("../../../testImages/test_alphagradient_1_512.png");
+		public static Memory2D<ColorRgba32> TestAlpha1 { get; } = LoadTestImage("../../../testImages/test_alpha_1_512.png");
+		public static Memory2D<ColorRgba32> TestRedGreen1 { get; } = LoadTestImage("../../../testImages/test_red_green_1_64.png");
+		public static Memory2D<ColorRgba32> TestRgbHard1 { get; } = LoadTestImage("../../../testImages/test_rgb_hard_1.png");
+		public static Memory2D<ColorRgba32> TestLenna { get; } = LoadTestImage("../../../testImages/test_lenna_512.png");
+		public static Memory2D<ColorRgba32> TestDecodingBc5Reference { get; } = LoadTestImage("../../../testImages/decoding_dds_bc5_reference.png");
 
-		public static Image<Rgba32>[] TestCubemap { get; } = {
+		public static Memory2D<ColorRgba32>[] TestCubemap { get; } = {
 			LoadTestImage("../../../testImages/cubemap/right.png"),
 			LoadTestImage("../../../testImages/cubemap/left.png"),
 			LoadTestImage("../../../testImages/cubemap/top.png"),
@@ -31,9 +32,27 @@ namespace BCnEncTests.Support
 			LoadTestImage("../../../testImages/cubemap/forward.png")
 		};
 
-		internal static Image<Rgba32> LoadTestImage(string filename)
+		internal static Memory2D<ColorRgba32> LoadTestImage(string filename)
+		{
+			using var image = Image.Load<Rgba32>(filename);
+			return ToMemory2D(image);
+		}
+
+		internal static Image<Rgba32> LoadTestImageSharp(string filename)
 		{
 			return Image.Load<Rgba32>(filename);
+		}
+
+		private static Memory2D<ColorRgba32> ToMemory2D(Image<Rgba32> image)
+		{
+			var pixels = new ColorRgba32[image.Width * image.Height];
+			for (var y = 0; y < image.Height; y++)
+				for (var x = 0; x < image.Width; x++)
+				{
+					var p = image[x, y];
+					pixels[y * image.Width + x] = new ColorRgba32(p.R, p.G, p.B, p.A);
+				}
+			return new Memory2D<ColorRgba32>(pixels, image.Height, image.Width);
 		}
 	}
 

@@ -6,10 +6,29 @@
     <SharedGUID>D954291E-2A0B-460D-934E-DC6B0785DB48</SharedGUID>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)AtcTests.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)BC1Tests.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Bc5Tests.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Bc6EncoderTests.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Bc6HDecoderTests.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Bc7BlockTests.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)BgraTests.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)BlockTests.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)CancellationTests.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ClusterTests.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)ColorTest.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)DecodingAsyncTests.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)DecodingTests.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)DdsReadTests.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)DdsWritingTests.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EncoderOptionsTests.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EncodingAsyncTest.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)EncodingTest.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)IntHelperTests.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)MathHelperTests.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)PcaTests.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ProgressTests.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)RawTests.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SingleBlockTests.cs" />
   </ItemGroup>
 </Project>

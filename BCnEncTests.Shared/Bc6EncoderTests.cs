@@ -265,7 +265,7 @@ namespace BCnEncTests
 		{
 			var signed = true;
 			var image = HdrLoader.TestHdrKiara;
-			var blocks = ImageToBlocks.ImageTo4X4(image.pixels.AsMemory().AsMemory2D(image.height, image.width), out var bW, out var bH);
+			var blocks = ImageToBlocks.ImageTo4X4(new Memory2D<ColorRgbFloat>(image.pixels, image.height, image.width), out var bW, out var bH);
 
 			for (var i = 0; i < blocks.Length; i++)
 			{

@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using BCnEncoder.Shared;
 using BCnEncTests.Support;
+using CommunityToolkit.HighPerformance;
 using Xunit;
 
 namespace BCnEncTests
@@ -44,7 +45,7 @@ namespace BCnEncTests
 				pixels[i] = pixC[clusters[i]].ToColorRgba32();
 			}
 
-			var result = pixels.AsMemory().AsMemory2D(height, width);
+			var result = new Memory2D<ColorRgba32>(pixels, height, width);
 			using var fs = File.OpenWrite("test_cluster.png");
 			TestHelper.SaveAsPng(result, fs);
 		}

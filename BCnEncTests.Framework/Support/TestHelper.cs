@@ -254,5 +254,20 @@ namespace BCnEncTests.Support
 			bmp.UnlockBits(data);
 			bmp.Save(stream, ImageFormat.Png);
 		}
+
+		public static void SaveAsPng(ColorRgbFloat[] pixels, int width, int height, Stream stream)
+		{
+			var rgba = new ColorRgba32[pixels.Length];
+			for (var i = 0; i < pixels.Length; i++)
+			{
+				var p = pixels[i];
+				byte r = (byte)(Math.Max(0, Math.Min(1, p.r)) * 255 + 0.5f);
+				byte g = (byte)(Math.Max(0, Math.Min(1, p.g)) * 255 + 0.5f);
+				byte b = (byte)(Math.Max(0, Math.Min(1, p.b)) * 255 + 0.5f);
+				rgba[i] = new ColorRgba32(r, g, b, 255);
+			}
+			var mem = new Memory2D<ColorRgba32>(rgba, height, width);
+			SaveAsPng(mem, stream);
+		}
 	}
 }

@@ -1,11 +1,10 @@
+using System;
 using System.Threading.Tasks;
 using BCnEncoder.Decoder;
 using BCnEncoder.Encoder;
-using BCnEncoder.ImageSharp;
 using BCnEncoder.Shared;
 using BCnEncTests.Support;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
+using CommunityToolkit.HighPerformance;
 using Xunit;
 
 namespace BCnEncTests
@@ -14,8 +13,8 @@ namespace BCnEncTests
 	{
 		private readonly BcEncoder encoder;
 		private readonly BcDecoder decoder;
-		private readonly Image<Rgba32> originalImage;
-		private readonly Image<Rgba32>[] originalCubeMap;
+		private readonly Memory2D<ColorRgba32> originalImage;
+		private readonly Memory2D<ColorRgba32>[] originalCubeMap;
 
 		public EncodingAsyncTest()
 		{
@@ -29,20 +28,18 @@ namespace BCnEncTests
 		public async Task EncodeToDdsAsync()
 		{
 			var file = await encoder.EncodeToDdsAsync(originalImage);
-			var image = decoder.DecodeToImageRgba32(file);
+			var image = decoder.Decode2D(file);
 
 			TestHelper.AssertImagesEqual(originalImage, image, encoder.OutputOptions.Quality);
-			image.Dispose();
 		}
 
 		[Fact]
 		public async Task EncodeToKtxAsync()
 		{
 			var file = await encoder.EncodeToKtxAsync(originalImage);
-			var image = decoder.DecodeToImageRgba32(file);
+			var image = decoder.Decode2D(file);
 
 			TestHelper.AssertImagesEqual(originalImage, image, encoder.OutputOptions.Quality);
-			image.Dispose();
 		}
 
 		[Fact]
@@ -53,10 +50,11 @@ namespace BCnEncTests
 
 			for (var i = 0; i < 6; i++)
 			{
-				var image = decoder.DecodeRawToImageRgba32(file.Faces[i].MipMaps[0].Data, (int)file.Faces[i].Width, (int)file.Faces[i].Height, CompressionFormat.Bc1);
+				var rawPixels = decoder.DecodeRaw(file.Faces[i].MipMaps[0].Data,
+					(int)file.Faces[i].Width, (int)file.Faces[i].Height, CompressionFormat.Bc1);
+				var decodedImage = new Memory2D<ColorRgba32>(rawPixels, (int)file.Faces[i].Height, (int)file.Faces[i].Width);
 
-				TestHelper.AssertImagesEqual(originalCubeMap[i], image, encoder.OutputOptions.Quality);
-				image.Dispose();
+				TestHelper.AssertImagesEqual(originalCubeMap[i], decodedImage, encoder.OutputOptions.Quality);
 			}
 		}
 
@@ -68,10 +66,12 @@ namespace BCnEncTests
 
 			for (var i = 0; i < 6; i++)
 			{
-				var image = decoder.DecodeRawToImageRgba32(file.MipMaps[0].Faces[i].Data, (int)file.MipMaps[0].Faces[i].Width, (int)file.MipMaps[0].Faces[i].Height, CompressionFormat.Bc1);
+				var rawPixels = decoder.DecodeRaw(file.MipMaps[0].Faces[i].Data,
+					(int)file.MipMaps[0].Faces[i].Width, (int)file.MipMaps[0].Faces[i].Height, CompressionFormat.Bc1);
+				var decodedImage = new Memory2D<ColorRgba32>(rawPixels,
+					(int)file.MipMaps[0].Faces[i].Height, (int)file.MipMaps[0].Faces[i].Width);
 
-				TestHelper.AssertImagesEqual(originalCubeMap[i], image, encoder.OutputOptions.Quality);
-				image.Dispose();
+				TestHelper.AssertImagesEqual(originalCubeMap[i], decodedImage, encoder.OutputOptions.Quality);
 			}
 		}
 
@@ -79,10 +79,10 @@ namespace BCnEncTests
 		public async Task EncodeToRawBytesAsync()
 		{
 			var data = await encoder.EncodeToRawBytesAsync(originalImage);
-			var image = decoder.DecodeRawToImageRgba32(data[0], originalImage.Width, originalImage.Height, CompressionFormat.Bc1);
+			var rawPixels = decoder.DecodeRaw(data[0], originalImage.Width, originalImage.Height, CompressionFormat.Bc1);
+			var image = new Memory2D<ColorRgba32>(rawPixels, originalImage.Height, originalImage.Width);
 
 			TestHelper.AssertImagesEqual(originalImage, image, encoder.OutputOptions.Quality);
-			image.Dispose();
 		}
 	}
 }

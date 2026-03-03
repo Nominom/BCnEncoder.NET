@@ -20,21 +20,25 @@ namespace BCnEncTests.Support
 	{
 		#region Assertions
 
-		public static void AssertPixelsEqual(Span<Rgba32> originalPixels, Span<Rgba32> pixels, CompressionQuality quality)
+		public static void AssertPixelsEqual(Span<ColorRgba32> originalPixels, Span<ColorRgba32> pixels, CompressionQuality quality, ITestOutputHelper output = null)
 		{
-			var psnr = ImageQuality.PeakSignalToNoiseRatio(
-				MemoryMarshal.Cast<Rgba32, ColorRgba32>(originalPixels),
-				MemoryMarshal.Cast<Rgba32, ColorRgba32>(pixels));
-			AssertPSNR(psnr, quality);
+			var psnr = ImageQuality.PeakSignalToNoiseRatio(originalPixels, pixels);
+			AssertPSNR(psnr, quality, output);
 		}
 
 		public static void AssertPixelsEqual(Span<ColorRgbFloat> originalPixels, Span<ColorRgbFloat> pixels, CompressionQuality quality, ITestOutputHelper output = null)
 		{
-			var rmse = ImageQuality.CalculateLogRMSE(originalPixels,pixels);
+			var rmse = ImageQuality.CalculateLogRMSE(originalPixels, pixels);
 			AssertRMSE(rmse, quality, output);
 		}
 
 		public static void AssertImagesEqual(Image<Rgba32> original, Image<Rgba32> image, CompressionQuality quality, bool countAlpha = true)
+		{
+			var psnr = CalculatePSNR(original, image, countAlpha);
+			AssertPSNR(psnr, quality);
+		}
+
+		public static void AssertImagesEqual(Memory2D<ColorRgba32> original, Memory2D<ColorRgba32> image, CompressionQuality quality, bool countAlpha = true)
 		{
 			var psnr = CalculatePSNR(original, image, countAlpha);
 			AssertPSNR(psnr, quality);
@@ -50,23 +54,23 @@ namespace BCnEncTests.Support
 			Assert.Equal((uint)1, file.header.NumberOfFaces);
 
 			var decoder = new BcDecoder();
-			using var image = decoder.DecodeToImageRgba32(file);
+			var pixels = decoder.Decode2D(file);
 
-			Assert.Equal((uint)image.Width, file.header.PixelWidth);
-			Assert.Equal((uint)image.Height, file.header.PixelHeight);
+			Assert.Equal((uint)pixels.Width, file.header.PixelWidth);
+			Assert.Equal((uint)pixels.Height, file.header.PixelHeight);
 
 			using var outFs = File.OpenWrite(outputFile);
-			image.SaveAsPng(outFs);
+			SaveAsPng(pixels, outFs);
 		}
 
 		#region Dds
 
-		public static void ExecuteDdsWritingTest(Image<Rgba32> image, CompressionFormat format, string outputFile)
+		public static void ExecuteDdsWritingTest(Memory2D<ColorRgba32> image, CompressionFormat format, string outputFile)
 		{
 			ExecuteDdsWritingTest(new[] { image }, format, outputFile);
 		}
 
-		public static void ExecuteDdsWritingTest(Image<Rgba32>[] images, CompressionFormat format, string outputFile)
+		public static void ExecuteDdsWritingTest(Memory2D<ColorRgba32>[] images, CompressionFormat format, string outputFile)
 		{
 			var encoder = new BcEncoder();
 			encoder.OutputOptions.Quality = CompressionQuality.Fast;
@@ -93,7 +97,7 @@ namespace BCnEncTests.Support
 
 			var decoder = new BcDecoder();
 			decoder.InputOptions.DdsBc1ExpectAlpha = assertAlpha;
-			var images = decoder.DecodeAllMipMapsToImageRgba32(file);
+			var images = decoder.DecodeAllMipMaps2D(file);
 
 			Assert.Equal((uint)images[0].Width, file.header.dwWidth);
 			Assert.Equal((uint)images[0].Height, file.header.dwHeight);
@@ -107,8 +111,7 @@ namespace BCnEncTests.Support
 				}
 
 				using var outFs = File.OpenWrite(string.Format(outputFile, i));
-				images[i].SaveAsPng(outFs);
-				images[i].Dispose();
+				SaveAsPng(images[i], outFs);
 			}
 		}
 
@@ -116,7 +119,7 @@ namespace BCnEncTests.Support
 
 		#region Cancellation
 
-		public static async Task ExecuteCancellationTest(Image<Rgba32> image, bool isParallel)
+		public static async Task ExecuteCancellationTest(Memory2D<ColorRgba32> image, bool isParallel)
 		{
 			var encoder = new BcEncoder(CompressionFormat.Bc7);
 			encoder.OutputOptions.Quality = CompressionQuality.Fast;
@@ -124,14 +127,14 @@ namespace BCnEncTests.Support
 
 			var source = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
 			await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
-				encoder.EncodeToRawBytesAsync(image, 0, source.Token));
+				encoder.EncodeToRawBytesAsync(image, source.Token));
 		}
 
 		#endregion
 
 		#endregion
 
-		public static float DecodeKtxCheckPSNR(string filename, Image<Rgba32> original)
+		public static float DecodeKtxCheckPSNR(string filename, Memory2D<ColorRgba32> original)
 		{
 			using var fs = File.OpenRead(filename);
 			var ktx = KtxFile.Load(fs);
@@ -139,9 +142,9 @@ namespace BCnEncTests.Support
 			{
 				OutputOptions = { Bc4Component = ColorComponent.Luminance }
 			};
-			using var img = decoder.DecodeToImageRgba32(ktx);
+			var decoded = decoder.Decode2D(ktx);
 
-			return CalculatePSNR(original, img);
+			return CalculatePSNR(original, decoded);
 		}
 
 		public static float DecodeKtxCheckRMSEHdr(string filename, HdrImage original)
@@ -157,8 +160,7 @@ namespace BCnEncTests.Support
 			return ImageQuality.CalculateLogRMSE(original.pixels, decoded);
 		}
 
-
-		public static void ExecuteEncodingTest(Image<Rgba32> image, CompressionFormat format, CompressionQuality quality, string filename, ITestOutputHelper output)
+		public static void ExecuteEncodingTest(Memory2D<ColorRgba32> image, CompressionFormat format, CompressionQuality quality, string filename, ITestOutputHelper output)
 		{
 			var encoder = new BcEncoder();
 			encoder.OutputOptions.Quality = quality;
@@ -182,7 +184,7 @@ namespace BCnEncTests.Support
 			encoder.OutputOptions.Format = format;
 
 			var fs = File.OpenWrite(filename);
-			encoder.EncodeToStreamHdr(image.pixels.AsMemory().AsMemory2D(image.height, image.width), fs);
+			encoder.EncodeToStreamHdr(new Memory2D<ColorRgbFloat>(image.pixels, image.height, image.width), fs);
 			fs.Close();
 
 			var rmse = DecodeKtxCheckRMSEHdr(filename, image);
@@ -198,15 +200,24 @@ namespace BCnEncTests.Support
 			return ImageQuality.PeakSignalToNoiseRatio(pixels, pixels2, countAlpha);
 		}
 
-		public static void AssertPSNR(float psnr, CompressionQuality quality)
+		private static float CalculatePSNR(Memory2D<ColorRgba32> original, Memory2D<ColorRgba32> decoded, bool countAlpha = true)
 		{
+			var pixels  = GetSinglePixelArrayAsColors(original);
+			var pixels2 = GetSinglePixelArrayAsColors(decoded);
+
+			return ImageQuality.PeakSignalToNoiseRatio(pixels, pixels2, countAlpha);
+		}
+
+		public static void AssertPSNR(float psnr, CompressionQuality quality, ITestOutputHelper output = null)
+		{
+			output?.WriteLine($"PSNR: {psnr} , quality: {quality}");
 			if (quality == CompressionQuality.Fast)
 			{
-				Assert.True(psnr > 25);
+				Assert.True(psnr > 25, $"PSNR was less than 25: {psnr} , quality: {quality}");
 			}
 			else
 			{
-				Assert.True(psnr > 30);
+				Assert.True(psnr > 30, $"PSNR was less than 30: {psnr} , quality: {quality}");
 			}
 		}
 
@@ -237,6 +248,20 @@ namespace BCnEncTests.Support
 			return pixels;
 		}
 
+		public static ColorRgba32[] GetSinglePixelArrayAsColors(ReadOnlyMemory2D<ColorRgba32> image)
+		{
+			var pixels = new ColorRgba32[image.Width * image.Height];
+			var span = image.Span;
+			for (var y = 0; y < image.Height; y++)
+			{
+				for (var x = 0; x < image.Width; x++)
+				{
+					pixels[y * image.Width + x] = span[y, x];
+				}
+			}
+			return pixels;
+		}
+
 		public static T[] GetSinglePixelArray<T>(Image<T> original) where T : unmanaged, IPixel<T>
 		{
 			T[] pixels = new T[original.Width * original.Height];
@@ -260,6 +285,36 @@ namespace BCnEncTests.Support
 					dest[x, y] = pixels[y * dest.Width + x];
 				}
 			}
+		}
+
+		public static void SaveAsPng(Memory2D<ColorRgba32> img, Stream fs)
+		{
+			var imageRgba = new Image<Rgba32>(img.Width, img.Height);
+			var span = img.Span;
+			for (var y = 0; y < img.Height; y++)
+			{
+				for (var x = 0; x < img.Width; x++)
+				{
+					var col = span[y, x];
+					imageRgba[x, y] = new Rgba32(col.r, col.g, col.b, col.a);
+				}
+			}
+			imageRgba.SaveAsPng(fs);
+		}
+
+		public static void SaveAsPng(ColorRgbFloat[] pixels, int width, int height, Stream stream)
+		{
+			var rgba = new ColorRgba32[pixels.Length];
+			for (var i = 0; i < pixels.Length; i++)
+			{
+				var p = pixels[i];
+				byte r = (byte)(Math.Max(0, Math.Min(1, p.r)) * 255 + 0.5f);
+				byte g = (byte)(Math.Max(0, Math.Min(1, p.g)) * 255 + 0.5f);
+				byte b = (byte)(Math.Max(0, Math.Min(1, p.b)) * 255 + 0.5f);
+				rgba[i] = new ColorRgba32(r, g, b, 255);
+			}
+			var mem = new Memory2D<ColorRgba32>(rgba, height, width);
+			SaveAsPng(mem, stream);
 		}
 	}
 }
