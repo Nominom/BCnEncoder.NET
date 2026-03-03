@@ -1,6 +1,4 @@
 using System;
-using System.Drawing;
-using System.Drawing.Imaging;
 using System.IO;
 using BCnEncoder.Decoder;
 using BCnEncoder.Encoder;
@@ -25,7 +23,7 @@ namespace BCnEncTests
 
 			var encodedRawBytes = encoder.EncodeToRawBytes(inputImage);
 			var decodedPixels = decoder.DecodeRaw(encodedRawBytes[0], inputImage.Width, inputImage.Height, CompressionFormat.Bc1);
-			var decodedImage = decodedPixels.AsMemory().AsMemory2D(inputImage.Height, inputImage.Width);
+			var decodedImage = new Memory2D<ColorRgba32>(decodedPixels, inputImage.Height, inputImage.Width);
 
 			var originalColors = TestHelper.GetSinglePixelArrayAsColors(inputImage);
 			var decodedColors  = TestHelper.GetSinglePixelArrayAsColors(decodedImage);
@@ -50,7 +48,7 @@ namespace BCnEncTests
 			Assert.Equal(0, ms.Position);
 
 			var rawPixels = decoder.DecodeRaw(ms, inputImage.Width, inputImage.Height, CompressionFormat.Bc1);
-			var decodedImage = rawPixels.AsMemory().AsMemory2D(inputImage.Height, inputImage.Width);
+			var decodedImage = new Memory2D<ColorRgba32>(rawPixels, inputImage.Height, inputImage.Width);
 
 			var originalColors = TestHelper.GetSinglePixelArrayAsColors(inputImage);
 			var decodedColors  = TestHelper.GetSinglePixelArrayAsColors(decodedImage);
@@ -87,11 +85,12 @@ namespace BCnEncTests
 
 			ms.Position = 0;
 			Assert.Equal(0, ms.Position);
+			var resized = ResizeImageToMips(inputImage);
+
 
 			for (var i = 0; i < mipLevels; i++)
 			{
 				encoder.CalculateMipMapSize(inputImage.Width, inputImage.Height, i, out var mipWidth, out var mipHeight);
-				var resized = ResizeImage(inputImage, mipWidth, mipHeight);
 
 				var blockSize = decoder.GetBlockSize(CompressionFormat.Bc1);
 				var blockCount = decoder.GetBlockCount(mipWidth, mipHeight);
@@ -99,9 +98,9 @@ namespace BCnEncTests
 				ms.Read(buffer, 0, buffer.Length);
 
 				var rawPixels = decoder.DecodeRaw(buffer, mipWidth, mipHeight, CompressionFormat.Bc1);
-				var decodedImage = rawPixels.AsMemory().AsMemory2D(mipHeight, mipWidth);
+				var decodedImage = new Memory2D<ColorRgba32>(rawPixels, mipHeight, mipWidth);
 
-				var originalColors = TestHelper.GetSinglePixelArrayAsColors(resized);
+				var originalColors = TestHelper.GetSinglePixelArrayAsColors(resized[i]);
 				var decodedColors  = TestHelper.GetSinglePixelArrayAsColors(decodedImage);
 
 				TestHelper.AssertPixelsEqual(originalColors, decodedColors, encoder.OutputOptions.Quality);
@@ -112,42 +111,11 @@ namespace BCnEncTests
 			Assert.Equal(1, lastMHeight);
 		}
 
-		private static ReadOnlyMemory2D<ColorRgba32> ResizeImage(Memory2D<ColorRgba32> image, int newWidth, int newHeight)
+		private static ReadOnlyMemory2D<ColorRgba32>[] ResizeImageToMips(Memory2D<ColorRgba32> image)
 		{
 			int numMips = 0;
 			var chain = MipMapper.GenerateMipChain(image, ref numMips);
-
-			foreach (var memory2D in chain)
-			{
-				if (memory2D.Width == newWidth && memory2D.Height == newHeight)
-				{
-					return memory2D;
-				}
-			}
-			throw new InvalidOperationException("Cannot resize image to non-mip dimensions");
-		}
-
-		private static unsafe Bitmap ToBitmap(Memory2D<ColorRgba32> image)
-		{
-			var bmp = new Bitmap(image.Width, image.Height, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
-			var data = bmp.LockBits(new Rectangle(0, 0, image.Width, image.Height),
-				ImageLockMode.WriteOnly, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
-			byte* ptr = (byte*)data.Scan0;
-			var span = image.Span;
-			for (int y = 0; y < image.Height; y++)
-			{
-				for (int x = 0; x < image.Width; x++)
-				{
-					var c = span[y, x];
-					ptr[0] = c.b;
-					ptr[1] = c.g;
-					ptr[2] = c.r;
-					ptr[3] = c.a;
-					ptr += 4;
-				}
-			}
-			bmp.UnlockBits(data);
-			return bmp;
+			return chain;
 		}
 	}
 }

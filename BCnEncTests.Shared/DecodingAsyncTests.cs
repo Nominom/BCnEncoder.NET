@@ -1,11 +1,11 @@
-using System.ComponentModel.DataAnnotations;
+using System;
 using System.IO;
 using System.Threading.Tasks;
 using BCnEncoder.Decoder;
 using BCnEncoder.Encoder;
-using BCnEncoder.ImageSharp;
 using BCnEncoder.Shared;
 using BCnEncTests.Support;
+using CommunityToolkit.HighPerformance;
 using Xunit;
 
 namespace BCnEncTests
@@ -20,10 +20,9 @@ namespace BCnEncTests
 			var original = ImageLoader.TestGradient1;
 
 			var file = encoder.EncodeToKtx(original);
-			var image = await decoder.DecodeToImageRgba32Async(file);
+			var image = await decoder.Decode2DAsync(file);
 
-			TestHelper.AssertImagesEqual(original, image,encoder.OutputOptions.Quality);
-			image.Dispose();
+			TestHelper.AssertImagesEqual(original, image, encoder.OutputOptions.Quality);
 		}
 
 		[Fact]
@@ -34,11 +33,9 @@ namespace BCnEncTests
 			var original = ImageLoader.TestGradient1;
 
 			var file = encoder.EncodeToKtx(original);
-			var images = await decoder.DecodeAllMipMapsToImageRgba32Async(file);
+			var images = await decoder.DecodeAllMipMaps2DAsync(file);
 
 			TestHelper.AssertImagesEqual(original, images[0], encoder.OutputOptions.Quality);
-			foreach(var img in images)
-				img.Dispose();
 		}
 
 		[Fact]
@@ -50,13 +47,17 @@ namespace BCnEncTests
 
 			var file = encoder.EncodeToKtx(original);
 
-			var ms = new MemoryStream(file.MipMaps[0].Faces[0].Data);
+			var rawBytes = file.MipMaps[0].Faces[0].Data;
+			var mipWidth = (int)file.MipMaps[0].Width;
+			var mipHeight = (int)file.MipMaps[0].Height;
 
-			var image = await decoder.DecodeRawToImageRgba32Async(ms,
-				(int) file.MipMaps[0].Width, (int) file.MipMaps[0].Height, CompressionFormat.Bc1);
+			var decoded = await Task.Run(() =>
+			{
+				var pixels = decoder.DecodeRaw(rawBytes, mipWidth, mipHeight, CompressionFormat.Bc1);
+				return new Memory2D<ColorRgba32>(pixels, mipHeight, mipWidth);
+			});
 
-			TestHelper.AssertImagesEqual(original, image, encoder.OutputOptions.Quality);
-			image.Dispose();
+			TestHelper.AssertImagesEqual(original, decoded, encoder.OutputOptions.Quality);
 		}
 	}
 }

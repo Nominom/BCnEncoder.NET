@@ -24,14 +24,18 @@ namespace BCnEncTests
 			var decoder = new BcDecoder();
 			var decoded = decoder.DecodeHdr(HdrLoader.TestHdrKiaraDds);
 
-			var hdr = new HdrImage((int)HdrLoader.TestHdrKiaraDds.header.dwWidth,
-				(int)HdrLoader.TestHdrKiaraDds.header.dwHeight);
+			var width = (int)HdrLoader.TestHdrKiaraDds.header.dwWidth;
+			var height = (int)HdrLoader.TestHdrKiaraDds.header.dwHeight;
+			var hdr = new HdrImage(width, height);
 
 			Assert.Equal(hdr.pixels.Length, decoded.Length);
 
 			hdr.pixels = decoded;
 			using var sfs = File.OpenWrite("decoding_test_dds_bc6h.hdr");
 			hdr.Write(sfs);
+
+			using var pngFs = File.OpenWrite("decoding_test_dds_bc6h.png");
+			TestHelper.SaveAsPng(decoded, width, height, pngFs);
 
 			TestHelper.AssertPixelsEqual(HdrLoader.TestHdrKiara.pixels, decoded, CompressionQuality.Fast, output);
 		}
@@ -42,14 +46,18 @@ namespace BCnEncTests
 			var decoder = new BcDecoder();
 			var decoded = decoder.DecodeHdr(HdrLoader.TestHdrKiaraKtx);
 
-			var hdr = new HdrImage((int)HdrLoader.TestHdrKiaraKtx.header.PixelWidth,
-				(int)HdrLoader.TestHdrKiaraKtx.header.PixelHeight);
+			var width = (int)HdrLoader.TestHdrKiaraKtx.header.PixelWidth;
+			var height = (int)HdrLoader.TestHdrKiaraKtx.header.PixelHeight;
+			var hdr = new HdrImage(width, height);
 
 			Assert.Equal(hdr.pixels.Length, decoded.Length);
 
 			hdr.pixels = decoded;
 			using var sfs = File.OpenWrite("decoding_test_ktx_bc6h.hdr");
 			hdr.Write(sfs);
+
+			using var pngFs = File.OpenWrite("decoding_test_ktx_bc6h.png");
+			TestHelper.SaveAsPng(decoded, width, height, pngFs);
 
 			TestHelper.AssertPixelsEqual(HdrLoader.TestHdrKiara.pixels, decoded, CompressionQuality.BestQuality, output);
 		}
@@ -63,7 +71,11 @@ namespace BCnEncTests
 			var decoder = new BcDecoder();
 			var decoded = decoder.DecodeHdr(HdrLoader.TestHdrKiaraDds);
 
+#if NETCOREAPP
+			using var fs = File.OpenRead("../../../testImages/test_hdr_kiara_dds_float16_data.bin");
+#else
 			using var fs = File.OpenRead("../../../../BCnEncTests/testImages/test_hdr_kiara_dds_float16_data.bin");
+#endif
 			using var ms = new MemoryStream();
 			fs.CopyTo(ms);
 			var length = (int)ms.Position;

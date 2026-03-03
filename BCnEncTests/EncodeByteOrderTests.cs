@@ -19,7 +19,7 @@ namespace BCnEncTests
 
 		private void EncodeByteOrderTest<T>(PixelFormat pixelFormat) where T : unmanaged, IPixel<T>
 		{
-			var imageOrig = ImageLoader.TestAlpha1;
+			using var imageOrig = ImageLoader.LoadTestImageSharp("../../../testImages/test_alpha_1_512.png");
 			var testImage = imageOrig.CloneAs<T>();
 			
 			var pixels = testImage.GetPixelMemoryGroup()[0];

@@ -3,11 +3,12 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using BCnEncoder.Decoder;
-using BCnEncoder.ImageSharp;
 using BCnEncoder.Shared;
 using BCnEncoder.Shared.ImageFiles;
-using SixLabors.ImageSharp;
+using BCnEncTests.Support;
 using Xunit;
+
+using CommunityToolkit.HighPerformance;
 
 namespace BCnEncTests
 {
@@ -79,15 +80,15 @@ namespace BCnEncTests
 			var bufferSize = decoder.GetBlockSize(CompressionFormat.Bc7) * width * height;
 
 			var buffer = new byte[bufferSize];
-			Random r = new Random(50);
+			var r = new Random(50);
 			r.NextBytes(buffer);
 
 			var pixels = decoder.DecodeRaw(buffer, width * 4, height * 4, CompressionFormat.Bc7);
-			var decoded = decoder.DecodeRawToImageRgba32(buffer, width * 4, height * 4, CompressionFormat.Bc7);
 			Assert.Contains(new ColorRgba32(255, 0, 255), pixels);
 
+			var decoded = new Memory2D<ColorRgba32>(pixels, height * 4, width * 4);
 			using var fs = File.OpenWrite("test_decode_bc7_error.png");
-			decoded.SaveAsPng(fs);
+			TestHelper.SaveAsPng(decoded, fs);
 		}
 
 		#region Type Packs
@@ -95,19 +96,14 @@ namespace BCnEncTests
 		private void Type0Pack(Span<Bc7Block> output)
 		{
 			var subsetEndpoints = new[] {
-				//subset 1
 				new byte[]{0b1111, 0, 0},
 				new byte[]{0b1000, 0, 0},
-				// subset 2
 				new byte[]{0, 0b1111, 0},
 				new byte[]{0, 0b1000, 0},
-				//subset 3
 				new byte[]{0, 0, 0b1111},
 				new byte[]{0, 0, 0b1000}
 			};
-			var pBits = new byte[] {
-				1, 0, 1, 0, 1, 1
-			};
+			var pBits = new byte[] { 1, 0, 1, 0, 1, 1 };
 			var indices = new byte[] {
 				0, 1, 2, 3,
 				0, 1, 2, 3,
@@ -121,16 +117,13 @@ namespace BCnEncTests
 				Assert.Equal(i, output[i].PartitionSetId);
 			}
 
-			pBits = new byte[] {
-				0, 0, 0, 0, 0, 0
-			};
+			pBits = new byte[] { 0, 0, 0, 0, 0, 0 };
 			indices = new byte[] {
 				0, 1, 0, 3,
 				1, 1, 1, 3,
 				2, 2, 2, 0,
 				3, 2, 3, 0
 			};
-
 			for (var i = 0; i < 16; i++)
 			{
 				output[i + 16].PackType0(i, subsetEndpoints, pBits, indices);
@@ -138,16 +131,13 @@ namespace BCnEncTests
 				Assert.Equal(i, output[i].PartitionSetId);
 			}
 
-			pBits = new byte[] {
-				1, 1, 1, 1, 1, 1
-			};
+			pBits = new byte[] { 1, 1, 1, 1, 1, 1 };
 			indices = new byte[] {
 				1, 0, 3, 3,
 				2, 1, 2, 3,
 				3, 2, 1, 0,
 				0, 3, 0, 0
 			};
-
 			for (var i = 0; i < 16; i++)
 			{
 				output[i + 32].PackType0(i, subsetEndpoints, pBits, indices);
@@ -155,16 +145,13 @@ namespace BCnEncTests
 				Assert.Equal(i, output[i].PartitionSetId);
 			}
 
-			pBits = new byte[] {
-				0, 1, 0, 1, 0, 0
-			};
+			pBits = new byte[] { 0, 1, 0, 1, 0, 0 };
 			indices = new byte[] {
 				3, 2, 1, 0,
 				0, 1, 2, 3,
 				3, 2, 1, 0,
 				0, 1, 2, 3
 			};
-
 			for (var i = 0; i < 16; i++)
 			{
 				output[i + 48].PackType0(i, subsetEndpoints, pBits, indices);
@@ -176,16 +163,12 @@ namespace BCnEncTests
 		private void Type1Pack(Span<Bc7Block> output)
 		{
 			var subsetEndpoints = new[] {
-				//subset 1
 				new byte[]{0b111111, 0b0100, 0},
 				new byte[]{0b0100, 0b111111, 0},
-				// subset 2
 				new byte[]{0, 0, 0b111111},
 				new byte[]{0, 0, 0b1010}
 			};
-			var pBits = new byte[] {
-				1, 1
-			};
+			var pBits = new byte[] { 1, 1 };
 			var indices = new byte[] {
 				0, 1, 2, 3,
 				0, 1, 2, 3,
@@ -203,13 +186,10 @@ namespace BCnEncTests
 		private void Type2Pack(Span<Bc7Block> output)
 		{
 			var subsetEndpoints = new[] {
-				//subset 1
 				new byte[]{0b11111, 0, 0},
 				new byte[]{0b01000, 0, 0},
-				// subset 2
 				new byte[]{0, 0b11111, 0},
 				new byte[]{0, 0b01000, 0},
-				//subset 3
 				new byte[]{0, 0, 0b11111},
 				new byte[]{0, 0, 0b01000}
 			};
@@ -230,16 +210,12 @@ namespace BCnEncTests
 		private void Type3Pack(Span<Bc7Block> output)
 		{
 			var subsetEndpoints = new[] {
-				//subset 1
 				new byte[]{0b1111111, 0b10100, 0},
 				new byte[]{0b10100, 0b1111111, 0},
-				// subset 2
 				new byte[]{0, 0, 0b1111111},
 				new byte[]{0, 0, 0b11010}
 			};
-			var pBits = new byte[] {
-				1, 0, 0, 1
-			};
+			var pBits = new byte[] { 1, 0, 0, 1 };
 			var indices = new byte[] {
 				0, 1, 2, 3,
 				0, 1, 2, 3,
@@ -257,21 +233,16 @@ namespace BCnEncTests
 		private void Type4Pack(Span<Bc7Block> output)
 		{
 			var colorEndpoints = new[] {
-				//subset 1
 				new byte[]{0b11111, 0, 0b0100},
 				new byte[]{0, 0b11111, 0b0100}
 			};
-			var alphaEndPoints = new byte[]{
-				0b111111,
-				0
-			};
+			var alphaEndPoints = new byte[] { 0b111111, 0 };
 			var indices2Bit = new byte[] {
 				0, 1, 2, 3,
 				0, 1, 2, 3,
 				3, 2, 1, 0,
 				3, 2, 1, 0
 			};
-
 			var indices3Bit = new byte[] {
 				0, 1, 2, 3,
 				7, 6, 5, 4,
@@ -294,14 +265,10 @@ namespace BCnEncTests
 		private void Type5Pack(Span<Bc7Block> output)
 		{
 			var colorEndpoints = new[] {
-				//subset 1
-				new byte[]{0b1111111,  0b0100, 0},
+				new byte[]{0b1111111, 0b0100, 0},
 				new byte[]{0, 0, 0b1111111}
 			};
-			var alphaEndPoints = new byte[]{
-				255,
-				100
-			};
+			var alphaEndPoints = new byte[] { 255, 100 };
 			var colorIndices = new byte[] {
 				0, 1, 2, 3,
 				0, 1, 2, 3,
@@ -327,13 +294,10 @@ namespace BCnEncTests
 		private void Type6Pack(Span<Bc7Block> output)
 		{
 			var colorEndpoints = new[] {
-				//subset 1
-				new byte[]{0b1111111,  0b0100, 0, 0b1111111},
+				new byte[]{0b1111111, 0b0100, 0, 0b1111111},
 				new byte[]{0, 0, 0b1111111, 0b1111}
 			};
-			var pBits = new byte[] {
-				1, 0
-			};
+			var pBits = new byte[] { 1, 0 };
 			var colorIndices = new byte[] {
 				0, 1, 2, 3,
 				4, 5, 6, 7,
@@ -350,16 +314,12 @@ namespace BCnEncTests
 		private void Type7Pack(Span<Bc7Block> output)
 		{
 			var colorEndpoints = new[] {
-				//subset 1
-				new byte[]{0b11111,  0b0100, 0, 0b11111},
+				new byte[]{0b11111, 0b0100, 0, 0b11111},
 				new byte[]{0, 0b11111, 0, 0b111},
-				//subset 2
-				new byte[]{0b11111,  0b0100, 0, 0b1111},
+				new byte[]{0b11111, 0b0100, 0, 0b1111},
 				new byte[]{0b10100, 0, 0b11111, 0b11111}
 			};
-			var pBits = new byte[] {
-				1, 0, 1, 0
-			};
+			var pBits = new byte[] { 1, 0, 1, 0 };
 			var indices = new byte[] {
 				0, 1, 2, 3,
 				0, 1, 2, 3,
