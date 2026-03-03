@@ -166,7 +166,7 @@ namespace BCnEncoder.Decoder
 		/// <returns>The awaitable operation to retrieve the decoded image.</returns>
 		public Task<Memory2D<ColorRgba32>[]> DecodeAllMipMaps2DAsync(Stream inputStream, CancellationToken token = default)
 		{
-			return Task.Run(() => DecodeFromStreamInternal2D(inputStream, false, token), token);
+			return Task.Run(() => DecodeFromStreamInternal2D(inputStream, true, token), token);
 		}
 
 		/// <summary>
@@ -675,7 +675,7 @@ namespace BCnEncoder.Decoder
 		/// <returns>The awaitable operation to retrieve the decoded image.</returns>
 		public Task<Memory2D<ColorRgbFloat>[]> DecodeAllMipMapsHdr2DAsync(Stream inputStream, CancellationToken token = default)
 		{
-			return Task.Run(() => DecodeFromStreamInternalHdr2D(inputStream, false, token), token);
+			return Task.Run(() => DecodeFromStreamInternalHdr2D(inputStream, true, token), token);
 		}
 
 		/// <summary>
