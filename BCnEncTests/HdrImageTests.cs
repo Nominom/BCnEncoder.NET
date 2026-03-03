@@ -2,9 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Threading.Tasks;
+using BCnEncoder.Decoder;
 using BCnEncoder.Encoder;
 using BCnEncoder.Shared;
 using BCnEncTests.Support;
+using CommunityToolkit.HighPerformance;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 using Xunit;
@@ -38,6 +41,26 @@ namespace BCnEncTests
 			var img2 = img.CloneAs<Rgba32>();
 
 			TestHelper.AssertImagesEqual(HdrLoader.ReferenceKiara, img2, CompressionQuality.BestQuality);
+		}
+
+		[Fact]
+		public async Task DecodeAllMipMapsHdrStreamAsync()
+		{
+			var encoder = new BcEncoder();
+			encoder.OutputOptions.Format = CompressionFormat.Bc6U;
+			encoder.OutputOptions.Quality = CompressionQuality.Fast;
+			encoder.OutputOptions.GenerateMipMaps = true;
+
+			var decoder = new BcDecoder();
+			var input = HdrLoader.TestHdrKiara;
+			var ktxWithMips = encoder.EncodeToKtxHdr(new Memory2D<ColorRgbFloat>(input.pixels, input.height, input.width));
+			using var ms = new MemoryStream();
+			ktxWithMips.Write(ms);
+			ms.Position = 0;
+
+			var images = await decoder.DecodeAllMipMapsHdr2DAsync(ms);
+			Assert.Equal((int)ktxWithMips.header.NumberOfMipmapLevels, images.Length);
+			Assert.True(images.Length > 1);
 		}
 	}
 }
