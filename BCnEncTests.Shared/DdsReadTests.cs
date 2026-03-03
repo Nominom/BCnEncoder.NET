@@ -36,15 +36,18 @@ namespace BCnEncTests
 		[Fact]
 		public void ReadFromStream()
 		{
-			using var fs = File.OpenRead(DdsLoader.TestDecompressBc1Name);
-
-			var decoder = new BcDecoder();
-			var images = decoder.DecodeAllMipMaps2D(fs);
-
-			for (var i = 0; i < images.Length; i++)
+			using (var fs = File.OpenRead(DdsLoader.TestDecompressBc1Name))
 			{
-				using var outFs = File.OpenWrite($"decoding_test_dds_stream_bc1_mip{i}.png");
-				TestHelper.SaveAsPng(images[i], outFs);
+				var decoder = new BcDecoder();
+				var images = decoder.DecodeAllMipMaps2D(fs);
+
+				for (var i = 0; i < images.Length; i++)
+				{
+					using (var outFs = File.OpenWrite($"decoding_test_dds_stream_bc1_mip{i}.png"))
+					{
+						TestHelper.SaveAsPng(images[i], outFs);
+					}
+				}
 			}
 		}
 	}

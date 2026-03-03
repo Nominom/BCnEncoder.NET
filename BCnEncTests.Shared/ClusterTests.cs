@@ -46,8 +46,10 @@ namespace BCnEncTests
 			}
 
 			var result = new Memory2D<ColorRgba32>(pixels, height, width);
-			using var fs = File.OpenWrite("test_cluster.png");
-			TestHelper.SaveAsPng(result, fs);
+			using (var fs = File.OpenWrite("test_cluster.png"))
+			{
+				TestHelper.SaveAsPng(result, fs);
+			}
 		}
 	}
 }
