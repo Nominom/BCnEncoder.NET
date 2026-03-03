@@ -57,11 +57,17 @@ namespace BCnEncoder.Encoder.Bptc
 			// Copy struct to array before the closure so that reducedIndicesBlock is not
 			// heap-captured. On .NET Framework, MemoryMarshalPolyfills.CreateSpan uses
 			// Unsafe.AsPointer, which is only GC-safe for stack-allocated structs.
+			#if NETSTANDARD2_0
 			var indices = new int[16];
-			for (var k = 0; k < 16; k++) indices[k] = reducedIndicesBlock[k];
+			reducedIndicesBlock.AsSpan.CopyTo(indices);
+			#endif
 
 			int CalculatePartitionError(int partitionIndex)
 			{
+				#if NETSTANDARD2_1
+				var indices = reducedIndicesBlock.AsSpan;
+				#endif
+
 				var error = 0;
 				ReadOnlySpan<int> partitionTable = Bc7Block.Subsets2PartitionTable[partitionIndex];
 				Span<int> subset0 = stackalloc int[numDistinctClusters];
@@ -122,11 +128,17 @@ namespace BCnEncoder.Encoder.Bptc
 			// Copy struct to array before the closure so that reducedIndicesBlock is not
 			// heap-captured. On .NET Framework, MemoryMarshalPolyfills.CreateSpan uses
 			// Unsafe.AsPointer, which is only GC-safe for stack-allocated structs.
+			#if NETSTANDARD2_0
 			var indices = new int[16];
-			for (var k = 0; k < 16; k++) indices[k] = reducedIndicesBlock[k];
+			reducedIndicesBlock.AsSpan.CopyTo(indices);
+			#endif
 
 			int CalculatePartitionError(int partitionIndex)
 			{
+				#if NETSTANDARD2_1
+				var indices = reducedIndicesBlock.AsSpan;
+				#endif
+
 				var error = 0;
 				ReadOnlySpan<int> partitionTable = Bc7Block.Subsets3PartitionTable[partitionIndex];
 
