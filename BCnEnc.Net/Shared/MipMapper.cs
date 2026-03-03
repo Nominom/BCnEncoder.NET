@@ -171,7 +171,6 @@ namespace BCnEncoder.Shared
 			var newWidth = Math.Max(1, oldWidth >> 1);
 			var newHeight = Math.Max(1, oldHeight >> 1);
 
-			// Use a 1D backing array so TryGetMemory() succeeds on all target frameworks
 			var result = new ColorRgba32[newHeight * newWidth];
 
 			int ClampW(int x) => Math.Max(0, Math.Min(oldWidth - 1, x));
@@ -200,7 +199,6 @@ namespace BCnEncoder.Shared
 			var newWidth = Math.Max(1, oldWidth >> 1);
 			var newHeight = Math.Max(1, oldHeight >> 1);
 
-			// Use a 1D backing array so TryGetMemory() succeeds on all target frameworks
 			var result = new ColorRgbFloat[newHeight * newWidth];
 
 			int ClampW(int x) => Math.Max(0, Math.Min(oldWidth - 1, x));
