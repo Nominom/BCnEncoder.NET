@@ -96,10 +96,13 @@ namespace BCnEncTests
 		private void Type0Pack(Span<Bc7Block> output)
 		{
 			var subsetEndpoints = new[] {
+				//subset 1
 				new byte[]{0b1111, 0, 0},
 				new byte[]{0b1000, 0, 0},
+				// subset 2
 				new byte[]{0, 0b1111, 0},
 				new byte[]{0, 0b1000, 0},
+				//subset 3
 				new byte[]{0, 0, 0b1111},
 				new byte[]{0, 0, 0b1000}
 			};
@@ -163,8 +166,10 @@ namespace BCnEncTests
 		private void Type1Pack(Span<Bc7Block> output)
 		{
 			var subsetEndpoints = new[] {
+				//subset 1
 				new byte[]{0b111111, 0b0100, 0},
 				new byte[]{0b0100, 0b111111, 0},
+				// subset 2
 				new byte[]{0, 0, 0b111111},
 				new byte[]{0, 0, 0b1010}
 			};
@@ -186,10 +191,13 @@ namespace BCnEncTests
 		private void Type2Pack(Span<Bc7Block> output)
 		{
 			var subsetEndpoints = new[] {
+				//subset 1
 				new byte[]{0b11111, 0, 0},
 				new byte[]{0b01000, 0, 0},
+				// subset 2
 				new byte[]{0, 0b11111, 0},
 				new byte[]{0, 0b01000, 0},
+				//subset 3
 				new byte[]{0, 0, 0b11111},
 				new byte[]{0, 0, 0b01000}
 			};
@@ -210,8 +218,10 @@ namespace BCnEncTests
 		private void Type3Pack(Span<Bc7Block> output)
 		{
 			var subsetEndpoints = new[] {
+				//subset 1
 				new byte[]{0b1111111, 0b10100, 0},
 				new byte[]{0b10100, 0b1111111, 0},
+				// subset 2
 				new byte[]{0, 0, 0b1111111},
 				new byte[]{0, 0, 0b11010}
 			};
@@ -233,6 +243,7 @@ namespace BCnEncTests
 		private void Type4Pack(Span<Bc7Block> output)
 		{
 			var colorEndpoints = new[] {
+				//subset 1
 				new byte[]{0b11111, 0, 0b0100},
 				new byte[]{0, 0b11111, 0b0100}
 			};
@@ -265,6 +276,7 @@ namespace BCnEncTests
 		private void Type5Pack(Span<Bc7Block> output)
 		{
 			var colorEndpoints = new[] {
+				//subset 1
 				new byte[]{0b1111111, 0b0100, 0},
 				new byte[]{0, 0, 0b1111111}
 			};
@@ -294,6 +306,7 @@ namespace BCnEncTests
 		private void Type6Pack(Span<Bc7Block> output)
 		{
 			var colorEndpoints = new[] {
+				//subset 1
 				new byte[]{0b1111111, 0b0100, 0, 0b1111111},
 				new byte[]{0, 0, 0b1111111, 0b1111}
 			};
@@ -314,8 +327,10 @@ namespace BCnEncTests
 		private void Type7Pack(Span<Bc7Block> output)
 		{
 			var colorEndpoints = new[] {
+				//subset 1
 				new byte[]{0b11111, 0b0100, 0, 0b11111},
 				new byte[]{0, 0b11111, 0, 0b111},
+				//subset 2
 				new byte[]{0b11111, 0b0100, 0, 0b1111},
 				new byte[]{0b10100, 0, 0b11111, 0b11111}
 			};
