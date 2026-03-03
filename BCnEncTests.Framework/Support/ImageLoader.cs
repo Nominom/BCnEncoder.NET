@@ -35,8 +35,10 @@ namespace BCnEncTests.Support
 
 		internal static Memory2D<ColorRgba32> LoadTestImage(string filename)
 		{
-			using var bmp = new Bitmap(filename);
-			return FromBitmap(bmp);
+			using (var bmp = new Bitmap(filename))
+			{
+				return FromBitmap(bmp);
+			}
 		}
 
 		internal static unsafe Memory2D<ColorRgba32> FromBitmap(Bitmap bmp)
@@ -72,8 +74,10 @@ namespace BCnEncTests.Support
 
 		internal static DdsFile LoadDdsFile(string filename)
 		{
-			using var fs = File.OpenRead(filename);
-			return DdsFile.Load(fs);
+			using (var fs = File.OpenRead(filename))
+			{
+				return DdsFile.Load(fs);
+			}
 		}
 	}
 
@@ -91,8 +95,10 @@ namespace BCnEncTests.Support
 
 		internal static KtxFile LoadKtxFile(string filename)
 		{
-			using var fs = File.OpenRead(filename);
-			return KtxFile.Load(fs);
+			using (var fs = File.OpenRead(filename))
+			{
+				return KtxFile.Load(fs);
+			}
 		}
 	}
 }

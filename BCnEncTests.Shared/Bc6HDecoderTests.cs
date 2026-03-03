@@ -31,11 +31,15 @@ namespace BCnEncTests
 			Assert.Equal(hdr.pixels.Length, decoded.Length);
 
 			hdr.pixels = decoded;
-			using var sfs = File.OpenWrite("decoding_test_dds_bc6h.hdr");
-			hdr.Write(sfs);
+			using (var sfs = File.OpenWrite("decoding_test_dds_bc6h.hdr"))
+			{
+				hdr.Write(sfs);
+			}
 
-			using var pngFs = File.OpenWrite("decoding_test_dds_bc6h.png");
-			TestHelper.SaveAsPng(decoded, width, height, pngFs);
+			using (var pngFs = File.OpenWrite("decoding_test_dds_bc6h.png"))
+			{
+				TestHelper.SaveAsPng(decoded, width, height, pngFs);
+			}
 
 			TestHelper.AssertPixelsEqual(HdrLoader.TestHdrKiara.pixels, decoded, CompressionQuality.Fast, output);
 		}
@@ -53,11 +57,15 @@ namespace BCnEncTests
 			Assert.Equal(hdr.pixels.Length, decoded.Length);
 
 			hdr.pixels = decoded;
-			using var sfs = File.OpenWrite("decoding_test_ktx_bc6h.hdr");
-			hdr.Write(sfs);
+			using (var sfs = File.OpenWrite("decoding_test_ktx_bc6h.hdr"))
+			{
+				hdr.Write(sfs);
+			}
 
-			using var pngFs = File.OpenWrite("decoding_test_ktx_bc6h.png");
-			TestHelper.SaveAsPng(decoded, width, height, pngFs);
+			using (var pngFs = File.OpenWrite("decoding_test_ktx_bc6h.png"))
+			{
+				TestHelper.SaveAsPng(decoded, width, height, pngFs);
+			}
 
 			TestHelper.AssertPixelsEqual(HdrLoader.TestHdrKiara.pixels, decoded, CompressionQuality.BestQuality, output);
 		}
@@ -71,28 +79,32 @@ namespace BCnEncTests
 			var decoder = new BcDecoder();
 			var decoded = decoder.DecodeHdr(HdrLoader.TestHdrKiaraDds);
 
+			Stream fs;
 #if NETCOREAPP
-			using var fs = File.OpenRead("../../../testImages/test_hdr_kiara_dds_float16_data.bin");
+			fs = File.OpenRead("../../../testImages/test_hdr_kiara_dds_float16_data.bin");
 #else
-			using var fs = File.OpenRead("../../../../BCnEncTests/testImages/test_hdr_kiara_dds_float16_data.bin");
+			fs = File.OpenRead("../../../../BCnEncTests/testImages/test_hdr_kiara_dds_float16_data.bin");
 #endif
-			using var ms = new MemoryStream();
-			fs.CopyTo(ms);
-			var length = (int)ms.Position;
-
-			var bytes = ms.GetBuffer().AsSpan(0, length);
-			var halfs = MemoryMarshal.Cast<byte, Half>(bytes);
-			Assert.Equal(halfs.Length / 4, decoded.Length);
-
-			for (var i = 0; i < decoded.Length; i++)
+			using (fs)
+			using (var ms = new MemoryStream())
 			{
-				float r = halfs[i * 4 + 0];
-				float g = halfs[i * 4 + 1];
-				float b = halfs[i * 4 + 2];
+				fs.CopyTo(ms);
+				var length = (int)ms.Position;
 
-				Assert.Equal(r, decoded[i].r);
-				Assert.Equal(g, decoded[i].g);
-				Assert.Equal(b, decoded[i].b);
+				var bytes = ms.GetBuffer().AsSpan(0, length);
+				var halfs = MemoryMarshal.Cast<byte, Half>(bytes);
+				Assert.Equal(halfs.Length / 4, decoded.Length);
+
+				for (var i = 0; i < decoded.Length; i++)
+				{
+					float r = halfs[i * 4 + 0];
+					float g = halfs[i * 4 + 1];
+					float b = halfs[i * 4 + 2];
+
+					Assert.Equal(r, decoded[i].r);
+					Assert.Equal(g, decoded[i].g);
+					Assert.Equal(b, decoded[i].b);
+				}
 			}
 		}
 
@@ -152,8 +164,10 @@ namespace BCnEncTests
 			Assert.Contains(new ColorRgbFloat(1, 0, 1), decoded);
 
 			HdrImage image = new HdrImage(new Span2D<ColorRgbFloat>(decoded, height * 4, width * 4));
-			using var fs = File.OpenWrite("test_decode_bc6h_error.hdr");
-			image.Write(fs);
+			using (var fs = File.OpenWrite("test_decode_bc6h_error.hdr"))
+			{
+				image.Write(fs);
+			}
 		}
 	}
 }

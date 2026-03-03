@@ -31,8 +31,10 @@ namespace BCnEncTests
 				lastProgress = element;
 			});
 
-			using var ms = new MemoryStream();
-			await encoder.EncodeToStreamAsync(testImage, ms);
+			using (var ms = new MemoryStream())
+			{
+				await encoder.EncodeToStreamAsync(testImage, ms);
+			}
 
 			output.WriteLine("LastProgress = " + lastProgress);
 

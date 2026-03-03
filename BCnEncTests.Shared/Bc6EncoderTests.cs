@@ -353,8 +353,10 @@ namespace BCnEncTests
 
 			var ktx = encoder.EncodeToKtxHdr(HdrLoader.TestHdrKiara.PixelMemory);
 
-			using var fs = File.OpenWrite("encoding_bc6_ktx.ktx");
-			ktx.Write(fs);
+			using (var fs = File.OpenWrite("encoding_bc6_ktx.ktx"))
+			{
+				ktx.Write(fs);
+			}
 		}
 
 		[Fact]
@@ -367,8 +369,10 @@ namespace BCnEncTests
 
 			var dds = encoder.EncodeToDdsHdr(HdrLoader.TestHdrKiara.PixelMemory);
 
-			using var fs = File.OpenWrite("encoding_bc6_dds.dds");
-			dds.Write(fs);
+			using (var fs = File.OpenWrite("encoding_bc6_dds.dds"))
+			{
+				dds.Write(fs);
+			}
 		}
 
 		[Fact]

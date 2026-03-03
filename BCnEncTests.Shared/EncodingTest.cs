@@ -308,8 +308,10 @@ namespace BCnEncTests
 			encoder.OutputOptions.GenerateMipMaps = true;
 			encoder.OutputOptions.Format = CompressionFormat.Bc1;
 
-			using var fs = File.OpenWrite(filename);
-			encoder.EncodeCubeMapToStream(images[0], images[1], images[2], images[3], images[4], images[5], fs);
+			using (var fs = File.OpenWrite(filename))
+			{
+				encoder.EncodeCubeMapToStream(images[0], images[1], images[2], images[3], images[4], images[5], fs);
+			}
 		}
 	}
 }

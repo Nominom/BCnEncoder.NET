@@ -51,8 +51,10 @@ namespace BCnEncTests.Support
 			Assert.Equal((uint)pixels.Width, file.header.PixelWidth);
 			Assert.Equal((uint)pixels.Height, file.header.PixelHeight);
 
-			using var outFs = File.OpenWrite(outputFile);
-			SaveAsPng(pixels, outFs);
+			using (var outFs = File.OpenWrite(outputFile))
+			{
+				SaveAsPng(pixels, outFs);
+			}
 		}
 
 		#region Dds
@@ -70,15 +72,16 @@ namespace BCnEncTests.Support
 			encoder.OutputOptions.Format = format;
 			encoder.OutputOptions.FileFormat = OutputFileFormat.Dds;
 
-			using var fs = File.OpenWrite(outputFile);
-
-			if (images.Length == 1)
+			using (var fs = File.OpenWrite(outputFile))
 			{
-				encoder.EncodeToStream(images[0], fs);
-			}
-			else
-			{
-				encoder.EncodeCubeMapToStream(images[0], images[1], images[2], images[3], images[4], images[5], fs);
+				if (images.Length == 1)
+				{
+					encoder.EncodeToStream(images[0], fs);
+				}
+				else
+				{
+					encoder.EncodeCubeMapToStream(images[0], images[1], images[2], images[3], images[4], images[5], fs);
+				}
 			}
 		}
 
@@ -102,8 +105,10 @@ namespace BCnEncTests.Support
 					Assert.Contains(pixels, x => x.a == 0);
 				}
 
-				using var outFs = File.OpenWrite(string.Format(outputFile, i));
-				SaveAsPng(images[i], outFs);
+				using (var outFs = File.OpenWrite(string.Format(outputFile, i)))
+				{
+					SaveAsPng(images[i], outFs);
+				}
 			}
 		}
 
@@ -128,26 +133,30 @@ namespace BCnEncTests.Support
 
 		public static float DecodeKtxCheckPSNR(string filename, Memory2D<ColorRgba32> original)
 		{
-			using var fs = File.OpenRead(filename);
-			var ktx = KtxFile.Load(fs);
-			var decoder = new BcDecoder()
+			using (var fs = File.OpenRead(filename))
 			{
-				OutputOptions = { Bc4Component = ColorComponent.Luminance }
-			};
-			var decoded = decoder.Decode2D(ktx);
+				var ktx = KtxFile.Load(fs);
+				var decoder = new BcDecoder()
+				{
+					OutputOptions = { Bc4Component = ColorComponent.Luminance }
+				};
+				var decoded = decoder.Decode2D(ktx);
 
-			return CalculatePSNR(original, decoded);
+				return CalculatePSNR(original, decoded);
+			}
 		}
 
 		public static float DecodeKtxCheckRMSEHdr(string filename, HdrImage original)
 		{
-			using var fs = File.OpenRead(filename);
-			var ktx = KtxFile.Load(fs);
-			var decoder = new BcDecoder();
+			using (var fs = File.OpenRead(filename))
+			{
+				var ktx = KtxFile.Load(fs);
+				var decoder = new BcDecoder();
 
-			var decoded = decoder.DecodeHdr(ktx);
+				var decoded = decoder.DecodeHdr(ktx);
 
-			return ImageQuality.CalculateLogRMSE(original.pixels, decoded);
+				return ImageQuality.CalculateLogRMSE(original.pixels, decoded);
+			}
 		}
 
 		public static void ExecuteEncodingTest(Memory2D<ColorRgba32> image, CompressionFormat format, CompressionQuality quality, string filename, ITestOutputHelper output)
@@ -234,25 +243,27 @@ namespace BCnEncTests.Support
 		{
 			int width = image.Width;
 			int height = image.Height;
-			using var bmp = new Bitmap(width, height, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
-			var data = bmp.LockBits(new Rectangle(0, 0, width, height),
-				ImageLockMode.WriteOnly, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
-			byte* ptr = (byte*)data.Scan0;
-			var span = image.Span;
-			for (int y = 0; y < height; y++)
+			using (var bmp = new Bitmap(width, height, System.Drawing.Imaging.PixelFormat.Format32bppArgb))
 			{
-				for (int x = 0; x < width; x++)
+				var data = bmp.LockBits(new Rectangle(0, 0, width, height),
+					ImageLockMode.WriteOnly, System.Drawing.Imaging.PixelFormat.Format32bppArgb);
+				byte* ptr = (byte*)data.Scan0;
+				var span = image.Span;
+				for (int y = 0; y < height; y++)
 				{
-					var c = span[y, x];
-					ptr[0] = c.b;
-					ptr[1] = c.g;
-					ptr[2] = c.r;
-					ptr[3] = c.a;
-					ptr += 4;
+					for (int x = 0; x < width; x++)
+					{
+						var c = span[y, x];
+						ptr[0] = c.b;
+						ptr[1] = c.g;
+						ptr[2] = c.r;
+						ptr[3] = c.a;
+						ptr += 4;
+					}
 				}
+				bmp.UnlockBits(data);
+				bmp.Save(stream, ImageFormat.Png);
 			}
-			bmp.UnlockBits(data);
-			bmp.Save(stream, ImageFormat.Png);
 		}
 
 		public static void SaveAsPng(ColorRgbFloat[] pixels, int width, int height, Stream stream)

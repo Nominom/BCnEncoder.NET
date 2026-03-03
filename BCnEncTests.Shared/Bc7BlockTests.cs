@@ -87,8 +87,10 @@ namespace BCnEncTests
 			Assert.Contains(new ColorRgba32(255, 0, 255), pixels);
 
 			var decoded = new Memory2D<ColorRgba32>(pixels, height * 4, width * 4);
-			using var fs = File.OpenWrite("test_decode_bc7_error.png");
-			TestHelper.SaveAsPng(decoded, fs);
+			using (var fs = File.OpenWrite("test_decode_bc7_error.png"))
+			{
+				TestHelper.SaveAsPng(decoded, fs);
+			}
 		}
 
 		#region Type Packs
