@@ -28,6 +28,7 @@ Please note, that the API might change between versions.
 # Dependencies
 Current dependencies are:
 * [CommunityToolkit.HighPerformance](https://www.nuget.org/packages/CommunityToolkit.HighPerformance/) licensed under the [MIT](https://opensource.org/licenses/MIT) license for Span2D and Memory2D types.
+
 Additionally, for .NET Standard 2.0:
 * [PolySharp](https://www.nuget.org/packages/PolySharp) licensed under the [MIT](https://opensource.org/licenses/MIT) license.
 * [Microsoft.Bcl.Numerics](https://www.nuget.org/packages/Microsoft.Bcl.Numerics) licensed under the [MIT](https://opensource.org/licenses/MIT) license.
