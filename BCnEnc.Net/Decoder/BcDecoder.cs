@@ -1652,7 +1652,7 @@ namespace BCnEncoder.Decoder
 					return new Bc4Decoder(OutputOptions.Bc4Component);
 
 				case CompressionFormat.Bc5:
-					return new Bc5Decoder(OutputOptions.Bc5Component1, OutputOptions.Bc5Component2);
+					return new Bc5Decoder(OutputOptions.Bc5Component1, OutputOptions.Bc5Component2, OutputOptions.Bc5RecalculateBlueChannel);
 
 				case CompressionFormat.Bc7:
 					return new Bc7Decoder();
