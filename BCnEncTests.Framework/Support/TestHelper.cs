@@ -183,7 +183,7 @@ namespace BCnEncTests.Support
 			encoder.OutputOptions.Format = format;
 
 			var fs = File.OpenWrite(filename);
-			encoder.EncodeToStreamHdr(image.pixels.AsMemory().AsMemory2D(image.height, image.width), fs);
+			encoder.EncodeToStreamHdr(new Memory2D<ColorRgbFloat>(image.pixels, image.height, image.width), fs);
 			fs.Close();
 
 			var rmse = DecodeKtxCheckRMSEHdr(filename, image);

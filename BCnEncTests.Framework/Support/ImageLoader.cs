@@ -54,7 +54,7 @@ namespace BCnEncTests.Support
 				ptr += 4;
 			}
 			bmp.UnlockBits(data);
-			return pixels.AsMemory().AsMemory2D(bmp.Height, bmp.Width);
+			return new Memory2D<ColorRgba32>(pixels,  bmp.Width, bmp.Height);
 		}
 	}
 
