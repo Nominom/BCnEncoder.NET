@@ -5,7 +5,7 @@
 A Cross-platform BCn / DXT encoding libary for .NET
 
 # What is it?
-BCnEncoder.NET is a library for compressing rgba images to different block-compressed formats. It has no native dependencies and is .NET Standard 2.1 compatible.
+BCnEncoder.NET is a library for compressing rgba images to different block-compressed formats. It has no native dependencies and is .NET Standard 2.1 & 2.0 compatible.
 
 Supported formats are:
  - Raw unsigned byte R, RG, RGB and RGBA formats
@@ -21,10 +21,16 @@ Supported formats are:
 The current state of this library is in development but quite usable. I'm planning on implementing support for more codecs and 
 different algorithms. The current version is capable of encoding and decoding BC1-BC7 images in both KTX or DDS formats.
 
+.NET Standard 2.0 support is experimental, and relies on [PolySharp](https://www.nuget.org/packages/PolySharp) & [Microsoft.Bcl.Numerics](https://www.nuget.org/packages/Microsoft.Bcl.Numerics).
+
 Please note, that the API might change between versions.
+
 # Dependencies
 Current dependencies are:
 * [CommunityToolkit.HighPerformance](https://www.nuget.org/packages/CommunityToolkit.HighPerformance/) licensed under the [MIT](https://opensource.org/licenses/MIT) license for Span2D and Memory2D types.
+Additionally, for .NET Standard 2.0:
+* [PolySharp](https://www.nuget.org/packages/PolySharp) licensed under the [MIT](https://opensource.org/licenses/MIT) license.
+* [Microsoft.Bcl.Numerics](https://www.nuget.org/packages/Microsoft.Bcl.Numerics) licensed under the [MIT](https://opensource.org/licenses/MIT) license.
 
 # Image library extensions
 This library has extension packages available for the following image libraries:
