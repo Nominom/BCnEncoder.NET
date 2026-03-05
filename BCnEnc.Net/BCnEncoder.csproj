@@ -33,7 +33,8 @@ Supported formats are:
     <PackageTags>BCn BC BC1 BC2 BC3 BC4 BC5 BC6 BC6H BC7 BPTC RGTC S3TC DXT1 DXT3 DXT5 ktx dds texture compression encoding decoding decompression image gpu</PackageTags>
     <PackageProjectUrl>https://github.com/Nominom/BCnEncoder.NET</PackageProjectUrl>
     <PackageReleaseNotes>2.3.0
-- Add .NET Standard 2.0 support</PackageReleaseNotes>
+- Add .NET Standard 2.0 support
+- Fix some DecodeAllMipMaps methods not decoding all MipMaps</PackageReleaseNotes>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
