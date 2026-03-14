@@ -69,7 +69,7 @@ public class EncoderApiTests
 	}
 
 	[Theory]
-	[InlineData(true, "rgba_1", CompressionFormat.Bc1)]
+	[InlineData(true, "blocks", CompressionFormat.Bc1)]
 	[InlineData(true, "rg_1", CompressionFormat.Bc5)]
 	[InlineData(false, "raw_r8g8b8_unorm", CompressionFormat.Bc1)]
 	[InlineData(false, "bc1_unorm", CompressionFormat.Bc7)]
@@ -96,7 +96,7 @@ public class EncoderApiTests
 	}
 
 	[Theory]
-	[InlineData(true, "rgba_1", CompressionFormat.Bc1)]
+	[InlineData(true, "blocks", CompressionFormat.Bc1)]
 	[InlineData(true, "rg_1", CompressionFormat.Bc5)]
 	[InlineData(false, "raw_r8g8b8_unorm", CompressionFormat.Bc1)]
 	[InlineData(false, "bc1_unorm", CompressionFormat.Bc7)]
@@ -122,15 +122,13 @@ public class EncoderApiTests
 	}
 
 	[Theory]
-	[InlineData("rgba_1", CompressionFormat.Bc1)]
-	[InlineData("rgba_1", CompressionFormat.RgbaFloat)]
+	[InlineData("blocks", CompressionFormat.Bc1)]
+	[InlineData("blocks", CompressionFormat.RgbaFloat)]
 	public void TestEncodeLdr(string name, CompressionFormat format)
 	{
 		var encoder = MakeEncoder(format);
 
 		var inputData = LoadTestFile(true, name);
-
-		Assert.Equal(CompressionFormat.Rgba32, inputData.Format);
 
 		// Test
 		var outputData = encoder.Encode(inputData.First.AsMemory2D<ColorRgba32>());
@@ -160,7 +158,7 @@ public class EncoderApiTests
 	}
 
 	[Theory]
-	[InlineData(true, "rgba_1", CompressionFormat.Bc1)]
+	[InlineData(true, "blocks", CompressionFormat.Bc1)]
 	[InlineData(true, "rg_1", CompressionFormat.Bc5)]
 	[InlineData(false, "raw_r8g8b8_unorm", CompressionFormat.Bc1)]
 	[InlineData(false, "hdr_1_rgbe", CompressionFormat.Rgb24)]
@@ -194,7 +192,7 @@ public class EncoderApiTests
 	}
 
 	[Theory]
-	[InlineData(true, "rgba_1", CompressionFormat.Bc1)]
+	[InlineData(true, "blocks", CompressionFormat.Bc1)]
 	[InlineData(true, "rg_1", CompressionFormat.Bc5)]
 	[InlineData(false, "raw_r8g8b8_unorm", CompressionFormat.Bc1)]
 	[InlineData(false, "hdr_1_rgbe", CompressionFormat.Rgb24)]
@@ -227,8 +225,8 @@ public class EncoderApiTests
 	}
 
 	// [Theory]
-	// [InlineData("rgba_1", CompressionFormat.Bc1)]
-	// [InlineData("rgba_1", CompressionFormat.RgbaFloat)]
+	// [InlineData("blocks", CompressionFormat.Bc1)]
+	// [InlineData("blocks", CompressionFormat.RgbaFloat)]
 	// public void TestEncodeToRawBytesLdr(string name, CompressionFormat format)
 	// {
 	// 	var encoder = MakeEncoder(format);

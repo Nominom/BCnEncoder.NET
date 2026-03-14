@@ -656,6 +656,7 @@ namespace BCnEncTests.Support
 			Image<RgbaVector> original,
 			Image<RgbaVector> other,
 			string channelMask,
+			float[] channelWeights,
 			int scales)
 		{
 			if (original.Width != other.Width || original.Height != other.Height)
@@ -666,6 +667,11 @@ namespace BCnEncTests.Support
 			if (string.IsNullOrEmpty(channelMask))
 			{
 				throw new ArgumentException("Channel mask must contain at least one channel", nameof(channelMask));
+			}
+
+			if (channelWeights != null && channelWeights.Length != 4)
+			{
+				throw new ArgumentException("Channel weights must be an array of length 4", nameof(channelWeights));
 			}
 
 			// Validate scales based on image dimensions
@@ -716,6 +722,11 @@ namespace BCnEncTests.Support
 				0.11f,
 				0.10f
 			];
+
+			if (channelWeights != null)
+			{
+				standardChannelWeights = channelWeights;
+			}
 
 			// Define MS-SSIM weights (from Wang et al. paper)
 			float[] scaleWeights = new float[scales];

@@ -30,11 +30,11 @@ public class CancellationTests
 	}
 
 	[Theory]
-	[InlineData(true, "rgba_1", CompressionFormat.Bc1)]
+	[InlineData(true, "blocks", CompressionFormat.Bc1)]
 	[InlineData(true, "hdr_1_rgbe", CompressionFormat.Rgb24)]
 	[InlineData(true, "hdr_1_rgbe", CompressionFormat.RgbaHalf)]
 	[InlineData(true, "hdr_1_rgbe", CompressionFormat.Bc6U)]
-	[InlineData(false, "rgba_1", CompressionFormat.Bc1)]
+	[InlineData(false, "blocks", CompressionFormat.Bc1)]
 	[InlineData(false, "hdr_1_rgbe", CompressionFormat.Rgb24)]
 	[InlineData(false, "hdr_1_rgbe", CompressionFormat.RgbaHalf)]
 	[InlineData(false, "hdr_1_rgbe", CompressionFormat.Bc6U)]
@@ -55,11 +55,11 @@ public class CancellationTests
 	}
 
 	[Theory]
-	[InlineData(true, "rgba_1", CompressionFormat.Bc1)]
+	[InlineData(true, "blocks", CompressionFormat.Bc1)]
 	[InlineData(true, "hdr_1_rgbe", CompressionFormat.Rgb24)]
 	[InlineData(true, "hdr_1_rgbe", CompressionFormat.RgbaHalf)]
 	[InlineData(true, "hdr_1_rgbe", CompressionFormat.Bc6U)]
-	[InlineData(false, "rgba_1", CompressionFormat.Bc1)]
+	[InlineData(false, "blocks", CompressionFormat.Bc1)]
 	[InlineData(false, "hdr_1_rgbe", CompressionFormat.Rgb24)]
 	[InlineData(false, "hdr_1_rgbe", CompressionFormat.RgbaHalf)]
 	[InlineData(false, "hdr_1_rgbe", CompressionFormat.Bc6U)]

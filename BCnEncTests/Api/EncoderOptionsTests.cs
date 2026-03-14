@@ -16,7 +16,7 @@ public class EncoderOptionsTests
 	[InlineData(5)]
 	public void MaxMipMaps(int requestedMipMaps)
 	{
-		var testImage = ImageLoader.TestRawImages["rgba_1"];
+		var testImage = ImageLoader.TestRawImages["blocks"];
 		var encoder = new BcEncoder()
 		{
 			OutputOptions =
@@ -49,7 +49,7 @@ public class EncoderOptionsTests
 	[InlineData(false)]
 	public void GenerateMipMaps(bool generateMipMaps)
 	{
-		var testImage = ImageLoader.TestRawImages["rgba_1"];
+		var testImage = ImageLoader.TestRawImages["blocks"];
 		int requestedMipMaps = generateMipMaps ?
 			MipMapper.CalculateMipChainLength(testImage.Width, testImage.Height, 1, 0) :
 			1;

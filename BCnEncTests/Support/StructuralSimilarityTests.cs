@@ -153,7 +153,7 @@ namespace BCnEncTests.Support
             float[] channelWeights = new float[] { 0.2126f, 0.7152f, 0.0722f, 1f };
 
             // Act
-            StructuralSimilarityResult similarity = StructuralSimilarity.MultiScaleStructuralSimilarity_NonSimd(original, modified, channelMask, 5);
+            StructuralSimilarityResult similarity = StructuralSimilarity.MultiScaleStructuralSimilarity_NonSimd(original, modified, channelMask, channelWeights, 5);
             StructuralSimilarityResult similaritySimd = StructuralSimilarity.MultiScaleStructuralSimilarity_Simd(original, modified, channelMask, channelWeights, 5);
 
             // Assert

@@ -130,7 +130,7 @@ namespace BCnEncTests.Support
 		public static RadianceFile TestHdr1 => TestEncodedImages["hdr_1_rgbe"].Item1 as RadianceFile;
 		public static RadianceFile TestHdr2 => TestEncodedImages["hdr_2_rgbe"].Item1 as RadianceFile;
 
-		public static Image<RgbaVector> TestLdrRgba => TestRawImages["rgba_1"];
+		public static Image<RgbaVector> TestLdrRgba => TestRawImages["blocks"];
 
 		internal static Image<Rgba32> LoadTestImage(string filename)
 		{
