@@ -114,7 +114,7 @@ namespace BCnEncoder.TextureFormats
 		/// <inheritdoc />
 		public BCnTextureData ToTextureData()
 		{
-			var format = header.GlInternalFormat.GetCompressionFormat();
+			var format = header.GlInternalFormat.GetCompressionFormat(header.GlFormat);
 			var textureData = new BCnTextureData(
 				format,
 				(int)header.PixelWidth,

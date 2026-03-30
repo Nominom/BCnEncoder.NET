@@ -741,9 +741,7 @@ namespace BCnEncTests.Colors
             Assert.Equal(defaultColor.GetHashCode(), zeroColor.GetHashCode());
         }
 
-        /// <summary>
-        /// Tests equality operations and hash code consistency for all color types.
-        /// </summary>
+
         [Theory]
         [MemberData(nameof(GetAllPackedColorTypes))]
         public void TestPackedColors<TColor, TRaw, TPacked>(ColorTypeInfo<TColor, TRaw> typeInfo, TPacked _)

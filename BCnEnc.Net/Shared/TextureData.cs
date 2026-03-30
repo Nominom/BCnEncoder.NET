@@ -622,8 +622,16 @@ namespace BCnEncoder.Shared
 			}
 			if(data.Format.IsBlockCompressedFormat())
 			{
-				throw new ArgumentException(
-					$"Source format should be a non-block-compressed format. Please use {nameof(BcDecoder)} for decoding from compressed formats!");
+				BcDecoder decoder = new BcDecoder(new DecoderOptions
+				{
+					IsParallel = false
+				}, new DecoderOutputOptions
+				{
+					InputColorSpace = InputColorSpaceAssumption.Auto,
+					OutputColorSpace = convertColorspace ? OutputColorSpaceTarget.Auto : OutputColorSpaceTarget.KeepAsIs
+				});
+
+				return decoder.Decode(data, format);
 			}
 
 			if (data.Format == format)

@@ -8,6 +8,25 @@ using BCnEncoder.Shared.Colors;
 namespace BCnEncoder.Shared
 {
 	// ReSharper disable InconsistentNaming
+	/// <summary>
+	/// Identifies a texture compression or raw pixel format.
+	///
+	/// <para><b>Non-packed formats</b> (e.g. <see cref="Rgba32"/>, <see cref="Bgr24"/>) store each
+	/// component in its own byte. The component order in the name reflects memory layout: the first
+	/// component in the name is at the lowest memory address.</para>
+	///
+	/// <para><b>Packed formats</b> (e.g. <see cref="R4G4B4A4_Packed"/>, <see cref="B5G6R5_Packed"/>)
+	/// pack multiple components into a single integer. The naming convention follows DirectX/DXGI:
+	/// the first component in the name occupies the <em>least-significant</em> bits of the integer
+	/// (LSB → MSB). This keeps packed and non-packed names consistent on little-endian hardware,
+	/// where the lowest-address byte is also the least-significant byte of any multi-byte value.</para>
+	///
+	/// <para><b>Vulkan/OpenGL/KTX note:</b> those APIs use the opposite convention for packed formats —
+	/// the first component in the name is the <em>most-significant</em> (MSB → LSB). When mapping
+	/// to or from Vulkan format names, the component order in the name will appear reversed.
+	/// For example, <see cref="R4G4B4A4_Packed"/> (R in bits [3:0], A in bits [15:12]) corresponds
+	/// to <c>VK_FORMAT_A4B4G4R4_UNORM_PACK16</c>.</para>
+	/// </summary>
 	public enum CompressionFormat
 	{
 		/// <summary>
@@ -159,98 +178,98 @@ namespace BCnEncoder.Shared
 		// ==== PACKED Formats ====
 
 		/// <summary>
-		/// 32-bit packed format with 2-bit Alpha, 10-bit Blue, 10-bit Green, and 10-bit Red components.
+		/// 32-bit packed format with 10-bit Red, 10-bit Green, 10-bit Blue, and 2-bit Alpha components.
 		/// Bits ordered from MSB to LSB as: A[31:30] B[29:20] G[19:10] R[9:0].
 		/// Equivalent to VK_FORMAT_A2B10G10R10_UNORM_PACK32 and DXGI_FORMAT_R10G10B10A2_UNORM.
 		/// </summary>
 		R10G10B10A2_Packed,
 
 		/// <summary>
-		/// 32-bit packed format with 2-bit Alpha, 10-bit Red, 10-bit Green, and 10-bit Blue components.
+		/// 32-bit packed format with 10-bit Blue, 10-bit Green, 10-bit Red, and 2-bit Alpha components.
 		/// Bits ordered from MSB to LSB as: A[31:30] R[29:20] G[19:10] B[9:0].
 		/// Equivalent to VK_FORMAT_A2R10G10B10_UNORM_PACK32.
 		/// </summary>
 		B10G10R10A2_Packed,
 
 		/// <summary>
-		/// 16-bit packed format with 5-bit Red, 6-bit Green, and 5-bit Blue components.
+		/// 16-bit packed format with 5-bit Blue, 6-bit Green, and 5-bit Red components.
 		/// Bits ordered from MSB to LSB as: R[15:11] G[10:5] B[4:0].
 		/// Equivalent to VK_FORMAT_R5G6B5_UNORM_PACK16 and DXGI_FORMAT_B5G6R5_UNORM.
 		/// </summary>
 		B5G6R5_Packed,
 
 		/// <summary>
-		/// 16-bit packed format with 5-bit Blue, 6-bit Green, and 5-bit Red components.
+		/// 16-bit packed format with 5-bit Red, 6-bit Green, and 5-bit Blue components.
 		/// Bits ordered from MSB to LSB as: B[15:11] G[10:5] R[4:0].
 		/// Equivalent to VK_FORMAT_B5G6R5_UNORM_PACK16.
 		/// </summary>
 		R5G6B5_Packed,
 
 		/// <summary>
-		/// 16-bit packed format with 5-bit Red, 5-bit Green, 5-bit Blue, and 1-bit Alpha components.
+		/// 16-bit packed format with 1-bit Alpha, 5-bit Blue, 5-bit Green, and 5-bit Red components.
 		/// Bits ordered from MSB to LSB as: R[15:11] G[10:6] B[5:1] A[0].
 		/// Equivalent to VK_FORMAT_R5G5B5A1_UNORM_PACK16.
 		/// </summary>
 		A1B5G5R5_Packed,
 
 		/// <summary>
-		/// 16-bit packed format with 5-bit Blue, 5-bit Green, 5-bit Red, and 1-bit Alpha components.
+		/// 16-bit packed format with 1-bit Alpha, 5-bit Red, 5-bit Green, and 5-bit Blue components.
 		/// Bits ordered from MSB to LSB as: B[15:11] G[10:6] R[5:1] A[0].
 		/// Equivalent to VK_FORMAT_B5G5R5A1_UNORM_PACK16.
 		/// </summary>
 		A1R5G5B5_Packed,
 
 		/// <summary>
-		/// 16-bit packed format with 1-bit Alpha, 5-bit Red, 5-bit Green, and 5-bit Blue components.
+		/// 16-bit packed format with 5-bit Blue, 5-bit Green, 5-bit Red, and 1-bit Alpha components.
 		/// Bits ordered from MSB to LSB as: A[15] R[14:10] G[9:5] B[4:0].
 		/// Equivalent to VK_FORMAT_A1R5G5B5_UNORM_PACK16 and DXGI_FORMAT_B5G5R5A1_UNORM.
 		/// </summary>
 		B5G5R5A1_Packed,
 
 		/// <summary>
-		/// 16-bit packed format with 1-bit Alpha, 5-bit Blue, 5-bit Green, and 5-bit Red components.
+		/// 16-bit packed format with 5-bit Red, 5-bit Green, 5-bit Blue, and 1-bit Alpha components.
 		/// Bits ordered from MSB to LSB as: A[15] B[14:10] G[9:5] R[4:0].
 		/// Equivalent to VK_FORMAT_A1B5G5R5_UNORM_PACK16.
 		/// </summary>
 		R5G5B5A1_Packed,
 
 		/// <summary>
-		/// 16-bit packed format with 4-bit Red, 4-bit Green, 4-bit Blue, and 4-bit Alpha components.
+		/// 16-bit packed format with 4-bit Alpha, 4-bit Blue, 4-bit Green, and 4-bit Red components.
 		/// Bits ordered from MSB to LSB as: R[15:12] G[11:8] B[7:4] A[3:0].
 		/// Equivalent to VK_FORMAT_R4G4B4A4_UNORM_PACK16 and DXGI_FORMAT_A4B4G4R4_UNORM.
 		/// </summary>
 		A4B4G4R4_Packed,
 
 		/// <summary>
-		/// 16-bit packed format with 4-bit Blue, 4-bit Green, 4-bit Red, and 4-bit Alpha components.
+		/// 16-bit packed format with 4-bit Alpha, 4-bit Red, 4-bit Green, and 4-bit Blue components.
 		/// Bits ordered from MSB to LSB as: B[15:12] G[11:8] R[7:4] A[3:0].
 		/// Equivalent to VK_FORMAT_B4G4R4A4_UNORM_PACK16.
 		/// </summary>
 		A4R4G4B4_Packed,
 
 		/// <summary>
-		/// 16-bit packed format with 4-bit Alpha, 4-bit Red, 4-bit Green, and 4-bit Blue components.
+		/// 16-bit packed format with 4-bit Blue, 4-bit Green, 4-bit Red, and 4-bit Alpha components.
 		/// Bits ordered from MSB to LSB as: A[15:12] R[11:8] G[7:4] B[3:0].
 		/// Equivalent to VK_FORMAT_A4R4G4B4_UNORM_PACK16 and DXGI_FORMAT_B4G4R4A4_UNORM.
 		/// </summary>
 		B4G4R4A4_Packed,
 
 		/// <summary>
-		/// 16-bit packed format with 4-bit Alpha, 4-bit Blue, 4-bit Green, and 4-bit Red components.
+		/// 16-bit packed format with 4-bit Red, 4-bit Green, 4-bit Blue, and 4-bit Alpha components.
 		/// Bits ordered from MSB to LSB as: A[15:12] B[11:8] G[7:4] R[3:0].
 		/// Equivalent to VK_FORMAT_A4B4G4R4_UNORM_PACK16.
 		/// </summary>
 		R4G4B4A4_Packed,
 
 		/// <summary>
-		/// 32-bit packed shared-exponent format with 5-bit Exponent, 9-bit Blue, 9-bit Green, and 9-bit Red components.
+		/// 32-bit packed shared-exponent format with 9-bit Red, 9-bit Green, 9-bit Blue, and 5-bit Exponent components.
 		/// Bits ordered from MSB to LSB as: E[31:27] B[26:18] G[17:9] R[8:0].
 		/// Equivalent to VK_FORMAT_E5B9G9R9_UFLOAT_PACK32 and DXGI_FORMAT_R9G9B9E5_SHAREDEXP.
 		/// </summary>
 		R9G9B9E5_Packed,
 
 		/// <summary>
-		/// 32-bit packed floating point format with 10-bit Blue, 11-bit Green, and 11-bit Red components.
+		/// 32-bit packed floating point format with 11-bit Red, 11-bit Green, and 10-bit Blue components.
 		/// Bits ordered from MSB to LSB as: B[31:22] G[21:11] R[10:0].
 		/// Equivalent to VK_FORMAT_B10G11R11_UFLOAT_PACK32 and DXGI_FORMAT_R11G11B10_FLOAT.
 		/// </summary>

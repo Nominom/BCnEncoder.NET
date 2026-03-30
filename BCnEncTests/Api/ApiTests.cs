@@ -87,6 +87,10 @@ public class EncoderApiTests
 
 		Assert.True(inputData.Format != CompressionFormat.Unknown);
 
+		if (inputData.Format.IsBlockCompressedFormat())
+		{
+			inputData = inputData.ConvertTo(CompressionFormat.RgbaFloat);
+		}
 
 		// Test
 		var outputData = encoder.Encode(inputData);
@@ -123,7 +127,7 @@ public class EncoderApiTests
 
 	[Theory]
 	[InlineData("blocks", CompressionFormat.Bc1)]
-	[InlineData("blocks", CompressionFormat.RgbaFloat)]
+	[InlineData("blocks", CompressionFormat.R5G5B5A1_Packed)]
 	public void TestEncodeLdr(string name, CompressionFormat format)
 	{
 		var encoder = MakeEncoder(format);
@@ -131,7 +135,7 @@ public class EncoderApiTests
 		var inputData = LoadTestFile(true, name);
 
 		// Test
-		var outputData = encoder.Encode(inputData.First.AsMemory2D<ColorRgba32>());
+		var outputData = encoder.EncodeHdr(inputData.First.AsMemory2D<ColorRgbaFloat>());
 
 		AssertNonCube(format, outputData, inputData);
 		ValidateData(encoder, inputData.Width, inputData.Height, inputData.Depth, outputData);
@@ -140,6 +144,8 @@ public class EncoderApiTests
 	[Theory]
 	[InlineData("hdr_1_rgbe", CompressionFormat.Bc6U)]
 	[InlineData("hdr_1_rgbe", CompressionFormat.RgbaFloat)]
+	[InlineData("hdr_1_rgbe", CompressionFormat.R9G9B9E5_Packed)]
+	[InlineData("hdr_1_rgbe", CompressionFormat.RgbHalf)]
 	[InlineData("hdr_1_rgbe", CompressionFormat.Bc1)]
 	public void TestEncodeHdr(string name, CompressionFormat format)
 	{
