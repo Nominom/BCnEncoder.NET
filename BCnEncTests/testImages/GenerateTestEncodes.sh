@@ -1,19 +1,20 @@
 #!/usr/bin/env bash
 # GenerateTestEncodes.sh
-# Generates test DDS and KTX texture files using cuttlefish, then decodes
-# reference PNGs using tacentview.
+# Generates test DDS, KTX, and KTX2 texture files using cuttlefish, then decodes
+# reference PNGs. KTX2 files are converted from KTX using ktx2ktx2. Reference
+# PNGs for KTX/KTX2 are extracted with ktx extract (KTX2 only); DDS reference
+# PNGs are decoded with tacentview.
 # Replaces GenerateTestDds.ps1 and GenerateTestKtx.ps1.
 #
 # Notes:
 #  - Only DX10-header DDS files are generated; cuttlefish does not support DX9/legacy headers.
 #  - ETC/EAC/ASTC/PVRTC formats are KTX-only (not valid in DDS containers).
-#  - tacentview is used for reference decoding; if not found the decode step is skipped.
 
 set -euo pipefail
 
 usage() {
     cat <<'EOF'
-GenerateTestEncodes.sh - Generate test DDS and KTX files for BCnEncoder.NET
+GenerateTestEncodes.sh - Generate test DDS, KTX, and KTX2 files for BCnEncoder.NET
 
 USAGE:
     ./GenerateTestEncodes.sh -i <input> [OPTIONS]
@@ -23,28 +24,37 @@ OPTIONS:
     -i, --input <path>       Path to input image (required unless --no-encode)
     -d, --dds-dir <path>     DDS directory (default: ./testdds)
     -k, --ktx-dir <path>     KTX directory (default: ./testktx)
+    -K, --ktx2-dir <path>    KTX2 directory (default: ./testktx2)
         --no-encode          Skip encoding; only decode reference PNGs from
-                             existing files in the DDS and KTX directories
-    -h, --help               Show this help
+                             existing files in the DDS, KTX, and KTX2 directories
+        --tacentview-ktx     Use tacentview for KTX reference decoding instead
+                             of the default ktx extract method
 
 TOOLS:
     cuttlefish    Required for encoding (not needed with --no-encode)
-    tacentview    Required for reference PNG decoding
+    ktx2ktx2      Required for KTX -> KTX2 conversion
+    ktx           Required for KTX2 reference PNG extraction
+    tacentview    Required for DDS reference PNG decoding; also used for KTX
+                  decoding if --tacentview-ktx is set
 EOF
 }
 
 INPUT=""
 DDS_DIR="./testdds"
 KTX_DIR="./testktx"
+KTX2_DIR="./testktx2"
 NO_ENCODE=0
+TACENTVIEW_KTX=0
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        -i|--input)   INPUT="$2";   shift 2 ;;
-        -d|--dds-dir) DDS_DIR="$2"; shift 2 ;;
-        -k|--ktx-dir) KTX_DIR="$2"; shift 2 ;;
-        --no-encode)  NO_ENCODE=1;  shift ;;
-        -h|--help)    usage; exit 0 ;;
+        -i|--input)        INPUT="$2";   shift 2 ;;
+        -d|--dds-dir)      DDS_DIR="$2"; shift 2 ;;
+        -k|--ktx-dir)      KTX_DIR="$2"; shift 2 ;;
+        -K|--ktx2-dir)     KTX2_DIR="$2"; shift 2 ;;
+        --no-encode)       NO_ENCODE=1;  shift ;;
+        --tacentview-ktx)  TACENTVIEW_KTX=1; shift ;;
+        -h|--help)         usage; exit 0 ;;
         *) echo "Unknown option: $1" >&2; usage >&2; exit 1 ;;
     esac
 done
@@ -57,11 +67,15 @@ fi
 
 HAS_TACENTVIEW=0
 command -v tacentview &>/dev/null && HAS_TACENTVIEW=1 \
-    || echo "Warning: tacentview not found — reference PNG decode step will be skipped"
+    || echo "Warning: tacentview not found — DDS reference PNG decoding will be skipped"
+
+HAS_KTX_TOOLS=0
+command -v ktx2ktx2 &>/dev/null && command -v ktx &>/dev/null && HAS_KTX_TOOLS=1 \
+    || echo "Warning: ktx2ktx2/ktx not found — KTX2 conversion and reference PNG extraction will be skipped"
 
 if [[ "$NO_ENCODE" == "0" ]]; then
     BASE_NAME="$(basename "${INPUT%.*}")"
-    mkdir -p "$DDS_DIR" "$KTX_DIR"
+    mkdir -p "$DDS_DIR" "$KTX_DIR" "$KTX2_DIR"
 fi
 
 run_cf() {
@@ -105,10 +119,10 @@ COMMON_FORMATS=(
     "bc3|BC3|unorm"
     # BC4
     "bc4|BC4|unorm"
-    "bc4-snorm|BC4|snorm"
+    "bc4s|BC4|snorm"
     # BC5
     "bc5|BC5|unorm"
-    "bc5-snorm|BC5|snorm"
+    "bc5s|BC5|snorm"
     # BC6H
     "bc6h|BC6H|ufloat"
     "bc6h-signed|BC6H|float"
@@ -127,9 +141,9 @@ COMMON_FORMATS=(
     "a1r5g5b5|A1R5G5B5|unorm"
     # Uncompressed 8-bit
     "r8|R8|unorm"
-    "r8-snorm|R8|snorm"
+    "r8s|R8|snorm"
     "r8g8|R8G8|unorm"
-    "r8g8-snorm|R8G8|snorm"
+    "r8g8s|R8G8|snorm"
     "r8g8b8|R8G8B8|unorm"
     "b8g8r8|B8G8R8|unorm"
     "r8g8b8a8|R8G8B8A8|unorm"
@@ -169,9 +183,9 @@ KTX_EXTRA_FORMATS=(
     "etc2-rgb-a1|ETC2_R8G8B8A1|unorm"
     # EAC (single- and dual-channel, signed and unsigned)
     "eac-r11|EAC_R11|unorm"
-    "eac-r11-snorm|EAC_R11|snorm"
+    "eac-r11s|EAC_R11|snorm"
     "eac-rg11|EAC_R11G11|unorm"
-    "eac-rg11-snorm|EAC_R11G11|snorm"
+    "eac-rg11s|EAC_R11G11|snorm"
     # ASTC
     "astc-4x4|ASTC_4x4|"
     "astc-5x4|ASTC_5x4|"
@@ -231,25 +245,58 @@ done
 echo "KTX generation complete. Files written to: $KTX_DIR"
 fi # NO_ENCODE
 
-# ─── Reference PNG decode ──────────────────────────────────────────────────────
-# Decodes each generated DDS/KTX back to PNG for visual inspection.
-# tacentview outputs the PNG alongside the source file, which is then moved
-# into a reference/ subdirectory.
-#
-# HDR formats (BC6H, float, ufloat) get tone=1.0 (neutral exposure) so the
-# result is representable as an 8-bit PNG. corr=auto respects any sRGB tagging
-# embedded in the file by cuttlefish.
+# ─── Convert KTX -> KTX2 ─────────────────────────────────────────────────────
+# ktx extract (used for reference PNGs) only supports KTX2, so convert each
+# KTX file. The pixel data is identical; KTX2 is just a different container.
 
-decode_references() {
-    local dir="$1" ext="$2" in_flag="$3"
+if [[ "$HAS_KTX_TOOLS" == "1" ]]; then
+    mkdir -p "$KTX2_DIR"
+    ktx_files=("$KTX_DIR"/*.ktx)
+    if [[ -f "${ktx_files[0]}" ]]; then
+        echo ""
+        echo "Converting KTX -> KTX2..."
+        total="${#ktx_files[@]}" count=0
+        for ktx in "${ktx_files[@]}"; do
+            count=$((count + 1))
+            name="$(basename "${ktx%.*}")"
+            ktx2="$KTX2_DIR/${name}.ktx2"
+            printf '[%d/%d] %s\n' "$count" "$total" "$name"
+            if [[ -f "$ktx2" ]]; then
+                echo "  Skipped (already exists): $ktx2"
+            elif ktx2ktx2 -o "$ktx2" "$ktx"; then
+                echo "  Created $ktx2"
+            else
+                echo "  Warning: ktx2ktx2 failed for $ktx" >&2
+            fi
+        done
+        echo "KTX2 conversion complete. Files written to: $KTX2_DIR"
+    else
+        echo "No KTX files found in $KTX_DIR — skipping KTX2 conversion"
+    fi
+else
+    echo ""
+    echo "Skipping KTX2 conversion (ktx2ktx2 not available)."
+fi
+
+# ─── Reference PNG decode ─────────────────────────────────────────────────────
+# DDS:      decoded with tacentview
+# KTX/KTX2: decoded with ktx extract (KTX2 only); PNGs are then copied from
+#            the KTX2 reference folder into the KTX reference folder since the
+#            pixel data is identical. Falls back to tacentview if --tacentview-ktx.
+#
+# HDR formats (BC6H, float, ufloat) get tone=1.0 for tacentview so the preview
+# is representable as an 8-bit PNG.
+
+decode_dds_references() {
+    local dir="$1"
     local ref_dir="$dir/reference"
     mkdir -p "$ref_dir"
 
-    local files=("$dir"/*."$ext")
-    [[ -f "${files[0]}" ]] || { echo "No .$ext files found in $dir"; return; }
+    local files=("$dir"/*.dds)
+    [[ -f "${files[0]}" ]] || { echo "No .dds files found in $dir"; return; }
 
     local total="${#files[@]}" count=0
-    echo "Decoding $ext reference PNGs..."
+    echo "Decoding DDS reference PNGs with tacentview..."
 
     for src in "${files[@]}"; do
         count=$((count + 1))
@@ -259,20 +306,14 @@ decode_references() {
 
         printf '[%d/%d] %s\n' "$count" "$total" "$name"
 
-        # Apply neutral tone-map for HDR/float formats so the preview is
-        # representable as an 8-bit PNG
-        local params="corr=auto"
-        if [[ "$name" == *bc6h* ]] || [[ "$name" == *float* ]] || [[ "$name" == *ufloat* ]]; then
-            params="corr=auto,tone=1.0"
-        fi
-
         if [[ -f "$ref_png" ]]; then
             echo "  Skipped (already exists): $ref_png"
             continue
         fi
 
-        # tacentview writes output alongside the input file; we then move it
-        if tacentview -c -w "$in_flag" "$params" -o png "$src"; then
+        local params="corr=none"
+
+        if tacentview -c -w --inDDS "$params" -o png "$src"; then
             if [[ -f "$out_png" ]]; then
                 mv "$out_png" "$ref_png"
                 echo "  Created $ref_png"
@@ -284,19 +325,135 @@ decode_references() {
         fi
     done
 
-    echo "$ext reference PNGs written to: $ref_dir"
+    echo "DDS reference PNGs written to: $ref_dir"
 }
 
+decode_ktx2_references() {
+    local ktx2_dir="$1" ktx_dir="$2"
+    local ktx2_ref_dir="$ktx2_dir/reference"
+    local ktx_ref_dir="$ktx_dir/reference"
+    mkdir -p "$ktx2_ref_dir" "$ktx_ref_dir"
+
+    local files=("$ktx2_dir"/*.ktx2)
+    [[ -f "${files[0]}" ]] || { echo "No .ktx2 files found in $ktx2_dir"; return; }
+
+    local total="${#files[@]}" count=0
+    echo "Extracting KTX2 reference PNGs with ktx extract (falling back to tacentview for block-compressed)..."
+
+    for src in "${files[@]}"; do
+        count=$((count + 1))
+        local name; name="$(basename "${src%.*}")"
+        local ktx_src="$ktx_dir/${name}.ktx"
+        local ktx2_ref_png="$ktx2_ref_dir/${name}.png"
+        local ktx_ref_png="$ktx_ref_dir/${name}.png"
+
+        printf '[%d/%d] %s\n' "$count" "$total" "$name"
+
+        if [[ ! -f "$ktx2_ref_png" ]]; then
+            # ktx extract only decodes uncompressed KTX2 to PNG; block-compressed
+            # KTX2 files (BCn, ETC, ASTC) are not "transcodable" without BasisLZ
+            # supercompression, so extract won't produce a PNG for those. We detect
+            # this by checking whether the output file was actually created.
+            ktx extract "$src" "$ktx2_ref_png" 2>/dev/null || true
+            if [[ -f "$ktx2_ref_png" ]]; then
+                echo "  Created $ktx2_ref_png"
+            elif [[ "$HAS_TACENTVIEW" == "1" && -f "$ktx_src" ]]; then
+                echo "  ktx extract produced no PNG (block-compressed); falling back to tacentview"
+                local out_png="${ktx_src%.*}.png"
+                local params="corr=none"
+                if tacentview -c -w --inKTX "$params" -o png "$ktx_src" && [[ -f "$out_png" ]]; then
+                    mv "$out_png" "$ktx2_ref_png"
+                    echo "  Created $ktx2_ref_png"
+                else
+                    echo "  Warning: tacentview fallback also failed for $name" >&2
+                    continue
+                fi
+            else
+                echo "  Warning: no PNG produced for $name (block-compressed; tacentview unavailable)" >&2
+                continue
+            fi
+        else
+            echo "  Skipped (already exists): $ktx2_ref_png"
+        fi
+
+        # Copy to KTX reference folder — pixel data is identical
+        if [[ -f "$ktx_ref_png" ]]; then
+            echo "  Skipped (already exists): $ktx_ref_png"
+        else
+            cp "$ktx2_ref_png" "$ktx_ref_png"
+            echo "  Copied to $ktx_ref_png"
+        fi
+    done
+
+    echo "KTX2 reference PNGs written to: $ktx2_ref_dir"
+    echo "KTX  reference PNGs written to: $ktx_ref_dir"
+}
+
+decode_ktx_references_tacentview() {
+    local dir="$1"
+    local ref_dir="$dir/reference"
+    mkdir -p "$ref_dir"
+
+    local files=("$dir"/*.ktx)
+    [[ -f "${files[0]}" ]] || { echo "No .ktx files found in $dir"; return; }
+
+    local total="${#files[@]}" count=0
+    echo "Decoding KTX reference PNGs with tacentview..."
+
+    for src in "${files[@]}"; do
+        count=$((count + 1))
+        local name; name="$(basename "${src%.*}")"
+        local out_png="${src%.*}.png"
+        local ref_png="$ref_dir/${name}.png"
+
+        printf '[%d/%d] %s\n' "$count" "$total" "$name"
+
+        if [[ -f "$ref_png" ]]; then
+            echo "  Skipped (already exists): $ref_png"
+            continue
+        fi
+
+        local params="corr=none"
+
+        if tacentview -c -w --inKTX "$params" -o png "$src"; then
+            if [[ -f "$out_png" ]]; then
+                mv "$out_png" "$ref_png"
+                echo "  Created $ref_png"
+            else
+                echo "  Warning: expected $out_png not found" >&2
+            fi
+        else
+            echo "  Warning: tacentview failed for $src" >&2
+        fi
+    done
+
+    echo "KTX reference PNGs written to: $ref_dir"
+}
+
+echo ""
 if [[ "$HAS_TACENTVIEW" == "1" ]]; then
-    echo ""
-    [[ -d "$DDS_DIR" ]] && decode_references "$DDS_DIR" "dds" "--inDDS" \
+    [[ -d "$DDS_DIR" ]] && decode_dds_references "$DDS_DIR" \
         || echo "Skipping DDS decode: $DDS_DIR does not exist"
-    echo ""
-    [[ -d "$KTX_DIR" ]] && decode_references "$KTX_DIR" "ktx" "--inKTX" \
-        || echo "Skipping KTX decode: $KTX_DIR does not exist"
 else
-    echo ""
-    echo "Skipping reference PNG decode (tacentview not available)."
+    echo "Skipping DDS reference PNG decode (tacentview not available)."
+fi
+
+echo ""
+if [[ "$TACENTVIEW_KTX" == "1" ]]; then
+    if [[ "$HAS_TACENTVIEW" == "1" ]]; then
+        [[ -d "$KTX_DIR" ]] && decode_ktx_references_tacentview "$KTX_DIR" \
+            || echo "Skipping KTX decode: $KTX_DIR does not exist"
+    else
+        echo "Skipping KTX reference PNG decode (tacentview not available)."
+    fi
+elif [[ "$HAS_KTX_TOOLS" == "1" ]]; then
+    if [[ -d "$KTX2_DIR" ]]; then
+        decode_ktx2_references "$KTX2_DIR" "$KTX_DIR"
+    else
+        echo "Skipping KTX/KTX2 decode: $KTX2_DIR does not exist"
+    fi
+else
+    echo "Skipping KTX reference PNG decode (ktx2ktx2/ktx not available; use --tacentview-ktx to use tacentview instead)."
 fi
 
 echo ""

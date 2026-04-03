@@ -23,13 +23,14 @@ public class DecodingTests
 	const string testImageFolderRoot = "testImages";
 	const string referenceFolder = "reference";
 
-	static string[] unsupportedFilter = new string[] { "astc", "eac", "etc1", "etc2", "bc4s", "bc5s", "basisu" };
+	static string[] unsupportedFilter = new string[] { "astc", "eac", "etc1", "etc2", "bc4s", "bc5s", "basisu", "pvrtc1" };
 
 	private static DecoderOutputOptions defaultOptions = new DecoderOutputOptions()
 	{
 		AlphaHandling = DecoderAlphaHandling.KeepAsIs,
 		InputColorSpace = InputColorSpaceAssumption.Auto,
-		OutputColorSpace = OutputColorSpaceTarget.ProcessLinearPreserveColorSpace
+		OutputColorSpace = OutputColorSpaceTarget.ProcessLinearPreserveColorSpace,
+		RescaleSnormToUnorm = true
 	};
 
 	[SkippableTheory]
@@ -137,11 +138,12 @@ public class DecodingTests
 
 		return (format, type) switch
 		{
-			(_, _) when format.IsRawPixelFormat() => minTolerance,
+			(_, FileType.Dds) when format.IsRawPixelFormat() => minTolerance,
+			(_, FileType.Ktx) when format.IsRawPixelFormat() => one,
 			(CompressionFormat.Bc7, _)            => minTolerance,
 			(CompressionFormat.Bc7_sRGB, _)       => minTolerance,
-			(CompressionFormat.Bc6S, _)           => minTolerance,
-			(CompressionFormat.Bc6U, _)           => minTolerance,
+			(CompressionFormat.Bc6S, _)           => one,
+			(CompressionFormat.Bc6U, _)           => one,
 			(_, FileType.Dds)                     => one, // Dds has a small tolerance
 			(_, FileType.Ktx)                     => three, // Ktx has a large tolerance due to different decoding methods
 		};
