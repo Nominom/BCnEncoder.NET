@@ -109,6 +109,21 @@ namespace BCnEncTests.Support
 		}
 
 		/// <summary>
+		/// Calculates the Peak Signal-to-Noise Ratio between two images.
+		/// PSNR = 20 * log10(1 / RMSE) for normalized [0,1] pixel values.
+		/// </summary>
+		/// <param name="original">Original image</param>
+		/// <param name="compressed">Processed/compressed image to compare</param>
+		/// <param name="channelMask">String indicating which channels to include in calculation ("rgba")</param>
+		/// <returns>PSNR in dB (higher is better). Returns positive infinity for identical images.</returns>
+		public static double CalculatePsnr(Image<RgbaVector> original, Image<RgbaVector> compressed, string channelMask = "rgb")
+		{
+			var rmse = CalculateRMSE(original, compressed, channelMask);
+			if (rmse == 0f) return double.PositiveInfinity;
+			return 20.0 * Math.Log10(1.0 / rmse);
+		}
+
+		/// <summary>
 		/// Calculates the logarithmic Root Mean Square Error between two images.
 		/// This is especially useful for HDR content as it accounts for the perceptual differences at different luminance levels.
 		/// </summary>

@@ -73,6 +73,10 @@ HAS_KTX_TOOLS=0
 command -v ktx2ktx2 &>/dev/null && command -v ktx &>/dev/null && HAS_KTX_TOOLS=1 \
     || echo "Warning: ktx2ktx2/ktx not found — KTX2 conversion and reference PNG extraction will be skipped"
 
+HAS_COMPRESSONATOR=0
+command -v compressonatorcli &>/dev/null && HAS_COMPRESSONATOR=1 \
+    || echo "Warning: compressonatorcli not found — ATC format encoding will be skipped"
+
 if [[ "$NO_ENCODE" == "0" ]]; then
     BASE_NAME="$(basename "${INPUT%.*}")"
     mkdir -p "$DDS_DIR" "$KTX_DIR" "$KTX2_DIR"
@@ -156,8 +160,10 @@ COMMON_FORMATS=(
     "a2b10g10r10|A2B10G10R10|unorm"
     # Uncompressed 16-bit
     "r16|R16|unorm"
+    "r16s|R16|snorm"
     "r16-float|R16|float"
     "r16g16|R16G16|unorm"
+    "r16g16s|R16G16|snorm"
     "r16g16-float|R16G16|float"
     "r16g16b16|R16G16B16|unorm"
     "r16g16b16-float|R16G16B16|float"
@@ -210,6 +216,28 @@ KTX_EXTRA_FORMATS=(
     "pvrtc2-rgba-4bpp|PVRTC2_RGBA_4BPP|"
 )
 
+# ATC formats — KTX only, encoded with compressonatorcli (not supported by cuttlefish)
+# Fields: name | compressonator_format
+KTX_ATC_FORMATS=(
+    "atc|ATC_RGB"
+    "atc-explicit-alpha|ATC_RGBA_Explicit"
+    "atc-interpolated-alpha|ATC_RGBA_Interpolated"
+)
+
+run_compressonator() {
+    local output="$1"; shift
+    echo "  compressonatorcli$(printf ' %q' "$@") -o $output"
+    if [[ -f "$output" ]]; then
+        echo "  Skipped (already exists): $output"
+        return
+    fi
+    if compressonatorcli "$@" "$output"; then
+        echo "  Created $output"
+    else
+        echo "  Warning: compressonatorcli failed for $output" >&2
+    fi
+}
+
 if [[ "$NO_ENCODE" == "0" ]]; then
 # ─── Generate DDS ────────────────────────────────────────────────────────────
 echo "Generating DDS files..."
@@ -243,6 +271,26 @@ for entry in "${KTX_FORMATS[@]}"; do
 done
 
 echo "KTX generation complete. Files written to: $KTX_DIR"
+
+# ─── Generate ATC KTX (via compressonatorcli) ────────────────────────────────
+if [[ "$HAS_COMPRESSONATOR" == "1" ]]; then
+    echo ""
+    echo "Generating ATC KTX files with compressonatorcli..."
+    total=${#KTX_ATC_FORMATS[@]}
+    count=0
+    for entry in "${KTX_ATC_FORMATS[@]}"; do
+        count=$((count + 1))
+        IFS='|' read -r name ca_fmt <<< "$entry"
+        output="$KTX_DIR/${BASE_NAME}-${name}.ktx"
+        printf '[%d/%d] %s\n' "$count" "$total" "$name"
+        run_compressonator "$output" -fd "$ca_fmt" "$INPUT"
+    done
+    echo "ATC KTX generation complete."
+else
+    echo ""
+    echo "Skipping ATC format encoding (compressonatorcli not available)."
+fi
+
 fi # NO_ENCODE
 
 # ─── Convert KTX -> KTX2 ─────────────────────────────────────────────────────
@@ -364,12 +412,28 @@ decode_ktx2_references() {
                 if tacentview -c -w --inKTX "$params" -o png "$ktx_src" && [[ -f "$out_png" ]]; then
                     mv "$out_png" "$ktx2_ref_png"
                     echo "  Created $ktx2_ref_png"
+                elif [[ "$HAS_COMPRESSONATOR" == "1" && -f "$ktx_src" ]]; then
+                    echo "  tacentview fallback failed; trying compressonatorcli"
+                    if compressonatorcli "$ktx_src" "$ktx2_ref_png" 2>/dev/null && [[ -f "$ktx2_ref_png" ]]; then
+                        echo "  Created $ktx2_ref_png"
+                    else
+                        echo "  Warning: all decode methods failed for $name" >&2
+                        continue
+                    fi
                 else
-                    echo "  Warning: tacentview fallback also failed for $name" >&2
+                    echo "  Warning: tacentview fallback failed for $name" >&2
+                    continue
+                fi
+            elif [[ "$HAS_COMPRESSONATOR" == "1" && -f "$ktx_src" ]]; then
+                echo "  ktx extract produced no PNG; falling back to compressonatorcli"
+                if compressonatorcli "$ktx_src" "$ktx2_ref_png" 2>/dev/null && [[ -f "$ktx2_ref_png" ]]; then
+                    echo "  Created $ktx2_ref_png"
+                else
+                    echo "  Warning: compressonatorcli decode failed for $name" >&2
                     continue
                 fi
             else
-                echo "  Warning: no PNG produced for $name (block-compressed; tacentview unavailable)" >&2
+                echo "  Warning: no PNG produced for $name (block-compressed; tacentview and compressonatorcli unavailable)" >&2
                 continue
             fi
         else
@@ -454,6 +518,52 @@ elif [[ "$HAS_KTX_TOOLS" == "1" ]]; then
     fi
 else
     echo "Skipping KTX reference PNG decode (ktx2ktx2/ktx not available; use --tacentview-ktx to use tacentview instead)."
+fi
+
+# Compressonatorcli mop-up: decode ATC KTX files that have no reference PNG yet.
+# compressonatorcli cannot write PNG directly, so we decode to an intermediate
+# uncompressed DDS (ARGB_8888) and then use tacentview to produce the final PNG.
+# Only ATC files are attempted — other formats that fell through are unsupported
+# by compressonatorcli's KTX plugin and would just produce errors.
+if [[ "$HAS_COMPRESSONATOR" == "1" && -d "$KTX_DIR" ]]; then
+    ktx_ref_dir="$KTX_DIR/reference"
+    ktx2_ref_dir="$KTX2_DIR/reference"
+    mkdir -p "$ktx_ref_dir"
+
+    # Build list of ATC KTX files that are missing a reference PNG.
+    # Match by filename suffix derived from KTX_ATC_FORMATS.
+    atc_pending=()
+    for entry in "${KTX_ATC_FORMATS[@]}"; do
+        IFS='|' read -r atc_name _ <<< "$entry"
+        for src in "$KTX_DIR"/*-"${atc_name}".ktx; do
+            [[ -f "$src" ]] || continue
+            name="$(basename "${src%.*}")"
+            [[ -f "$ktx_ref_dir/${name}.png" ]] || atc_pending+=("$src")
+        done
+    done
+
+    if [[ "${#atc_pending[@]}" -gt 0 ]]; then
+        echo ""
+        echo "Decoding ${#atc_pending[@]} ATC KTX reference PNGs with compressonatorcli..."
+        total="${#atc_pending[@]}" count=0
+        for src in "${atc_pending[@]}"; do
+            count=$((count + 1))
+            name="$(basename "${src%.*}")"
+            ktx_ref_png="$ktx_ref_dir/${name}.png"
+            printf '[%d/%d] %s\n' "$count" "$total" "$name"
+
+            if compressonatorcli -fd ARGB_8888 "$src" "$ktx_ref_png" && [[ -f "$ktx_ref_png" ]]; then
+                echo "  Created $ktx_ref_png"
+                # Mirror into KTX2 reference if the KTX2 file exists
+                if [[ -d "$ktx2_ref_dir" && -f "$KTX2_DIR/${name}.ktx2" && ! -f "$ktx2_ref_dir/${name}.png" ]]; then
+                    cp "$ktx_ref_png" "$ktx2_ref_dir/${name}.png"
+                    echo "  Copied to $ktx2_ref_dir/${name}.png"
+                fi
+            else
+                echo "  Warning: compressonatorcli decode failed for $name" >&2
+            fi
+        done
+    fi
 fi
 
 echo ""

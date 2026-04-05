@@ -63,6 +63,15 @@ public class CompressionFormatTests
 				Assert.False(format.IsUNormFormat(), $"Format {format} should not be UNorm: Info={info}");
 				Assert.True(format.IsHdrFormat(), $"Format {format} should be HDR: Info={info}");
 			}
+			else if (format.ToString().EndsWith("UI", StringComparison.Ordinal))
+			{
+				Assert.Equal(CompressionFormatType.RawUint, info.FormatType);
+				Assert.True(format.IsIntegerFormat(), $"Format {format} should be integer: Info={info}");
+				Assert.False(format.IsSignedFormat(), $"Format {format} should not be signed: Info={info}");
+				Assert.False(format.IsSNormFormat(), $"Format {format} should not be SNorm: Info={info}");
+				Assert.False(format.IsUNormFormat(), $"Format {format} should not be UNorm: Info={info}");
+				Assert.False(format.IsHdrFormat(), $"Format {format} should not be HDR: Info={info}");
+			}
 			else if (format.ToString().EndsWith("UFloat", StringComparison.OrdinalIgnoreCase) ||
 			         format.ToString().EndsWith("UF", StringComparison.OrdinalIgnoreCase) ||
 			         format.ToString().EndsWith("UF_Packed", StringComparison.OrdinalIgnoreCase))
@@ -96,6 +105,7 @@ public class CompressionFormatTests
 				Assert.False(format.IsSignedFormat(), $"Format {format} should not be signed: Info={info}");
 				Assert.False(format.IsSNormFormat(), $"Format {format} should not be SNorm: Info={info}");
 				Assert.True(format.IsUNormFormat(), $"Format {format} should be UNorm: Info={info}");
+				Assert.False(format.IsIntegerFormat(), $"Format {format} should not be integer: Info={info}");
 				Assert.False(format.IsHdrFormat(), $"Format {format} should not be HDR: Info={info}");
 			}
 

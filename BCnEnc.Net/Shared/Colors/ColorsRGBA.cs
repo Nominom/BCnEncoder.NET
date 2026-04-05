@@ -806,3 +806,231 @@ public struct ColorRgbaHalf : IColorRgba<ColorRgbaHalf, Half>
 		set => a = value;
 	}
 }
+
+/// <summary>
+/// Raw 16-bit unsigned normalized four-channel format. 16 bits each for Red, Green, Blue, Alpha.
+/// </summary>
+[StructLayout(LayoutKind.Sequential)]
+public struct ColorR16G16B16A16 : IColorRgba<ColorR16G16B16A16, ushort>
+{
+	/// <summary>The 16-bit unsigned integer red value.</summary>
+	public ushort r;
+	/// <summary>The 16-bit unsigned integer green value.</summary>
+	public ushort g;
+	/// <summary>The 16-bit unsigned integer blue value.</summary>
+	public ushort b;
+	/// <summary>The 16-bit unsigned integer alpha value.</summary>
+	public ushort a;
+
+	/// <summary>Gets or sets the red component as a normalized floating-point value [0, 1].</summary>
+	public float R
+	{
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		get => Unorm16ToFloat(r);
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		set => r = FloatToUnorm16(value);
+	}
+
+	/// <summary>Gets or sets the green component as a normalized floating-point value [0, 1].</summary>
+	public float G
+	{
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		get => Unorm16ToFloat(g);
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		set => g = FloatToUnorm16(value);
+	}
+
+	/// <summary>Gets or sets the blue component as a normalized floating-point value [0, 1].</summary>
+	public float B
+	{
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		get => Unorm16ToFloat(b);
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		set => b = FloatToUnorm16(value);
+	}
+
+	/// <summary>Gets or sets the alpha component as a normalized floating-point value [0, 1].</summary>
+	public float A
+	{
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		get => Unorm16ToFloat(a);
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		set => a = FloatToUnorm16(value);
+	}
+
+	/// <summary>Gets or sets the raw 16-bit unsigned integer red value.</summary>
+	public ushort RawR { get => r; set => r = value; }
+	/// <summary>Gets or sets the raw 16-bit unsigned integer green value.</summary>
+	public ushort RawG { get => g; set => g = value; }
+	/// <summary>Gets or sets the raw 16-bit unsigned integer blue value.</summary>
+	public ushort RawB { get => b; set => b = value; }
+	/// <summary>Gets or sets the raw 16-bit unsigned integer alpha value.</summary>
+	public ushort RawA { get => a; set => a = value; }
+
+	/// <summary>Creates a new ColorR16G16B16A16 with the specified raw values.</summary>
+	public ColorR16G16B16A16(ushort r, ushort g, ushort b, ushort a)
+	{
+		this.r = r;
+		this.g = g;
+		this.b = b;
+		this.a = a;
+	}
+
+	/// <summary>Creates a new ColorR16G16B16A16 with the specified raw RGB values; alpha is set to max (65535).</summary>
+	public ColorR16G16B16A16(ushort r, ushort g, ushort b)
+	{
+		this.r = r;
+		this.g = g;
+		this.b = b;
+		this.a = ushort.MaxValue;
+	}
+
+	/// <summary>Creates a new ColorR16G16B16A16 with the specified normalized values.</summary>
+	public ColorR16G16B16A16(float r, float g, float b, float a)
+	{
+		this.r = FloatToUnorm16(r);
+		this.g = FloatToUnorm16(g);
+		this.b = FloatToUnorm16(b);
+		this.a = FloatToUnorm16(a);
+	}
+
+	/// <inheritdoc />
+	public ColorRgbaFloat ToColorRgbaFloat() => new ColorRgbaFloat(R, G, B, A);
+
+	/// <inheritdoc />
+	public void FromColorRgbaFloat(ColorRgbaFloat color)
+	{
+		R = color.r;
+		G = color.g;
+		B = color.b;
+		A = color.a;
+	}
+
+	/// <inheritdoc />
+	public override string ToString() => $"R16G16B16A16[R={R:F3}, G={G:F3}, B={B:F3}, A={A:F3}]";
+
+	/// <inheritdoc />
+	public override bool Equals(object? obj) => obj is ColorR16G16B16A16 other && Equals(other);
+
+	/// <inheritdoc />
+	public bool Equals(ColorR16G16B16A16 other) => r == other.r && g == other.g && b == other.b && a == other.a;
+
+	/// <inheritdoc />
+	public override int GetHashCode() => HashCode.Combine(r, g, b, a);
+
+	/// <summary>Compares two <see cref="ColorR16G16B16A16"/> for equality.</summary>
+	public static bool operator ==(ColorR16G16B16A16 left, ColorR16G16B16A16 right) => left.Equals(right);
+
+	/// <summary>Compares two <see cref="ColorR16G16B16A16"/> for inequality.</summary>
+	public static bool operator !=(ColorR16G16B16A16 left, ColorR16G16B16A16 right) => !left.Equals(right);
+}
+
+/// <summary>
+/// Raw 32-bit unsigned integer four-channel format. 32 bits each for Red, Green, Blue, Alpha.
+/// Float accessors perform a direct integer-to-float cast with no normalization.
+/// </summary>
+[StructLayout(LayoutKind.Sequential)]
+public struct ColorR32G32B32A32UI : IColorRgba<ColorR32G32B32A32UI, uint>
+{
+	/// <summary>The 32-bit unsigned integer red value.</summary>
+	public uint r;
+	/// <summary>The 32-bit unsigned integer green value.</summary>
+	public uint g;
+	/// <summary>The 32-bit unsigned integer blue value.</summary>
+	public uint b;
+	/// <summary>The 32-bit unsigned integer alpha value.</summary>
+	public uint a;
+
+	/// <summary>Gets or sets the red component as a float (direct cast, not normalized).</summary>
+	public float R
+	{
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		get => (float)r;
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		set => r = (uint)value;
+	}
+
+	/// <summary>Gets or sets the green component as a float (direct cast, not normalized).</summary>
+	public float G
+	{
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		get => (float)g;
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		set => g = (uint)value;
+	}
+
+	/// <summary>Gets or sets the blue component as a float (direct cast, not normalized).</summary>
+	public float B
+	{
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		get => (float)b;
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		set => b = (uint)value;
+	}
+
+	/// <summary>Gets or sets the alpha component as a float (direct cast, not normalized).</summary>
+	public float A
+	{
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		get => (float)a;
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		set => a = (uint)value;
+	}
+
+	/// <summary>Gets or sets the raw 32-bit unsigned integer red value.</summary>
+	public uint RawR { get => r; set => r = value; }
+	/// <summary>Gets or sets the raw 32-bit unsigned integer green value.</summary>
+	public uint RawG { get => g; set => g = value; }
+	/// <summary>Gets or sets the raw 32-bit unsigned integer blue value.</summary>
+	public uint RawB { get => b; set => b = value; }
+	/// <summary>Gets or sets the raw 32-bit unsigned integer alpha value.</summary>
+	public uint RawA { get => a; set => a = value; }
+
+	/// <summary>Creates a new ColorR32G32B32A32UI with the specified raw values.</summary>
+	public ColorR32G32B32A32UI(uint r, uint g, uint b, uint a)
+	{
+		this.r = r;
+		this.g = g;
+		this.b = b;
+		this.a = a;
+	}
+
+	/// <summary>Creates a new ColorR32G32B32A32UI with the specified raw RGB values; alpha is set to max.</summary>
+	public ColorR32G32B32A32UI(uint r, uint g, uint b)
+	{
+		this.r = r;
+		this.g = g;
+		this.b = b;
+		this.a = uint.MaxValue;
+	}
+
+	/// <inheritdoc />
+	public ColorRgbaFloat ToColorRgbaFloat() => new ColorRgbaFloat((float)r, (float)g, (float)b, (float)a);
+
+	/// <inheritdoc />
+	public void FromColorRgbaFloat(ColorRgbaFloat color)
+	{
+		r = (uint)color.r;
+		g = (uint)color.g;
+		b = (uint)color.b;
+		a = (uint)color.a;
+	}
+
+	/// <inheritdoc />
+	public override string ToString() => $"R32G32B32A32UI[R={r}, G={g}, B={b}, A={a}]";
+
+	/// <inheritdoc />
+	public override bool Equals(object? obj) => obj is ColorR32G32B32A32UI other && Equals(other);
+
+	/// <inheritdoc />
+	public bool Equals(ColorR32G32B32A32UI other) => r == other.r && g == other.g && b == other.b && a == other.a;
+
+	/// <inheritdoc />
+	public override int GetHashCode() => HashCode.Combine(r, g, b, a);
+
+	/// <summary>Compares two <see cref="ColorR32G32B32A32UI"/> for equality.</summary>
+	public static bool operator ==(ColorR32G32B32A32UI left, ColorR32G32B32A32UI right) => left.Equals(right);
+
+	/// <summary>Compares two <see cref="ColorR32G32B32A32UI"/> for inequality.</summary>
+	public static bool operator !=(ColorR32G32B32A32UI left, ColorR32G32B32A32UI right) => !left.Equals(right);
+}

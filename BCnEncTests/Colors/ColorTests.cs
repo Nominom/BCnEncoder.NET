@@ -111,6 +111,7 @@ namespace BCnEncTests.Colors
             yield return CreateFloatInfo<ColorR32F, float>(1, float.MaxValue, float.MinValue);
 
             // Dual-channel types
+            yield return CreateUnormInfo<ColorR4G4Packed, byte>([4, 4]);
             yield return CreateUnormInfo<ColorR8G8, byte>([8, 8]);
             yield return CreateSnormInfo<ColorR8G8S, sbyte>([8, 8]);
             yield return CreateUnormInfo<ColorR16G16, ushort>([16, 16]);
@@ -122,8 +123,11 @@ namespace BCnEncTests.Colors
             yield return CreateUnormInfo<ColorB5G6R5Packed, ushort>([5, 6, 5]);
             yield return CreateUnormInfo<ColorR5G6B5Packed, ushort>([5, 6, 5]);
             yield return CreateUnormInfo<ColorB5G5R5M1Packed, ushort>([5, 5, 5]);
+            yield return CreateUnormInfo<ColorR16G16B16, ushort>([16, 16, 16]);
 			yield return CreateUnormInfo<ColorRgb24, byte>([8, 8, 8]);
 			yield return CreateUnormInfo<ColorBgr24, byte>([8, 8, 8]);
+
+			// Triple-channel (RGB) float types
             yield return CreateFloatInfo<ColorRgbHalf, Half>(3, Half.MaxValue, Half.MinValue, tolerance: 0.0002f);
             yield return CreateFloatInfo<ColorRgbFloat, float>(3, float.MaxValue, float.MinValue);
 
@@ -146,6 +150,9 @@ namespace BCnEncTests.Colors
             // Quad-channel (RGBA) unorm types with 10-10-10-2 bit pattern
             yield return CreateUnormInfo<ColorR10G10B10A2Packed, uint>([10, 10, 10, 2]);
             yield return CreateUnormInfo<ColorB10G10R10A2Packed, uint>([10, 10, 10, 2]);
+
+            // Quad-channel (RGBA) unorm other
+            yield return CreateUnormInfo<ColorR16G16B16A16, ushort>([16, 16, 16, 16]);
 
             // Quad-channel (RGBA) float types
             yield return CreateFloatInfo<ColorRgbaHalf, Half>(4, Half.MaxValue, Half.MinValue, tolerance: 0.0002f);

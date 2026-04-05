@@ -1965,3 +1965,91 @@ public struct ColorB10G10R10A2Packed : IColorRgba<ColorB10G10R10A2Packed, uint>,
 		A = color.a;
 	}
 }
+
+[StructLayout(LayoutKind.Sequential)]
+public struct ColorR4G4Packed : IColorRedGreen<ColorR4G4Packed, byte>, IColorPacked<byte>
+{
+	/// <inheritdoc />
+	public static PackedRgbaMask ChannelMask { get; } = "R4G4";
+
+	byte IColorPacked<byte>.Data
+	{
+		get => data;
+		set => data = value;
+	}
+
+	public bool Equals(ColorR4G4Packed other) => data == other.data;
+
+	public override bool Equals(object obj) => obj is ColorR4G4Packed other && Equals(other);
+
+	public override int GetHashCode() => data.GetHashCode();
+
+	public static bool operator ==(ColorR4G4Packed left, ColorR4G4Packed right) => left.Equals(right);
+
+	public static bool operator !=(ColorR4G4Packed left, ColorR4G4Packed right) => !left.Equals(right);
+
+	private const byte RedMask = 0x0F;
+	private const int RedShift = 0;
+	private const byte GreenMask = 0xF0;
+	private const int GreenShift = 4;
+
+	private const byte RedMaxValue = 15;
+	private const byte GreenMaxValue = 15;
+
+	public byte data;
+
+	/// <inheritdoc />
+	public float R
+	{
+		readonly get => Unorm4ToFloat(RawR);
+		set => RawR = FloatToUnorm4(value);
+	}
+
+	/// <inheritdoc />
+	public float G
+	{
+		readonly get => Unorm4ToFloat(RawG);
+		set => RawG = FloatToUnorm4(value);
+	}
+
+	/// <inheritdoc />
+	public byte RawR
+	{
+		readonly get => (byte)((data & RedMask) >> RedShift);
+		set
+		{
+			if (value > RedMaxValue) value = RedMaxValue;
+			data = (byte)(data & ~RedMask);
+			data = (byte)(data | (value << RedShift));
+		}
+	}
+
+	/// <inheritdoc />
+	public byte RawG
+	{
+		readonly get => (byte)((data & GreenMask) >> GreenShift);
+		set
+		{
+			if (value > GreenMaxValue) value = GreenMaxValue;
+			data = (byte)(data & ~GreenMask);
+			data = (byte)(data | (value << GreenShift));
+		}
+	}
+
+	public ColorR4G4Packed(float r, float g)
+	{
+		data = 0;
+		R = r;
+		G = g;
+	}
+
+	/// <inheritdoc />
+	public ColorRgbaFloat ToColorRgbaFloat() => new ColorRgbaFloat(R, G, 0, 1);
+
+	/// <inheritdoc />
+	public void FromColorRgbaFloat(ColorRgbaFloat color)
+	{
+		R = color.r;
+		G = color.g;
+	}
+}

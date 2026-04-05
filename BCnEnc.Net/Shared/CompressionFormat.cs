@@ -173,6 +173,29 @@ namespace BCnEncoder.Shared
 		/// </summary>
 		R32G32F,
 
+		/// <summary>
+		/// Raw 16-bit-per-channel Unorm triple channel format. 16 bits each for Red, Green, Blue channels.
+		/// Pixel format <see cref="ColorR16G16B16"/>.
+		/// </summary>
+		R16G16B16,
+
+		/// <summary>
+		/// Raw 32-bit-per-channel Uint triple channel format. 32 bits each for Red, Green, Blue channels.
+		/// Pixel format <see cref="ColorR32G32B32UI"/>.
+		/// </summary>
+		R32G32B32UI,
+
+		/// <summary>
+		/// Raw 16-bit-per-channel Unorm quad channel format. 16 bits each for Red, Green, Blue, Alpha channels.
+		/// Pixel format <see cref="ColorR16G16B16A16"/>.
+		/// </summary>
+		R16G16B16A16,
+
+		/// <summary>
+		/// Raw 32-bit-per-channel Uint quad channel format. 32 bits each for Red, Green, Blue, Alpha channels.
+		/// Pixel format <see cref="ColorR32G32B32A32UI"/>.
+		/// </summary>
+		R32G32B32A32UI,
 
 
 		// ==== PACKED Formats ====
@@ -260,6 +283,13 @@ namespace BCnEncoder.Shared
 		/// Equivalent to VK_FORMAT_A4B4G4R4_UNORM_PACK16.
 		/// </summary>
 		R4G4B4A4_Packed,
+
+		/// <summary>
+		/// 8-bit packed format with 4-bit Red and 4-bit Green components.
+		/// Bits ordered from MSB to LSB as: G[7:4] R[3:0].
+		/// Equivalent to VK_FORMAT_R4G4_UNORM_PACK8. Vulkan-only format.
+		/// </summary>
+		R4G4_Packed,
 
 		/// <summary>
 		/// 32-bit packed shared-exponent format with 9-bit Red, 9-bit Green, 9-bit Blue, and 5-bit Exponent components.
@@ -388,6 +418,7 @@ namespace BCnEncoder.Shared
 		RawSnorm,
 		RawFloat,
 		RawUFloat,
+		RawUint,
 		RawSharedExponent,
 		BlockUnorm,
 		BlockUnormSrgb,
@@ -454,6 +485,8 @@ namespace BCnEncoder.Shared
 			{ CompressionFormat.RgbHalf,         new CompressionFormatInfo(CompressionFormat.RgbHalf,         CompressionFormatType.RawFloat,     false, BlockPixelSize.Size1x1x1, typeof(ColorRgbHalf))},
 			{ CompressionFormat.Bgr24x8,         new CompressionFormatInfo(CompressionFormat.Bgr24x8,         CompressionFormatType.RawUnorm,     false, BlockPixelSize.Size1x1x1, typeof(ColorBgra32))},
 			{ CompressionFormat.Bgr24x8_sRGB,    new CompressionFormatInfo(CompressionFormat.Bgr24x8_sRGB,    CompressionFormatType.RawUnormSrgb, false, BlockPixelSize.Size1x1x1, typeof(ColorBgra32))},
+			{ CompressionFormat.R16G16B16,       new CompressionFormatInfo(CompressionFormat.R16G16B16,       CompressionFormatType.RawUnorm,     false, BlockPixelSize.Size1x1x1, typeof(ColorR16G16B16))},
+			{ CompressionFormat.R32G32B32UI,     new CompressionFormatInfo(CompressionFormat.R32G32B32UI,     CompressionFormatType.RawUint,      false, BlockPixelSize.Size1x1x1, typeof(ColorR32G32B32UI))},
 
 			// Quad-channel formats (RGBA)
 			{ CompressionFormat.Rgba32,          new CompressionFormatInfo(CompressionFormat.Rgba32,          CompressionFormatType.RawUnorm,     true,  BlockPixelSize.Size1x1x1, typeof(ColorRgba32))},
@@ -462,6 +495,8 @@ namespace BCnEncoder.Shared
 			{ CompressionFormat.Bgra32_sRGB,     new CompressionFormatInfo(CompressionFormat.Bgra32_sRGB,     CompressionFormatType.RawUnormSrgb, true,  BlockPixelSize.Size1x1x1, typeof(ColorBgra32))},
 			{ CompressionFormat.RgbaFloat,       new CompressionFormatInfo(CompressionFormat.RgbaFloat,       CompressionFormatType.RawFloat,     true,  BlockPixelSize.Size1x1x1, typeof(ColorRgbaFloat))},
 			{ CompressionFormat.RgbaHalf,        new CompressionFormatInfo(CompressionFormat.RgbaHalf,        CompressionFormatType.RawFloat,     true,  BlockPixelSize.Size1x1x1, typeof(ColorRgbaHalf))},
+			{ CompressionFormat.R16G16B16A16,    new CompressionFormatInfo(CompressionFormat.R16G16B16A16,    CompressionFormatType.RawUnorm,     true,  BlockPixelSize.Size1x1x1, typeof(ColorR16G16B16A16))},
+			{ CompressionFormat.R32G32B32A32UI,  new CompressionFormatInfo(CompressionFormat.R32G32B32A32UI,  CompressionFormatType.RawUint,      true,  BlockPixelSize.Size1x1x1, typeof(ColorR32G32B32A32UI))},
 
 			// Special packed formats
 			{ CompressionFormat.R5G6B5_Packed,          new CompressionFormatInfo(CompressionFormat.R5G6B5_Packed,          CompressionFormatType.RawUnorm,     false, BlockPixelSize.Size1x1x1, typeof(ColorR5G6B5Packed))},
@@ -471,6 +506,7 @@ namespace BCnEncoder.Shared
 			{ CompressionFormat.A1B5G5R5_Packed,        new CompressionFormatInfo(CompressionFormat.A1B5G5R5_Packed,        CompressionFormatType.RawUnorm,     true,  BlockPixelSize.Size1x1x1, typeof(ColorA1B5G5R5Packed))},
 			{ CompressionFormat.A1R5G5B5_Packed,        new CompressionFormatInfo(CompressionFormat.A1R5G5B5_Packed,        CompressionFormatType.RawUnorm,     true,  BlockPixelSize.Size1x1x1, typeof(ColorA1R5G5B5Packed))},
 			{ CompressionFormat.R4G4B4A4_Packed,        new CompressionFormatInfo(CompressionFormat.R4G4B4A4_Packed,        CompressionFormatType.RawUnorm,     true,  BlockPixelSize.Size1x1x1, typeof(ColorR4G4B4A4Packed))},
+			{ CompressionFormat.R4G4_Packed,            new CompressionFormatInfo(CompressionFormat.R4G4_Packed,            CompressionFormatType.RawUnorm,     false, BlockPixelSize.Size1x1x1, typeof(ColorR4G4Packed))},
 			{ CompressionFormat.B4G4R4A4_Packed,        new CompressionFormatInfo(CompressionFormat.B4G4R4A4_Packed,        CompressionFormatType.RawUnorm,     true,  BlockPixelSize.Size1x1x1, typeof(ColorB4G4R4A4Packed))},
 			{ CompressionFormat.A4B4G4R4_Packed,        new CompressionFormatInfo(CompressionFormat.A4B4G4R4_Packed,        CompressionFormatType.RawUnorm,     true,  BlockPixelSize.Size1x1x1, typeof(ColorA4B4G4R4Packed))},
 			{ CompressionFormat.A4R4G4B4_Packed,        new CompressionFormatInfo(CompressionFormat.A4R4G4B4_Packed,        CompressionFormatType.RawUnorm,     true,  BlockPixelSize.Size1x1x1, typeof(ColorA4R4G4B4Packed))},
@@ -602,6 +638,14 @@ namespace BCnEncoder.Shared
 				|| info.FormatType == CompressionFormatType.RawUnormSrgb
 				|| info.FormatType == CompressionFormatType.BlockUnorm
 				|| info.FormatType == CompressionFormatType.BlockUnormSrgb;
+		}
+
+		// Whether the format stores raw integer values (not normalized to [0, 1])
+		public static bool IsIntegerFormat(this CompressionFormat format)
+		{
+			CompressionFormatInfo info = format.GetInfo();
+
+			return info.FormatType == CompressionFormatType.RawUint;
 		}
 
 		public static long CalculateMipByteSize(this CompressionFormat format, int width, int height, int depth)

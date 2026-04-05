@@ -573,6 +573,7 @@ namespace BCnEncoder.TextureFormats
 			(DxgiFormat.DxgiFormatUnknown, D3DFormat.D3DFormatX4R4G4B4, PixelFormatFlags.DdpfRgb, 16U, 0xf00U, 0xf0U, 0xfU, 0x0U),
 			(DxgiFormat.DxgiFormatUnknown, D3DFormat.D3DFormatA8R3G3B2, PixelFormatFlags.DdpfRgb | PixelFormatFlags.DdpfAlphaPixels, 16U, 0xe0U, 0x1cU, 0x3U, 0xff00U),
 			(DxgiFormat.DxgiFormatUnknown, D3DFormat.D3DFormatL16, PixelFormatFlags.DdpfLuminance, 16U, 0xffffU, 0x0U, 0x0U, 0x0U),
+			(DxgiFormat.DxgiFormatIa44, D3DFormat.D3DFormatUnknown, PixelFormatFlags.DdpfLuminance | PixelFormatFlags.DdpfAlphaPixels, 8U, 0x0fU, 0x0U, 0x0U, 0xf0U),
 			(DxgiFormat.DxgiFormatUnknown, D3DFormat.D3DFormatA4L4, PixelFormatFlags.DdpfLuminance | PixelFormatFlags.DdpfAlphaPixels, 8U, 0xfU, 0x0U, 0x0U, 0xf0U)
 		};
 
@@ -603,15 +604,13 @@ namespace BCnEncoder.TextureFormats
 
 			// BC4 formats. Ati1 is earlier in the list for wider support, even if it doesn't differentiate between signed and unsigned
 			(Ati1, DxgiFormat.DxgiFormatBc4Unorm),
-			(Ati1, DxgiFormat.DxgiFormatBc4Snorm),
-			(Bc4U, DxgiFormat.DxgiFormatBc4Unorm),
 			(Bc4S, DxgiFormat.DxgiFormatBc4Snorm),
+			(Bc4U, DxgiFormat.DxgiFormatBc4Unorm),
 
 			// BC5 formats. Ati2 is higher up for the same reason.
 			(Ati2, DxgiFormat.DxgiFormatBc5Unorm),
-			(Ati2, DxgiFormat.DxgiFormatBc5Snorm),
-			(Bc5U, DxgiFormat.DxgiFormatBc5Unorm),
 			(Bc5S, DxgiFormat.DxgiFormatBc5Snorm),
+			(Bc5U, DxgiFormat.DxgiFormatBc5Unorm),
 
 			// YUV-like packed formats
 			(Rgbg, DxgiFormat.DxgiFormatR8G8B8G8Unorm),

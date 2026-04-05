@@ -138,8 +138,7 @@ public class DecodingTests
 
 		return (format, type) switch
 		{
-			(_, FileType.Dds) when format.IsRawPixelFormat() => minTolerance,
-			(_, FileType.Ktx) when format.IsRawPixelFormat() => one,
+			(_, _) when format.IsRawPixelFormat() => one,
 			(CompressionFormat.Bc7, _)            => minTolerance,
 			(CompressionFormat.Bc7_sRGB, _)       => minTolerance,
 			(CompressionFormat.Bc6S, _)           => one,

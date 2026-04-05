@@ -18,6 +18,8 @@ namespace BCnEncoder.TextureFormats
 		GlRgSnorm = 0x8F91,
 		GlRgbSnorm = 0x8F92,
 		GlRgbaSnorm = 0x8F93,
+		GlRgbInteger = 0x8D98,
+		GlRgbaInteger = 0x8D99,
 	}
 
 	public enum GlType : uint
@@ -396,6 +398,8 @@ namespace BCnEncoder.TextureFormats
 				{ CompressionFormat.R11G11B10UF_Packed, (GlFormat.GlRgb, GlInternalFormat.GlR11G11B10F, GlType.GlUnsignedInt10F11F11FRev) },
 				{ CompressionFormat.R9G9B9E5_Packed, (GlFormat.GlRgb, GlInternalFormat.GlRgb9E5, GlType.GlUnsignedInt5999Rev) },
 				{ CompressionFormat.R5G6B5_Packed, (GlFormat.GlRgb, GlInternalFormat.GlRgb565, GlType.GlUnsignedShort565Rev) },
+				{ CompressionFormat.R16G16B16, (GlFormat.GlRgb, GlInternalFormat.GlRgb16, GlType.GlUnsignedShort) },
+				{ CompressionFormat.R32G32B32UI, (GlFormat.GlRgbInteger, GlInternalFormat.GlRgb32Ui, GlType.GlUnsignedInt) },
 
 				// RGBA formats
 				{ CompressionFormat.R10G10B10A2_Packed, (GlFormat.GlRgba, GlInternalFormat.GlRgb10A2, GlType.GlUnsignedInt2101010Rev) },
@@ -403,6 +407,8 @@ namespace BCnEncoder.TextureFormats
 				{ CompressionFormat.Rgba32_sRGB, (GlFormat.GlRgba, GlInternalFormat.GlSrgb8Alpha8, GlType.GlUnsignedByte) },
 				{ CompressionFormat.RgbaFloat, (GlFormat.GlRgba, GlInternalFormat.GlRgba32F, GlType.GlFloat) },
 				{ CompressionFormat.RgbaHalf, (GlFormat.GlRgba, GlInternalFormat.GlRgba16F, GlType.GlHalfFloat) },
+				{ CompressionFormat.R16G16B16A16, (GlFormat.GlRgba, GlInternalFormat.GlRgba16, GlType.GlUnsignedShort) },
+				{ CompressionFormat.R32G32B32A32UI, (GlFormat.GlRgbaInteger, GlInternalFormat.GlRgba32Ui, GlType.GlUnsignedInt) },
 				{ CompressionFormat.R5G5B5A1_Packed, (GlFormat.GlRgba, GlInternalFormat.GlRgb5A1, GlType.GlUnsignedShort1555Rev) },
 				{ CompressionFormat.R4G4B4A4_Packed, (GlFormat.GlRgba, GlInternalFormat.GlRgba4, GlType.GlUnsignedShort4444Rev) },
 				{ CompressionFormat.A1B5G5R5_Packed, (GlFormat.GlRgba, GlInternalFormat.GlRgb5A1, GlType.GlUnsignedShort5551) },
@@ -487,6 +493,8 @@ namespace BCnEncoder.TextureFormats
 				{ (GlInternalFormat.GlR11G11B10F, GlFormat.GlRgb, GlType.GlUnsignedInt10F11F11FRev), CompressionFormat.R11G11B10UF_Packed }, // Note: OpenGL follows DirectX naming here
 				{ (GlInternalFormat.GlRgb9E5, GlFormat.GlRgb, GlType.GlUnsignedInt5999Rev), CompressionFormat.R9G9B9E5_Packed }, // Note: OpenGL follows DirectX naming here
 				{ (GlInternalFormat.GlRgb565, GlFormat.GlRgb, GlType.GlUnsignedShort565Rev), CompressionFormat.R5G6B5_Packed },
+				{ (GlInternalFormat.GlRgb16, GlFormat.GlRgb, GlType.GlUnsignedShort), CompressionFormat.R16G16B16 },
+				{ (GlInternalFormat.GlRgb32Ui, GlFormat.GlRgbInteger, GlType.GlUnsignedInt), CompressionFormat.R32G32B32UI },
 
 				// RGBA formats
 				{ (GlInternalFormat.GlRgb10A2, GlFormat.GlRgba, GlType.GlUnsignedInt2101010Rev), CompressionFormat.R10G10B10A2_Packed }, // Note: OpenGL follows DirectX naming here
@@ -499,6 +507,8 @@ namespace BCnEncoder.TextureFormats
 				{ (GlInternalFormat.GlSrgbAlpha, GlFormat.GlRgba, GlType.GlUnsignedByte), CompressionFormat.Rgba32_sRGB },
 				{ (GlInternalFormat.GlRgba32F, GlFormat.GlRgba, GlType.GlFloat), CompressionFormat.RgbaFloat },
 				{ (GlInternalFormat.GlRgba16F, GlFormat.GlRgba, GlType.GlHalfFloat), CompressionFormat.RgbaHalf },
+				{ (GlInternalFormat.GlRgba16, GlFormat.GlRgba, GlType.GlUnsignedShort), CompressionFormat.R16G16B16A16 },
+				{ (GlInternalFormat.GlRgba32Ui, GlFormat.GlRgbaInteger, GlType.GlUnsignedInt), CompressionFormat.R32G32B32A32UI },
 				{ (GlInternalFormat.GlRgb5A1, GlFormat.GlRgba, GlType.GlUnsignedShort5551), CompressionFormat.A1B5G5R5_Packed },
 				{ (GlInternalFormat.GlRgb5A1, GlFormat.GlRgba, GlType.GlUnsignedShort1555Rev), CompressionFormat.R5G5B5A1_Packed },
 				{ (GlInternalFormat.GlRgba4, GlFormat.GlRgba, GlType.GlUnsignedShort4444), CompressionFormat.A4B4G4R4_Packed },

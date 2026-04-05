@@ -413,6 +413,8 @@ namespace BCnEncoder.TextureFormats
 					return 2;
 				case DxgiFormat.DxgiFormatR16Sint:
 					return 2;
+				case DxgiFormat.DxgiFormatIa44:
+					return 1;
 				case DxgiFormat.DxgiFormatR8Typeless:
 					return 1;
 				case DxgiFormat.DxgiFormatR8Unorm:
@@ -561,6 +563,7 @@ namespace BCnEncoder.TextureFormats
 				{ CompressionFormat.R32F, DxgiFormat.DxgiFormatR32Float },
 
 				// Red-green formats
+				{ CompressionFormat.R4G4_Packed, DxgiFormat.DxgiFormatIa44 },
 				{ CompressionFormat.R8G8, DxgiFormat.DxgiFormatR8G8Unorm },
 				{ CompressionFormat.R8G8S, DxgiFormat.DxgiFormatR8G8Snorm },
 				{ CompressionFormat.R16G16, DxgiFormat.DxgiFormatR16G16Unorm },
@@ -572,6 +575,7 @@ namespace BCnEncoder.TextureFormats
 				{ CompressionFormat.RgbFloat, DxgiFormat.DxgiFormatR32G32B32Float },
 				{ CompressionFormat.R11G11B10UF_Packed, DxgiFormat.DxgiFormatR11G11B10Float },
 				{ CompressionFormat.R9G9B9E5_Packed, DxgiFormat.DxgiFormatR9G9B9E5Sharedexp },
+				{ CompressionFormat.R32G32B32UI, DxgiFormat.DxgiFormatR32G32B32Uint },
 
 				// BGR formats
 				{ CompressionFormat.B5G6R5_Packed, DxgiFormat.DxgiFormatB5G6R5Unorm },
@@ -584,6 +588,8 @@ namespace BCnEncoder.TextureFormats
 				{ CompressionFormat.Rgba32_sRGB, DxgiFormat.DxgiFormatR8G8B8A8UnormSrgb },
 				{ CompressionFormat.RgbaFloat, DxgiFormat.DxgiFormatR32G32B32A32Float },
 				{ CompressionFormat.RgbaHalf, DxgiFormat.DxgiFormatR16G16B16A16Float },
+				{ CompressionFormat.R16G16B16A16, DxgiFormat.DxgiFormatR16G16B16A16Unorm },
+				{ CompressionFormat.R32G32B32A32UI, DxgiFormat.DxgiFormatR32G32B32A32Uint },
 
 				// BGRA formats
 				{ CompressionFormat.B5G5R5A1_Packed, DxgiFormat.DxgiFormatB5G5R5A1Unorm },

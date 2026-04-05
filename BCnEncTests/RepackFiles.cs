@@ -83,17 +83,52 @@ public class RepackFiles
 	}
 
 	[Theory]
-	[InlineData("testdds/raw-bc1-srgb.dds", "testdds/raw-bc1-linear.dds", DxgiFormat.DxgiFormatBc1Unorm)]
-	public void RepackDds(string input, string output, DxgiFormat newFormat)
+	[InlineData("testdds/raw-bc1-rgb-dx10.dds")]
+	[InlineData("testdds/raw-bc1-rgba-dx10.dds")]
+	[InlineData("testdds/raw-bc2-dx10.dds")]
+	[InlineData("testdds/raw-bc3-dx10.dds")]
+	[InlineData("testdds/raw-bc4-dx10.dds")]
+	[InlineData("testdds/raw-bc4s-dx10.dds")]
+	[InlineData("testdds/raw-bc5-dx10.dds")]
+	[InlineData("testdds/raw-bc5s-dx10.dds")]
+	[InlineData("testdds/raw-r4g4-dx10.dds")]
+	[InlineData("testdds/raw-r5g6b5-dx10.dds")]
+	[InlineData("testdds/raw-r8-dx10.dds")]
+	[InlineData("testdds/raw-r8g8-dx10.dds")]
+	[InlineData("testdds/raw-r8g8b8a8-dx10.dds")]
+	[InlineData("testdds/raw-b8g8r8a8-dx10.dds")]
+	[InlineData("testdds/raw-a1r5g5b5-dx10.dds")]
+	[InlineData("testdds/raw-a2b10g10r10-dx10.dds")]
+	[InlineData("testdds/raw-a4r4g4b4-dx10.dds")]
+	[InlineData("testdds/raw-r16-dx10.dds")]
+	[InlineData("testdds/raw-r16-float-dx10.dds")]
+	[InlineData("testdds/raw-r16g16-dx10.dds")]
+	[InlineData("testdds/raw-r16g16-float-dx10.dds")]
+	[InlineData("testdds/raw-r16g16b16a16-dx10.dds")]
+	[InlineData("testdds/raw-r16g16b16a16-float-dx10.dds")]
+	[InlineData("testdds/raw-r32-float-dx10.dds")]
+	[InlineData("testdds/raw-r32g32-float-dx10.dds")]
+	[InlineData("testdds/raw-r32g32b32a32-float-dx10.dds")]
+
+	public void RepackDdsDx9(string input)
 	{
+		string output = input.Replace("dx10", "dx9");
+		Assert.NotEqual(input, output);
+
 		string iPath = Path.Combine(TestHelper.GetProjectRoot(), "testImages", input);
 		string oPath = Path.Combine(TestHelper.GetProjectRoot(), "testImages", output);
 
 		using var ifs = File.OpenRead(iPath);
 		var dds = DdsFile.Load(ifs);
-		dds.dx10Header.dxgiFormat = newFormat;
+		var texData = dds.ToTextureData();
+
+		DdsFile.PreferredMinApiLevel = DdsFile.DxApiLevel.Dx9;
+
+		var dx9dds = texData.AsTexture<DdsFile>();
+
+		Assert.False(dx9dds.header.ddsPixelFormat.IsDxt10Format);
 
 		using var ofs = File.OpenWrite(oPath);
-		dds.WriteToStream(ofs);
+		dx9dds.WriteToStream(ofs);
 	}
 }
