@@ -1,40 +1,54 @@
 using System;
+using System.Numerics;
+using System.Runtime.CompilerServices;
 using BCnEncoder.Shared;
 
 namespace BCnEncoder.Encoder
 {
 	internal static class ColorChooser
 	{
+		/// <summary>
+		/// Weighted per-channel distance of <paramref name="color"/> to all four palette entries at
+		/// once. One lane per entry, so the four candidates cost a single set of SIMD operations.
+		/// </summary>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		private static Vector4 DistancesTo4(ReadOnlySpan<ColorRgb24> colors, ColorRgba32 color, float rWeight, float gWeight, float bWeight)
+		{
+			var dr = Vector4.Abs(new Vector4(colors[0].r, colors[1].r, colors[2].r, colors[3].r) - new Vector4(color.r));
+			var dg = Vector4.Abs(new Vector4(colors[0].g, colors[1].g, colors[2].g, colors[3].g) - new Vector4(color.g));
+			var db = Vector4.Abs(new Vector4(colors[0].b, colors[1].b, colors[2].b, colors[3].b) - new Vector4(color.b));
+
+			return dr * rWeight + dg * gWeight + db * bWeight;
+		}
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		private static float Select(Vector4 v, int index)
+		{
+			switch (index)
+			{
+				case 0: return v.X;
+				case 1: return v.Y;
+				case 2: return v.Z;
+				default: return v.W;
+			}
+		}
 
 		public static int ChooseClosestColor4(ReadOnlySpan<ColorRgb24> colors, ColorRgba32 color, float rWeight, float gWeight, float bWeight, out float error)
 		{
-			ReadOnlySpan<float> d = stackalloc float[4] {
-				MathF.Abs(colors[0].r - color.r) * rWeight
-				+ MathF.Abs(colors[0].g - color.g) * gWeight
-				+ MathF.Abs(colors[0].b - color.b) * bWeight,
-				MathF.Abs(colors[1].r - color.r) * rWeight
-				+ MathF.Abs(colors[1].g - color.g) * gWeight
-				+ MathF.Abs(colors[1].b - color.b) * bWeight,
-				MathF.Abs(colors[2].r - color.r) * rWeight
-				+ MathF.Abs(colors[2].g - color.g) * gWeight
-				+ MathF.Abs(colors[2].b - color.b) * bWeight,
-				MathF.Abs(colors[3].r - color.r) * rWeight
-				+ MathF.Abs(colors[3].g - color.g) * gWeight
-				+ MathF.Abs(colors[3].b - color.b) * bWeight,
-			};
+			var d = DistancesTo4(colors, color, rWeight, gWeight, bWeight);
 
-			var b0 = d[0] > d[3] ? 1 : 0;
-			var b1 = d[1] > d[2] ? 1 : 0;
-			var b2 = d[0] > d[2] ? 1 : 0;
-			var b3 = d[1] > d[3] ? 1 : 0;
-			var b4 = d[2] > d[3] ? 1 : 0;
+			var b0 = d.X > d.W ? 1 : 0;
+			var b1 = d.Y > d.Z ? 1 : 0;
+			var b2 = d.X > d.Z ? 1 : 0;
+			var b3 = d.Y > d.W ? 1 : 0;
+			var b4 = d.Z > d.W ? 1 : 0;
 
 			var x0 = b1 & b2;
 			var x1 = b0 & b3;
 			var x2 = b0 & b4;
 
 			var idx = x2 | ((x0 | x1) << 1);
-			error = d[idx];
+			error = Select(d, idx);
 			return idx;
 		}
 
@@ -48,34 +62,23 @@ namespace BCnEncoder.Encoder
 				return 3;
 			}
 
-			ReadOnlySpan<float> d = stackalloc float[4] {
-				MathF.Abs(colors[0].r - color.r) * rWeight
-				+ MathF.Abs(colors[0].g - color.g) * gWeight
-				+ MathF.Abs(colors[0].b - color.b) * bWeight,
-				MathF.Abs(colors[1].r - color.r) * rWeight
-				+ MathF.Abs(colors[1].g - color.g) * gWeight
-				+ MathF.Abs(colors[1].b - color.b) * bWeight,
-				MathF.Abs(colors[2].r - color.r) * rWeight
-				+ MathF.Abs(colors[2].g - color.g) * gWeight
-				+ MathF.Abs(colors[2].b - color.b) * bWeight,
+			var d = DistancesTo4(colors, color, rWeight, gWeight, bWeight);
+			if (hasAlpha)
+			{
+				d.W = 999;
+			}
 
-				hasAlpha ? 999 :
-				MathF.Abs(colors[3].r - color.r) * rWeight
-				+ MathF.Abs(colors[3].g - color.g) * gWeight
-				+ MathF.Abs(colors[3].b - color.b) * bWeight,
-			};
-
-			var b0 = d[0] > d[2] ? 1 : 0;
-			var b1 = d[1] > d[3] ? 1 : 0;
-			var b2 = d[0] > d[3] ? 1 : 0;
-			var b3 = d[1] > d[2] ? 1 : 0;
-			var nb3 = d[1] > d[2] ? 0 : 1;
-			var b4 = d[0] > d[1] ? 1 : 0;
-			var b5 = d[2] > d[3] ? 1 : 0;
+			var b0 = d.X > d.Z ? 1 : 0;
+			var b1 = d.Y > d.W ? 1 : 0;
+			var b2 = d.X > d.W ? 1 : 0;
+			var b3 = d.Y > d.Z ? 1 : 0;
+			var nb3 = d.Y > d.Z ? 0 : 1;
+			var b4 = d.X > d.Y ? 1 : 0;
+			var b5 = d.Z > d.W ? 1 : 0;
 
 			var idx = (nb3 & b4) | (b2 & b5) | (((b0 & b3) | (b1 & b2)) << 1);
 
-			error = d[idx];
+			error = Select(d, idx);
 			return idx;
 		}
 

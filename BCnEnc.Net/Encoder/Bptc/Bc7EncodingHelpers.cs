@@ -1,5 +1,7 @@
 using System;
 using System.Linq;
+using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using BCnEncoder.Shared;
 
@@ -8,6 +10,10 @@ namespace BCnEncoder.Encoder.Bptc
 
 	internal static class Bc7EncodingHelpers
 	{
+		/// <summary>Luma is weighted more heavily than chroma when scoring endpoint candidates.</summary>
+		private const float YWeight = 4;
+		private const float AlphaWeight = 2;
+
 		private static readonly int[] varPatternRAlpha = new int[] { 1, -1, 1, 0, 0, -1, 0, 0, 0, 0 };
 		private static readonly int[] varPatternRNoAlpha = new int[] { 1, -1, 1, 0, 0, -1, 0, 0 };
 			
@@ -301,15 +307,25 @@ namespace BCnEncoder.Encoder.Bptc
 		public static ColorRgba32 InterpolateColor(ColorRgba32 endPointStart, ColorRgba32 endPointEnd,
 			int colorIndex, int alphaIndex, int colorBitCount, int alphaBitCount)
 		{
+			return InterpolateColor(endPointStart, endPointEnd,
+				BptcEncodingHelpers.GetInterpolationWeights(colorBitCount)[colorIndex],
+				BptcEncodingHelpers.GetInterpolationWeights(alphaBitCount)[alphaIndex]);
+		}
 
-			var result = new ColorRgba32(
-				BptcEncodingHelpers.InterpolateByte(endPointStart.r, endPointEnd.r, colorIndex, colorBitCount),
-				BptcEncodingHelpers.InterpolateByte(endPointStart.g, endPointEnd.g, colorIndex, colorBitCount),
-				BptcEncodingHelpers.InterpolateByte(endPointStart.b, endPointEnd.b, colorIndex, colorBitCount),
-				BptcEncodingHelpers.InterpolateByte(endPointStart.a, endPointEnd.a, alphaIndex, alphaBitCount)
+		/// <summary>
+		/// Interpolates with weights already looked up by the caller, so palette loops select the
+		/// weight table once instead of once per component.
+		/// </summary>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static ColorRgba32 InterpolateColor(ColorRgba32 endPointStart, ColorRgba32 endPointEnd,
+			int colorWeight, int alphaWeight)
+		{
+			return new ColorRgba32(
+				BptcEncodingHelpers.InterpolateByte(endPointStart.r, endPointEnd.r, colorWeight),
+				BptcEncodingHelpers.InterpolateByte(endPointStart.g, endPointEnd.g, colorWeight),
+				BptcEncodingHelpers.InterpolateByte(endPointStart.b, endPointEnd.b, colorWeight),
+				BptcEncodingHelpers.InterpolateByte(endPointStart.a, endPointEnd.a, alphaWeight)
 			);
-
-			return result;
 		}
 
 		public static void ClampEndpoint(ref ColorRgba32 endpoint, byte colorMax, byte alphaMax)
@@ -320,39 +336,55 @@ namespace BCnEncoder.Encoder.Bptc
 			if (endpoint.a > alphaMax) endpoint.a = alphaMax;
 		}
 
-		private static int FindClosestColorIndex(ColorYCbCrAlpha color, ReadOnlySpan<ColorYCbCrAlpha> colors, out float bestError)
+		private static int FindClosestColorIndex(ColorYCbCrAlpha color, in YcbcrAlphaPalette palette, out float bestError)
 		{
-			bestError = color.CalcDistWeighted(colors[0], 4, 2);
+			var y = new Vector4(color.y);
+			var cb = new Vector4(color.cb);
+			var cr = new Vector4(color.cr);
+			var alpha = new Vector4(color.alpha);
+
+			var bestSquared = float.MaxValue;
 			var bestIndex = 0;
-			for (var i = 1; i < colors.Length; i++)
+
+			for (var g = 0; g < palette.Groups; g++)
 			{
-				var error = color.CalcDistWeighted(colors[i], 4, 2);
-				if (error < bestError)
-				{
-					bestIndex = i;
-					bestError = error;
-				}
+				var dy = y - palette.Y[g];
+				var dcb = cb - palette.Cb[g];
+				var dcr = cr - palette.Cr[g];
+				var da = alpha - palette.Alpha[g];
+
+				var d = dy * dy * YWeight + dcb * dcb + dcr * dcr + da * da * AlphaWeight;
+
+				// Lanes are checked in index order so ties keep the lowest index, like a scalar scan.
+				var first = g * 4;
+				if (d.X < bestSquared) { bestSquared = d.X; bestIndex = first; }
+				if (d.Y < bestSquared) { bestSquared = d.Y; bestIndex = first + 1; }
+				if (d.Z < bestSquared) { bestSquared = d.Z; bestIndex = first + 2; }
+				if (d.W < bestSquared) { bestSquared = d.W; bestIndex = first + 3; }
 			}
+
+			bestError = MathF.Sqrt(bestSquared);
 			return bestIndex;
 		}
 
 		private static int FindClosestColorIndex(ColorYCbCr color, ReadOnlySpan<ColorYCbCr> colors, out float bestError)
 		{
-			bestError = color.CalcDistWeighted(colors[0], 4);
+			var bestSquared = color.CalcDistWeightedSquared(colors[0], 4);
 			var bestIndex = 0;
 			for (var i = 1; i < colors.Length; i++)
 			{
-				var error = color.CalcDistWeighted(colors[i], 4);
-				if (error < bestError)
+				var error = color.CalcDistWeightedSquared(colors[i], 4);
+				if (error < bestSquared)
 				{
 					bestIndex = i;
-					bestError = error;
+					bestSquared = error;
 				}
-				if (bestError == 0)
+				if (bestSquared == 0)
 				{
 					break;
 				}
 			}
+			bestError = MathF.Sqrt(bestSquared);
 			return bestIndex;
 		}
 
@@ -378,8 +410,103 @@ namespace BCnEncoder.Encoder.Bptc
 		}
 
 
-		private static float TrySubsetEndpoints(Bc7BlockType type, RawBlock4X4Rgba32 raw, ColorRgba32 ep0, ColorRgba32 ep1,
-			ReadOnlySpan<int> partitionTable, int subsetIndex, int type4IdxMode)
+		/// <summary>
+		/// Converts the block once so the endpoint search below does not redo it for every candidate.
+		/// The y/cb/cr components match <see cref="ColorYCbCr"/> built from the same pixel.
+		/// </summary>
+		private static void ConvertPixels(RawBlock4X4Rgba32 raw, Span<ColorYCbCrAlpha> pixelColors)
+		{
+			var pixels = raw.AsSpan;
+			for (var i = 0; i < 16; i++)
+			{
+				pixelColors[i] = new ColorYCbCrAlpha(pixels[i]);
+			}
+		}
+
+		/// <summary>
+		/// The interpolated endpoint palette in YCbCrAlpha, stored channel-wise in groups of four.
+		/// Scoring a pixel against four candidates is then a single set of SIMD operations, which is
+		/// what the endpoint search spends nearly all of its time on.
+		/// </summary>
+		private readonly ref struct YcbcrAlphaPalette
+		{
+			public readonly Span<Vector4> Y;
+			public readonly Span<Vector4> Cb;
+			public readonly Span<Vector4> Cr;
+			public readonly Span<Vector4> Alpha;
+
+			/// <summary>
+			/// Splits <paramref name="storage"/> into the four channels. It needs one <see cref="Vector4"/>
+			/// per palette entry, since four entries per group times four channels is four vectors.
+			/// </summary>
+			public YcbcrAlphaPalette(Span<Vector4> storage)
+			{
+				var groups = storage.Length / 4;
+				Y = storage.Slice(0, groups);
+				Cb = storage.Slice(groups, groups);
+				Cr = storage.Slice(groups * 2, groups);
+				Alpha = storage.Slice(groups * 3, groups);
+			}
+
+			public int Groups => Y.Length;
+		}
+
+		/// <summary>
+		/// Builds the interpolated endpoint palette shared by color and alpha indices.
+		/// </summary>
+		private static YcbcrAlphaPalette BuildPalette(ColorRgba32 ep0, ColorRgba32 ep1, int colorIndexPrecision, int alphaIndexPrecision,
+			Span<Vector4> storage)
+		{
+			var colorWeights = BptcEncodingHelpers.GetInterpolationWeights(colorIndexPrecision);
+			var alphaWeights = BptcEncodingHelpers.GetInterpolationWeights(alphaIndexPrecision);
+			var normalized = ColorTables.Normalized;
+			var palette = new YcbcrAlphaPalette(storage);
+
+			for (var group = 0; group < palette.Groups; group++)
+			{
+				var first = group * 4;
+				var c0 = InterpolateColor(ep0, ep1, colorWeights[first], alphaWeights[first]);
+				var c1 = InterpolateColor(ep0, ep1, colorWeights[first + 1], alphaWeights[first + 1]);
+				var c2 = InterpolateColor(ep0, ep1, colorWeights[first + 2], alphaWeights[first + 2]);
+				var c3 = InterpolateColor(ep0, ep1, colorWeights[first + 3], alphaWeights[first + 3]);
+
+				var r = new Vector4(normalized[c0.r], normalized[c1.r], normalized[c2.r], normalized[c3.r]);
+				var g = new Vector4(normalized[c0.g], normalized[c1.g], normalized[c2.g], normalized[c3.g]);
+				var b = new Vector4(normalized[c0.b], normalized[c1.b], normalized[c2.b], normalized[c3.b]);
+
+				ColorYCbCrAlpha.FromNormalized(r, g, b, out var y, out var cb, out var cr);
+
+				palette.Y[group] = y;
+				palette.Cb[group] = cb;
+				palette.Cr[group] = cr;
+				palette.Alpha[group] = new Vector4(normalized[c0.a], normalized[c1.a], normalized[c2.a], normalized[c3.a]);
+			}
+
+			return palette;
+		}
+
+		/// <summary>
+		/// Builds the palettes for the modes that index color and alpha independently.
+		/// </summary>
+		private static void BuildSeparatePalettes(ColorRgba32 ep0, ColorRgba32 ep1, int colorIndexPrecision, int alphaIndexPrecision,
+			Span<ColorYCbCr> colors, Span<byte> alphas)
+		{
+			var colorWeights = BptcEncodingHelpers.GetInterpolationWeights(colorIndexPrecision);
+			var alphaWeights = BptcEncodingHelpers.GetInterpolationWeights(alphaIndexPrecision);
+
+			for (var i = 0; i < colors.Length; i++)
+			{
+				colors[i] = new ColorYCbCr(InterpolateColor(ep0, ep1, colorWeights[i], 0));
+			}
+
+			for (var i = 0; i < alphas.Length; i++)
+			{
+				alphas[i] = InterpolateColor(ep0, ep1, 0, alphaWeights[i]).a;
+			}
+		}
+
+		private static float TrySubsetEndpoints(Bc7BlockType type, RawBlock4X4Rgba32 raw, ReadOnlySpan<ColorYCbCrAlpha> pixelColors,
+			ColorRgba32 ep0, ColorRgba32 ep1, ReadOnlySpan<int> partitionTable, int subsetIndex, int type4IdxMode)
 		{
 			var colorIndexPrecision = GetColorIndexBitCount(type, type4IdxMode);
 			var alphaIndexPrecision = GetAlphaIndexBitCount(type, type4IdxMode);
@@ -388,25 +515,15 @@ namespace BCnEncoder.Encoder.Bptc
 			{ //separate indices for color and alpha
 				Span<ColorYCbCr> colors = stackalloc ColorYCbCr[1 << colorIndexPrecision];
 				Span<byte> alphas = stackalloc byte[1 << alphaIndexPrecision];
-
-				for (var i = 0; i < colors.Length; i++)
-				{
-					colors[i] = new ColorYCbCr(InterpolateColor(ep0, ep1, i,
-						0, colorIndexPrecision, 0));
-				}
-
-				for (var i = 0; i < alphas.Length; i++)
-				{
-					alphas[i] = InterpolateColor(ep0, ep1, 0,
-						i, 0, alphaIndexPrecision).a;
-				}
+				BuildSeparatePalettes(ep0, ep1, colorIndexPrecision, alphaIndexPrecision, colors, alphas);
 
 				var pixels = raw.AsSpan;
 				float error = 0;
 
 				for (var i = 0; i < 16; i++)
 				{
-					var pixelColor = new ColorYCbCr(pixels[i]);
+					var cached = pixelColors[i];
+					var pixelColor = new ColorYCbCr(cached.y, cached.cb, cached.cr);
 
 					FindClosestColorIndex(pixelColor, colors, out var ce);
 					FindClosestAlphaIndex(pixels[i].a, alphas, out var ae);
@@ -418,14 +535,9 @@ namespace BCnEncoder.Encoder.Bptc
 			}
 			else
 			{
-				Span<ColorYCbCrAlpha> colors = stackalloc ColorYCbCrAlpha[1 << colorIndexPrecision];
-				for (var i = 0; i < colors.Length; i++)
-				{
-					colors[i] = new ColorYCbCrAlpha(InterpolateColor(ep0, ep1, i,
-						i, colorIndexPrecision, alphaIndexPrecision));
-				}
+				Span<Vector4> paletteStorage = stackalloc Vector4[1 << colorIndexPrecision];
+				var palette = BuildPalette(ep0, ep1, colorIndexPrecision, alphaIndexPrecision, paletteStorage);
 
-				var pixels = raw.AsSpan;
 				float error = 0;
 				float count = 0;
 
@@ -433,9 +545,7 @@ namespace BCnEncoder.Encoder.Bptc
 				{
 					if (partitionTable[i] == subsetIndex)
 					{
-						var pixelColor = new ColorYCbCrAlpha(pixels[i]);
-
-						FindClosestColorIndex(pixelColor, colors, out var e);
+						FindClosestColorIndex(pixelColors[i], palette, out var e);
 						error += e * e;
 						count++;
 					}
@@ -459,12 +569,8 @@ namespace BCnEncoder.Encoder.Bptc
 			}
 			else
 			{
-				Span<ColorYCbCrAlpha> colors = stackalloc ColorYCbCrAlpha[1 << colorIndexPrecision];
-				for (var i = 0; i < colors.Length; i++)
-				{
-					colors[i] = new ColorYCbCrAlpha(InterpolateColor(ep0, ep1, i,
-						i, colorIndexPrecision, alphaIndexPrecision));
-				}
+				Span<Vector4> paletteStorage = stackalloc Vector4[1 << colorIndexPrecision];
+				var palette = BuildPalette(ep0, ep1, colorIndexPrecision, alphaIndexPrecision, paletteStorage);
 
 				var pixels = raw.AsSpan;
 
@@ -474,7 +580,7 @@ namespace BCnEncoder.Encoder.Bptc
 					{
 						var pixelColor = new ColorYCbCrAlpha(pixels[i]);
 
-						var index = FindClosestColorIndex(pixelColor, colors, out var e);
+						var index = FindClosestColorIndex(pixelColor, palette, out var e);
 						indicesToFill[i] = (byte)index;
 					}
 				}
@@ -494,18 +600,7 @@ namespace BCnEncoder.Encoder.Bptc
 			{
 				Span<ColorYCbCr> colors = stackalloc ColorYCbCr[1 << colorIndexPrecision];
 				Span<byte> alphas = stackalloc byte[1 << alphaIndexPrecision];
-
-				for (var i = 0; i < colors.Length; i++)
-				{
-					colors[i] = new ColorYCbCr(InterpolateColor(ep0, ep1, i,
-						0, colorIndexPrecision, 0));
-				}
-
-				for (var i = 0; i < alphas.Length; i++)
-				{
-					alphas[i] = InterpolateColor(ep0, ep1, 0,
-						i, 0, alphaIndexPrecision).a;
-				}
+				BuildSeparatePalettes(ep0, ep1, colorIndexPrecision, alphaIndexPrecision, colors, alphas);
 
 				var pixels = raw.AsSpan;
 
@@ -533,7 +628,10 @@ namespace BCnEncoder.Encoder.Bptc
 			var colorMax = (byte)((1 << GetColorComponentPrecision(type)) - 1);
 			var alphaMax = (byte)((1 << GetAlphaComponentPrecision(type)) - 1);
 
-			var bestError = TrySubsetEndpoints(type, raw,
+			Span<ColorYCbCrAlpha> pixelColors = stackalloc ColorYCbCrAlpha[16];
+			ConvertPixels(raw, pixelColors);
+
+			var bestError = TrySubsetEndpoints(type, raw, pixelColors,
 				ExpandEndpoint(type, ep0, pBit0),
 				ExpandEndpoint(type, ep1, pBit1), partitionTable, subsetIndex, type4IdxMode
 			);
@@ -574,7 +672,7 @@ namespace BCnEncoder.Encoder.Bptc
 					ClampEndpoint(ref testEndPoint0, colorMax, alphaMax);
 					ClampEndpoint(ref testEndPoint1, colorMax, alphaMax);
 
-					var error = TrySubsetEndpoints(type, raw,
+					var error = TrySubsetEndpoints(type, raw, pixelColors,
 						ExpandEndpoint(type, testEndPoint0, pBit0),
 						ExpandEndpoint(type, testEndPoint1, pBit1), partitionTable, subsetIndex, type4IdxMode
 					);
@@ -597,7 +695,7 @@ namespace BCnEncoder.Encoder.Bptc
 						);
 					ClampEndpoint(ref testEndPoint0, colorMax, alphaMax);
 
-					var error = TrySubsetEndpoints(type, raw,
+					var error = TrySubsetEndpoints(type, raw, pixelColors,
 						ExpandEndpoint(type, testEndPoint0, pBit0),
 						ExpandEndpoint(type, ep1, pBit1), partitionTable, subsetIndex, type4IdxMode
 					);
@@ -619,7 +717,7 @@ namespace BCnEncoder.Encoder.Bptc
 					);
 					ClampEndpoint(ref testEndPoint1, colorMax, alphaMax);
 
-					var error = TrySubsetEndpoints(type, raw,
+					var error = TrySubsetEndpoints(type, raw, pixelColors,
 						ExpandEndpoint(type, ep0, pBit0),
 						ExpandEndpoint(type, testEndPoint1, pBit1), partitionTable, subsetIndex, type4IdxMode
 					);
@@ -635,7 +733,7 @@ namespace BCnEncoder.Encoder.Bptc
 				{
 					{
 						var testPBit0 = pBit0 == 0 ? (byte)1 : (byte)0;
-						var error = TrySubsetEndpoints(type, raw,
+						var error = TrySubsetEndpoints(type, raw, pixelColors,
 							ExpandEndpoint(type, ep0, testPBit0),
 							ExpandEndpoint(type, ep1, pBit1), partitionTable, subsetIndex, type4IdxMode
 						);
@@ -648,7 +746,7 @@ namespace BCnEncoder.Encoder.Bptc
 					}
 					{
 						var testPBit1 = pBit1 == 0 ? (byte)1 : (byte)0;
-						var error = TrySubsetEndpoints(type, raw,
+						var error = TrySubsetEndpoints(type, raw, pixelColors,
 							ExpandEndpoint(type, ep0, pBit0),
 							ExpandEndpoint(type, ep1, testPBit1), partitionTable, subsetIndex, type4IdxMode
 						);

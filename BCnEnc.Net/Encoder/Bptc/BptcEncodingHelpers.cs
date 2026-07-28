@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using BCnEncoder.Shared;
@@ -13,199 +13,136 @@ namespace BCnEncoder.Encoder.Bptc
 {
 	internal static class BptcEncodingHelpers
 	{
+		private static readonly byte[] ColorInterpolationWeights0 = new byte[16];
 		private static readonly byte[] ColorInterpolationWeights2 = new byte[] { 0, 21, 43, 64 };
 		private static readonly byte[] ColorInterpolationWeights3 = new byte[] { 0, 9, 18, 27, 37, 46, 55, 64 };
 		private static readonly byte[] ColorInterpolationWeights4 = new byte[] { 0, 4, 9, 13, 17, 21, 26, 30, 34, 38, 43, 47, 51, 55, 60, 64 };
 
-
-		public static int InterpolateInt(int e0, int e1, int index, int indexPrecision)
+		/// <summary>
+		/// Interpolation weights for an index precision. Precision 0 means "always endpoint 0",
+		/// which is a zero weight for every index, so callers never need to special-case it.
+		/// </summary>
+		public static ReadOnlySpan<byte> GetInterpolationWeights(int indexPrecision)
 		{
-			if (indexPrecision == 0) return e0;
-			var aWeights2 = ColorInterpolationWeights2;
-			var aWeights3 = ColorInterpolationWeights3;
-			var aWeights4 = ColorInterpolationWeights4;
-
-			if (indexPrecision == 2)
-				return (((64 - aWeights2[index]) * e0 + aWeights2[index] * e1 + 32) >> 6);
-			if (indexPrecision == 3)
-				return ((64 - aWeights3[index]) * e0 + aWeights3[index] * e1 + 32) >> 6;
-			else // indexprecision == 4
-				return ((64 - aWeights4[index]) * e0 + aWeights4[index] * e1 + 32) >> 6;
+			switch (indexPrecision)
+			{
+				case 2: return ColorInterpolationWeights2;
+				case 3: return ColorInterpolationWeights3;
+				case 4: return ColorInterpolationWeights4;
+				default: return ColorInterpolationWeights0;
+			}
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static int InterpolateInt(int e0, int e1, int weight)
+		{
+			return ((64 - weight) * e0 + weight * e1 + 32) >> 6;
+		}
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static byte InterpolateByte(byte e0, byte e1, int weight)
+		{
+			return (byte)InterpolateInt(e0, e1, weight);
+		}
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static int InterpolateInt(int e0, int e1, int index, int indexPrecision)
+		{
+			return InterpolateInt(e0, e1, GetInterpolationWeights(indexPrecision)[index]);
+		}
+
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static byte InterpolateByte(byte e0, byte e1, int index, int indexPrecision)
 		{
-			if (indexPrecision == 0) return e0;
-			var aWeights2 = ColorInterpolationWeights2;
-			var aWeights3 = ColorInterpolationWeights3;
-			var aWeights4 = ColorInterpolationWeights4;
-
-			if (indexPrecision == 2)
-				return (byte)(((64 - aWeights2[index]) * e0 + aWeights2[index] * e1 + 32) >> 6);
-			if (indexPrecision == 3)
-				return (byte)(((64 - aWeights3[index]) * e0 + aWeights3[index] * e1 + 32) >> 6);
-			else // indexprecision == 4
-				return (byte)(((64 - aWeights4[index]) * e0 + aWeights4[index] * e1 + 32) >> 6);
+			return InterpolateByte(e0, e1, GetInterpolationWeights(indexPrecision)[index]);
 		}
 
 
 
 		public static int[] Rank2SubsetPartitions(ClusterIndices4X4 reducedIndicesBlock, int numDistinctClusters, bool smallIndex = false)
 		{
-			var output = Enumerable.Range(0, smallIndex ? 32 : 64).ToArray();
+			var partitionCount = smallIndex ? 32 : 64;
+			var indices = reducedIndicesBlock.AsSpan;
 
-			// Copy struct to array before the closure so that reducedIndicesBlock is not
-			// heap-captured. On .NET Framework, MemoryMarshalPolyfills.CreateSpan uses
-			// Unsafe.AsPointer, which is only GC-safe for stack-allocated structs.
-			#if NETSTANDARD2_0
-			var indices = new int[16];
-			reducedIndicesBlock.AsSpan.CopyTo(indices);
-			#endif
-
-			int CalculatePartitionError(int partitionIndex)
+			Span<int> errors = stackalloc int[partitionCount];
+			for (var p = 0; p < partitionCount; p++)
 			{
-				#if NETSTANDARD2_1
-				var indices = reducedIndicesBlock.AsSpan;
-				#endif
-
-				var error = 0;
-				ReadOnlySpan<int> partitionTable = Bc7Block.Subsets2PartitionTable[partitionIndex];
-				Span<int> subset0 = stackalloc int[numDistinctClusters];
-				Span<int> subset1 = stackalloc int[numDistinctClusters];
-				var max0Idx = 0;
-				var max1Idx = 0;
-
-				//Calculate largest cluster index for each subset
-				for (var i = 0; i < 16; i++)
-				{
-					if (partitionTable[i] == 0)
-					{
-						var r = indices[i];
-						subset0[r]++;
-						var count = subset0[r];
-						if (count > subset0[max0Idx])
-						{
-							max0Idx = r;
-						}
-					}
-					else
-					{
-						var r = indices[i];
-						subset1[r]++;
-						var count = subset1[r];
-						if (count > subset1[max1Idx])
-						{
-							max1Idx = r;
-						}
-					}
-				}
-
-				// Calculate error by counting as error everything that does not match the largest cluster
-				for (var i = 0; i < 16; i++)
-				{
-					if (partitionTable[i] == 0)
-					{
-						if (indices[i] != max0Idx) error++;
-					}
-					else
-					{
-						if (indices[i] != max1Idx) error++;
-					}
-				}
-
-				return error;
+				errors[p] = CalculatePartitionError(indices, Bc7Block.Subsets2PartitionTable[p], 2, numDistinctClusters);
 			}
 
-			output = output.OrderBy(CalculatePartitionError).ToArray();
-
-			return output;
+			return RankByError(errors);
 		}
 
 		public static int[] Rank3SubsetPartitions(ClusterIndices4X4 reducedIndicesBlock, int numDistinctClusters)
 		{
-			var output = Enumerable.Range(0, 64).ToArray();
+			const int partitionCount = 64;
+			var indices = reducedIndicesBlock.AsSpan;
 
-			// Copy struct to array before the closure so that reducedIndicesBlock is not
-			// heap-captured. On .NET Framework, MemoryMarshalPolyfills.CreateSpan uses
-			// Unsafe.AsPointer, which is only GC-safe for stack-allocated structs.
-			#if NETSTANDARD2_0
-			var indices = new int[16];
-			reducedIndicesBlock.AsSpan.CopyTo(indices);
-			#endif
-
-			int CalculatePartitionError(int partitionIndex)
+			Span<int> errors = stackalloc int[partitionCount];
+			for (var p = 0; p < partitionCount; p++)
 			{
-				#if NETSTANDARD2_1
-				var indices = reducedIndicesBlock.AsSpan;
-				#endif
-
-				var error = 0;
-				ReadOnlySpan<int> partitionTable = Bc7Block.Subsets3PartitionTable[partitionIndex];
-
-				Span<int> subset0 = stackalloc int[numDistinctClusters];
-				Span<int> subset1 = stackalloc int[numDistinctClusters];
-				Span<int> subset2 = stackalloc int[numDistinctClusters];
-				var max0Idx = 0;
-				var max1Idx = 0;
-				var max2Idx = 0;
-
-				//Calculate largest cluster index for each subset
-				for (var i = 0; i < 16; i++)
-				{
-					if (partitionTable[i] == 0)
-					{
-						var r = indices[i];
-						subset0[r]++;
-						var count = subset0[r];
-						if (count > subset0[max0Idx])
-						{
-							max0Idx = r;
-						}
-					}
-					else if (partitionTable[i] == 1)
-					{
-						var r = indices[i];
-						subset1[r]++;
-						var count = subset1[r];
-						if (count > subset1[max1Idx])
-						{
-							max1Idx = r;
-						}
-					}
-					else
-					{
-						var r = indices[i];
-						subset2[r]++;
-						var count = subset2[r];
-						if (count > subset2[max2Idx])
-						{
-							max2Idx = r;
-						}
-					}
-				}
-
-				// Calculate error by counting as error everything that does not match the largest cluster
-				for (var i = 0; i < 16; i++)
-				{
-					if (partitionTable[i] == 0)
-					{
-						if (indices[i] != max0Idx) error++;
-					}
-					else if (partitionTable[i] == 1)
-					{
-						if (indices[i] != max1Idx) error++;
-					}
-					else
-					{
-						if (indices[i] != max2Idx) error++;
-					}
-				}
-
-				return error;
+				errors[p] = CalculatePartitionError(indices, Bc7Block.Subsets3PartitionTable[p], 3, numDistinctClusters);
 			}
 
-			output = output.OrderBy(CalculatePartitionError).ToArray();
+			return RankByError(errors);
+		}
 
+		/// <summary>
+		/// Counts, per subset, how many pixels do not belong to that subset's most common cluster.
+		/// </summary>
+		private static int CalculatePartitionError(ReadOnlySpan<int> indices, ReadOnlySpan<int> partitionTable,
+			int numSubsets, int numDistinctClusters)
+		{
+			Span<int> histogram = stackalloc int[numSubsets * numDistinctClusters];
+			Span<int> largestCluster = stackalloc int[numSubsets];
+			histogram.Clear();
+			largestCluster.Clear();
+
+			for (var i = 0; i < 16; i++)
+			{
+				var subset = partitionTable[i];
+				var cluster = indices[i];
+				var bucket = subset * numDistinctClusters;
+
+				histogram[bucket + cluster]++;
+				if (histogram[bucket + cluster] > histogram[bucket + largestCluster[subset]])
+				{
+					largestCluster[subset] = cluster;
+				}
+			}
+
+			var error = 0;
+			for (var i = 0; i < 16; i++)
+			{
+				if (indices[i] != largestCluster[partitionTable[i]]) error++;
+			}
+
+			return error;
+		}
+
+		/// <summary>
+		/// Stable ascending sort of partition indices by error. Errors are pixel counts, so a
+		/// counting sort over the 0..16 range replaces a comparison sort entirely.
+		/// </summary>
+		private static int[] RankByError(ReadOnlySpan<int> errors)
+		{
+			Span<int> offsets = stackalloc int[18];
+			offsets.Clear();
+
+			for (var i = 0; i < errors.Length; i++)
+			{
+				offsets[errors[i] + 1]++;
+			}
+			for (var i = 1; i < offsets.Length; i++)
+			{
+				offsets[i] += offsets[i - 1];
+			}
+
+			var output = new int[errors.Length];
+			for (var i = 0; i < errors.Length; i++)
+			{
+				output[offsets[errors[i]]++] = i;
+			}
 			return output;
 		}
 	}

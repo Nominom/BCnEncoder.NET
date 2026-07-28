@@ -1,7 +1,10 @@
-﻿namespace BCnEncoder.Shared
+using System.Runtime.CompilerServices;
+
+namespace BCnEncoder.Shared
 {
 	internal static class ByteHelper
 	{
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static byte ClampToByte(int i)
 		{
 			if (i < 0) i = 0;
@@ -9,15 +12,18 @@
 			return (byte)i;
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static byte ClampToByte(float f)
 			=> ClampToByte((int)f);
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static byte Extract1(ulong source, int index)
 		{
 			const ulong mask = 0b1UL;
 			return (byte)((source >> index) & mask);
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static ulong Store1(ulong dest, int index, byte value)
 		{
 			const ulong mask = 0b1UL;
@@ -26,12 +32,14 @@
 			return dest;
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static byte Extract2(ulong source, int index)
 		{
 			const ulong mask = 0b11UL;
 			return (byte)((source >> index) & mask);
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static ulong Store2(ulong dest, int index, byte value)
 		{
 			const ulong mask = 0b11UL;
@@ -40,12 +48,14 @@
 			return dest;
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static byte Extract3(ulong source, int index)
 		{
 			const ulong mask = 0b111UL;
 			return (byte)((source >> index) & mask);
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static ulong Store3(ulong dest, int index, byte value)
 		{
 			const ulong mask = 0b111UL;
@@ -54,12 +64,14 @@
 			return dest;
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static byte Extract4(ulong source, int index)
 		{
 			const ulong mask = 0b1111UL;
 			return (byte)((source >> index) & mask);
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static ulong Store4(ulong dest, int index, byte value)
 		{
 			const ulong mask = 0b1111UL;
@@ -68,12 +80,14 @@
 			return dest;
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static byte Extract5(ulong source, int index)
 		{
 			const ulong mask = 0b1_1111UL;
 			return (byte)((source >> index) & mask);
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static ulong Store5(ulong dest, int index, byte value)
 		{
 			const ulong mask = 0b1_1111UL;
@@ -82,12 +96,14 @@
 			return dest;
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static byte Extract6(ulong source, int index)
 		{
 			const ulong mask = 0b11_1111UL;
 			return (byte)((source >> index) & mask);
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static ulong Store6(ulong dest, int index, byte value)
 		{
 			const ulong mask = 0b11_1111UL;
@@ -96,12 +112,14 @@
 			return dest;
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static byte Extract7(ulong source, int index)
 		{
 			const ulong mask = 0b111_1111UL;
 			return (byte)((source >> index) & mask);
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static ulong Store7(ulong dest, int index, byte value)
 		{
 			const ulong mask = 0b111_1111UL;
@@ -110,12 +128,14 @@
 			return dest;
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static byte Extract8(ulong source, int index)
 		{
 			const ulong mask = 0b1111_1111UL;
 			return (byte)((source >> index) & mask);
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static ulong Store8(ulong dest, int index, byte value)
 		{
 			const ulong mask = 0b1111_1111UL;
@@ -124,6 +144,7 @@
 			return dest;
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static ulong Extract(ulong source, int index, int bitCount)
 		{
 			unchecked
@@ -133,6 +154,7 @@
 			}
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static ulong Store(ulong dest, int index, int bitCount, ulong value)
 		{
 			unchecked
@@ -144,6 +166,7 @@
 			}
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static ulong ExtractFrom128(ulong low, ulong high, int index, int bitCount)
 		{
 			if (index + bitCount <= 64)
@@ -168,6 +191,7 @@
 			}
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static (ulong, ulong) StoreTo128(ulong low, ulong high, int index, int bitCount, ulong value)
 		{
 			if (index + bitCount <= 64)

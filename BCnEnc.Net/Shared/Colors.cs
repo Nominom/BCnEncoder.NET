@@ -1,12 +1,52 @@
-﻿using System;
+using System;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 
 namespace BCnEncoder.Shared
 {
+	/// <summary>
+	/// Precomputed tables for the per-byte conversions that dominate the encoder hot loops.
+	/// Every entry holds exactly the value the equivalent expression would have produced.
+	/// </summary>
+	internal static class ColorTables
+	{
+		/// <summary>
+		/// <c>Normalized[i] == i / 255f</c>
+		/// </summary>
+		public static readonly float[] Normalized = CreateNormalized();
+
+		/// <summary>
+		/// <c>PivotRgb[i] == ColorXyz.PivotRgb(i / 255f)</c>
+		/// </summary>
+		public static readonly float[] PivotRgb = CreatePivotRgb();
+
+		private static float[] CreateNormalized()
+		{
+			var table = new float[256];
+			for (var i = 0; i < table.Length; i++)
+			{
+				table[i] = i / 255f;
+			}
+			return table;
+		}
+
+		private static float[] CreatePivotRgb()
+		{
+			var table = new float[256];
+			for (var i = 0; i < table.Length; i++)
+			{
+				var n = i / 255f;
+				table[i] = (n > 0.04045f ? MathF.Pow((n + 0.055f) / 1.055f, 2.4f) : n / 12.92f) * 100;
+			}
+			return table;
+		}
+	}
+
 	public struct ColorRgba32 : IEquatable<ColorRgba32>
 	{
 		public byte r, g, b, a;
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public ColorRgba32(byte r, byte g, byte b, byte a)
 		{
 			this.r = r;
@@ -199,12 +239,13 @@ namespace BCnEncoder.Shared
 			this.a = a;
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public ColorRgbaFloat(ColorRgba32 other)
 		{
-			this.r = other.r / 255f;
-			this.g = other.g / 255f;
-			this.b = other.b / 255f;
-			this.a = other.a / 255f;
+			this.r = ColorTables.Normalized[other.r];
+			this.g = ColorTables.Normalized[other.g];
+			this.b = ColorTables.Normalized[other.b];
+			this.a = ColorTables.Normalized[other.a];
 		}
 
 		public ColorRgbaFloat(float r, float g, float b)
@@ -316,6 +357,7 @@ namespace BCnEncoder.Shared
 	{
 		public float r, g, b;
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public ColorRgbFloat(float r, float g, float b)
 		{
 			this.r = r;
@@ -323,13 +365,15 @@ namespace BCnEncoder.Shared
 			this.b = b;
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public ColorRgbFloat(ColorRgba32 other)
 		{
-			this.r = other.r / 255f;
-			this.g = other.g / 255f;
-			this.b = other.b / 255f;
+			this.r = ColorTables.Normalized[other.r];
+			this.g = ColorTables.Normalized[other.g];
+			this.b = ColorTables.Normalized[other.b];
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public ColorRgbFloat(Vector3 vector)
 		{
 			r = vector.X;
@@ -426,11 +470,13 @@ namespace BCnEncoder.Shared
 				);
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public Vector3 ToVector3()
 		{
 			return new Vector3(r, g, b);
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		internal float CalcLogDist(ColorRgbFloat other)
 		{
 			var dr = Math.Sign(other.r) * MathF.Log(1 + MathF.Abs(other.r)) - Math.Sign(r) * MathF.Log(1 + MathF.Abs(r));
@@ -439,6 +485,7 @@ namespace BCnEncoder.Shared
 			return MathF.Sqrt((dr * dr) + (dg * dg) + (db * db));
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		internal float CalcDist(ColorRgbFloat other)
 		{
 			var dr = other.r - r;
@@ -478,17 +525,19 @@ namespace BCnEncoder.Shared
 			this.cr = cr;
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		internal ColorYCbCr(ColorRgb24 rgb)
 		{
-			var fr = (float)rgb.r / 255;
-			var fg = (float)rgb.g / 255;
-			var fb = (float)rgb.b / 255;
+			var fr = ColorTables.Normalized[rgb.r];
+			var fg = ColorTables.Normalized[rgb.g];
+			var fb = ColorTables.Normalized[rgb.b];
 
 			y = 0.2989f * fr + 0.5866f * fg + 0.1145f * fb;
 			cb = -0.1687f * fr - 0.3313f * fg + 0.5000f * fb;
 			cr = 0.5000f * fr - 0.4184f * fg - 0.0816f * fb;
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		internal ColorYCbCr(ColorRgbaFloat rgb)
 		{
 			var fr = rgb.r;
@@ -500,6 +549,7 @@ namespace BCnEncoder.Shared
 			cr = 0.5000f * fr - 0.4184f * fg - 0.0816f * fb;
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		internal ColorYCbCr(ColorRgbFloat rgb)
 		{
 			var fr = rgb.r;
@@ -511,28 +561,31 @@ namespace BCnEncoder.Shared
 			cr = 0.5000f * fr - 0.4184f * fg - 0.0816f * fb;
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		internal ColorYCbCr(ColorRgb565 rgb)
 		{
-			var fr = (float)rgb.R / 255;
-			var fg = (float)rgb.G / 255;
-			var fb = (float)rgb.B / 255;
+			var fr = ColorTables.Normalized[rgb.R];
+			var fg = ColorTables.Normalized[rgb.G];
+			var fb = ColorTables.Normalized[rgb.B];
 
 			y = 0.2989f * fr + 0.5866f * fg + 0.1145f * fb;
 			cb = -0.1687f * fr - 0.3313f * fg + 0.5000f * fb;
 			cr = 0.5000f * fr - 0.4184f * fg - 0.0816f * fb;
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public ColorYCbCr(ColorRgba32 rgba)
 		{
-			var fr = (float)rgba.r / 255;
-			var fg = (float)rgba.g / 255;
-			var fb = (float)rgba.b / 255;
+			var fr = ColorTables.Normalized[rgba.r];
+			var fg = ColorTables.Normalized[rgba.g];
+			var fb = ColorTables.Normalized[rgba.b];
 
 			y = 0.2989f * fr + 0.5866f * fg + 0.1145f * fb;
 			cb = -0.1687f * fr - 0.3313f * fg + 0.5000f * fb;
 			cr = 0.5000f * fr - 0.4184f * fg - 0.0816f * fb;
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public ColorYCbCr(Vector3 vec)
 		{
 			var fr = (float)vec.X;
@@ -571,13 +624,24 @@ namespace BCnEncoder.Shared
 			return $"r : {r * 255} g : {g * 255} b : {b * 255}";
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public float CalcDistWeighted(ColorYCbCr other, float yWeight = 4)
 		{
-			var dy = (y - other.y) * (y - other.y) * yWeight;
-			var dcb = (cb - other.cb) * (cb - other.cb);
-			var dcr = (cr - other.cr) * (cr - other.cr);
+			return MathF.Sqrt(CalcDistWeightedSquared(other, yWeight));
+		}
 
-			return MathF.Sqrt(dy + dcb + dcr);
+		/// <summary>
+		/// Squared counterpart of <see cref="CalcDistWeighted"/>. Ordering is identical, so it can
+		/// replace it in nearest-color searches without taking a square root per candidate.
+		/// </summary>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public float CalcDistWeightedSquared(ColorYCbCr other, float yWeight = 4)
+		{
+			var dy = y - other.y;
+			var dcb = cb - other.cb;
+			var dcr = cr - other.cr;
+
+			return dy * dy * yWeight + dcb * dcb + dcr * dcr;
 		}
 
 		public static ColorYCbCr operator +(ColorYCbCr left, ColorYCbCr right)
@@ -636,11 +700,13 @@ namespace BCnEncoder.Shared
 
 		public byte Mode
 		{
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			readonly get
 			{
 				var mode = (data & ModeMask) >> ModeShift;
 				return (byte)mode;
 			}
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			set
 			{
 				var mode = value;
@@ -651,11 +717,13 @@ namespace BCnEncoder.Shared
 
 		public byte R
 		{
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			readonly get
 			{
 				var r5 = (data & RedMask) >> RedShift;
 				return (byte)((r5 << 3) | (r5 >> 2));
 			}
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			set
 			{
 				var r5 = value >> 3;
@@ -666,11 +734,13 @@ namespace BCnEncoder.Shared
 
 		public byte G
 		{
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			readonly get
 			{
 				var g5 = (data & GreenMask) >> GreenShift;
 				return (byte)((g5 << 3) | (g5 >> 2));
 			}
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			set
 			{
 				var g5 = value >> 3;
@@ -681,11 +751,13 @@ namespace BCnEncoder.Shared
 
 		public byte B
 		{
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			readonly get
 			{
 				var b5 = data & BlueMask;
 				return (byte)((b5 << 3) | (b5 >> 2));
 			}
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			set
 			{
 				var b5 = value >> 3;
@@ -697,6 +769,7 @@ namespace BCnEncoder.Shared
 		public int RawR
 		{
 			readonly get => (data & RedMask) >> RedShift;
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			set
 			{
 				if (value > 31) value = 31;
@@ -709,6 +782,7 @@ namespace BCnEncoder.Shared
 		public int RawG
 		{
 			readonly get => (data & GreenMask) >> GreenShift;
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			set
 			{
 				if (value > 31) value = 31;
@@ -721,6 +795,7 @@ namespace BCnEncoder.Shared
 		public int RawB
 		{
 			readonly get => data & BlueMask;
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			set
 			{
 				if (value > 31) value = 31;
@@ -754,6 +829,7 @@ namespace BCnEncoder.Shared
 			B = color.b;
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public readonly ColorRgb24 ToColorRgb24()
 		{
 			return new ColorRgb24(R, G, B);
@@ -807,11 +883,13 @@ namespace BCnEncoder.Shared
 
 		public byte R
 		{
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			readonly get
 			{
 				var r5 = (data & RedMask) >> RedShift;
 				return (byte)((r5 << 3) | (r5 >> 2));
 			}
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			set
 			{
 				var r5 = value >> 3;
@@ -822,11 +900,13 @@ namespace BCnEncoder.Shared
 
 		public byte G
 		{
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			readonly get
 			{
 				var g6 = (data & GreenMask) >> GreenShift;
 				return (byte)((g6 << 2) | (g6 >> 4));
 			}
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			set
 			{
 				var g6 = value >> 2;
@@ -837,11 +917,13 @@ namespace BCnEncoder.Shared
 
 		public byte B
 		{
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			readonly get
 			{
 				var b5 = data & BlueMask;
 				return (byte)((b5 << 3) | (b5 >> 2));
 			}
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			set
 			{
 				var b5 = value >> 3;
@@ -853,6 +935,7 @@ namespace BCnEncoder.Shared
 		public int RawR
 		{
 			readonly get { return (data & RedMask) >> RedShift; }
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			set
 			{
 				if (value > 31) value = 31;
@@ -865,6 +948,7 @@ namespace BCnEncoder.Shared
 		public int RawG
 		{
 			readonly get { return (data & GreenMask) >> GreenShift; }
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			set
 			{
 				if (value > 63) value = 63;
@@ -877,6 +961,7 @@ namespace BCnEncoder.Shared
 		public int RawB
 		{
 			readonly get { return data & BlueMask; }
+			[MethodImpl(MethodImplOptions.AggressiveInlining)]
 			set
 			{
 				if (value > 31) value = 31;
@@ -910,6 +995,7 @@ namespace BCnEncoder.Shared
 			B = color.b;
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public readonly ColorRgb24 ToColorRgb24()
 		{
 			return new ColorRgb24(R, G, B);
@@ -930,6 +1016,7 @@ namespace BCnEncoder.Shared
 	{
 		public byte r, g, b;
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public ColorRgb24(byte r, byte g, byte b)
 		{
 			this.r = r;
@@ -937,6 +1024,7 @@ namespace BCnEncoder.Shared
 			this.b = b;
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public ColorRgb24(ColorRgb565 color)
 		{
 			this.r = color.R;
@@ -944,6 +1032,7 @@ namespace BCnEncoder.Shared
 			this.b = color.B;
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public ColorRgb24(ColorRgba32 color)
 		{
 			this.r = color.r;
@@ -1037,11 +1126,12 @@ namespace BCnEncoder.Shared
 			this.alpha = alpha;
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public ColorYCbCrAlpha(ColorRgb24 rgb)
 		{
-			var fr = (float)rgb.r / 255;
-			var fg = (float)rgb.g / 255;
-			var fb = (float)rgb.b / 255;
+			var fr = ColorTables.Normalized[rgb.r];
+			var fg = ColorTables.Normalized[rgb.g];
+			var fb = ColorTables.Normalized[rgb.b];
 
 			y = 0.2989f * fr + 0.5866f * fg + 0.1145f * fb;
 			cb = -0.1687f * fr - 0.3313f * fg + 0.5000f * fb;
@@ -1049,11 +1139,12 @@ namespace BCnEncoder.Shared
 			alpha = 1;
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public ColorYCbCrAlpha(ColorRgb565 rgb)
 		{
-			var fr = (float)rgb.R / 255;
-			var fg = (float)rgb.G / 255;
-			var fb = (float)rgb.B / 255;
+			var fr = ColorTables.Normalized[rgb.R];
+			var fg = ColorTables.Normalized[rgb.G];
+			var fb = ColorTables.Normalized[rgb.B];
 
 			y = 0.2989f * fr + 0.5866f * fg + 0.1145f * fb;
 			cb = -0.1687f * fr - 0.3313f * fg + 0.5000f * fb;
@@ -1061,18 +1152,20 @@ namespace BCnEncoder.Shared
 			alpha = 1;
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public ColorYCbCrAlpha(ColorRgba32 rgba)
 		{
-			var fr = (float)rgba.r / 255;
-			var fg = (float)rgba.g / 255;
-			var fb = (float)rgba.b / 255;
+			var fr = ColorTables.Normalized[rgba.r];
+			var fg = ColorTables.Normalized[rgba.g];
+			var fb = ColorTables.Normalized[rgba.b];
 
 			y = 0.2989f * fr + 0.5866f * fg + 0.1145f * fb;
 			cb = -0.1687f * fr - 0.3313f * fg + 0.5000f * fb;
 			cr = 0.5000f * fr - 0.4184f * fg - 0.0816f * fb;
-			alpha = rgba.a / 255f;
+			alpha = ColorTables.Normalized[rgba.a];
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public ColorYCbCrAlpha(ColorRgbaFloat rgba)
 		{
 			var fr = rgba.r;
@@ -1085,6 +1178,20 @@ namespace BCnEncoder.Shared
 			alpha = rgba.a;
 		}
 
+
+		/// <summary>
+		/// Converts four colors at once, given their already normalized channels. Produces exactly
+		/// what the <see cref="ColorRgba32"/> constructor above would, one color per vector lane,
+		/// and keeps the coefficients defined in a single place.
+		/// </summary>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public static void FromNormalized(Vector4 r, Vector4 g, Vector4 b,
+			out Vector4 y, out Vector4 cb, out Vector4 cr)
+		{
+			y = r * 0.2989f + g * 0.5866f + b * 0.1145f;
+			cb = r * -0.1687f - g * 0.3313f + b * 0.5000f;
+			cr = r * 0.5000f - g * 0.4184f - b * 0.0816f;
+		}
 
 		public ColorRgb565 ToColorRgb565()
 		{
@@ -1104,14 +1211,25 @@ namespace BCnEncoder.Shared
 			return $"r : {r * 255} g : {g * 255} b : {b * 255}";
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public float CalcDistWeighted(ColorYCbCrAlpha other, float yWeight = 4, float aWeight = 1)
 		{
-			var dy = (y - other.y) * (y - other.y) * yWeight;
-			var dcb = (cb - other.cb) * (cb - other.cb);
-			var dcr = (cr - other.cr) * (cr - other.cr);
-			var da = (alpha - other.alpha) * (alpha - other.alpha) * aWeight;
+			return MathF.Sqrt(CalcDistWeightedSquared(other, yWeight, aWeight));
+		}
 
-			return MathF.Sqrt(dy + dcb + dcr + da);
+		/// <summary>
+		/// Squared counterpart of <see cref="CalcDistWeighted"/>. Ordering is identical, so it can
+		/// replace it in nearest-color searches without taking a square root per candidate.
+		/// </summary>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		public float CalcDistWeightedSquared(ColorYCbCrAlpha other, float yWeight = 4, float aWeight = 1)
+		{
+			var dy = y - other.y;
+			var dcb = cb - other.cb;
+			var dcr = cr - other.cr;
+			var da = alpha - other.alpha;
+
+			return dy * dy * yWeight + dcb * dcb + dcr * dcr + da * da * aWeight;
 		}
 
 		public static ColorYCbCrAlpha operator +(ColorYCbCrAlpha left, ColorYCbCrAlpha right)
@@ -1146,11 +1264,13 @@ namespace BCnEncoder.Shared
 			this.z = z;
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public ColorXyz(ColorRgb24 color)
 		{
 			this = ColorToXyz(color);
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public ColorXyz(ColorRgbFloat color)
 		{
 			this = ColorToXyz(color);
@@ -1165,11 +1285,13 @@ namespace BCnEncoder.Shared
 			);
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static ColorXyz ColorToXyz(ColorRgb24 color)
 		{
-			var r = PivotRgb(color.r / 255.0f);
-			var g = PivotRgb(color.g / 255.0f);
-			var b = PivotRgb(color.b / 255.0f);
+			var pivot = ColorTables.PivotRgb;
+			var r = pivot[color.r];
+			var g = pivot[color.g];
+			var b = pivot[color.b];
 
 			// Observer. = 2°, Illuminant = D65
 			return new ColorXyz(r * 0.4124f + g * 0.3576f + b * 0.1805f, r * 0.2126f + g * 0.7152f + b * 0.0722f, r * 0.0193f + g * 0.1192f + b * 0.9505f);
@@ -1197,6 +1319,7 @@ namespace BCnEncoder.Shared
 		public float a;
 		public float b;
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public ColorLab(float l, float a, float b)
 		{
 			this.l = l;
@@ -1204,21 +1327,25 @@ namespace BCnEncoder.Shared
 			this.b = b;
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public ColorLab(ColorRgb24 color)
 		{
 			this = ColorToLab(color);
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public ColorLab(ColorRgba32 color)
 		{
 			this = ColorToLab(new ColorRgb24(color.r, color.g, color.b));
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public ColorLab(ColorRgbFloat color)
 		{
 			this = XyzToLab(new ColorXyz(color));
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static ColorLab ColorToLab(ColorRgb24 color)
 		{
 			var xyz = new ColorXyz(color);
@@ -1226,6 +1353,7 @@ namespace BCnEncoder.Shared
 		}
 
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static ColorLab XyzToLab(ColorXyz xyz)
 		{
 			var refX = 95.047f; // Observer= 2°, Illuminant= D65
@@ -1239,6 +1367,7 @@ namespace BCnEncoder.Shared
 			return new ColorLab(116 * y - 16, 500 * (x - y), 200 * (y - z));
 		}
 
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		private static float PivotXyz(float n)
 		{
 			var i = MathCbrt.Cbrt(n);
