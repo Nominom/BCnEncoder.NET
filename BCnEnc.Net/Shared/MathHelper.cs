@@ -1,12 +1,16 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace BCnEncoder.Shared
 {
 	public static unsafe class MathHelper
 	{
-		private static  double two54 =  1.80143985094819840000e+16; /* 0x43500000, 0x00000000 */
+		private const double two54 =  1.80143985094819840000e+16; /* 0x43500000, 0x00000000 */
+
+		private const int MinExponent = -126;
+		private const int MaxExponent = 127;
 
 		// FrExp modified to C# from http://www.netlib.org
 		/* @(#)fdlibm.h 1.5 04/04/22 */
@@ -25,6 +29,7 @@ namespace BCnEncoder.Shared
 		/// <param name="x"></param>
 		/// <param name="eptr"></param>
 		/// <returns>Returns the normalized fraction m. If x is 0, the function returns 0 for both the fraction and exponent. The fraction has the same sign as the argument x. The result of the function cannot have a range error.</returns>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static double FrExp(double x, out int eptr)
 		{
 			unchecked
@@ -57,9 +62,25 @@ namespace BCnEncoder.Shared
 		/// <param name="arg"></param>
 		/// <param name="exp"></param>
 		/// <returns></returns>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
 		public static float LdExp(float arg, int exp)
 		{
+			if (exp >= MinExponent && exp <= MaxExponent)
+			{
+				return arg * Exp2(exp);
+			}
+
 			return arg * MathF.Pow(2, exp);
+		}
+
+		/// <summary>
+		/// Builds 2^exp directly from its IEEE-754 exponent field. Only valid for normal exponents.
+		/// </summary>
+		[MethodImpl(MethodImplOptions.AggressiveInlining)]
+		private static float Exp2(int exp)
+		{
+			var bits = (exp + 127) << 23;
+			return *(float*)&bits;
 		}
 	}
 }

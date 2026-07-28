@@ -1,5 +1,6 @@
 using System;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 
 namespace BCnEncoder.Shared
 {
@@ -10,12 +11,11 @@ namespace BCnEncoder.Shared
 
 		private static void ConvertToVector4(ReadOnlySpan<ColorRgba32> colors, Span<Vector4> vectors)
 		{
+			var normalized = ColorTables.Normalized;
 			for (var i = 0; i < colors.Length; i++)
 			{
-				vectors[i].X += colors[i].r / 255f;
-				vectors[i].Y += colors[i].g / 255f;
-				vectors[i].Z += colors[i].b / 255f;
-				vectors[i].W += colors[i].a / 255f;
+				var c = colors[i];
+				vectors[i] = new Vector4(normalized[c.r], normalized[c.g], normalized[c.b], normalized[c.a]);
 			}
 		}
 
@@ -23,35 +23,20 @@ namespace BCnEncoder.Shared
 		{
 			for (var i = 0; i < colors.Length; i++)
 			{
-				vectors[i].X += colors[i].r;
-				vectors[i].Y += colors[i].g;
-				vectors[i].Z += colors[i].b;
-				vectors[i].W = 0;
+				var c = colors[i];
+				vectors[i] = new Vector4(c.r, c.g, c.b, 0);
 			}
 		}
 
-		private static Vector4 CalculateMean(Span<Vector4> colors)
+		private static Vector4 CalculateMean(ReadOnlySpan<Vector4> colors)
 		{
-
-			float r = 0;
-			float g = 0;
-			float b = 0;
-			float a = 0;
-
+			var sum = Vector4.Zero;
 			for (var i = 0; i < colors.Length; i++)
 			{
-				r += colors[i].X;
-				g += colors[i].Y;
-				b += colors[i].Z;
-				a += colors[i].W;
+				sum += colors[i];
 			}
 
-			return new Vector4(
-				r / colors.Length,
-				g / colors.Length,
-				b / colors.Length,
-				a / colors.Length
-				);
+			return sum / colors.Length;
 		}
 
 		internal static Matrix4x4 CalculateCovariance(Span<Vector4> values, out Vector4 mean) {
@@ -61,36 +46,33 @@ namespace BCnEncoder.Shared
 				values[i] -= mean;
 			}
 
-			//4x4 matrix
-			var mat = new Matrix4x4();
+			// Each row of the symmetric covariance matrix is one broadcasted component times the
+			// whole vector, so the outer product accumulates four products per SIMD multiply.
+			var row1 = Vector4.Zero;
+			var row2 = Vector4.Zero;
+			var row3 = Vector4.Zero;
+			var row4 = Vector4.Zero;
 
 			for (var i = 0; i < values.Length; i++)
 			{
-				mat.M11 += values[i].X * values[i].X;
-				mat.M12 += values[i].X * values[i].Y;
-				mat.M13 += values[i].X * values[i].Z;
-				mat.M14 += values[i].X * values[i].W;
-				
-				mat.M22 += values[i].Y * values[i].Y;
-				mat.M23 += values[i].Y * values[i].Z;
-				mat.M24 += values[i].Y * values[i].W;
-				
-				mat.M33 += values[i].Z * values[i].Z;
-				mat.M34 += values[i].Z * values[i].W;
-				
-				mat.M44 += values[i].W * values[i].W;
+				var v = values[i];
+				row1 += new Vector4(v.X) * v;
+				row2 += new Vector4(v.Y) * v;
+				row3 += new Vector4(v.Z) * v;
+				row4 += new Vector4(v.W) * v;
 			}
 
-			mat = Matrix4x4.Multiply(mat, 1f / (values.Length - 1));
-			
-			mat.M21 = mat.M12;
-			mat.M31 = mat.M13;
-			mat.M32 = mat.M23;
-			mat.M41 = mat.M14;
-			mat.M42 = mat.M24;
-			mat.M43 = mat.M34;
+			var scale = 1f / (values.Length - 1);
+			row1 *= scale;
+			row2 *= scale;
+			row3 *= scale;
+			row4 *= scale;
 
-			return mat;
+			return new Matrix4x4(
+				row1.X, row1.Y, row1.Z, row1.W,
+				row2.X, row2.Y, row2.Z, row2.W,
+				row3.X, row3.Y, row3.Z, row3.W,
+				row4.X, row4.Y, row4.Z, row4.W);
 		}
 
 		/// <summary>
@@ -99,16 +81,27 @@ namespace BCnEncoder.Shared
 		/// <param name="covarianceMatrix"></param>
 		/// <returns></returns>
 		internal static Vector4 CalculatePrincipalAxis(Matrix4x4 covarianceMatrix) {
+			// Held as rows so the iteration below is four multiply-adds instead of a matrix copy.
+			var row1 = new Vector4(covarianceMatrix.M11, covarianceMatrix.M12, covarianceMatrix.M13, covarianceMatrix.M14);
+			var row2 = new Vector4(covarianceMatrix.M21, covarianceMatrix.M22, covarianceMatrix.M23, covarianceMatrix.M24);
+			var row3 = new Vector4(covarianceMatrix.M31, covarianceMatrix.M32, covarianceMatrix.M33, covarianceMatrix.M34);
+			var row4 = new Vector4(covarianceMatrix.M41, covarianceMatrix.M42, covarianceMatrix.M43, covarianceMatrix.M44);
+
 			var lastDa = Vector4.UnitY;
 
 			for (var i = 0; i < 30; i++) {
-				var dA = Vector4.Transform(lastDa, covarianceMatrix);
+				var dA = new Vector4(lastDa.X) * row1
+					+ new Vector4(lastDa.Y) * row2
+					+ new Vector4(lastDa.Z) * row3
+					+ new Vector4(lastDa.W) * row4;
 
-				if(dA.LengthSquared() == 0) {
+				// Vector4.Normalize would recompute the squared length internally, so divide directly.
+				var lengthSquared = dA.LengthSquared();
+				if(lengthSquared == 0) {
 					break;
 				}
 
-				dA = Vector4.Normalize(dA);
+				dA /= MathF.Sqrt(lengthSquared);
 				if (Vector4.Dot(lastDa, dA) > 0.999999) {
 					lastDa = dA;
 					break;
@@ -178,10 +171,12 @@ namespace BCnEncoder.Shared
 
 			float minD = 0;
 			float maxD = 0;
+			var normalized = ColorTables.Normalized;
 
 			for (var i = 0; i < colors.Length; i++)
 			{
-				var colorVec = new Vector3(colors[i].r / 255f, colors[i].g / 255f, colors[i].b / 255f);
+				var c = colors[i];
+				var colorVec = new Vector3(normalized[c.r], normalized[c.g], normalized[c.b]);
 
 				var v = colorVec - mean;
 				var d = Vector3.Dot(v, principalAxis);
@@ -218,10 +213,12 @@ namespace BCnEncoder.Shared
 
 			float minD = 0;
 			float maxD = 0;
+			var normalized = ColorTables.Normalized;
 
 			for (var i = 0; i < colors.Length; i++)
 			{
-				var colorVec = new Vector3(colors[i].r / 255f, colors[i].g / 255f, colors[i].b / 255f);
+				var c = colors[i];
+				var colorVec = new Vector3(normalized[c.r], normalized[c.g], normalized[c.b]);
 
 				var v = colorVec - mean;
 				var d = Vector3.Dot(v, principalAxis);
@@ -272,10 +269,12 @@ namespace BCnEncoder.Shared
 
 			float minD = 0;
 			float maxD = 0;
+			var normalized = ColorTables.Normalized;
 
 			for (var i = 0; i < colors.Length; i++)
 			{
-				var colorVec = new Vector4(colors[i].r / 255f, colors[i].g / 255f, colors[i].b / 255f, colors[i].a / 255f);
+				var c = colors[i];
+				var colorVec = new Vector4(normalized[c.r], normalized[c.g], normalized[c.b], normalized[c.a]);
 
 				var v = colorVec - mean;
 				var d = Vector4.Dot(v, principalAxis);
